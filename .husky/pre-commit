@@ -1,3 +1,5 @@
+export PATH="$(pwd)/node_modules/.bin:$PATH"
+
 echo "🪝 Running pre-commit checks..."
 echo "⚠️  These checks are MANDATORY and cannot be bypassed."
 echo "⚠️  Do NOT use --no-verify to skip these checks."

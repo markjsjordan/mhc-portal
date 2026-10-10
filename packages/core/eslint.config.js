@@ -102,6 +102,8 @@ export default [
       'unicorn/prefer-string-slice': 'error',
       'unicorn/better-regex': 'error',
       'unicorn/no-for-loop': 'error',
+      // SonarJS deprecation off (Zod deprecated type aliases)
+      'sonarjs/deprecation': 'off',
       // SOLID Principles enforcement
       // Single Responsibility Principle (SRP) - Keep files and functions small
       'max-lines': ['warn', { max: 300, skipBlankLines: true, skipComments: true }],

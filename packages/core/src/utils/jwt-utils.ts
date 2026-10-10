@@ -26,9 +26,10 @@ export interface TokenPayload {
   impersonation?: {
     adminUserId: UUID;
     adminEmail: string;
-    impersonatedAt: string;
+    sessionId: UUID;
+    startedAt: string;
+    impersonatedAt?: string;
     reason?: string;
-    sessionId?: string;
   };
 }
 
@@ -82,6 +83,29 @@ export class JWTUtils {
       throw new Error('JWT_REFRESH_SECRET must be at least 32 characters for security');
     }
     return secret;
+  }
+
+  /**
+   * Generate short-lived access token for impersonation (no refresh token)
+   * 
+   * @param payload - User context with impersonation details
+   * @returns Access token and expiry time
+   */
+  static generateImpersonationToken(payload: TokenPayload): { accessToken: string; expiresIn: number } {
+    const accessToken = jwt.sign(
+      payload,
+      this.getAccessTokenSecret(),
+      { 
+        expiresIn: this.ACCESS_TOKEN_EXPIRY,
+        issuer: 'folkcare',
+        audience: 'folkcare-api'
+      }
+    );
+
+    return {
+      accessToken,
+      expiresIn: 15 * 60 // 15 minutes in seconds
+    };
   }
 
   /**
@@ -166,7 +190,8 @@ export class JWTUtils {
         branchIds: Array.isArray(payload.branchIds) ? (payload.branchIds as UUID[]) : [],
         roles: Array.isArray(payload.roles) ? (payload.roles as string[]) : [],
         permissions: Array.isArray(payload.permissions) ? (payload.permissions as string[]) : [],
-        tokenVersion: typeof payload.tokenVersion === 'number' ? payload.tokenVersion : 1
+        tokenVersion: typeof payload.tokenVersion === 'number' ? payload.tokenVersion : 1,
+        impersonation: (payload.impersonation as TokenPayload['impersonation']) ?? undefined
       };
     } catch (error) {
       if (error instanceof Error) {

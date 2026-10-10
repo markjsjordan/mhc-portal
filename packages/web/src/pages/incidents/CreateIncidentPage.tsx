@@ -4,56 +4,24 @@
  * Form for reporting new incidents with validation and submission.
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-
-type IncidentType =
-  | 'FALL'
-  | 'MEDICATION_ERROR'
-  | 'INJURY'
-  | 'ABUSE_ALLEGATION'
-  | 'NEGLECT_ALLEGATION'
-  | 'EXPLOITATION_ALLEGATION'
-  | 'EQUIPMENT_FAILURE'
-  | 'EMERGENCY_HOSPITALIZATION'
-  | 'DEATH'
-  | 'ELOPEMENT'
-  | 'BEHAVIORAL_INCIDENT'
-  | 'INFECTION'
-  | 'PRESSURE_INJURY'
-  | 'CLIENT_REFUSAL'
-  | 'OTHER';
-
-type IncidentSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-
-interface CreateIncidentInput {
-  clientId: string;
-  incidentType: IncidentType;
-  severity: IncidentSeverity;
-  occurredAt: string;
-  location: string;
-  description: string;
-  immediateAction?: string;
-}
-
-async function createIncident(data: CreateIncidentInput) {
-  const response = await fetch('/api/incidents', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) throw new Error('Failed to create incident');
-  return response.json();
-}
+import { useApiClient } from '@/core/hooks';
+import {
+  createIncidentApiService,
+  type CreateIncidentInput,
+} from '@/verticals/incident-reporting-frontend/services/incident-api';
 
 export function CreateIncidentPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const prefilledClientId = searchParams.get('clientId') || '';
+
+  const apiClient = useApiClient();
+  const incidentApi = useMemo(() => createIncidentApiService(apiClient), [apiClient]);
 
   const [formData, setFormData] = useState<CreateIncidentInput>({
     clientId: prefilledClientId,
@@ -66,14 +34,20 @@ export function CreateIncidentPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: createIncident,
+    mutationFn: (data: CreateIncidentInput) => incidentApi.createIncident(data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['incidents'] });
       toast.success('Incident reported successfully');
       navigate(`/incidents/${data.id}`);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to report incident');
+      const status = (error as Error & { status?: number }).status;
+      const isSessionExpired = status === 401;
+      toast.error(
+        isSessionExpired
+          ? 'Session expired, please log in again.'
+          : error.message || 'Failed to report incident'
+      );
     },
   });
 

@@ -231,6 +231,18 @@ export class ShowcaseApiProvider implements ApiProvider {
       return this.handlePayrollEndpoint(method, url, data);
     }
 
+    if (url.includes('/api/incidents')) {
+      if (method === 'POST') {
+        return {
+          id: `demo-inc-${Date.now()}`,
+          status: 'REPORTED',
+          createdAt: new Date().toISOString(),
+          ...((data as Record<string, unknown>) ?? {}),
+        };
+      }
+      return [];
+    }
+
     // Default: return empty success
     return { success: true };
   }

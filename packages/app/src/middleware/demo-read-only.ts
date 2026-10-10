@@ -49,6 +49,9 @@ const ALLOWED_ROUTES = [
   '/api/signup',
   '/api/organizations/register',
   '/api/invitations/accept',
+
+  // Client operations (for client intake & onboarding workflows)
+  '/api/clients',
 ];
 
 /**
