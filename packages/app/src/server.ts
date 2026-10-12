@@ -56,7 +56,7 @@ function initDb(): ReturnType<typeof initializeDatabase> {
   
   if (databaseUrl !== undefined && databaseUrl !== '') {
     console.log('Using DATABASE_URL for connection');
-    // Parse DATABASE_URL (format: postgresql://user:pass@host:port/db?sslmode=require)
+    // Parse DATABASE_URL (format: postgresql://user:***@host:port/db?sslmode=require)
     const url = new globalThis.URL(databaseUrl);
     const port = Number(url.port);
     const dbConfig = {
@@ -78,7 +78,12 @@ function initDb(): ReturnType<typeof initializeDatabase> {
       ssl: dbConfig.ssl,
       hasPassword: Boolean(dbConfig.password)
     });
-    return initializeDatabase(dbConfig);
+    try {
+      return initializeDatabase(dbConfig);
+    } catch (error) {
+      console.error('Failed to initialize database with DATABASE_URL:', error);
+      throw error;
+    }
   }
   
   // Fall back to individual environment variables
@@ -99,7 +104,12 @@ function initDb(): ReturnType<typeof initializeDatabase> {
   };
 
   console.log(`Initializing database: ${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`);
-  return initializeDatabase(dbConfig);
+  try {
+    return initializeDatabase(dbConfig);
+  } catch (error) {
+    console.error('Failed to initialize database with DB_* variables:', error);
+    throw error;
+  }
 }
 
 /**
@@ -247,9 +257,19 @@ async function setupApiRoutes(): Promise<void> {
  */
 export async function createApp(): Promise<express.Express> {
   console.log(`Initializing Folk API (${NODE_ENV})`);
+  console.log('Environment variables:', {
+    DB_HOST: process.env['DB_HOST'],
+    DB_PORT: process.env['DB_PORT'],
+    DB_NAME: process.env['DB_NAME'],
+    DB_USER: process.env['DB_USER'],
+    DB_PASSWORD: process.env['DB_PASSWORD'] ? '***' : 'NOT SET',
+    DATABASE_URL: process.env['DATABASE_URL'] ? '***' : 'NOT SET',
+  });
 
   // Initialize database
+  console.log('Calling initDb()...');
   const db = initDb();
+  console.log('Database initialized successfully');
 
   // Check database connection
   const isHealthy = await db.healthCheck();

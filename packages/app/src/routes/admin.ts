@@ -27,10 +27,15 @@ router.use((req: Request, res: Response, next: NextFunction) => {
   getAuthMiddleware().requireAuth(req, res, next).catch(next);
 });
 
-// HIPAA audit logging for impersonated actions
-if (getAuthMiddleware().auditImpersonatedActions) {
-  router.use((req, res, next) => getAuthMiddleware().auditImpersonatedActions(req, res, next));
-}
+// HIPAA audit logging for impersonated actions (lazy - call at request time, not import time)
+router.use((req: Request, res: Response, next: NextFunction) => {
+  const middleware = getAuthMiddleware();
+  if (middleware.auditImpersonatedActions) {
+    middleware.auditImpersonatedActions(req, res, next);
+  } else {
+    next();
+  }
+});
 
 /**
  * Get cache statistics

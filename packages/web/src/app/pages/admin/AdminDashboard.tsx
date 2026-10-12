@@ -8,19 +8,25 @@ import {
   Database,
   Shield,
   Clock,
+  LogIn,
+  X,
 } from 'lucide-react';
 import { Card } from '@/core/components';
+import { useAuth } from '@/core/hooks/auth';
 import {
   OperationsCenter,
   StateConfigPanel,
   DataGridPanel,
   ComplianceCenter,
+  LoginAsModal,
 } from './components';
 
 type TabView = 'operations' | 'state-config' | 'data' | 'compliance';
 
 export const AdminDashboard: React.FC = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabView>('operations');
+  const [isLoginAsOpen, setIsLoginAsOpen] = useState(false);
 
   const tabs = [
     {
@@ -83,12 +89,48 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600 mt-1">
-          Comprehensive system administration and state-specific configuration
-        </p>
+      {/* Impersonation Banner */}
+      {user && user.roles?.includes('CAREGIVER') && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center gap-3">
+          <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-yellow-800">
+              You are currently logged in as a caregiver
+            </p>
+            <p className="text-xs text-yellow-700 mt-1">
+              This is an impersonation session. Your actions are being audited for compliance.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              localStorage.removeItem('auth-storage');
+              window.location.href = '/login';
+            }}
+            className="text-yellow-600 hover:text-yellow-800 flex-shrink-0"
+            aria-label="End impersonation"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
+      {/* Header with Login As Button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-600 mt-1">
+            Comprehensive system administration and state-specific configuration
+          </p>
+        </div>
+        {!user?.roles?.includes('CAREGIVER') && (
+          <button
+            onClick={() => setIsLoginAsOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <LogIn className="h-4 w-4" />
+            <span className="text-sm font-medium">Login As Caregiver</span>
+          </button>
+        )}
       </div>
 
       {/* Real-time Stats */}
@@ -139,6 +181,34 @@ export const AdminDashboard: React.FC = () => {
         {activeTab === 'data' && <DataGridPanel />}
         {activeTab === 'compliance' && <ComplianceCenter />}
       </div>
+
+      {/* Login As Modal */}
+      <LoginAsModal
+        isOpen={isLoginAsOpen}
+        onClose={() => setIsLoginAsOpen(false)}
+        onImpersonateStart={(accessToken, caregiver) => {
+          // Store the new token and reload to update context
+          localStorage.setItem(
+            'auth-storage',
+            JSON.stringify({
+              state: {
+                user: {
+                  id: caregiver.id,
+                  email: caregiver.email,
+                  organizationId: user?.organizationId || '',
+                  name: caregiver.name,
+                  roles: ['CAREGIVER'],
+                  permissions: [],
+                },
+                token: accessToken,
+                isAuthenticated: true,
+              },
+              version: 0,
+            })
+          );
+          window.location.reload();
+        }}
+      />
     </div>
   );
 };

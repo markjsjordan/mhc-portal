@@ -198,14 +198,26 @@ export function createCaregiverRouter(db: Database): Router {
       const context = getUserContext(req);
       const service = new CaregiverService(db);
 
+      // Safe date parsing with validation
+      const parseDate = (dateStr: unknown): Date => {
+        if (!dateStr || typeof dateStr !== 'string') {
+          throw new Error(`Invalid date: ${dateStr}`);
+        }
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) {
+          throw new Error(`Invalid date format: ${dateStr}`);
+        }
+        return date;
+      };
+
       const input: CreateCaregiverInput = {
         ...req.body,
         organizationId: context.organizationId!,
-        dateOfBirth: new Date(req.body['dateOfBirth']),
-        hireDate: new Date(req.body['hireDate']),
+        dateOfBirth: parseDate(req.body['dateOfBirth']),
+        hireDate: parseDate(req.body['hireDate']),
         payRate: {
           ...req.body['payRate'],
-          effectiveDate: new Date(req.body['payRate']['effectiveDate']),
+          effectiveDate: parseDate(req.body['payRate']?.['effectiveDate']),
         },
       };
 

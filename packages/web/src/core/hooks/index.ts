@@ -8,3 +8,4 @@ export * from './useCompliance';
 export * from './useDemoData';
 export * from './useDemoMode';
 export * from './useOrganizationStats';
+export * from './useImpersonation';
