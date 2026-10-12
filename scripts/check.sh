@@ -5,6 +5,9 @@ set -e
 # because tail always succeeds. DO NOT REMOVE THIS LINE.
 set -o pipefail
 
+# Ensure root node_modules/.bin is in PATH for workspace scripts
+export PATH="$(pwd)/node_modules/.bin:/usr/local/bin:/opt/homebrew/bin:$PATH"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'

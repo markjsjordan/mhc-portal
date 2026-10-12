@@ -565,6 +565,79 @@ describe('AuditService', () => {
     });
   });
 
+  describe('Oversized Field Truncation', () => {
+    // Regression test for a production bug: AuthMiddleware.requireRole()
+    // logs `resource: req.path`. A sufficiently long request path (deeply
+    // nested routes, long resource IDs embedded in the URL) exceeded the
+    // original varchar(100) column width and threw Postgres error 22001,
+    // silently dropping the unauthorized-access audit record — a HIPAA/
+    // Cures Act compliance gap. Column was widened to varchar(255) and
+    // logEvent now truncates defensively so no future oversized value can
+    // drop an audit record again.
+    it('should truncate an oversized resource path instead of throwing', async () => {
+      const mockResult = { rows: [], rowCount: 1, command: 'INSERT' as const, oid: 0, fields: [] };
+      mockDatabase.query.mockResolvedValue(mockResult);
+
+      const longPath = `/api/organizations/${'a'.repeat(300)}/users`;
+
+      await auditService.logEvent(mockUserContext, {
+        eventType: 'AUTHORIZATION',
+        resource: longPath,
+        resourceId: 'user-123',
+        action: 'UNAUTHORIZED_ROLE_ACCESS_ATTEMPT',
+        result: 'FAILURE',
+      });
+
+      const insertCall = mockDatabase.query.mock.calls[0];
+      const params = insertCall?.[1] as unknown[];
+      const persistedResource = params[5] as string;
+
+      expect(persistedResource.length).toBeLessThanOrEqual(255);
+      expect(persistedResource).toBe(longPath.slice(0, 255));
+    });
+
+    it('should truncate an oversized resourceId instead of throwing', async () => {
+      const mockResult = { rows: [], rowCount: 1, command: 'INSERT' as const, oid: 0, fields: [] };
+      mockDatabase.query.mockResolvedValue(mockResult);
+
+      const longResourceId = 'x'.repeat(400);
+
+      await auditService.logEvent(mockUserContext, {
+        eventType: 'AUTHORIZATION',
+        resource: 'auth',
+        resourceId: longResourceId,
+        action: 'UNAUTHORIZED_ROLE_ACCESS_ATTEMPT',
+        result: 'FAILURE',
+      });
+
+      const insertCall = mockDatabase.query.mock.calls[0];
+      const params = insertCall?.[1] as unknown[];
+      const persistedResourceId = params[6] as string;
+
+      expect(persistedResourceId.length).toBeLessThanOrEqual(255);
+      expect(persistedResourceId).toBe(longResourceId.slice(0, 255));
+    });
+
+    it('should leave normal-length resource/resourceId untouched', async () => {
+      const mockResult = { rows: [], rowCount: 1, command: 'INSERT' as const, oid: 0, fields: [] };
+      mockDatabase.query.mockResolvedValue(mockResult);
+
+      await auditService.logEvent(mockUserContext, {
+        eventType: 'DATA_ACCESS',
+        resource: '/api/clients/client-123',
+        resourceId: 'client-123',
+        action: 'READ',
+        result: 'SUCCESS',
+      });
+
+      const insertCall = mockDatabase.query.mock.calls[0];
+      const params = insertCall?.[1] as unknown[];
+
+      expect(params[5]).toBe('/api/clients/client-123');
+      expect(params[6]).toBe('client-123');
+    });
+  });
+
   describe('Event Types', () => {
     it('should handle all audit event types', async () => {
       const eventTypes: AuditEventType[] = [

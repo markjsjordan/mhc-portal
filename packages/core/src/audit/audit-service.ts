@@ -58,6 +58,15 @@ export class AuditService {
     const eventId = uuidv4();
     const timestamp = new Date();
 
+    // Defensive truncation: `resource`/`resource_id` are populated from
+    // request-controlled input (e.g. req.path) in some callers. A value
+    // that exceeds the column width must never cause the INSERT to fail —
+    // a dropped audit record is a worse compliance outcome than a
+    // truncated one. Column widths: resource/resource_id varchar(255).
+    const RESOURCE_MAX_LENGTH = 255;
+    const resource = event.resource.slice(0, RESOURCE_MAX_LENGTH);
+    const resourceId = event.resourceId.slice(0, RESOURCE_MAX_LENGTH);
+
     const query = `
       INSERT INTO audit_events (
         event_id, timestamp, user_id, organization_id, event_type,
@@ -71,8 +80,8 @@ export class AuditService {
       context.userId,
       context.organizationId,
       event.eventType,
-      event.resource,
-      event.resourceId,
+      resource,
+      resourceId,
       event.action,
       event.result,
       JSON.stringify(event.metadata ?? {}),

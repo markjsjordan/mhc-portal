@@ -8,9 +8,9 @@ import { Router, Request, Response, NextFunction } from 'express';
 import {
   Database,
   AuthMiddleware,
+  PasswordUtils,
 } from '@folkcare/core';
 import { z } from 'zod';
-import bcrypt from 'bcrypt';
 
 // Validation schemas
 const updateProfileSchema = z.object({
@@ -249,7 +249,7 @@ export function createUsersRouter(db: Database): Router {
       }
 
       // Verify current password
-      const isValidPassword = await bcrypt.compare(validatedData.currentPassword, String(user.password_hash));
+      const isValidPassword = PasswordUtils.verifyPassword(validatedData.currentPassword, String(user.password_hash));
 
       if (!isValidPassword) {
         res.status(400).json({
@@ -261,7 +261,7 @@ export function createUsersRouter(db: Database): Router {
       }
 
       // Hash new password
-      const newPasswordHash = await bcrypt.hash(validatedData.newPassword, 10);
+      const newPasswordHash = PasswordUtils.hashPassword(validatedData.newPassword);
 
       // Update password
       await db.query(

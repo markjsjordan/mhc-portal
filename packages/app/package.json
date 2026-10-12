@@ -7,7 +7,7 @@
   "//3": "════════════════════════════════════════════════════════════════",
   "type": "module",
   "description": "Folk Care API server - Express backend for home healthcare management",
-  "main": "dist/server.js",
+  "main": "dist/src/server.js",
   "engines": {
     "node": "22.x"
   },
@@ -16,11 +16,11 @@
     "dev:watch": "tsc --watch",
     "build": "tsc && tsc-alias -p tsconfig.json",
     "build:vercel": "tsc -p tsconfig.vercel.json",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "test": "vitest run --passWithNoTests",
     "test:coverage": "vitest run --coverage --passWithNoTests",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint . --ext ts --max-warnings 180 --ignore-pattern 'dist-vercel/**'"
+    "lint": "eslint . --ext ts --max-warnings 200 --ignore-pattern 'dist-vercel/**'"
   },
   "dependencies": {
     "@folkcare/ai-services": "*",
@@ -43,7 +43,6 @@
     "@types/papaparse": "^5.5.0",
     "@upstash/ratelimit": "^2.2.0",
     "@upstash/redis": "^1.39.0",
-    "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",

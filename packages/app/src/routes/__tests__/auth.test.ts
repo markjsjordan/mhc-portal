@@ -45,6 +45,7 @@ const mockAuthMiddleware = {
       res.status(401).json({ error: 'Not authenticated' });
     }
   }),
+  requireRole: vi.fn(() => (_req: unknown, _res: unknown, next: () => void) => next()),
 };
 
 // Mock the core module
@@ -56,7 +57,10 @@ vi.mock('@folkcare/core', async () => {
       return mockAuthService;
     }),
     AuthMiddleware: vi.fn(function() {
-      return mockAuthMiddleware;
+      return {
+        requireAuth: mockAuthMiddleware.requireAuth,
+        requireRole: vi.fn(() => (_req: unknown, _res: unknown, next: () => void) => next()),
+      };
     }),
   };
 });
@@ -460,6 +464,7 @@ describe('Authentication Routes', () => {
         id: '123e4567-e89b-12d3-a456-426614174000',
         email: 'user@example.com',
         organizationId: '223e4567-e89b-12d3-a456-426614174000',
+        defaultBranchId: null,
         roles: ['caregiver'],
         permissions: ['visits:view'],
       });
