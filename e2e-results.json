@@ -1,18 +1,16 @@
 {
   "config": {
-    "configFile": "/Users/markjordan/folk-care/playwright.gate2-shared.config.ts",
+    "configFile": "/Users/markjordan/folk-care/playwright.config.ts",
     "rootDir": "/Users/markjordan/folk-care/e2e/tests",
     "forbidOnly": false,
     "fullyParallel": true,
-    "globalSetup": null,
-    "globalTeardown": null,
+    "globalSetup": "/Users/markjordan/folk-care/e2e/setup/global-setup.ts",
+    "globalTeardown": "/Users/markjordan/folk-care/e2e/setup/global-teardown.ts",
     "globalTimeout": 0,
     "grep": {},
     "grepInvert": null,
     "maxFailures": 0,
-    "metadata": {
-      "actualWorkers": 1
-    },
+    "metadata": {},
     "preserveOutput": "always",
     "reporter": [
       [
@@ -49,9 +47,7 @@
         "outputDir": "/Users/markjordan/folk-care/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 1
-        },
+        "metadata": {},
         "id": "chromium",
         "name": "chromium",
         "testDir": "/Users/markjordan/folk-care/e2e/tests",
@@ -65,9 +61,7 @@
         "outputDir": "/Users/markjordan/folk-care/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 1
-        },
+        "metadata": {},
         "id": "firefox",
         "name": "firefox",
         "testDir": "/Users/markjordan/folk-care/e2e/tests",
@@ -81,9 +75,7 @@
         "outputDir": "/Users/markjordan/folk-care/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 1
-        },
+        "metadata": {},
         "id": "webkit",
         "name": "webkit",
         "testDir": "/Users/markjordan/folk-care/e2e/tests",
@@ -97,9 +89,7 @@
         "outputDir": "/Users/markjordan/folk-care/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 1
-        },
+        "metadata": {},
         "id": "mobile-chrome",
         "name": "mobile-chrome",
         "testDir": "/Users/markjordan/folk-care/e2e/tests",
@@ -113,9 +103,7 @@
         "outputDir": "/Users/markjordan/folk-care/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 1
-        },
+        "metadata": {},
         "id": "mobile-safari",
         "name": "mobile-safari",
         "testDir": "/Users/markjordan/folk-care/e2e/tests",
@@ -129,9 +117,7 @@
         "outputDir": "/Users/markjordan/folk-care/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 1
-        },
+        "metadata": {},
         "id": "tablet",
         "name": "tablet",
         "testDir": "/Users/markjordan/folk-care/e2e/tests",
@@ -147,156 +133,35 @@
     "updateSnapshots": "missing",
     "updateSourceMethod": "patch",
     "version": "1.57.0",
-    "workers": 1,
-    "webServer": null
+    "workers": 4,
+    "webServer": {
+      "command": "npm run test:e2e:server",
+      "port": 3000,
+      "timeout": 30000,
+      "reuseExistingServer": true,
+      "stdout": "pipe",
+      "stderr": "pipe",
+      "env": {
+        "NODE_ENV": "test",
+        "DATABASE_URL": "postgresql://postgres:postgres@localhost:5432/folkcare_e2e_test",
+        "PORT": "3000",
+        "JWT_SECRET": "B1AlozWTRDJ5r9BK9bwmRum7vs/lAP60Z798Rdq5YAM=",
+        "JWT_REFRESH_SECRET": "gLyltGHa/K2KGucUfuu9Ef6Idtx3RvjIcbKHafN3nZI="
+      }
+    }
   },
-  "suites": [
+  "suites": [],
+  "errors": [
     {
-      "title": "payroll-period-and-run.spec.ts",
-      "file": "payroll-period-and-run.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "FC-AUDIT-BILLING-PAYROLL-EVV: payroll period and run lifecycle",
-          "file": "payroll-period-and-run.spec.ts",
-          "line": 76,
-          "column": 6,
-          "specs": [
-            {
-              "title": "Create Pay Period opens a DRAFT period and immediately transitions it to OPEN",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 5337,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-07T16:39:10.528Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "38eda989154d4d09eb8a-b6c01c991f1be67686d9",
-              "file": "payroll-period-and-run.spec.ts",
-              "line": 77,
-              "column": 3
-            },
-            {
-              "title": "Create Pay Run modal opens from the dashboard's Run Payroll action",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1136,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-07T16:39:16.448Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "38eda989154d4d09eb8a-9e275c8281bdf650ccf1",
-              "file": "payroll-period-and-run.spec.ts",
-              "line": 177,
-              "column": 3
-            },
-            {
-              "title": "calculate/process a pay run and verify pay stubs, when an approved-timesheet pay run exists",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [
-                    {
-                      "type": "skip",
-                      "description": "No pay run with compiled timesheets available in this environment (compileTimeSheet has a pre-existing, out-of-scope repository bug blocking test data setup — see file header)",
-                      "location": {
-                        "file": "/Users/markjordan/folk-care/e2e/tests/payroll-period-and-run.spec.ts",
-                        "line": 206,
-                        "column": 10
-                      }
-                    }
-                  ],
-                  "expectedStatus": "skipped",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "skipped",
-                      "duration": 1380,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-10-07T16:39:17.590Z",
-                      "annotations": [
-                        {
-                          "type": "skip",
-                          "description": "No pay run with compiled timesheets available in this environment (compileTimeSheet has a pre-existing, out-of-scope repository bug blocking test data setup — see file header)",
-                          "location": {
-                            "file": "/Users/markjordan/folk-care/e2e/tests/payroll-period-and-run.spec.ts",
-                            "line": 206,
-                            "column": 10
-                          }
-                        }
-                      ],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "skipped"
-                }
-              ],
-              "id": "38eda989154d4d09eb8a-8975ac982c75acd4bf3e",
-              "file": "payroll-period-and-run.spec.ts",
-              "line": 195,
-              "column": 3
-            }
-          ]
-        }
-      ]
+      "message": "Error: Process from config.webServer was not able to start. Exit code: 1",
+      "stack": "Error: Process from config.webServer was not able to start. Exit code: 1"
     }
   ],
-  "errors": [],
   "stats": {
-    "startTime": "2026-10-07T16:39:10.155Z",
-    "duration": 8844.55,
-    "expected": 2,
-    "skipped": 1,
+    "startTime": "2026-10-11T23:58:58.271Z",
+    "duration": 3276.46,
+    "expected": 0,
+    "skipped": 0,
     "unexpected": 0,
     "flaky": 0
   }

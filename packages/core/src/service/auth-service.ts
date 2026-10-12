@@ -97,11 +97,17 @@ export class AuthService {
   /**
    * Merge explicit permissions with role-based permissions
    * @private
+  /**
+   * Merge explicit user permissions with permissions derived from roles
    */
-  private mergePermissions(explicitPermissions: string[], roles: string[]): string[] {
+  getMergedPermissions(explicitPermissions: string[], roles: string[]): string[] {
     const rolePerms = this.permissionService.getPermissionsForRoles(roles);
     const merged = new Set([...explicitPermissions, ...rolePerms]);
     return Array.from(merged);
+  }
+
+  private mergePermissions(explicitPermissions: string[], roles: string[]): string[] {
+    return this.getMergedPermissions(explicitPermissions, roles);
   }
 
   /**
@@ -454,7 +460,7 @@ export class AuthService {
       async () => {
         const result = await this.db.query(
           `SELECT id, organization_id, email, password_hash, first_name, last_name,
-                  roles, permissions, status, token_version, failed_login_attempts,
+                  roles, permissions, branch_ids, status, token_version, failed_login_attempts,
                   locked_until, oauth_provider, oauth_provider_id
            FROM users
            WHERE id = $1 AND deleted_at IS NULL`,
@@ -466,6 +472,13 @@ export class AuthService {
       },
       CacheTTL.SHORT // User data changes frequently
     );
+  }
+
+  /**
+   * Public helper to retrieve user record for impersonation checks
+   */
+  async getUserByIdForImpersonation(userId: UUID): Promise<UserRecord | null> {
+    return this.findUserById(userId);
   }
 
   /**

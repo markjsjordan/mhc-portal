@@ -8,10 +8,14 @@
  * - HIPAA-compliant audit logging
  */
 
+import { randomUUID } from 'node:crypto';
 import { Router, Request, Response } from 'express';
 import { 
   AuthService, 
   AuthMiddleware, 
+  AuditService,
+  JWTUtils,
+  TokenPayload,
   Database, 
   ValidationError, 
   AuthenticationError 
@@ -325,11 +329,12 @@ export function createAuthRouter(db: Database): Router {
         data: result
       });
     } catch (error) {
-      if (error instanceof AuthenticationError) {
+      const err = error as { message?: string; code?: string; statusCode?: number; name?: string };
+      if (error instanceof AuthenticationError || err.statusCode === 401 || err.name === 'AuthenticationError') {
         return res.status(401).json({
           success: false,
-          error: error.message,
-          code: error.code
+          error: err.message ?? 'Authentication failed',
+          code: err.code ?? 'AUTHENTICATION_ERROR'
         });
       }
 
@@ -444,7 +449,7 @@ export function createAuthRouter(db: Database): Router {
    *       500:
    *         description: Server error
    */
-   router.get('/me', authMiddleware.requireAuth, (req: Request, res: Response) => {
+   router.get('/me', authMiddleware.requireAuth, async (req: Request, res: Response) => {
     try {
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (!req.user) {
@@ -455,12 +460,24 @@ export function createAuthRouter(db: Database): Router {
         });
       }
 
+      let defaultBranchId: string | null = null;
+      if (typeof req.user.organizationId === 'string' && req.user.organizationId.length > 0) {
+        const orgResult = await db.query(
+          'SELECT default_branch_id FROM organizations WHERE id = $1 AND deleted_at IS NULL',
+          [req.user.organizationId]
+        );
+        const rows = orgResult?.rows;
+        const row = Array.isArray(rows) ? (rows[0] as { default_branch_id?: string | null } | undefined) : undefined;
+        defaultBranchId = row?.default_branch_id ?? null;
+      }
+
       return res.json({
         success: true,
         data: {
           id: req.user.userId,
           email: req.user.email,
           organizationId: req.user.organizationId,
+          defaultBranchId,
           roles: req.user.roles,
           permissions: req.user.permissions
         }
@@ -474,6 +491,213 @@ export function createAuthRouter(db: Database): Router {
       });
     }
   });
+
+  /**
+   * POST /api/auth/impersonate/start
+   * Start impersonating a caregiver (admin only)
+   */
+  router.post(
+    '/impersonate/start',
+    authMiddleware.requireAuth,
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN']),
+    // eslint-disable-next-line sonarjs/cognitive-complexity
+    async (req: Request, res: Response) => {
+      try {
+        const admin = req.user as TokenPayload | undefined;
+        if (admin === undefined) {
+          return res.status(401).json({
+            success: false,
+            error: 'Authentication required',
+            code: 'UNAUTHORIZED'
+          });
+        }
+        if (admin.impersonation !== undefined) {
+          return res.status(400).json({
+            success: false,
+            error: 'Cannot start impersonation while already in an impersonation session',
+            code: 'ALREADY_IMPERSONATING'
+          });
+        }
+
+        const { caregiverId } = req.body as { caregiverId?: string };
+        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+        if (!caregiverId || typeof caregiverId !== 'string') {
+          return res.status(400).json({
+            success: false,
+            error: 'caregiverId is required',
+            code: 'INVALID_INPUT'
+          });
+        }
+
+        const targetUser = await authService.getUserByIdForImpersonation(caregiverId);
+        if (targetUser === null) {
+          return res.status(404).json({
+            success: false,
+            error: 'Target caregiver user not found',
+            code: 'USER_NOT_FOUND'
+          });
+        }
+
+        // Must be a CAREGIVER
+        if (!targetUser.roles.includes('CAREGIVER')) {
+          return res.status(403).json({
+            success: false,
+            error: 'Impersonation is restricted to caregivers',
+            code: 'TARGET_NOT_CAREGIVER'
+          });
+        }
+
+        // Scope check
+        const isAdminSuper = admin.roles.includes('SUPER_ADMIN');
+        const isAdminOrg = admin.roles.includes('ORG_ADMIN');
+        const isAdminBranch = admin.roles.includes('BRANCH_ADMIN');
+
+        if (!isAdminSuper) {
+          if (isAdminOrg && targetUser.organization_id !== admin.organizationId) {
+            return res.status(403).json({
+              success: false,
+              error: 'Cannot impersonate caregiver outside of your organization',
+              code: 'IMPERSONATION_SCOPE_VIOLATION'
+            });
+          }
+
+          if (isAdminBranch) {
+            const targetBranchIds = (targetUser.branch_ids ?? []) as string[];
+            const adminBranchIds = (admin.branchIds ?? []) as string[];
+            const sharesBranch = adminBranchIds.some((b: string) => targetBranchIds.includes(b));
+            if (!sharesBranch && targetUser.organization_id !== admin.organizationId) {
+              return res.status(403).json({
+                success: false,
+                error: 'Cannot impersonate caregiver outside of your branch',
+                code: 'IMPERSONATION_SCOPE_VIOLATION'
+              });
+            }
+          }
+        }
+
+        const sessionId = randomUUID();
+        const mergedPermissions = authService.getMergedPermissions(
+          targetUser.permissions ?? [],
+          targetUser.roles ?? []
+        );
+
+        const caregiverPayload: TokenPayload = {
+          userId: targetUser.id,
+          email: targetUser.email,
+          organizationId: targetUser.organization_id,
+          branchIds: targetUser.branch_ids ?? [],
+          roles: targetUser.roles ?? [],
+          permissions: mergedPermissions,
+          tokenVersion: targetUser.token_version,
+          impersonation: {
+            adminUserId: admin.userId,
+            adminEmail: admin.email,
+            sessionId,
+            startedAt: new Date().toISOString()
+          }
+        };
+
+        const tokenResult = JWTUtils.generateImpersonationToken(caregiverPayload);
+
+        const adminContext = {
+          userId: admin.userId,
+          organizationId: admin.organizationId,
+          branchIds: admin.branchIds,
+          roles: admin.roles,
+          permissions: admin.permissions
+        };
+
+        const auditService = new AuditService(db);
+        await auditService.logImpersonationEvent(
+          adminContext,
+          'IMPERSONATION_START',
+          targetUser.id,
+          targetUser.email,
+          sessionId
+        );
+
+        const caregiverName = [targetUser.first_name, targetUser.last_name].filter(Boolean).join(' ');
+
+        return res.json({
+          success: true,
+          data: {
+            accessToken: tokenResult.accessToken,
+            expiresIn: tokenResult.expiresIn,
+            caregiver: {
+              id: targetUser.id,
+              email: targetUser.email,
+              name: caregiverName
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Impersonate start error:', error);
+        return res.status(500).json({
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to start impersonation',
+          code: 'IMPERSONATION_ERROR'
+        });
+      }
+    }
+  );
+
+  /**
+   * POST /api/auth/impersonate/end
+   * End active impersonation session
+   */
+  router.post(
+    '/impersonate/end',
+    authMiddleware.requireAuth,
+    async (req: Request, res: Response) => {
+      try {
+        const user = req.user as TokenPayload | undefined;
+        if (user === undefined) {
+          return res.status(401).json({
+            success: false,
+            error: 'Authentication required',
+            code: 'UNAUTHORIZED'
+          });
+        }
+        if (user.impersonation === undefined) {
+          return res.status(400).json({
+            success: false,
+            error: 'No active impersonation session to end',
+            code: 'NOT_IMPERSONATING'
+          });
+        }
+
+        const imp = user.impersonation;
+        const adminContext = {
+          userId: imp.adminUserId,
+          organizationId: user.organizationId,
+          branchIds: user.branchIds,
+          roles: user.roles,
+          permissions: user.permissions
+        };
+
+        const auditService = new AuditService(db);
+        await auditService.logImpersonationEvent(
+          adminContext,
+          'IMPERSONATION_END',
+          user.userId,
+          user.email,
+          imp.sessionId
+        );
+
+        return res.json({
+          success: true,
+          message: 'Impersonation session ended'
+        });
+      } catch (error) {
+        console.error('Impersonate end error:', error);
+        return res.status(500).json({
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to end impersonation',
+          code: 'IMPERSONATION_ERROR'
+        });
+      }
+    }
+  );
 
   return router;
 }

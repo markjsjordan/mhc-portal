@@ -72,8 +72,8 @@ export const configureCsrfProtection = (app: Express): void => {
       return next();
     }
 
-    // Skip CSRF for mobile API (uses JWT)
-    if (req.headers['x-mobile-app'] !== undefined) {
+    // Skip CSRF for mobile API or Bearer token authenticated API requests (uses JWT)
+    if (req.headers['x-mobile-app'] !== undefined || req.headers.authorization?.startsWith('Bearer ') === true) {
       return next();
     }
 

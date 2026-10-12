@@ -5,65 +5,31 @@
  * Enables coordinators and admins to track compliance incidents.
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-
-type IncidentType =
-  | 'FALL'
-  | 'MEDICATION_ERROR'
-  | 'INJURY'
-  | 'ABUSE_ALLEGATION'
-  | 'NEGLECT_ALLEGATION'
-  | 'EXPLOITATION_ALLEGATION'
-  | 'EQUIPMENT_FAILURE'
-  | 'EMERGENCY_HOSPITALIZATION'
-  | 'DEATH'
-  | 'ELOPEMENT'
-  | 'BEHAVIORAL_INCIDENT'
-  | 'INFECTION'
-  | 'PRESSURE_INJURY'
-  | 'CLIENT_REFUSAL'
-  | 'OTHER';
-
-type IncidentSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-type IncidentStatus = 'REPORTED' | 'UNDER_REVIEW' | 'INVESTIGATION_REQUIRED' | 'RESOLVED' | 'CLOSED';
-
-interface Incident {
-  id: string;
-  clientId: string;
-  clientName?: string;
-  incidentType: IncidentType;
-  severity: IncidentSeverity;
-  status: IncidentStatus;
-  occurredAt: string;
-  discoveredAt: string;
-  location: string;
-  description: string;
-  reportedBy: string;
-  reportedByName?: string;
-  stateReportingRequired?: boolean;
-  investigationRequired?: boolean;
-  createdAt: string;
-}
-
-async function fetchIncidents(): Promise<Incident[]> {
-  const response = await fetch('/api/incidents', {
-    credentials: 'include',
-  });
-  if (!response.ok) throw new Error('Failed to fetch incidents');
-  return response.json();
-}
+import { useApiClient } from '@/core/hooks';
+import {
+  createIncidentApiService,
+  type IncidentSeverity,
+  type IncidentStatus,
+  type IncidentType,
+} from '@/verticals/incident-reporting-frontend/services/incident-api.js';
 
 export function IncidentListPage() {
   const [filterStatus, setFilterStatus] = useState<IncidentStatus | 'ALL'>('ALL');
   const [filterSeverity, setFilterSeverity] = useState<IncidentSeverity | 'ALL'>('ALL');
 
-  const { data: incidents = [], isLoading, error } = useQuery({
+  const apiClient = useApiClient();
+  const incidentApi = useMemo(() => createIncidentApiService(apiClient), [apiClient]);
+
+  const { data: rawIncidents, isLoading, error } = useQuery({
     queryKey: ['incidents'],
-    queryFn: fetchIncidents,
+    queryFn: () => incidentApi.getIncidents(),
     refetchInterval: 30000, // Refresh every 30 seconds
   });
+
+  const incidents = Array.isArray(rawIncidents) ? rawIncidents : [];
 
   const filteredIncidents = incidents.filter((incident) => {
     if (filterStatus !== 'ALL' && incident.status !== filterStatus) return false;
@@ -131,10 +97,19 @@ export function IncidentListPage() {
   }
 
   if (error) {
+    const status = (error as Error & { status?: number }).status;
+    const isSessionExpired = status === 401;
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">Failed to load incidents. Please try again.</p>
+        <div
+          className="bg-red-50 border border-red-200 rounded-lg p-4"
+          data-testid={isSessionExpired ? 'session-expired-error' : 'incidents-error'}
+        >
+          <p className="text-red-800">
+            {isSessionExpired
+              ? 'Session expired, please log in again.'
+              : 'Failed to load incidents. Please try again.'}
+          </p>
         </div>
       </div>
     );

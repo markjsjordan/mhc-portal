@@ -16,7 +16,7 @@ import type { IncidentType, IncidentSeverity, IncidentStatus } from '../types/in
  * in this codebase.
  */
 function getUserContext(req: Request): UserContext {
-  const user = req.user!;
+  const user = (req as Request & { user?: { userId: string; organizationId: string; branchIds: string[]; roles: string[]; permissions: string[] } }).user!;
   return {
     userId: user.userId,
     organizationId: user.organizationId,

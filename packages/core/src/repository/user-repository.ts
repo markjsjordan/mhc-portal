@@ -51,6 +51,7 @@ export interface IUserRepository {
   revokeInviteToken(token: string, revokedBy: UUID): Promise<void>;
   getOrganizationInvites(organizationId: UUID): Promise<InviteToken[]>;
   getUsersByOrganization(organizationId: UUID): Promise<User[]>;
+  updateUserRoles(id: UUID, organizationId: UUID, roles: Role[], updatedBy: UUID): Promise<User>;
   resendInviteToken(invitationId: UUID, organizationId: UUID, resendBy: UUID): Promise<void>;
   revokeInviteById(invitationId: UUID, organizationId: UUID, revokedBy: UUID): Promise<void>;
 }
@@ -524,6 +525,48 @@ export class UserRepository implements IUserRepository {
       branchIds: row.branch_ids,
       status: row.status,
     }));
+  }
+
+  async updateUserRoles(id: UUID, organizationId: UUID, roles: Role[], updatedBy: UUID): Promise<User> {
+    const query = `
+      UPDATE users
+      SET 
+        roles = $3,
+        updated_by = $4,
+        updated_at = NOW(),
+        version = version + 1
+      WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL
+      RETURNING id, organization_id, first_name, last_name, email, username, roles, branch_ids, status
+    `;
+
+    const result = await this.db.query<{
+      id: string;
+      organization_id: string;
+      first_name: string;
+      last_name: string;
+      email: string;
+      username: string;
+      roles: string[];
+      branch_ids: string[];
+      status: string;
+    }>(query, [id, organizationId, roles, updatedBy]);
+
+    const row = result.rows[0];
+    if (row === undefined) {
+      throw new Error('User not found or role update failed');
+    }
+
+    return {
+      id: row.id,
+      organizationId: row.organization_id,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      email: row.email,
+      username: row.username,
+      roles: row.roles as Role[],
+      branchIds: row.branch_ids,
+      status: row.status,
+    };
   }
 
   async resendInviteToken(invitationId: UUID, organizationId: UUID, resendBy: UUID): Promise<void> {
