@@ -12,7 +12,7 @@ import { useApiClient } from '@/core/hooks';
 import {
   createIncidentApiService,
   type CreateIncidentInput,
-} from '@/verticals/incident-reporting-frontend/services/incident-api';
+} from '@/verticals/incident-reporting-frontend/services/incident-api.js';
 
 export function CreateIncidentPage() {
   const navigate = useNavigate();

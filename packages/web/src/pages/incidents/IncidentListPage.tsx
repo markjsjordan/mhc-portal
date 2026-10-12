@@ -14,7 +14,7 @@ import {
   type IncidentSeverity,
   type IncidentStatus,
   type IncidentType,
-} from '@/verticals/incident-reporting-frontend/services/incident-api';
+} from '@/verticals/incident-reporting-frontend/services/incident-api.js';
 
 export function IncidentListPage() {
   const [filterStatus, setFilterStatus] = useState<IncidentStatus | 'ALL'>('ALL');
