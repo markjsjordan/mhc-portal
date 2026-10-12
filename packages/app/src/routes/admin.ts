@@ -27,6 +27,11 @@ router.use((req: Request, res: Response, next: NextFunction) => {
   getAuthMiddleware().requireAuth(req, res, next).catch(next);
 });
 
+// HIPAA audit logging for impersonated actions
+if (getAuthMiddleware().auditImpersonatedActions) {
+  router.use((req, res, next) => getAuthMiddleware().auditImpersonatedActions(req, res, next));
+}
+
 /**
  * Get cache statistics
  *

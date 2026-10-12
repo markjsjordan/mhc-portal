@@ -210,6 +210,8 @@ function createFamilyEngagementRouter(handlers: ReturnType<typeof createFamilyEn
   router.post('/family-engagement/messages/threads/:threadId/messages', handlers.sendMessage);
   router.get('/family-engagement/messages/family-member/:familyMemberId/threads', handlers.getThreadsForFamilyMember);
   router.get('/family-engagement/messages/threads/:threadId/messages', handlers.getMessagesInThread);
+  router.get('/family-engagement/messages/inbox', handlers.getStaffInbox);
+  router.patch('/family-engagement/messages/threads/:threadId', handlers.updateMessageThread);
 
   // Dashboard endpoint
   router.get('/family-engagement/dashboard/family-member/:familyMemberId', handlers.getFamilyDashboard);
@@ -243,6 +245,12 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
   // API Documentation routes
   app.use('/', docsRoutes);
   console.log('  ✓ API Documentation routes registered');
+
+  // HIPAA audit logging for impersonated actions (applied to all authenticated API routes)
+  const authMiddlewareForAudit = new AuthMiddleware(db);
+  if (authMiddlewareForAudit.auditImpersonatedActions) {
+    app.use('/api', (req, res, next) => authMiddlewareForAudit.auditImpersonatedActions(req, res, next));
+  }
 
   // Authentication routes with rate limiting
   const authRouter = createAuthRouter(db);

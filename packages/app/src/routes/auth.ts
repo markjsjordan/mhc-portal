@@ -562,10 +562,19 @@ export function createAuthRouter(db: Database): Router {
           }
 
           if (isAdminBranch) {
+            // BRANCH_ADMIN can only impersonate users in their own branch(es)
+            // AND in the same organization
+            if (targetUser.organization_id !== admin.organizationId) {
+              return res.status(403).json({
+                success: false,
+                error: 'Cannot impersonate caregiver outside of your organization',
+                code: 'IMPERSONATION_SCOPE_VIOLATION'
+              });
+            }
             const targetBranchIds = (targetUser.branch_ids ?? []) as string[];
             const adminBranchIds = (admin.branchIds ?? []) as string[];
             const sharesBranch = adminBranchIds.some((b: string) => targetBranchIds.includes(b));
-            if (!sharesBranch && targetUser.organization_id !== admin.organizationId) {
+            if (!sharesBranch) {
               return res.status(403).json({
                 success: false,
                 error: 'Cannot impersonate caregiver outside of your branch',
