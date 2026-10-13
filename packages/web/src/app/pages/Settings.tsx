@@ -27,18 +27,17 @@ const profileSchema = z.object({
 });
 
 const passwordSchema = z.object({
-  currentPassword: z.string().min(8, 'Password must be at least 8 characters'),
-  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
-  confirmPassword: z.string().min(8, 'Password must be at least 8 characters'),
+  currentPassword: z.string().min(1, 'Current password is required').min(8, 'Password must be 8 or more characters'),
+  newPassword: z.string().min(1, 'New password is required').min(8, 'Password must be 8 or more characters').regex(/[A-Z]/, 'Password must contain at least one uppercase letter').regex(/[a-z]/, 'Password must contain at least one lowercase letter').regex(/[0-9]/, 'Password must contain at least one number'),
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
 }).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: "New password and confirmation must match",
   path: ['confirmPassword'],
 });
 
 const preferencesSchema = z.object({
   emailNotifications: z.boolean(),
   pushNotifications: z.boolean(),
-  theme: z.enum(['light', 'dark', 'system']),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -259,7 +258,6 @@ function ProfileSettings({ userProfile, isLoading, onSuccess, onError }: Setting
             errors={errors}
             helperText="Your email address is used for login and notifications"
             required
-            disabled
           />
 
           <div className="flex items-center gap-4 pt-4">
@@ -345,7 +343,7 @@ function AccountSettings({ onSuccess, onError }: Readonly<Omit<SettingsSectionPr
             type="password"
             register={register}
             errors={errors}
-            helperText="Password must be at least 8 characters"
+            helperText="At least 8 characters with uppercase, lowercase, and numbers"
             required
           />
 
@@ -384,19 +382,35 @@ function AccountSettings({ onSuccess, onError }: Readonly<Omit<SettingsSectionPr
 function PreferencesSettings({ onSuccess, onError }: Readonly<Omit<SettingsSectionProps, 'userProfile' | 'isLoading'>>) {
   const apiClient = useApiClient();
 
+  // Fetch user preferences
+  const { data: preferences, isLoading: isLoadingPreferences } = useQuery({
+    queryKey: ['userPreferences'],
+    queryFn: async () => {
+      return await apiClient.get<Omit<PreferencesFormData, 'theme'>>('/api/users/preferences');
+    },
+  });
+
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { },
     reset,
   } = useForm<PreferencesFormData>({
     resolver: zodResolver(preferencesSchema as any),
     defaultValues: {
       emailNotifications: true,
       pushNotifications: false,
-      theme: 'system',
     },
   });
+
+  React.useEffect(() => {
+    if (preferences) {
+      reset({
+        emailNotifications: preferences.emailNotifications,
+        pushNotifications: preferences.pushNotifications,
+      });
+    }
+  }, [preferences, reset]);
 
   const updatePreferencesMutation = useMutation({
     mutationFn: async (data: PreferencesFormData) => {
@@ -413,6 +427,18 @@ function PreferencesSettings({ onSuccess, onError }: Readonly<Omit<SettingsSecti
   const onSubmit = (data: PreferencesFormData) => {
     updatePreferencesMutation.mutate(data);
   };
+
+  if (isLoadingPreferences) {
+    return (
+      <Card>
+        <Card.Content>
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+          </div>
+        </Card.Content>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -448,22 +474,6 @@ function PreferencesSettings({ onSuccess, onError }: Readonly<Omit<SettingsSecti
                 Push notifications
               </label>
             </div>
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium text-gray-900">Appearance</h3>
-            <FormField
-              name="theme"
-              label="Theme"
-              type="select"
-              register={register}
-              errors={errors}
-              options={[
-                { value: 'light', label: 'Light' },
-                { value: 'dark', label: 'Dark' },
-                { value: 'system', label: 'System' },
-              ]}
-            />
           </div>
 
           <div className="flex items-center gap-4 pt-4">
