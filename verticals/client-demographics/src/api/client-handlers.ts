@@ -5,7 +5,7 @@
  */
 
 import { Request, Response, NextFunction, Router } from 'express';
-import { UserContext, Database, AuthMiddleware } from '@folkcare/core';
+import { UserContext, Database, AuthMiddleware, getPermissionService } from '@folkcare/core';
 import { ClientService } from '../service/client-service';
 import { CreateClientInput, UpdateClientInput, ClientSearchFilters, ClientStatus, RiskType } from '../types/client';
 
@@ -45,6 +45,8 @@ function asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => P
  * Client API handlers
  */
 export class ClientHandlers {
+  private permissionService = getPermissionService();
+  
   constructor(private clientService: ClientService) { }
 
   /**
@@ -521,6 +523,9 @@ export class ClientHandlers {
         error: 'Client ID is required',
       });
     }
+
+    // Enforce clients:delete permission
+    this.permissionService.requirePermission(context, 'clients:delete');
 
     await this.clientService.deleteClient(id, context);
 
