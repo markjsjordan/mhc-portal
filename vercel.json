@@ -32,7 +32,7 @@
       "destination": "/api"
     },
     {
-      "source": "/(.*)",
+      "source": "/:path*",
       "destination": "/index.html"
     }
   ],
