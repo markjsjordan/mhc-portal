@@ -1,18 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { useCreateClient, useClients } from '@/verticals/client-demographics/hooks';
-import type { CreateClientInput } from '@/verticals/client-demographics/types';
+import { useCreateClient, useClients, useUpdateClient } from '@/verticals/client-demographics/hooks';
+import type { CreateClientInput, UpdateClientInput } from '@/verticals/client-demographics/types';
 import { useAuth } from '@/core/hooks';
+import type { Client } from '@/verticals/client-demographics/types/client';
 
 /**
  * Client Intake Workflow
  *
  * Multi-step wizard for comprehensive client onboarding.
  * Reduces intake time from 60 min → 20 min with validation and auto-save.
+ * Can be used for both creating new clients and editing existing ones.
  */
 
 type CareLevel = 'independent' | 'assistance' | 'dependent';
+
+interface ClientIntakeWorkflowProps {
+  initialData?: Partial<IntakeData>;
+  isEditMode?: boolean;
+  clientId?: string;
+  onSuccess?: (client: Client) => void;
+}
 
 interface IntakeData {
   // Step 1: Demographics & Contact
@@ -127,25 +136,28 @@ const DEMO_CAREGIVERS = [
   { id: 'cg-4', name: 'David Martinez', skills: ['Personal Care'], languages: ['English', 'Spanish'] },
 ];
 
-export default function ClientIntakeWorkflow() {
+export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = {}) {
+  const { initialData, isEditMode = false, clientId, onSuccess } = props;
   const [currentStep, setCurrentStep] = useState(1);
-  const [intakeData, setIntakeData] = useState<Partial<IntakeData>>({
-    emergencyContacts: [{ name: '', relationship: '', phone: '' }],
-    medications: [],
-    allergies: [],
-    conditions: [],
-    tasks: [],
-    preferredTimes: [],
-    serviceTypes: [],
-    backupCaregivers: [],
-    visitSchedule: [],
-    consents: {
-      careAgreement: false,
-      hipaa: false,
-      financialResponsibility: false,
-      evv: false,
-    },
-  });
+  const [intakeData, setIntakeData] = useState<Partial<IntakeData>>(
+    initialData || {
+      emergencyContacts: [{ name: '', relationship: '', phone: '' }],
+      medications: [],
+      allergies: [],
+      conditions: [],
+      tasks: [],
+      preferredTimes: [],
+      serviceTypes: [],
+      backupCaregivers: [],
+      visitSchedule: [],
+      consents: {
+        careAgreement: false,
+        hipaa: false,
+        financialResponsibility: false,
+        evv: false,
+      },
+    }
+  );
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   // Auto-save every 30 seconds
@@ -234,6 +246,7 @@ export default function ClientIntakeWorkflow() {
   };
 
   const createClient = useCreateClient();
+  const updateClient = useUpdateClient();
   const navigate = useNavigate();
   const { user } = useAuth();
   // Only used to discover a real, already-seeded branchId for this organization
@@ -241,27 +254,30 @@ export default function ClientIntakeWorkflow() {
   const { data: existingClients } = useClients({ page: 1, pageSize: 1 });
 
   const handleSubmit = async () => {
-    if (!user?.organizationId) {
-      toast.error('Unable to submit: no organization context for the signed-in user.');
-      return;
-    }
+    // In edit mode, skip branch ID requirement since we're only updating existing client
+    if (!isEditMode) {
+      if (!user?.organizationId) {
+        toast.error('Unable to submit: no organization context for the signed-in user.');
+        return;
+      }
 
-    // KNOWN GAP (documented, not silently papered over — see FC-AUDIT-CLIENTS report):
-    // There is currently no backend endpoint to list/select an organization's
-    // branches (confirmed: no GET /api/branches, no GET /api/organizations/:id/branches).
-    // CreateClientInput requires a real branchId UUID. As a stopgap, we reuse the
-    // branchId off an existing client in this organization (clients already carry a
-    // valid branchId) rather than inventing a hardcoded ID. This is NOT a general
-    // solution for orgs with multiple branches or zero existing clients — a real
-    // branch-selector UI + backend branch-list endpoint is a follow-up, out of scope
-    // for this pass.
-    const fallbackBranchId = existingClients?.items?.[0]?.branchId;
-    if (!fallbackBranchId) {
-      toast.error(
-        'Unable to submit: no existing branch could be found for this organization. ' +
-          'Branch selection is not yet implemented (see FC-AUDIT-CLIENTS follow-up).'
-      );
-      return;
+      // KNOWN GAP (documented, not silently papered over — see FC-AUDIT-CLIENTS report):
+      // There is currently no backend endpoint to list/select an organization's
+      // branches (confirmed: no GET /api/branches, no GET /api/organizations/:id/branches).
+      // CreateClientInput requires a real branchId UUID. As a stopgap, we reuse the
+      // branchId off an existing client in this organization (clients already carry a
+      // valid branchId) rather than inventing a hardcoded ID. This is NOT a general
+      // solution for orgs with multiple branches or zero existing clients — a real
+      // branch-selector UI + backend branch-list endpoint is a follow-up, out of scope
+      // for this pass.
+      const fallbackBranchId = existingClients?.items?.[0]?.branchId;
+      if (!fallbackBranchId) {
+        toast.error(
+          'Unable to submit: no existing branch could be found for this organization. ' +
+            'Branch selection is not yet implemented (see FC-AUDIT-CLIENTS follow-up).'
+        );
+        return;
+      }
     }
 
     // KNOWN GAP — HIPAA/EVV/financial consent + signature are collected in Step 6
@@ -281,47 +297,98 @@ export default function ClientIntakeWorkflow() {
       return;
     }
 
-    const input: CreateClientInput = {
-      organizationId: user.organizationId,
-      branchId: fallbackBranchId,
-      firstName: intakeData.firstName || '',
-      lastName: intakeData.lastName || '',
-      dateOfBirth: intakeData.dateOfBirth || '',
-      email: intakeData.email || undefined,
-      primaryPhone: intakeData.phone
-        ? { number: intakeData.phone, type: 'MOBILE', canReceiveSMS: false }
-        : undefined,
-      primaryAddress: {
-        type: 'HOME',
-        line1: intakeData.address?.line1 || '',
-        line2: intakeData.address?.line2 || undefined,
-        city: intakeData.address?.city || '',
-        state: intakeData.address?.state || '',
-        postalCode: intakeData.address?.postalCode || '',
-        country: 'US',
-      },
-      emergencyContacts: (intakeData.emergencyContacts || [])
-        .filter((c) => c.name && c.phone)
-        .map((c) => ({
-          id: crypto.randomUUID(),
-          name: c.name,
-          relationship: c.relationship,
-          phone: { number: c.phone, type: 'MOBILE' as const, canReceiveSMS: false },
-          isPrimary: true,
-          canMakeHealthcareDecisions: false,
-        })),
-      status: 'PENDING_INTAKE',
+    // Build the common data structure for both create and update
+    const phoneInput = intakeData.phone
+      ? { number: intakeData.phone, type: 'MOBILE' as const, canReceiveSMS: false }
+      : undefined;
+
+    const addressInput = {
+      type: 'HOME' as const,
+      line1: intakeData.address?.line1 || '',
+      line2: intakeData.address?.line2 || undefined,
+      city: intakeData.address?.city || '',
+      state: intakeData.address?.state || '',
+      postalCode: intakeData.address?.postalCode || '',
+      country: 'US' as const,
     };
 
+    const emergencyContactsInput = (intakeData.emergencyContacts || [])
+      .filter((c) => c.name && c.phone)
+      .map((c) => ({
+        id: crypto.randomUUID(),
+        name: c.name,
+        relationship: c.relationship,
+        phone: { number: c.phone, type: 'MOBILE' as const, canReceiveSMS: false },
+        isPrimary: true,
+        canMakeHealthcareDecisions: false,
+      }));
+
     try {
-      const newClient = await createClient.mutateAsync(input);
-      toast.success(
-        'Client intake submitted. NOTE: consent/signature capture is not yet persisted — see FC-AUDIT-CLIENTS follow-up.',
-        { duration: 6000 }
-      );
-      navigate(`/clients/${newClient.id}`);
+      if (isEditMode && clientId) {
+        // Update mode
+        const updateInput: UpdateClientInput = {
+          firstName: intakeData.firstName || '',
+          lastName: intakeData.lastName || '',
+          dateOfBirth: intakeData.dateOfBirth || '',
+          email: intakeData.email || undefined,
+          primaryPhone: phoneInput,
+          primaryAddress: addressInput,
+          emergencyContacts: emergencyContactsInput,
+        };
+
+        const updatedClient = await updateClient.mutateAsync({
+          id: clientId,
+          input: updateInput,
+        });
+
+        if (onSuccess) {
+          onSuccess(updatedClient);
+        } else {
+          navigate(`/clients/${updatedClient.id}`);
+        }
+      } else {
+        // Create mode
+        if (!user?.organizationId) {
+          toast.error('Unable to submit: no organization context for the signed-in user.');
+          return;
+        }
+
+        const fallbackBranchId = existingClients?.items?.[0]?.branchId;
+        if (!fallbackBranchId) {
+          toast.error(
+            'Unable to submit: no existing branch could be found for this organization. ' +
+              'Branch selection is not yet implemented (see FC-AUDIT-CLIENTS follow-up).'
+          );
+          return;
+        }
+
+        const createInput: CreateClientInput = {
+          organizationId: user.organizationId,
+          branchId: fallbackBranchId,
+          firstName: intakeData.firstName || '',
+          lastName: intakeData.lastName || '',
+          dateOfBirth: intakeData.dateOfBirth || '',
+          email: intakeData.email || undefined,
+          primaryPhone: phoneInput,
+          primaryAddress: addressInput,
+          emergencyContacts: emergencyContactsInput,
+          status: 'PENDING_INTAKE',
+        };
+
+        const newClient = await createClient.mutateAsync(createInput);
+        toast.success(
+          'Client intake submitted. NOTE: consent/signature capture is not yet persisted — see FC-AUDIT-CLIENTS follow-up.',
+          { duration: 6000 }
+        );
+
+        if (onSuccess) {
+          onSuccess(newClient);
+        } else {
+          navigate(`/clients/${newClient.id}`);
+        }
+      }
     } catch {
-      // useCreateClient's onError already surfaces a toast; nothing further to do here.
+      // useCreateClient/useUpdateClient's onError already surfaces a toast; nothing further to do here.
     }
   };
 

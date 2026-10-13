@@ -53,6 +53,7 @@ const CreateAuditPage = React.lazy(() => import('./verticals/quality-assurance/p
 // Lazy loaded vertical pages
 const ClientList = React.lazy(() => import('./verticals/client-demographics/pages/ClientList').then((m) => ({ default: m.ClientList })));
 const ClientDetail = React.lazy(() => import('./verticals/client-demographics/pages/ClientDetail').then((m) => ({ default: m.ClientDetail })));
+const ClientEditPage = React.lazy(() => import('./verticals/client-demographics/pages/ClientEditPage').then((m) => ({ default: m.ClientEditPage })));
 const ClientDashboard = React.lazy(() => import('./verticals/client-demographics/pages/ClientDashboard').then((m) => ({ default: m.ClientDashboard })));
 
 const CarePlanList = React.lazy(() => import('./verticals/care-plans/pages/CarePlanList').then((m) => ({ default: m.CarePlanList })));
@@ -252,6 +253,16 @@ function AppRoutes() {
           <ProtectedRoute requiredRoles={['NURSE', 'NURSE_RN', 'NURSE_LPN', 'CLINICAL']}>
             <AppShell>
               <NurseDashboard />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/clients/:id/edit"
+        element={
+          <ProtectedRoute permission="clients:write">
+            <AppShell>
+              <ClientEditPage />
             </AppShell>
           </ProtectedRoute>
         }
