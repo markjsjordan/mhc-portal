@@ -11,7 +11,7 @@ import { Input } from './Input';
 import { Select } from './Select';
 import { FormField } from './FormField';
 import type { CreateOrganizationRequest, Address } from '../../services/organization-api';
-import { US_STATES } from '../../services/organization-api';
+import { US_STATES } from '../../constants/us-states';
 
 interface OrganizationRegistrationFormProps {
   readonly onSubmit: (data: CreateOrganizationRequest) => Promise<void>;
