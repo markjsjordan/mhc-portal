@@ -254,6 +254,24 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
   const { data: existingClients } = useClients({ page: 1, pageSize: 1 });
 
   const handleSubmit = async () => {
+    // Validate early: common fields required for both create and update
+    if (!intakeData.firstName?.trim()) {
+      toast.error('First name is required');
+      return;
+    }
+    if (!intakeData.lastName?.trim()) {
+      toast.error('Last name is required');
+      return;
+    }
+    if (!intakeData.dateOfBirth) {
+      toast.error('Date of birth is required');
+      return;
+    }
+    if (!intakeData.address?.line1?.trim() || !intakeData.address?.city?.trim() || !intakeData.address?.state) {
+      toast.error('Complete address (street, city, state) is required');
+      return;
+    }
+
     // In edit mode, skip branch ID requirement since we're only updating existing client
     if (!isEditMode) {
       if (!user?.organizationId) {
@@ -261,6 +279,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         return;
       }
 
+      // PHASE 1 FIX (wdvf3abhb7): Defensive guard for undefined branchId
       // KNOWN GAP (documented, not silently papered over — see FC-AUDIT-CLIENTS report):
       // There is currently no backend endpoint to list/select an organization's
       // branches (confirmed: no GET /api/branches, no GET /api/organizations/:id/branches).
@@ -273,8 +292,18 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       const fallbackBranchId = existingClients?.items?.[0]?.branchId;
       if (!fallbackBranchId) {
         toast.error(
-          'Unable to submit: no existing branch could be found for this organization. ' +
-            'Branch selection is not yet implemented (see FC-AUDIT-CLIENTS follow-up).'
+          'Unable to submit: this organization has no existing clients with branch information. ' +
+            'Please contact your administrator. Branch selection UI is not yet implemented (see FC-AUDIT-CLIENTS follow-up).',
+          { duration: 8000 }
+        );
+        return;
+      }
+
+      // PHASE 1 FIX: Extra guard to ensure branchId is a valid UUID before sending to API
+      if (typeof fallbackBranchId !== 'string' || fallbackBranchId.length === 0) {
+        toast.error(
+          'Unable to submit: invalid branch ID found. This is an internal error. Please contact support.',
+          { duration: 8000 }
         );
         return;
       }
@@ -356,8 +385,18 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         const fallbackBranchId = existingClients?.items?.[0]?.branchId;
         if (!fallbackBranchId) {
           toast.error(
-            'Unable to submit: no existing branch could be found for this organization. ' +
-              'Branch selection is not yet implemented (see FC-AUDIT-CLIENTS follow-up).'
+            'Unable to submit: this organization has no existing clients with branch information. ' +
+              'Please contact your administrator. Branch selection UI is not yet implemented (see FC-AUDIT-CLIENTS follow-up).',
+            { duration: 8000 }
+          );
+          return;
+        }
+
+        // PHASE 1 FIX: Extra guard to ensure branchId is a valid UUID before sending to API
+        if (typeof fallbackBranchId !== 'string' || fallbackBranchId.length === 0) {
+          toast.error(
+            'Unable to submit: invalid branch ID found. This is an internal error. Please contact support.',
+            { duration: 8000 }
           );
           return;
         }

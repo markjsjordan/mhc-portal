@@ -106,17 +106,56 @@ export class ClientValidator {
       return { success: true };
     } catch (error) {
       if (error instanceof z.ZodError) {
+        // PHASE 2 FIX (wdvf3abhb7): Enhanced error messages for production clarity
+        // Map generic Zod messages to user-facing, actionable messages
+        const messages = error.issues.map((e) => {
+          const fieldPath = e.path.join('.');
+          
+          // Special handling for undefined branchId (the root cause of wdvf3abhb7)
+          if (fieldPath === 'branchId' && e.code === 'invalid_type') {
+            return {
+              path: fieldPath,
+              message: 'Branch ID is required. Organization must have at least one existing client or branch.',
+            };
+          }
+          
+          // Provide specific guidance for other critical fields
+          if (fieldPath === 'organizationId' && e.code === 'invalid_type') {
+            return {
+              path: fieldPath,
+              message: 'Organization ID is required and must be a valid UUID.',
+            };
+          }
+          
+          if (fieldPath === 'firstName' || fieldPath === 'lastName') {
+            return {
+              path: fieldPath,
+              message: `${fieldPath.charAt(0).toUpperCase() + fieldPath.slice(1)} is required (max 100 characters).`,
+            };
+          }
+          
+          if (fieldPath.includes('primaryAddress')) {
+            return {
+              path: fieldPath,
+              message: `Address field is invalid: ${e.message}. Ensure all required address fields (line1, city, state, postalCode) are populated correctly.`,
+            };
+          }
+
+          // Default: preserve original Zod message with field path
+          return {
+            path: fieldPath,
+            message: e.message,
+          };
+        });
+        
         return {
           success: false,
-          errors: error.issues.map((e) => ({
-            path: e.path.join('.'),
-            message: e.message,
-          })),
+          errors: messages,
         };
       }
       return {
         success: false,
-        errors: [{ path: 'unknown', message: 'Validation failed' }],
+        errors: [{ path: 'unknown', message: 'Validation failed unexpectedly. Please contact support.' }],
       };
     }
   }
