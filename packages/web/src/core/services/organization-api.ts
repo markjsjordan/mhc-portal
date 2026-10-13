@@ -6,11 +6,11 @@
 
 import type { ApiClient } from './api-client';
 
-// Re-export types from core package (in a real scenario, these would be shared)
-export interface USStateCode {
-  code: string;
-  name: string;
-}
+// Re-export from centralized constants
+import { US_STATES, USStateCode } from '../constants/us-states';
+
+export type { USStateCode };
+export { US_STATES };
 
 export interface Address {
   street1: string;
@@ -98,26 +98,6 @@ export interface ApiResponse<T> {
   error?: string;
   code?: string;
 }
-
-/**
- * US States list for state selector
- * Currently configured for TX and FL, designed to scale to all 50 states
- */
-export const US_STATES: USStateCode[] = [
-  { code: 'TX', name: 'Texas' },
-  { code: 'FL', name: 'Florida' },
-  // Additional states can be added as the platform scales
-  { code: 'AL', name: 'Alabama' },
-  { code: 'AK', name: 'Alaska' },
-  { code: 'AZ', name: 'Arizona' },
-  { code: 'AR', name: 'Arkansas' },
-  { code: 'CA', name: 'California' },
-  { code: 'CO', name: 'Colorado' },
-  { code: 'CT', name: 'Connecticut' },
-  { code: 'DE', name: 'Delaware' },
-  { code: 'GA', name: 'Georgia' },
-  // ... (remaining states can be added as needed)
-];
 
 export class OrganizationApi {
   constructor(private apiClient: ApiClient) {}
