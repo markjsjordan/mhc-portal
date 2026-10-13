@@ -11,7 +11,7 @@
  *    → Updates ticket to QA PASSED or QA FAILED with notes
  */
 
-import { clickupService } from '../services/clickup.service.js';
+import { clickupService, type ClickUpTask } from '../services/clickup.service.js';
 import { qaTestingDispatcher } from '../services/qa-testing-dispatcher.js';
 
 const POLL_INTERVAL_MS = 60000; // 1 minute
@@ -40,7 +40,7 @@ export async function pollClickUpTickets(): Promise<void> {
 
     // Process READY tickets (implementation)
     const readyTickets = allTasks.filter(
-      (task) => task.status.status.toLowerCase() === READY_STATUS
+      (task: ClickUpTask) => task.status.status.toLowerCase() === READY_STATUS
     );
 
     console.log(`[CLICKUP] Found ${readyTickets.length} READY tickets`);
@@ -55,7 +55,7 @@ export async function pollClickUpTickets(): Promise<void> {
 
     // Process QA READY tickets (testing/verification)
     const qaReadyTickets = allTasks.filter(
-      (task) => task.status.status.toLowerCase() === QA_READY_STATUS
+      (task: ClickUpTask) => task.status.status.toLowerCase() === QA_READY_STATUS
     );
 
     console.log(`[CLICKUP] Found ${qaReadyTickets.length} QA READY tickets`);

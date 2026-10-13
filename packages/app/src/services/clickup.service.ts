@@ -206,6 +206,62 @@ export class ClickUpService {
   }
 
   /**
+   * Get all tasks in the list (no status filter)
+   */
+  async getAllTasks(): Promise<ClickUpTask[]> {
+    try {
+      const url = `${this.baseUrl}/list/${this.listId}/task`;
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${this.apiToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `ClickUp API error: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = (await response.json()) as { tasks: ClickUpTask[] };
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      return data.tasks ?? [];
+    } catch (error) {
+      console.error('[ClickUp] Error fetching all tasks:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get task details
+   */
+  async getTaskDetails(taskId: string): Promise<ClickUpTask & { description?: string }> {
+    try {
+      const url = `${this.baseUrl}/task/${taskId}?include_subtasks=false`;
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${this.apiToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        console.warn(`[ClickUp] Task not found: ${taskId}`);
+        throw new Error(`Task not found: ${taskId}`);
+      }
+
+      const task = (await response.json()) as ClickUpTask & { description?: string };
+      return task;
+    } catch (error) {
+      console.error('[ClickUp] Error fetching task details:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Poll for tickets in READY or QA FAILURE status
    */
   async pollForTickets(): Promise<ClickUpTask[]> {
@@ -227,3 +283,9 @@ export class ClickUpService {
     }
   }
 }
+
+/**
+ * Singleton instance of ClickUpService
+ * Used by polling and testing services
+ */
+export const clickupService = new ClickUpService();
