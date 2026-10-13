@@ -258,6 +258,16 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/clients/new/intake"
+        element={
+          <ProtectedRoute permission="clients:write">
+            <AppShell>
+              <ClientIntakeWorkflow />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/clients/:id/edit"
         element={
           <ProtectedRoute permission="clients:write">
@@ -273,16 +283,6 @@ function AppRoutes() {
           <ProtectedRoute>
             <AppShell>
               <ClientDetail />
-            </AppShell>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/clients/new/intake"
-        element={
-          <ProtectedRoute permission="clients:write">
-            <AppShell>
-              <ClientIntakeWorkflow />
             </AppShell>
           </ProtectedRoute>
         }
