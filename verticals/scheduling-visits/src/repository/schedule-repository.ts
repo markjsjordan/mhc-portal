@@ -553,6 +553,71 @@ export class ScheduleRepository {
   }
 
   /**
+   * Check for conflicting visits when assigning a caregiver
+   * 
+   * @param caregiverId - Caregiver to check availability for
+   * @param visitDate - Date of proposed visit
+   * @param startTime - Start time (HH:MM format)
+   * @param endTime - End time (HH:MM format)
+   * @returns Array of conflicting visits with caregiver and client names
+   */
+  async getConflictingVisits(
+    caregiverId: UUID,
+    visitDate: Date,
+    startTime: string,
+    endTime: string
+  ): Promise<
+    Array<{
+      id: string;
+      caregiverFirstName: string;
+      caregiverLastName: string;
+      scheduledStartTime: string;
+      scheduledEndTime: string;
+      clientFirstName: string;
+      clientLastName: string;
+    }>
+  > {
+    const query = `
+      SELECT 
+        v.id,
+        c.first_name as caregiver_first_name,
+        c.last_name as caregiver_last_name,
+        v.scheduled_start_time,
+        v.scheduled_end_time,
+        cl.first_name as client_first_name,
+        cl.last_name as client_last_name
+      FROM visits v
+      LEFT JOIN caregivers c ON v.assigned_caregiver_id = c.id
+      LEFT JOIN clients cl ON v.client_id = cl.id
+      WHERE v.assigned_caregiver_id = $1
+        AND DATE(v.scheduled_date) = $2
+        AND v.status NOT IN ('CANCELLED', 'NO_SHOW_CLIENT', 'NO_SHOW_CAREGIVER', 'REJECTED')
+        AND (
+          (v.scheduled_start_time < $4 AND v.scheduled_end_time > $3)
+        )
+        AND v.deleted_at IS NULL
+      ORDER BY v.scheduled_start_time
+    `;
+
+    const result = await this.pool.query(query, [
+      caregiverId,
+      visitDate.toISOString().split('T')[0],
+      startTime,
+      endTime,
+    ]);
+
+    return result.rows.map(row => ({
+      id: row.id,
+      caregiverFirstName: row.caregiver_first_name || 'Unknown',
+      caregiverLastName: row.caregiver_last_name || 'Caregiver',
+      scheduledStartTime: row.scheduled_start_time,
+      scheduledEndTime: row.scheduled_end_time,
+      clientFirstName: row.client_first_name || 'Unknown',
+      clientLastName: row.client_last_name || 'Client',
+    }));
+  }
+
+  /**
    * Helper methods
    */
 

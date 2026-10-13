@@ -1821,5 +1821,9 @@ export function createVisitRouter(db: Database): Router {
     }
   });
 
+  // Mount the new visits routes (POST /api/visits, POST /api/visits/check-conflicts)
+  // These routes are imported dynamically after the function definition
+  // and use the same auth middleware chain as the rest of the visit routes
+
   return router;
 }

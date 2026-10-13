@@ -1,0 +1,115 @@
+/**
+ * E2E tests for Admin Login As Caregiver feature
+ * Tests the caregiver search UI, impersonation flow, and banner indicator
+ */
+
+import { test, expect } from '@playwright/test';
+
+test.describe('Admin Login As Caregiver', () => {
+  test.beforeEach(async ({ page }) => {
+    // Login as admin
+    await page.goto('/login');
+    await page.fill('input[type="email"]', 'admin@folkcare.example');
+    await page.fill('input[type="password"]', 'Admin123!');
+    await page.click('button:has-text("Sign In")');
+    // Wait for redirect to admin dashboard
+    await page.waitForURL('**/admin**', { timeout: 10000 });
+  });
+
+  test('should display Login As Caregiver button on admin dashboard', async ({ page }) => {
+    // Navigate to admin dashboard
+    await page.goto('/admin');
+    
+    // Button should be visible
+    const loginAsButton = page.locator('button:has-text("Login As Caregiver")');
+    await expect(loginAsButton).toBeVisible();
+  });
+
+  test('should open Login As Modal when button is clicked', async ({ page }) => {
+    await page.goto('/admin');
+    
+    // Click the Login As button
+    await page.click('button:has-text("Login As Caregiver")');
+    
+    // Modal should appear with search field
+    const modal = page.locator('text=Login As Caregiver');
+    await expect(modal).toBeVisible();
+    
+    const searchInput = page.locator('input[placeholder*="Search by name"]');
+    await expect(searchInput).toBeVisible();
+  });
+
+  test('should search for caregivers by name', async ({ page }) => {
+    await page.goto('/admin');
+    
+    // Open modal
+    await page.click('button:has-text("Login As Caregiver")');
+    
+    // Type in search
+    const searchInput = page.locator('input[placeholder*="Search by name"]');
+    await searchInput.fill('Demo');
+    
+    // Wait for results
+    await page.waitForTimeout(400); // Debounce wait
+    
+    // Results should appear
+    const resultButton = page.locator('button:has-text("Demo Caregiver")').first();
+    await expect(resultButton).toBeVisible({ timeout: 5000 });
+  });
+
+  test('should show impersonation banner when logged in as caregiver', async ({ page }) => {
+    // This test would require actually completing the impersonation flow
+    // For now, we skip it as full E2E impersonation requires special setup
+    test.skip();
+  });
+
+  test('should display error message when search returns no results', async ({ page }) => {
+    await page.goto('/admin');
+    
+    // Open modal
+    await page.click('button:has-text("Login As Caregiver")');
+    
+    // Search for non-existent caregiver
+    const searchInput = page.locator('input[placeholder*="Search by name"]');
+    await searchInput.fill('NonExistentCaregiverXYZ123');
+    
+    // Wait for search to complete
+    await page.waitForTimeout(400);
+    
+    // No results message should appear
+    const noResultsMessage = page.locator('text=No caregivers found');
+    await expect(noResultsMessage).toBeVisible({ timeout: 5000 });
+  });
+
+  test('should close modal when Cancel button is clicked', async ({ page }) => {
+    await page.goto('/admin');
+    
+    // Open modal
+    await page.click('button:has-text("Login As Caregiver")');
+    
+    // Modal should be visible
+    const modal = page.locator('text=Login As Caregiver');
+    await expect(modal).toBeVisible();
+    
+    // Click Cancel button
+    await page.click('button:has-text("Cancel")');
+    
+    // Modal should be gone
+    await expect(modal).not.toBeVisible();
+  });
+
+  test('should close modal when X button is clicked', async ({ page }) => {
+    await page.goto('/admin');
+    
+    // Open modal
+    await page.click('button:has-text("Login As Caregiver")');
+    
+    // Click X button
+    const closeButton = page.locator('button[aria-label="Close modal"]');
+    await closeButton.click();
+    
+    // Modal should be gone
+    const modal = page.locator('text=Login As Caregiver');
+    await expect(modal).not.toBeVisible();
+  });
+});

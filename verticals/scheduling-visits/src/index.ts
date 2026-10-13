@@ -78,6 +78,7 @@ export * from './utils/schedule-utils';
 
 // API / Integration
 export { VisitProvider, createVisitProvider } from './api/visit-provider';
+export { createVisitsRoutes } from './api/visits-routes.js';
 
 // Staffing Demand Prediction (AI-powered)
 export { StaffingDemandPredictionService } from './service/staffing-demand-prediction-service.js';
