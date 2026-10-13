@@ -86,7 +86,9 @@ export type VisitType =
   | 'EMERGENCY'
   | 'MAKEUP'
   | 'SUPERVISION'
-  | 'ASSESSMENT';
+  | 'ASSESSMENT'
+  | 'CONCIERGE'
+  | 'ONGOING_SUPPORT';
 
 export type VisitStatus =
   | 'DRAFT'
@@ -154,6 +156,8 @@ export const VISIT_TYPE_LABELS: Record<VisitType, string> = {
   MAKEUP: 'Makeup',
   SUPERVISION: 'Supervision',
   ASSESSMENT: 'Assessment',
+  CONCIERGE: 'Concierge',
+  ONGOING_SUPPORT: 'Ongoing Support',
 };
 
 export const VISIT_STATUS_COLORS: Record<VisitStatus, string> = {
