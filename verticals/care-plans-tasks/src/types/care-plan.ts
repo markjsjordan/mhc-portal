@@ -181,6 +181,37 @@ export type GoalStatus =
   | 'NOT_ACHIEVED'
   | 'DISCONTINUED';
 
+export interface CreateCarePlanGoalInput {
+  /** Required primary goal text. Trimmed before persistence. */
+  title: string;
+  /** Optional extended description */
+  description?: string;
+  /** Goal category classification */
+  category?: GoalCategory;
+  /** Target date for goal achievement */
+  targetDate?: Date;
+  /** Initial goal status */
+  status?: GoalStatus;
+  /** Priority level */
+  priority?: Priority;
+}
+
+export interface CarePlanGoalDto {
+  id: string;
+  carePlanId: string;
+  title: string;
+  description?: string;
+  category?: GoalCategory;
+  targetDate?: Date;
+  status: GoalStatus;
+  priority: Priority;
+}
+
+export interface CreateCarePlanGoalResponse {
+  success: true;
+  data: CarePlanGoalDto;
+}
+
 export interface Milestone {
   id: UUID;
   name: string;

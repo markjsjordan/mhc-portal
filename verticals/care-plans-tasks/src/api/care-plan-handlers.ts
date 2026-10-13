@@ -787,6 +787,111 @@ export function createCarePlanHandlers(service: CarePlanService, templateService
         handleError(error, res, 'fetching care plan versions');
       }
     },
+
+    /**
+     * @openapi
+     * /api/care-plans/{carePlanId}/goals:
+     *   post:
+     *     tags:
+     *       - Care Plans
+     *     summary: Create goal in a care plan
+     *     description: Create a new goal associated with a care plan
+     *     security:
+     *       - bearerAuth: []
+     *     parameters:
+     *       - in: path
+     *         name: carePlanId
+     *         required: true
+     *         schema:
+     *           type: string
+     *           format: uuid
+     *         description: Care Plan UUID
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             required:
+     *               - title
+     *             properties:
+     *               title:
+     *                 type: string
+     *                 description: Required primary goal text (max 500 chars)
+     *               description:
+     *                 type: string
+     *               category:
+     *                 type: string
+     *                 enum: [MOBILITY, ADL, IADL, NUTRITION, MEDICATION_MANAGEMENT, SAFETY, SOCIAL_ENGAGEMENT, COGNITIVE, EMOTIONAL_WELLBEING, PAIN_MANAGEMENT, WOUND_CARE, CHRONIC_DISEASE_MANAGEMENT, OTHER]
+     *               targetDate:
+     *                 type: string
+     *                 format: date
+     *               status:
+     *                 type: string
+     *                 enum: [NOT_STARTED, IN_PROGRESS, ON_TRACK, AT_RISK, ACHIEVED, PARTIALLY_ACHIEVED, NOT_ACHIEVED, DISCONTINUED]
+     *               priority:
+     *                 type: string
+     *                 enum: [LOW, MEDIUM, HIGH, URGENT]
+     *     responses:
+     *       201:
+     *         description: Goal created successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 success:
+     *                   type: boolean
+     *                   enum: [true]
+     *                 data:
+     *                   type: object
+     *                   properties:
+     *                     id:
+     *                       type: string
+     *                       format: uuid
+     *                     carePlanId:
+     *                       type: string
+     *                       format: uuid
+     *                     title:
+     *                       type: string
+     *                     description:
+     *                       type: string
+     *                     category:
+     *                       type: string
+     *                     targetDate:
+     *                       type: string
+     *                       format: date
+     *                     status:
+     *                       type: string
+     *                     priority:
+     *                       type: string
+     *       400:
+     *         description: Invalid input (empty/whitespace title, exceeds length)
+     *       401:
+     *         description: Not authenticated
+     *       403:
+     *         description: Insufficient permissions
+     *       404:
+     *         description: Care plan not found
+     *       500:
+     *         description: Server error
+     */
+    async createGoal(req: Request, res: Response) {
+      try {
+        const context = getUserContext(req);
+        const { carePlanId } = req.params;
+
+        if (!carePlanId) {
+          res.status(400).json({ error: 'Care plan ID is required' });
+          return;
+        }
+
+        const goal = await service.createGoal(carePlanId as string, req.body, context);
+        res.status(201).json({ success: true, data: goal });
+      } catch (error: unknown) {
+        handleError(error, res, 'creating goal');
+      }
+    },
   };
 }
 

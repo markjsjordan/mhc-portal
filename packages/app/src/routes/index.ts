@@ -91,6 +91,9 @@ function createCarePlanRouter(handlers: ReturnType<typeof createCarePlanHandlers
   router.get('/clients/:clientId/care-plans', handlers.getCarePlansByClientId);
   router.get('/clients/:clientId/care-plans/active', handlers.getActiveCarePlanForClient);
 
+  // Goal endpoints
+  router.post('/care-plans/:carePlanId/goals', handlers.createGoal);
+
   // Task generation
   router.post('/care-plans/:id/tasks/generate', handlers.createTasksForVisit);
 
