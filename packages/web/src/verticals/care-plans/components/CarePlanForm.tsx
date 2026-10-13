@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,6 +13,7 @@ import {
   LoadingSpinner
 } from '@/core/components';
 import { formatDate } from '@/core/utils';
+import { useAuth } from '@/core/hooks/auth';
 import type { CreateCarePlanInput } from '../types';
 import { Plus, Trash2 } from 'lucide-react';
 
@@ -96,6 +97,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
   isLoading = false 
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const { user } = useAuth();
 
   const {
     register,
@@ -108,8 +110,8 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
     resolver: zodResolver(carePlanSchema as any),
     defaultValues: {
       clientId: initialData?.clientId ?? '',
-      organizationId: initialData?.organizationId ?? '',
-      branchId: initialData?.branchId ?? '',
+      organizationId: initialData?.organizationId ?? user?.organizationId ?? '',
+      branchId: initialData?.branchId ?? user?.branchIds?.[0] ?? '',
       name: initialData?.name ?? '',
       planType: initialData?.planType ?? 'PERSONAL_CARE',
       effectiveDate: initialData?.effectiveDate ?? formatDate(new Date()),
@@ -119,6 +121,16 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
       goals: initialData?.goals ?? [],
     },
   });
+
+  // Update org and branch when user context is available
+  useEffect(() => {
+    if (user?.organizationId && !initialData?.organizationId) {
+      setValue('organizationId', user.organizationId);
+    }
+    if (user?.branchIds?.[0] && !initialData?.branchId) {
+      setValue('branchId', user.branchIds[0]);
+    }
+  }, [user, initialData, setValue]);
 
   const { fields: goalFields, append: appendGoal, remove: removeGoal } = useFieldArray({
     control,

@@ -6,6 +6,7 @@
 
 import { z } from 'zod';
 import { CreateProgressNoteInput, GoalProgress, Observation } from '../types/care-plan';
+import { ValidationError } from '@folkcare/core';
 
 // Base schemas
 const UUIDSchema = z.string().uuid();
@@ -510,7 +511,20 @@ export const TaskInstanceSearchFiltersSchema = z.object({
  */
 export class CarePlanValidator {
   static validateCreateCarePlan(input: unknown) {
-    return CreateCarePlanInputSchema.parse(input);
+    try {
+      return CreateCarePlanInputSchema.parse(input);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const zodError = error as unknown as { issues?: Array<{ path?: (string | number)[]; message?: string; code?: string }> };
+        const errorDetails = (zodError.issues || []).map(e => ({
+          path: (e.path || []).join('.'),
+          message: e.message || 'Validation failed',
+          code: e.code || 'unknown',
+        }));
+        throw new ValidationError('Care plan validation failed', { issues: errorDetails });
+      }
+      throw error;
+    }
   }
 
   static validateUpdateCarePlan(input: unknown) {

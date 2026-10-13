@@ -29,6 +29,20 @@ export class CarePlanRepository extends Repository<CarePlan> {
     return this.database;
   }
 
+  /**
+   * Validate that JSON fields can be serialized/deserialized properly
+   */
+  private validateJsonField(fieldName: string, value: unknown): string {
+    try {
+      // Attempt to stringify and parse to ensure valid JSON
+      const json = JSON.stringify(value);
+      JSON.parse(json);
+      return json;
+    } catch (error) {
+      throw new Error(`Invalid JSON in field '${fieldName}': ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
   // satisfy abstract methods (delegate / stub)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected mapRowToEntity(row: any): CarePlan {
@@ -144,7 +158,7 @@ export class CarePlanRepository extends Repository<CarePlan> {
         version
       ) VALUES (
         gen_random_uuid(),
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $17,
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
         NOW(), NOW(), 1
       )
       RETURNING *
@@ -162,12 +176,13 @@ export class CarePlanRepository extends Repository<CarePlan> {
       input.effectiveDate,
       input.expirationDate,
       input.coordinatorId,
-      JSON.stringify(input.goals),
-      JSON.stringify(input.interventions),
-      JSON.stringify(input.taskTemplates || []),
-      JSON.stringify(input.serviceFrequency),
+      this.validateJsonField('goals', input.goals),
+      this.validateJsonField('interventions', input.interventions),
+      this.validateJsonField('taskTemplates', input.taskTemplates || []),
+      this.validateJsonField('serviceFrequency', input.serviceFrequency),
       input.notes,
       input.createdBy,
+      input.createdBy, // updated_by = created_by on creation
     ]);
 
     if (!result.rows[0]) {
@@ -858,7 +873,19 @@ export class CarePlanRepository extends Repository<CarePlan> {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private mapRowToCarePlan(row: any): CarePlan {
-    return ({
+    // Safe JSON parsing helper
+    const safeParseJson = (value: any, defaultValue: any = null) => {
+      if (value === null || value === undefined) return defaultValue;
+      if (typeof value === 'object') return value; // Already parsed
+      try {
+        return JSON.parse(value);
+      } catch {
+        console.warn('Failed to parse JSON field:', value);
+        return defaultValue;
+      }
+    };
+
+    return (({
       id: row.id,
       planNumber: row.plan_number,
       name: row.name,
@@ -880,10 +907,10 @@ export class CarePlanRepository extends Repository<CarePlan> {
       assessmentSummary: row.assessment_summary,
       medicalDiagnosis: row.medical_diagnosis,
       functionalLimitations: row.functional_limitations,
-      goals: row.goals || [],
-      interventions: row.interventions || [],
-      taskTemplates: row.task_templates || [],
-      serviceFrequency: row.service_frequency,
+      goals: safeParseJson(row.goals, []),
+      interventions: safeParseJson(row.interventions, []),
+      taskTemplates: safeParseJson(row.task_templates, []),
+      serviceFrequency: safeParseJson(row.service_frequency, {}),
       estimatedHoursPerWeek: row.estimated_hours_per_week,
       authorizedBy: row.authorized_by,
       authorizedDate: row.authorized_date ? new Date(row.authorized_date) : undefined,
@@ -914,7 +941,7 @@ export class CarePlanRepository extends Repository<CarePlan> {
       version: row.version,
       deletedAt: row.deleted_at ? new Date(row.deleted_at) : null,
       deletedBy: row.deleted_by,
-    }) as CarePlan;
+    }) as CarePlan);
   }
 
   /**

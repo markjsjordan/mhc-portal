@@ -29,6 +29,10 @@ function handleError(error: unknown, res: Response, operation: string): void {
     } else if (error instanceof NotFoundError) {
       res.status(404).json({ error: error.message });
     }
+  } else if (error instanceof Error && error.name === 'ZodError') {
+    // Handle Zod validation errors that slip through
+    console.error(`Validation error ${operation}:`, error);
+    res.status(400).json({ error: 'Validation failed', details: (error as any).errors });
   } else {
     console.error(`Error ${operation}:`, error);
     res.status(500).json({ error: 'Internal server error' });
