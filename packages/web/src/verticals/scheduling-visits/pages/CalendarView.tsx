@@ -9,6 +9,7 @@ import { CalendarDays, Plus, List, Layout, Home, Phone, Building2, ZoomIn, ZoomO
 import { useCalendarVisits, useVisitApi, useCaregiverAvailability } from '../hooks/useVisits';
 import { useAuth } from '@/core/hooks';
 import { EmptyState } from '@/core/components/feedback/EmptyState';
+import { CreateVisitModal } from '@/core/components/forms/CreateVisitModal';
 import { MiniCalendar, VisitStatusLegend } from '../components';
 import type { Visit } from '../types';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -175,6 +176,8 @@ export const CalendarView: React.FC = () => {
   const [selectedBranches] = useState<string[]>([]);
   const [selectedCaregiverFilter, setSelectedCaregiverFilter] = useState<string | null>(null);
   const [expandedCaregivers, setExpandedCaregivers] = useState<Set<string>>(new Set());
+  const [isCreateVisitModalOpen, setIsCreateVisitModalOpen] = useState(false);
+  const [createVisitSlotInfo, setCreateVisitSlotInfo] = useState<SlotInfo | null>(null);
 
   const toggleExpandedCaregiver = useCallback((caregiverId: string) => {
     setExpandedCaregivers(prev => {
@@ -458,8 +461,9 @@ export const CalendarView: React.FC = () => {
   // modal is backend+frontend work beyond this ticket's thin-wiring scope for
   // the scheduling-visits vertical; surfacing the gap clearly instead of a
   // silent no-op or a fabricated call to a nonexistent endpoint.
-  const handleSelectSlot = useCallback((_slotInfo: SlotInfo) => {
-    toast('Creating a visit from the calendar needs a new POST /api/visits route and a visit form - neither exists yet.', { duration: 4000 });
+  const handleSelectSlot = useCallback((slotInfo: SlotInfo) => {
+    setCreateVisitSlotInfo(slotInfo);
+    setIsCreateVisitModalOpen(true);
   }, []);
 
   // Custom event style getter (for color-coding)
@@ -1051,6 +1055,21 @@ export const CalendarView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Create Visit Modal */}
+      <CreateVisitModal
+        isOpen={isCreateVisitModalOpen}
+        onClose={() => {
+          setIsCreateVisitModalOpen(false);
+          setCreateVisitSlotInfo(null);
+        }}
+        onSuccess={() => {
+          refetch();
+        }}
+        preSelectedDate={createVisitSlotInfo ? moment(createVisitSlotInfo.start).format('YYYY-MM-DD') : undefined}
+        preSelectedStartTime={createVisitSlotInfo ? moment(createVisitSlotInfo.start).format('HH:mm') : undefined}
+        preSelectedEndTime={createVisitSlotInfo ? moment(createVisitSlotInfo.end).format('HH:mm') : undefined}
+      />
     </div>
   );
 };

@@ -321,6 +321,203 @@ export function createVisitRouter(db: Database): Router {
     }
   });
 
+  /**
+   * POST /api/visits
+   * Create a single visit (called from Schedule calendar view)
+   * 
+   * Body:
+   * - clientId: UUID of client (required)
+   * - caregiverId: UUID of assigned caregiver (optional)
+   * - serviceTypeId: UUID of service type (required)
+   * - serviceTypeName: Display name of service type (optional)
+   * - scheduledDate: Date in YYYY-MM-DD format (required)
+   * - scheduledStartTime: Time in HH:MM 24-hour format (required)
+   * - scheduledEndTime: Time in HH:MM 24-hour format (required)
+   * - address: Service address (optional)
+   * - notes: Internal notes (optional)
+   * - clientInstructions: Instructions for caregiver (optional)
+   * - status: Visit status - UNASSIGNED | ASSIGNED | SCHEDULED | COMPLETED | NO_SHOW_CLIENT | NO_SHOW_CAREGIVER | CANCELLED (default: UNASSIGNED)
+   *
+   * Returns: Created visit object
+   */
+  router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const context = getUserContext(req);
+
+      // Validate organization context
+      if (!context.organizationId) {
+        res.status(400).json({
+          success: false,
+          error: 'Organization ID is required',
+        });
+        return;
+      }
+
+      const {
+        clientId,
+        caregiverId,
+        serviceTypeId,
+        serviceTypeName,
+        scheduledDate,
+        scheduledStartTime,
+        scheduledEndTime,
+        address,
+        notes,
+        clientInstructions,
+        status = 'UNASSIGNED',
+      } = req.body;
+
+      // Validate required fields
+      if (!clientId || !serviceTypeId || !scheduledDate || !scheduledStartTime || !scheduledEndTime) {
+        res.status(400).json({
+          success: false,
+          error: 'Missing required fields: clientId, serviceTypeId, scheduledDate, scheduledStartTime, scheduledEndTime',
+        });
+        return;
+      }
+
+      // Validate date format (YYYY-MM-DD)
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(scheduledDate)) {
+        res.status(400).json({
+          success: false,
+          error: 'scheduledDate must be in YYYY-MM-DD format',
+        });
+        return;
+      }
+
+      // Validate time format (HH:MM in 24-hour format)
+      const timeRegex = /^([01]?\d|2[0-3]):[0-5]\d$/;
+      if (!timeRegex.test(scheduledStartTime) || !timeRegex.test(scheduledEndTime)) {
+        res.status(400).json({
+          success: false,
+          error: 'scheduledStartTime and scheduledEndTime must be in HH:MM format (24-hour)',
+        });
+        return;
+      }
+
+      // Verify client exists and belongs to organization
+      const clientCheck = await db.query(
+        'SELECT id, organization_id FROM clients WHERE id = $1 AND deleted_at IS NULL',
+        [clientId]
+      );
+
+      if (clientCheck.rows.length === 0) {
+        res.status(404).json({
+          success: false,
+          error: 'Client not found',
+        });
+        return;
+      }
+
+      const client = clientCheck.rows[0] as { id: string; organization_id: string };
+      if (client.organization_id !== context.organizationId) {
+        res.status(403).json({
+          success: false,
+          error: 'Access denied to this client',
+        });
+        return;
+      }
+
+      // Verify service type exists
+      const serviceTypeCheck = await db.query(
+        'SELECT id FROM service_types WHERE id = $1 AND deleted_at IS NULL',
+        [serviceTypeId]
+      );
+
+      if (serviceTypeCheck.rows.length === 0) {
+        res.status(404).json({
+          success: false,
+          error: 'Service type not found',
+        });
+        return;
+      }
+
+      // If caregiver is provided, verify they exist and are active
+      let assignedCaregiverId: string | null = null;
+      if (caregiverId) {
+        const caregiverCheck = await db.query(
+          'SELECT id, status FROM caregivers WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL',
+          [caregiverId, context.organizationId]
+        );
+
+        if (caregiverCheck.rows.length === 0) {
+          res.status(404).json({
+            success: false,
+            error: 'Caregiver not found',
+          });
+          return;
+        }
+
+        const caregiver = caregiverCheck.rows[0] as { id: string; status: string };
+        if (caregiver.status !== 'ACTIVE') {
+          res.status(400).json({
+            success: false,
+            error: 'Caregiver is not active',
+          });
+          return;
+        }
+
+        assignedCaregiverId = caregiver.id;
+      }
+
+      // Parse the branch from context or client assignment
+      // For now, use first branch from context
+      const branchId = context.branchIds?.[0];
+
+      // Create the visit
+      const result = await db.query(
+        `INSERT INTO visits (
+          id, organization_id, branch_id, client_id, assigned_caregiver_id,
+          service_type_id, service_type_name,
+          scheduled_date, scheduled_start_time, scheduled_end_time,
+          address, notes, client_instructions,
+          status, assignment_method,
+          created_by, updated_by, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(), $1, $2, $3, $4,
+          $5, $6,
+          $7, $8, $9,
+          $10, $11, $12,
+          $13, $14,
+          $15, $15, NOW(), NOW()
+        ) RETURNING *`,
+        [
+          context.organizationId,
+          branchId || null,
+          clientId,
+          assignedCaregiverId,
+          serviceTypeId,
+          serviceTypeName || null,
+          scheduledDate,
+          scheduledStartTime,
+          scheduledEndTime,
+          address || null,
+          notes || null,
+          clientInstructions || null,
+          status,
+          assignedCaregiverId ? 'MANUAL' : null,
+          context.userId,
+        ]
+      );
+
+      if (result.rows.length === 0) {
+        res.status(500).json({
+          success: false,
+          error: 'Failed to create visit',
+        });
+        return;
+      }
+
+      res.status(201).json({
+        success: true,
+        data: result.rows[0],
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // =========================================================================
   // Recurring Visit Patterns Endpoints
   // =========================================================================

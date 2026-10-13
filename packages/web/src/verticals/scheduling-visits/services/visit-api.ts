@@ -46,6 +46,7 @@ export interface VisitApiService {
   checkConflicts(visitId: string, caregiverId: string): Promise<ConflictCheckResult>;
   getCaregiverAvailability(date: Date, branchIds?: string[]): Promise<CaregiverAvailability[]>;
   getVisitById(visitId: string): Promise<Visit>;
+  createVisit(data: CreateVisitPayload): Promise<Visit>;
   createPattern(data: CreatePatternPayload): Promise<{ pattern: any; visits: Visit[]; generatedVisitsCount: number; exceptions: any[] }>;
   getPattern(id: string): Promise<PatternDetailsResponse>;
   updatePattern(id: string, data: UpdatePatternPayload): Promise<any>;
@@ -68,6 +69,20 @@ export interface CreatePatternPayload {
   notes?: string;
   skipHolidays?: boolean;
   horizonDays?: number;
+}
+
+export interface CreateVisitPayload {
+  clientId: string;
+  caregiverId?: string;
+  serviceTypeId: string;
+  serviceTypeName?: string;
+  scheduledDate: string;
+  scheduledStartTime: string;
+  scheduledEndTime: string;
+  address?: string;
+  notes?: string;
+  clientInstructions?: string;
+  status?: string;
 }
 
 export interface UpdatePatternPayload {
@@ -171,6 +186,14 @@ export const createVisitApiService = (apiClient: ApiClient): VisitApiService => 
     async getVisitById(visitId: string): Promise<Visit> {
       const response = await apiClient.get<{ success: boolean; data: Visit }>(
         `/api/visits/${visitId}`
+      );
+      return response.data;
+    },
+
+    async createVisit(data: CreateVisitPayload): Promise<Visit> {
+      const response = await apiClient.post<{ success: boolean; data: Visit }>(
+        '/api/visits',
+        data
       );
       return response.data;
     },
