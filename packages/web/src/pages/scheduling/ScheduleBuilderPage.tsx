@@ -7,7 +7,7 @@ import { useCalendarVisits, useVisitApi, useCaregiverAvailability } from '@/vert
 import type { Visit as ApiVisit } from '@/verticals/scheduling-visits/types';
 import { useClients } from '@/verticals/client-demographics/hooks/useClients';
 import { calculateSupervisoryCadence } from '@/verticals/scheduling-visits/utils/supervisory-cadence';
-import { SupervisionAlertBanner } from '@/verticals/scheduling-visits/components/SupervisionAlertBanner';
+import { SupervisionAlertBanner, CreateVisitModal } from '@/verticals/scheduling-visits/components';
 
 interface Caregiver {
   id: string;
@@ -106,6 +106,7 @@ export default function ScheduleBuilderPage() {
   const [draggedVisit, setDraggedVisit] = useState<Visit | null>(null);
   const [viewMode, setViewMode] = useState<'week' | 'day'>('day');
   const [showPatternModal, setShowPatternModal] = useState(false);
+  const [showCreateVisitModal, setShowCreateVisitModal] = useState(false);
 
   const [searchParams] = useSearchParams();
   const initialClientId = searchParams.get('clientId') || '';
@@ -272,6 +273,12 @@ export default function ScheduleBuilderPage() {
               </option>
             ))}
           </select>
+          <button
+            style={styles.patternButton}
+            onClick={() => setShowCreateVisitModal(true)}
+          >
+            + Create Visit
+          </button>
           <button
             style={styles.patternButton}
             onClick={() => setShowPatternModal(true)}
@@ -490,6 +497,17 @@ export default function ScheduleBuilderPage() {
           }}
         />
       )}
+
+      <CreateVisitModal
+        isOpen={showCreateVisitModal}
+        onClose={() => setShowCreateVisitModal(false)}
+        onCreated={async () => {
+          setShowCreateVisitModal(false);
+          await queryClient.invalidateQueries({ queryKey: ['visits'] });
+          await refetchVisits();
+        }}
+        defaultDate={selectedDate}
+      />
     </div>
   );
 }
