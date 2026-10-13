@@ -54,6 +54,8 @@ const visitTypeSchema = z.enum([
   'MAKEUP',
   'SUPERVISION',
   'ASSESSMENT',
+  'CONCIERGE',
+  'ONGOING_SUPPORT',
 ]);
 
 const visitStatusSchema = z.enum([
