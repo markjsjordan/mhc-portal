@@ -227,3 +227,9 @@ export class ClickUpService {
     }
   }
 }
+
+/**
+ * Singleton instance of ClickUpService
+ * Used by polling and testing services
+ */
+export const clickupService = new ClickUpService();
