@@ -10,13 +10,13 @@ import {
 } from '@/core/components';
 import { usePermissions, useDemoData } from '@/core/hooks';
 import { useClients } from '../hooks';
-import { ClientCard, ClientSearch } from '../components';
-import type { ClientSearchFilters } from '../types';
+import { ClientCard, ClientFilters } from '../components';
+import type { ClientFiltersFilters } from '../types';
 
 export const ClientList: React.FC = () => {
   const navigate = useNavigate();
   const { can } = usePermissions();
-  const [filters, setFilters] = useState<ClientSearchFilters>({});
+  const [filters, setFilters] = useState<ClientFiltersFilters>({});
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { data, isLoading, error, refetch } = useClients(filters);
   const {
@@ -95,7 +95,7 @@ export const ClientList: React.FC = () => {
         />
       )}
 
-      <ClientSearch filters={filters} onFiltersChange={setFilters} />
+      <ClientFilters filters={filters} onFiltersChange={setFilters} />
 
       {clients.length === 0 ? (
         <EmptyState

@@ -4,12 +4,12 @@ import { Plus, Grid, List, FileText } from 'lucide-react';
 import { Button, LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
 import { usePermissions } from '@/core/hooks';
 import { useCarePlans } from '../hooks';
-import { CarePlanCard, CarePlanSearch } from '../components';
-import type { CarePlanSearchFilters } from '../types';
+import { CarePlanCard, CarePlanFilters } from '../components';
+import type { CarePlanFiltersFilters } from '../types';
 
 export const CarePlanList: React.FC = () => {
   const { can } = usePermissions();
-  const [filters, setFilters] = useState<CarePlanSearchFilters>({});
+  const [filters, setFilters] = useState<CarePlanFiltersFilters>({});
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { data, isLoading, error, refetch } = useCarePlans(filters);
 
@@ -77,7 +77,7 @@ export const CarePlanList: React.FC = () => {
         </div>
       </div>
 
-      <CarePlanSearch filters={filters} onFiltersChange={setFilters} />
+      <CarePlanFilters filters={filters} onFiltersChange={setFilters} />
 
       {carePlans.length === 0 ? (
         <EmptyState
