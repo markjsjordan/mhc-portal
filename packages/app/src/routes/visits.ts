@@ -419,19 +419,8 @@ export function createVisitRouter(db: Database): Router {
         return;
       }
 
-      // Verify service type exists
-      const serviceTypeCheck = await db.query(
-        'SELECT id FROM service_types WHERE id = $1 AND deleted_at IS NULL',
-        [serviceTypeId]
-      );
-
-      if (serviceTypeCheck.rows.length === 0) {
-        res.status(404).json({
-          success: false,
-          error: 'Service type not found',
-        });
-        return;
-      }
+      // Service type validation: serviceTypeId is a string code (NURSING, PT, OT, etc.)
+      // No separate table lookup needed - codes are predefined in the system
 
       // If caregiver is provided, verify they exist and are active
       let assignedCaregiverId: string | null = null;
