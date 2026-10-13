@@ -1,5 +1,5 @@
 import type { ApiClient } from '@/core/services';
-import type { Visit, VisitSearchFilters } from '../types';
+import type { Visit, VisitSearchFilters, VisitType, VisitStatus } from '../types';
 
 export interface VisitApiResponse {
   success: boolean;
@@ -38,6 +38,72 @@ export interface ConflictCheckResult {
   }>;
 }
 
+/**
+ * Request payload for creating a new visit
+ */
+export interface CreateVisitPayload {
+  clientId: string;
+  serviceTypeId: string;
+  serviceTypeName: string;
+  scheduledDate: string; // YYYY-MM-DD
+  scheduledStartTime: string; // HH:MM
+  scheduledEndTime: string; // HH:MM
+  timezone?: string;
+  assignedCaregiverId?: string | null;
+  visitType?: VisitType;
+  notes?: string;
+  checkConflicts?: boolean;
+}
+
+/**
+ * Response from creating a visit
+ */
+export interface CreateVisitResponse {
+  success: boolean;
+  data: {
+    id: string;
+    visitNumber: string;
+    clientId: string;
+    serviceTypeName: string;
+    scheduledDate: string;
+    scheduledStartTime: string;
+    scheduledEndTime: string;
+    status: VisitStatus;
+    createdAt: string;
+  };
+  message?: string;
+}
+
+/**
+ * Single conflict in check conflicts response
+ */
+export interface VisitConflict {
+  visitId: string;
+  caregiverName: string;
+  scheduledStartTime: string;
+  scheduledEndTime: string;
+  clientName: string;
+}
+
+/**
+ * Request for checking conflicts
+ */
+export interface CheckConflictsRequest {
+  caregiverId: string;
+  scheduledDate: string; // YYYY-MM-DD
+  scheduledStartTime: string; // HH:MM
+  scheduledEndTime: string; // HH:MM
+}
+
+/**
+ * Response from checking conflicts
+ */
+export interface CheckConflictsResponse {
+  hasConflicts: boolean;
+  conflicts: VisitConflict[];
+  message?: string;
+}
+
 export interface VisitApiService {
   getMyVisits(startDate: Date, endDate: Date): Promise<Visit[]>;
   getVisitsByFilters(filters: VisitSearchFilters): Promise<Visit[]>;
@@ -50,6 +116,8 @@ export interface VisitApiService {
   getPattern(id: string): Promise<PatternDetailsResponse>;
   updatePattern(id: string, data: UpdatePatternPayload): Promise<any>;
   listPatterns(clientId?: string): Promise<any[]>;
+  createVisit(payload: CreateVisitPayload): Promise<CreateVisitResponse>;
+  checkConflictsForNewVisit(request: CheckConflictsRequest): Promise<CheckConflictsResponse>;
 }
 
 export interface CreatePatternPayload {
@@ -201,9 +269,44 @@ export const createVisitApiService = (apiClient: ApiClient): VisitApiService => 
     async listPatterns(clientId?: string): Promise<any[]> {
       const params = new URLSearchParams();
       if (clientId) params.append('client_id', clientId);
-      const url = `/api/visits/patterns${params.toString() ? '?' + params.toString() : ''}`;
+      const url = `/api/visits/patterns${params.toString() ? '?' + params.toString() : ''}`
       const response = await apiClient.get<{ success: boolean; data: any[] }>(url);
       return response.data;
+    },
+
+    async createVisit(payload: CreateVisitPayload): Promise<CreateVisitResponse> {
+      const response = await apiClient.post<CreateVisitResponse>(
+        '/api/visits',
+        {
+          clientId: payload.clientId,
+          serviceTypeId: payload.serviceTypeId,
+          serviceTypeName: payload.serviceTypeName,
+          scheduledDate: payload.scheduledDate,
+          scheduledStartTime: payload.scheduledStartTime,
+          scheduledEndTime: payload.scheduledEndTime,
+          timezone: payload.timezone || 'America/New_York',
+          assignedCaregiverId: payload.assignedCaregiverId || null,
+          visitType: payload.visitType || 'REGULAR',
+          notes: payload.notes || '',
+          checkConflicts: payload.checkConflicts !== false,
+        }
+      );
+
+      return response;
+    },
+
+    async checkConflictsForNewVisit(request: CheckConflictsRequest): Promise<CheckConflictsResponse> {
+      const response = await apiClient.post<CheckConflictsResponse>(
+        '/api/visits/check-conflicts',
+        {
+          caregiverId: request.caregiverId,
+          scheduledDate: request.scheduledDate,
+          scheduledStartTime: request.scheduledStartTime,
+          scheduledEndTime: request.scheduledEndTime,
+        }
+      );
+
+      return response;
     },
   };
 };
