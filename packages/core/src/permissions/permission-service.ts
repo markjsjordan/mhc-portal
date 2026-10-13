@@ -63,6 +63,7 @@ export class PermissionService {
       new Set([
         'clients:read',
         'clients:update',
+        'clients:delete',
         'caregivers:*',
         'staff:read',
         'schedules:*',
@@ -78,6 +79,7 @@ export class PermissionService {
       new Set([
         'clients:read',
         'clients:update',
+        'clients:delete',
         'caregivers:read',
         'schedules:*',
         'visits:*',
@@ -216,7 +218,13 @@ export class PermissionService {
   /**
    * Assert permission or throw error
    */
-  requirePermission(context: UserContext, permission: string): void {
+  requirePermission(context: UserContext | null, permission: string): void {
+    if (!context) {
+      throw new PermissionError(
+        `Invalid user context`,
+        { permission }
+      );
+    }
     if (!this.hasPermission(context, permission)) {
       throw new PermissionError(
         `Permission denied: ${permission}`,
