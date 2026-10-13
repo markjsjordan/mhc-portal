@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { 
@@ -14,6 +14,16 @@ import {
 } from '@/core/components';
 import { formatDate } from '@/core/utils';
 import type { CreateCarePlanInput } from '../types';
+import { Plus, Trash2 } from 'lucide-react';
+
+const goalSchema = z.object({
+  name: z.string().min(1, 'Goal name is required'),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  targetDate: z.string().optional(),
+  status: z.string().optional(),
+  priority: z.string().optional(),
+});
 
 const carePlanSchema = z.object({
   clientId: z.string().min(1, 'Client ID is required'),
@@ -25,6 +35,7 @@ const carePlanSchema = z.object({
   expirationDate: z.string().optional(),
   coordinatorId: z.string().optional(),
   notes: z.string().optional(),
+  goals: z.array(goalSchema).optional().default([]),
 });
 
 type CarePlanFormData = z.infer<typeof carePlanSchema>;
@@ -46,6 +57,39 @@ const planTypeOptions = [
   { value: 'CUSTOM', label: 'Custom' },
 ];
 
+const goalCategoryOptions = [
+  { value: 'MOBILITY', label: 'Mobility' },
+  { value: 'ADL', label: 'Activities of Daily Living' },
+  { value: 'IADL', label: 'Instrumental ADL' },
+  { value: 'NUTRITION', label: 'Nutrition' },
+  { value: 'MEDICATION_MANAGEMENT', label: 'Medication Management' },
+  { value: 'SAFETY', label: 'Safety' },
+  { value: 'SOCIAL_ENGAGEMENT', label: 'Social Engagement' },
+  { value: 'COGNITIVE', label: 'Cognitive' },
+  { value: 'EMOTIONAL_WELLBEING', label: 'Emotional Wellbeing' },
+  { value: 'PAIN_MANAGEMENT', label: 'Pain Management' },
+  { value: 'WOUND_CARE', label: 'Wound Care' },
+  { value: 'CHRONIC_DISEASE_MANAGEMENT', label: 'Chronic Disease Management' },
+  { value: 'OTHER', label: 'Other' },
+];
+
+const goalStatusOptions = [
+  { value: 'NOT_STARTED', label: 'Not Started' },
+  { value: 'IN_PROGRESS', label: 'In Progress' },
+  { value: 'ON_TRACK', label: 'On Track' },
+  { value: 'AT_RISK', label: 'At Risk' },
+  { value: 'ACHIEVED', label: 'Achieved' },
+  { value: 'PARTIALLY_ACHIEVED', label: 'Partially Achieved' },
+  { value: 'DISCONTINUED', label: 'Discontinued' },
+];
+
+const priorityOptions = [
+  { value: 'LOW', label: 'Low' },
+  { value: 'MEDIUM', label: 'Medium' },
+  { value: 'HIGH', label: 'High' },
+  { value: 'URGENT', label: 'Urgent' },
+];
+
 export const CarePlanForm: React.FC<CarePlanFormProps> = ({ 
   initialData, 
   onSubmit, 
@@ -58,6 +102,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
     handleSubmit,
     setValue,
     getValues,
+    control,
     formState: { errors },
   } = useForm<CarePlanFormData>({
     resolver: zodResolver(carePlanSchema as any),
@@ -71,7 +116,13 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
       expirationDate: initialData?.expirationDate ?? '',
       coordinatorId: initialData?.coordinatorId ?? '',
       notes: initialData?.notes ?? '',
+      goals: initialData?.goals ?? [],
     },
+  });
+
+  const { fields: goalFields, append: appendGoal, remove: removeGoal } = useFieldArray({
+    control,
+    name: 'goals',
   });
 
   const steps = [
@@ -96,7 +147,6 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
   const onFormSubmit = (data: CarePlanFormData) => {
     onSubmit({
       ...data,
-      goals: [],
       interventions: [],
     });
   };
@@ -209,10 +259,129 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
 
   const renderGoals = () => (
     <div className="space-y-6">
-      <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-md">
-        <p className="text-gray-500">Goals will be implemented in a future update</p>
-        <p className="text-sm text-gray-400 mt-2">This will include goal creation, categories, priorities, and progress tracking</p>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">Care Plan Goals</h3>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            appendGoal({
+              name: '',
+              description: '',
+              category: 'OTHER',
+              targetDate: '',
+              status: 'NOT_STARTED',
+              priority: 'MEDIUM',
+            })
+          }
+          className="flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Add Goal
+        </Button>
       </div>
+
+      {goalFields.length === 0 ? (
+        <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-md">
+          <p className="text-gray-500">No goals added yet</p>
+          <p className="text-sm text-gray-400 mt-2">Click "Add Goal" to define care goals for this care plan</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {goalFields.map((field, index) => (
+            <Card key={field.id}>
+              <CardHeader title={`Goal ${index + 1}`} />
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      label="Goal Name"
+                      error={errors.goals?.[index]?.name?.message}
+                      required
+                    >
+                      <Input
+                        {...register(`goals.${index}.name`)}
+                        placeholder="Enter goal name"
+                      />
+                    </FormField>
+
+                    <FormField
+                      label="Target Date (Optional)"
+                      error={errors.goals?.[index]?.targetDate?.message}
+                    >
+                      <Input
+                        {...register(`goals.${index}.targetDate`)}
+                        type="date"
+                      />
+                    </FormField>
+                  </div>
+
+                  <FormField
+                    label="Description (Optional)"
+                    error={errors.goals?.[index]?.description?.message}
+                  >
+                    <textarea
+                      {...register(`goals.${index}.description`)}
+                      placeholder="Enter goal description"
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </FormField>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      label="Category"
+                      error={errors.goals?.[index]?.category?.message}
+                    >
+                      <Select
+                        options={goalCategoryOptions}
+                        value={getValues(`goals.${index}.category`)}
+                        onChange={(e) => setValue(`goals.${index}.category`, e.target.value)}
+                      />
+                    </FormField>
+
+                    <FormField
+                      label="Priority"
+                      error={errors.goals?.[index]?.priority?.message}
+                    >
+                      <Select
+                        options={priorityOptions}
+                        value={getValues(`goals.${index}.priority`)}
+                        onChange={(e) => setValue(`goals.${index}.priority`, e.target.value)}
+                      />
+                    </FormField>
+
+                    <FormField
+                      label="Status"
+                      error={errors.goals?.[index]?.status?.message}
+                    >
+                      <Select
+                        options={goalStatusOptions}
+                        value={getValues(`goals.${index}.status`)}
+                        onChange={(e) => setValue(`goals.${index}.status`, e.target.value)}
+                      />
+                    </FormField>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeGoal(index)}
+                      className="text-red-600 hover:text-red-700 flex items-center gap-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Remove Goal
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 
@@ -266,14 +435,33 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
           </CardContent>
         </Card>
 
+        {watchedValues.goals && watchedValues.goals.length > 0 && (
+          <Card>
+            <CardHeader title={`Goals (${watchedValues.goals.length})`} />
+            <CardContent>
+              <div className="space-y-3">
+                {watchedValues.goals.map((goal, index) => (
+                  <div key={index} className="border-l-4 border-blue-500 pl-4 py-2">
+                    <h4 className="font-medium">{goal.name}</h4>
+                    {goal.description && (
+                      <p className="text-sm text-gray-600 mt-1">{goal.description}</p>
+                    )}
+                    <div className="flex items-center gap-4 text-xs text-gray-500 mt-2">
+                      {goal.category && <span>{goal.category.replace(/_/g, ' ')}</span>}
+                      {goal.priority && <span>Priority: {goal.priority}</span>}
+                      {goal.targetDate && <span>Target: {goal.targetDate}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader title="Next Steps" />
           <CardContent>
             <div className="space-y-3">
-              <div className="border-l-4 border-blue-500 pl-4">
-                <h4 className="font-medium">Goals and Interventions</h4>
-                <p className="text-sm text-gray-600">After creating the care plan, you can add specific goals and interventions</p>
-              </div>
               <div className="border-l-4 border-green-500 pl-4">
                 <h4 className="font-medium">Task Templates</h4>
                 <p className="text-sm text-gray-600">Create task templates for recurring care activities</p>
