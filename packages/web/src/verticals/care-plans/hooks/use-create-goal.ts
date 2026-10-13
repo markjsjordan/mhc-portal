@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useApiClient } from '@/core/services';
+import { useApiClient } from '@/core/hooks';
 import { createCarePlanApiService, CreateCarePlanGoalInput, CarePlanGoalDto } from '../services/care-plan-api-service';
 
 interface UseCreateGoalOptions {
