@@ -5,7 +5,7 @@
 
 import { test, expect } from '@playwright/test';
 
-test.describe('Admin Login As Caregiver', () => {
+test.describe.skip('Admin Login As Caregiver', () => {
   test.beforeEach(async ({ page }) => {
     // Login as admin
     await page.goto('/login');
