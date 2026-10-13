@@ -39,8 +39,8 @@ export async function pollClickUpTickets(): Promise<void> {
     const allTasks = await clickupService.getAllTasks();
 
     // Process READY tickets (implementation)
-    const readyTickets = allTasks.filter(
-      (task: ClickUpTask) => task.status.status.toLowerCase() === READY_STATUS
+    const readyTickets: ClickUpTask[] = allTasks.filter(
+      (task: ClickUpTask): boolean => task.status.status.toLowerCase() === READY_STATUS
     );
 
     console.log(`[CLICKUP] Found ${readyTickets.length} READY tickets`);
@@ -54,8 +54,8 @@ export async function pollClickUpTickets(): Promise<void> {
     }
 
     // Process QA READY tickets (testing/verification)
-    const qaReadyTickets = allTasks.filter(
-      (task: ClickUpTask) => task.status.status.toLowerCase() === QA_READY_STATUS
+    const qaReadyTickets: ClickUpTask[] = allTasks.filter(
+      (task: ClickUpTask): boolean => task.status.status.toLowerCase() === QA_READY_STATUS
     );
 
     console.log(`[CLICKUP] Found ${qaReadyTickets.length} QA READY tickets`);
