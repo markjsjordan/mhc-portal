@@ -23,6 +23,9 @@ import {
   TaskCompletionMetrics,
   TaskTemplate,
   TaskCategory,
+  CreateCarePlanGoalInput,
+  CarePlanGoal,
+  CarePlanGoalDto,
 } from '../types/care-plan';
 import { CarePlanRepository } from '../repository/care-plan-repository';
 import { CarePlanValidator } from '../validation/care-plan-validator';
@@ -395,6 +398,110 @@ export class CarePlanService {
     }
 
     await this.repository.deleteCarePlan(id, context.userId);
+  }
+
+  /**
+   * Create a new goal in a care plan
+   * Validates authorization and derives client/tenant scope from the care plan
+   */
+  async createGoal(
+    carePlanId: UUID,
+    input: CreateCarePlanGoalInput,
+    context: UserContext
+  ): Promise<CarePlanGoalDto> {
+    // Validate permissions
+    if (!this.permissions.hasPermission(context, 'care-plans:update')) {
+      throw new PermissionError('Insufficient permissions to create goals');
+    }
+
+    // Validate input
+    const trimmedTitle = input.title?.trim() ?? '';
+    if (!trimmedTitle || trimmedTitle.length === 0) {
+      throw new ValidationError('Goal title is required', {
+        field: 'title',
+        message: 'Title cannot be empty or whitespace-only',
+      });
+    }
+
+    const MAX_TITLE_LENGTH = 500;
+    if (trimmedTitle.length > MAX_TITLE_LENGTH) {
+      throw new ValidationError('Goal title exceeds maximum length', {
+        field: 'title',
+        message: `Title must be ${MAX_TITLE_LENGTH} characters or less`,
+        maxLength: MAX_TITLE_LENGTH,
+        currentLength: trimmedTitle.length,
+      });
+    }
+
+    // Load the care plan within user's organization/client/branch scope
+    const carePlan = await this.repository.getCarePlanById(carePlanId);
+    if (!carePlan) {
+      throw new NotFoundError('Care plan not found', { id: carePlanId });
+    }
+
+    // Verify user has access to this plan's client and organization
+    if (carePlan.organizationId !== context.organizationId) {
+      throw new PermissionError('Access denied to this care plan');
+    }
+
+    if (carePlan.branchId && context.branchIds && !context.branchIds.includes(carePlan.branchId)) {
+      throw new PermissionError('Access denied to this care plan');
+    }
+
+    // Create the new goal with defaults
+    const newGoal: CarePlanGoal = {
+      id: this.generateUUID(),
+      name: trimmedTitle,
+      description: input.description?.trim() ?? '',
+      category: input.category ?? 'OTHER',
+      targetDate: input.targetDate,
+      status: input.status ?? 'NOT_STARTED',
+      priority: input.priority ?? 'MEDIUM',
+      measurementType: undefined,
+      targetValue: undefined,
+      currentValue: undefined,
+      unit: undefined,
+      milestones: [],
+      progressPercentage: 0,
+      lastAssessedDate: undefined,
+      interventionIds: [],
+      taskIds: [],
+      achievedDate: undefined,
+      outcome: undefined,
+      notes: undefined,
+    };
+
+    // Add goal to care plan's goals array
+    const updatedGoals = [...(carePlan.goals ?? []), newGoal];
+
+    // Update the care plan with the new goal
+    await this.inTransaction(async (executor) => {
+      await this.repository.updateGoals(carePlanId, updatedGoals, context.userId, executor);
+    });
+
+    // Return the created goal as DTO
+    return {
+      id: newGoal.id,
+      carePlanId,
+      title: newGoal.name,
+      description: newGoal.description,
+      category: newGoal.category,
+      targetDate: newGoal.targetDate,
+      status: newGoal.status,
+      priority: newGoal.priority,
+    };
+  }
+
+  /**
+   * Generate a UUID for new entities
+   */
+  private generateUUID(): UUID {
+    // Node.js crypto-based UUID v4
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    }) as UUID;
   }
 
   /**

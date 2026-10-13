@@ -16,6 +16,31 @@ export type CreateProgressNoteInput = Omit<
   'id' | 'authorId' | 'authorName' | 'authorRole' | 'noteDate' | 'createdAt' | 'updatedAt' | 'reviewedBy' | 'reviewedAt' | 'approved'
 >;
 
+export interface CreateCarePlanGoalInput {
+  title: string;
+  description?: string;
+  category?: string;
+  targetDate?: Date | string;
+  status?: string;
+  priority?: string;
+}
+
+export interface CarePlanGoalDto {
+  id: string;
+  carePlanId: string;
+  title: string;
+  description?: string;
+  category?: string;
+  targetDate?: Date | string;
+  status: string;
+  priority: string;
+}
+
+export interface CreateCarePlanGoalResponse {
+  success: true;
+  data: CarePlanGoalDto;
+}
+
 export interface CarePlanApiService {
   getCarePlans(filters?: CarePlanSearchFilters & SearchParams): Promise<PaginatedResult<CarePlan>>;
   getCarePlanById(id: string): Promise<CarePlan>;
@@ -27,6 +52,7 @@ export interface CarePlanApiService {
   completeTask(id: string, input: CompleteTaskInput): Promise<TaskInstance>;
   getProgressNotes(carePlanId: string): Promise<ProgressNote[]>;
   createProgressNote(input: CreateProgressNoteInput): Promise<ProgressNote>;
+  createGoal(carePlanId: string, input: CreateCarePlanGoalInput): Promise<CarePlanGoalDto>;
 }
 
 export const createCarePlanApiService = (apiClient: ApiClient): CarePlanApiService => {
@@ -108,6 +134,14 @@ export const createCarePlanApiService = (apiClient: ApiClient): CarePlanApiServi
 
     async createProgressNote(input: CreateProgressNoteInput): Promise<ProgressNote> {
       return apiClient.post<ProgressNote>('/api/progress-notes', input);
+    },
+
+    async createGoal(carePlanId: string, input: CreateCarePlanGoalInput): Promise<CarePlanGoalDto> {
+      const response = await apiClient.post<CreateCarePlanGoalResponse>(
+        `/api/care-plans/${carePlanId}/goals`,
+        input
+      );
+      return response.data;
     },
   };
 };

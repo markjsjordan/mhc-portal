@@ -1,7 +1,7 @@
 /**
  * Webhooks Routes
  *
- * Handles incoming webhooks from external services (Stripe, etc.)
+ * Handles incoming webhooks from external services (Stripe, ClickUp, etc.)
  */
 
 import express, { Request, Response } from 'express';

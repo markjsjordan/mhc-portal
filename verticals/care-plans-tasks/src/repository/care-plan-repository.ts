@@ -831,6 +831,29 @@ export class CarePlanRepository extends Repository<CarePlan> {
   }
 
   /**
+   * Update goals for a care plan
+   * Replaces the entire goals array with the provided one
+   */
+  async updateGoals(
+    carePlanId: UUID,
+    goals: any[],
+    updatedBy: UUID,
+    executor: Queryable = this.database
+  ): Promise<void> {
+    const db = (executor as any) || this.database;
+    const query = `
+      UPDATE care_plans 
+      SET goals = $1,
+          updated_by = $2,
+          updated_at = NOW(),
+          version = version + 1
+      WHERE id = $3
+    `;
+
+    await db.query(query, [JSON.stringify(goals), updatedBy, carePlanId]);
+  }
+
+  /**
    * Helper: Map database row to CarePlan entity
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
