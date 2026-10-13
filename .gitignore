@@ -204,6 +204,7 @@ packages/core/migrations/*.d.ts.map
 !marketing/*.png
 !about/public/images/*.png
 !packages/web/src/assets/*.png
+!packages/web/public/*.png
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Mobile-specific (React Native / Expo)
