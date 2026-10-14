@@ -7,7 +7,7 @@
  * - HIPAA Security Rule (45 CFR § 164.312(b)) audit logging
  */
 
-/* eslint-disable @typescript-eslint/strict-boolean-expressions */
+ 
 /* eslint-disable sonarjs/redundant-type-aliases */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable sonarjs/no-hardcoded-ip */

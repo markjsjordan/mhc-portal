@@ -635,6 +635,7 @@ describe('Security Middleware Integration Tests', () => {
         app.use('/api/auth', authLimiter as any);
         app.post('/api/auth/login', (req, res) => {
           // Simulate failed login
+          // eslint-disable-next-line sonarjs/no-hardcoded-passwords
           if (req.body.password !== 'correct') {
             res.status(401).json({ error: 'Invalid credentials' });
             return;

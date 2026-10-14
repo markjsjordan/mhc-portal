@@ -4,7 +4,7 @@
  * Tests for visit API endpoints including my-visits, calendar, assignments, and notes
  */
 
-/* eslint-disable @typescript-eslint/strict-boolean-expressions */
+ 
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createVisitRouter } from '../visits';

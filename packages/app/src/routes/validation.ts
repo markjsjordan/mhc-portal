@@ -123,7 +123,7 @@ router.get('/state/:code', (req: Request, res: Response) => {
   try {
     const { code } = req.params;
 
-    if (!code || code.length !== 2) {
+    if (!code?.length || code.length !== 2) {
       return res.status(400).json({
         valid: false,
         error: 'State code must be exactly 2 characters',

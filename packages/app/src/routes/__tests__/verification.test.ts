@@ -4,7 +4,7 @@
  * Tests for email verification workflow API endpoints.
  */
 
-/* eslint-disable @typescript-eslint/strict-boolean-expressions */
+ 
 /* eslint-disable sonarjs/redundant-type-aliases */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

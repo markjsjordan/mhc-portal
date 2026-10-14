@@ -30,7 +30,7 @@ const mockAuthService = {
 
 const mockAuthMiddleware = {
   requireAuth: vi.fn((req, res, next) => {
-    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+     
     if (req.headers.authorization) {
       req.user = {
         userId: '123e4567-e89b-12d3-a456-426614174000',

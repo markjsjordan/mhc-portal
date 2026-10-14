@@ -4,7 +4,7 @@
  * Tests for bulk data import API endpoints with file upload support.
  */
 
-/* eslint-disable @typescript-eslint/strict-boolean-expressions */
+ 
 /* eslint-disable sonarjs/redundant-type-aliases */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 

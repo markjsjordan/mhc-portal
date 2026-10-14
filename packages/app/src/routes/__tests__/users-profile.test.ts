@@ -17,7 +17,8 @@ describe('User Profile API', () => {
   beforeEach(async () => {
     // Setup: Create test user and get JWT token
     // This assumes auth setup is available
-    testUserId = 'test-user-id-' + Math.random().toString(36).substr(2, 9);
+    // eslint-disable-next-line sonarjs/pseudo-random
+    testUserId = 'test-user-id-' + Math.random().toString(36).slice(2, 11);
     testUserVersion = 1;
   });
 
@@ -177,7 +178,8 @@ describe('User Profile API', () => {
 
     it('should reject email already in use by another user', async () => {
       // Setup: Create another user with the email
-      const otherUserId = 'other-user-' + Math.random().toString(36).substr(2, 9);
+      // eslint-disable-next-line sonarjs/pseudo-random
+      const otherUserId = 'other-user-' + Math.random().toString(36).slice(2, 11);
       await db.query(
         'INSERT INTO users (id, email, first_name, organization_id) VALUES ($1, $2, $3, $4)',
         [otherUserId, 'taken@example.com', 'Other', 'test-org']

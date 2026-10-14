@@ -75,7 +75,7 @@ export function createSyncHandlers(_db: Database): {
       const userId = req.user?.userId;
       const userOrgId = req.user?.organizationId;
       
-      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+       
       if (!userId || !userOrgId || userOrgId !== request.organizationId) {
         res.status(403).json({
           error: 'Forbidden',
@@ -126,7 +126,7 @@ export function createSyncHandlers(_db: Database): {
       const userId = req.user?.userId;
       const userOrgId = req.user?.organizationId;
       
-      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+       
       if (!userId || !userOrgId || userOrgId !== request.organizationId) {
         res.status(403).json({
           error: 'Forbidden',
@@ -165,7 +165,7 @@ export function createSyncHandlers(_db: Database): {
       const userId = req.user?.userId;
       const organizationId = req.user?.organizationId;
 
-      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+       
       if (!userId || !organizationId) {
         res.status(401).json({
           error: 'Unauthorized',
