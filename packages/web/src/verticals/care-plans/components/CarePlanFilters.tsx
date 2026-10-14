@@ -33,12 +33,14 @@ export const CarePlanFilters: React.FC<CarePlanFiltersProps> = ({
 }) => {
   const [queryInput, setQueryInput] = React.useState(filters.query || '');
 
+  // Sync input when filters change externally
   React.useEffect(() => {
     if (filters.query !== queryInput) {
       setQueryInput(filters.query || '');
     }
   }, [filters.query]);
 
+  // Debounced query update
   React.useEffect(() => {
     const timer = setTimeout(() => {
       if ((filters.query || '') !== queryInput) {
@@ -93,6 +95,7 @@ export const CarePlanFilters: React.FC<CarePlanFiltersProps> = ({
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm space-y-3">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        {/* Search Bar */}
         <div className="relative flex-1 max-w-lg">
           <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
@@ -114,12 +117,14 @@ export const CarePlanFilters: React.FC<CarePlanFiltersProps> = ({
           )}
         </div>
 
+        {/* Filter Dropdown */}
         <FilterDropdown
           title="Filter Care Plans"
           activeCount={activeCount}
           onClearAll={handleClearAll}
           width="md"
         >
+          {/* Status Section */}
           <FilterCheckboxSection
             label="Status"
             options={STATUS_OPTIONS.map((opt) => ({
@@ -130,6 +135,7 @@ export const CarePlanFilters: React.FC<CarePlanFiltersProps> = ({
             onToggle={toggleStatus}
           />
 
+          {/* Priority Section */}
           <FilterCheckboxSection
             label="Priority"
             options={PRIORITY_OPTIONS.map((opt) => ({
@@ -140,6 +146,7 @@ export const CarePlanFilters: React.FC<CarePlanFiltersProps> = ({
             onToggle={togglePriority}
           />
 
+          {/* Date Range Section */}
           <FilterDateRangeSection
             label="Created Date"
             fromValue={filters.createdDateFrom}

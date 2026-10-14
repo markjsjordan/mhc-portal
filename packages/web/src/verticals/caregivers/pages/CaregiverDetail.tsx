@@ -4,19 +4,33 @@
  * Renders the full caregiver record (credentials, training, compliance
  * status) using the existing useCaregiver(id) hook, and links out to the
  * existing /caregivers/:id/training route.
+ *
+ * Includes action buttons for Edit, Delete, and Duplicate with proper
+ * modals and confirmation dialogs.
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Phone, Calendar, Briefcase, GraduationCap, ShieldCheck } from 'lucide-react';
 import { Card, CardHeader, CardContent } from '@/core/components';
 import { Button, StatusBadge, LoadingSpinner, ErrorMessage } from '@/core/components';
 import { formatDate, formatPhone } from '@/core/utils';
 import { useCaregiver } from '../hooks/index.js';
+import {
+  CaregiverActionButtons,
+  EditCaregiverModal,
+  DeleteCaregiverConfirmation,
+  DuplicateCaregiverModal,
+} from '../components/index.js';
 
 export const CaregiverDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: caregiver, isLoading, error, refetch } = useCaregiver(id);
+
+  // Modal state
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -62,11 +76,23 @@ export const CaregiverDetail: React.FC = () => {
             {caregiver.employeeNumber} &middot; {caregiver.role}
           </p>
         </div>
-        <Link to={`/caregivers/${caregiver.id}/training`}>
-          <Button variant="outline" leftIcon={<GraduationCap className="h-4 w-4" />}>
-            Training & Compliance
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <CaregiverActionButtons
+            caregiver={caregiver}
+            onEdit={() => setIsEditModalOpen(true)}
+            onDelete={() => setIsDeleteModalOpen(true)}
+            onDuplicate={() => setIsDuplicateModalOpen(true)}
+            onViewHistory={() => {
+              // TODO: Navigate to audit history page
+              console.log('View audit history');
+            }}
+          />
+          <Link to={`/caregivers/${caregiver.id}/training`}>
+            <Button variant="outline" leftIcon={<GraduationCap className="h-4 w-4" />}>
+              Training & Compliance
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Contact */}
@@ -192,5 +218,35 @@ export const CaregiverDetail: React.FC = () => {
         </CardContent>
       </Card>
     </div>
-  );
-};
+
+    {/* Modals */}
+    {caregiver && (
+      <>
+        <EditCaregiverModal
+          isOpen={isEditModalOpen}
+          caregiver={caregiver}
+          onClose={() => setIsEditModalOpen(false)}
+          onSuccess={() => {
+            refetch();
+            setIsEditModalOpen(false);
+          }}
+        />
+
+        <DeleteCaregiverConfirmation
+          isOpen={isDeleteModalOpen}
+          caregiver={caregiver}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onSuccess={() => {
+            navigate('/caregivers');
+          }}
+        />
+
+        <DuplicateCaregiverModal
+          isOpen={isDuplicateModalOpen}
+          caregiver={caregiver}
+          onClose={() => setIsDuplicateModalOpen(false)}
+        />
+      </>
+    )}
+  </div>
+);

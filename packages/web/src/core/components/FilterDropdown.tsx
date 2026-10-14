@@ -25,6 +25,7 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Close on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -39,6 +40,7 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = ({
     };
   }, [isOpen]);
 
+  // Close on ESC key
   useEffect(() => {
     if (!isOpen) return;
     const handleEsc = (e: KeyboardEvent) => {
@@ -50,6 +52,7 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = ({
 
   return (
     <div className="relative" ref={containerRef}>
+      {/* Trigger Button */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -69,10 +72,12 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = ({
         )}
       </button>
 
+      {/* Dropdown Panel */}
       {isOpen && (
         <div
           className={`absolute right-0 mt-2 ${widthClasses[width]} bg-white rounded-xl shadow-xl border border-gray-200 p-5 z-30`}
         >
+          {/* Header */}
           <div className="flex items-center justify-between pb-3 border-b border-gray-200">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-blue-600" />
@@ -104,10 +109,12 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = ({
             </div>
           </div>
 
+          {/* Content */}
           <div className="space-y-4 py-3 max-h-[70vh] overflow-y-auto pr-1">
             {children}
           </div>
 
+          {/* Footer */}
           <div className="pt-3 border-t border-gray-200 flex justify-between items-center">
             <span className="text-xs text-gray-500">
               {activeCount === 0 ? 'No filters applied' : `${activeCount} filter${activeCount > 1 ? 's' : ''} applied`}

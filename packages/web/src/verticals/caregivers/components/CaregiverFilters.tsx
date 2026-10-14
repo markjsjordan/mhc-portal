@@ -43,12 +43,14 @@ export const CaregiverFilters: React.FC<CaregiverFiltersProps> = ({
 }) => {
   const [queryInput, setQueryInput] = React.useState(filters.query || '');
 
+  // Sync input when filters change externally
   React.useEffect(() => {
     if (filters.query !== queryInput) {
       setQueryInput(filters.query || '');
     }
   }, [filters.query]);
 
+  // Debounced query update
   React.useEffect(() => {
     const timer = setTimeout(() => {
       if ((filters.query || '') !== queryInput) {
@@ -116,6 +118,7 @@ export const CaregiverFilters: React.FC<CaregiverFiltersProps> = ({
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm space-y-3">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        {/* Search Bar */}
         <div className="relative flex-1 max-w-lg">
           <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
@@ -137,12 +140,14 @@ export const CaregiverFilters: React.FC<CaregiverFiltersProps> = ({
           )}
         </div>
 
+        {/* Filter Dropdown */}
         <FilterDropdown
           title="Filter Caregivers"
           activeCount={activeCount}
           onClearAll={handleClearAll}
           width="md"
         >
+          {/* Status Section */}
           <FilterCheckboxSection
             label="Status"
             options={STATUS_OPTIONS.map((opt) => ({
@@ -153,6 +158,7 @@ export const CaregiverFilters: React.FC<CaregiverFiltersProps> = ({
             onToggle={toggleStatus}
           />
 
+          {/* Employment Type Section */}
           <FilterCheckboxSection
             label="Employment Type"
             options={EMPLOYMENT_TYPE_OPTIONS.map((opt) => ({
@@ -163,6 +169,7 @@ export const CaregiverFilters: React.FC<CaregiverFiltersProps> = ({
             onToggle={toggleEmploymentType}
           />
 
+          {/* Compliance Status Section */}
           <FilterCheckboxSection
             label="Compliance Status"
             options={COMPLIANCE_STATUS_OPTIONS.map((opt) => ({
@@ -173,6 +180,7 @@ export const CaregiverFilters: React.FC<CaregiverFiltersProps> = ({
             onToggle={toggleComplianceStatus}
           />
 
+          {/* Date Range Section */}
           <FilterDateRangeSection
             label="Hire Date"
             fromValue={filters.hireDateFrom}

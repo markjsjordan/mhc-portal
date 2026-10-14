@@ -263,6 +263,43 @@ export function createCaregiverRouter(db: Database): Router {
   });
 
   /**
+   * POST /api/caregivers/:id/duplicate
+   * Duplicate a caregiver record with optional field selection
+   */
+  router.post('/:id/duplicate', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const context = getUserContext(req);
+      const service = new CaregiverService(db);
+
+      // Verify user has permission to create caregivers
+      if (!context.permissions.includes('caregivers:create') && 
+          !context.permissions.includes('CAREGIVER_CREATE')) {
+        res.status(403).json({ 
+          error: 'PERMISSION_DENIED',
+          message: 'User does not have permission to create caregivers'
+        });
+        return;
+      }
+
+      const newCaregiverId = await service.duplicateCaregiver(
+        req.params['id']!,
+        {
+          email: req.body['email'],
+          phone: req.body['phone'],
+          firstName: req.body['firstName'],
+          lastName: req.body['lastName'],
+          fieldsToInclude: req.body['fieldsToInclude'], // Which fields to copy (certifications, skills, etc.)
+        },
+        context
+      );
+
+      res.status(201).json({ id: newCaregiverId });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  /**
    * GET /api/caregivers/:id/service-authorizations
    * Get service authorizations for caregiver
    */

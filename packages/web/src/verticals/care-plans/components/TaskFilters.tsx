@@ -22,6 +22,13 @@ const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: 'ISSUE_REPORTED', label: 'Issue Reported' },
 ];
 
+const PRIORITY_OPTIONS = [
+  { value: 'LOW', label: 'Low' },
+  { value: 'MEDIUM', label: 'Medium' },
+  { value: 'HIGH', label: 'High' },
+  { value: 'URGENT', label: 'Urgent' },
+];
+
 const CATEGORY_OPTIONS: { value: TaskCategory; label: string }[] = [
   { value: 'PERSONAL_HYGIENE', label: 'Personal Hygiene' },
   { value: 'BATHING', label: 'Bathing' },
@@ -50,12 +57,14 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
 }) => {
   const [queryInput, setQueryInput] = React.useState(filters.query || '');
 
+  // Sync input when filters change externally
   React.useEffect(() => {
     if (filters.query !== queryInput) {
       setQueryInput(filters.query || '');
     }
   }, [filters.query]);
 
+  // Debounced query update
   React.useEffect(() => {
     const timer = setTimeout(() => {
       if ((filters.query || '') !== queryInput) {
@@ -115,6 +124,7 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm space-y-3">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        {/* Search Bar */}
         <div className="relative flex-1 max-w-lg">
           <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
@@ -136,12 +146,14 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
           )}
         </div>
 
+        {/* Filter Dropdown */}
         <FilterDropdown
           title="Filter Tasks"
           activeCount={activeCount}
           onClearAll={handleClearAll}
           width="md"
         >
+          {/* Status Section */}
           <FilterCheckboxSection
             label="Status"
             options={STATUS_OPTIONS.map((opt) => ({
@@ -152,6 +164,7 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
             onToggle={toggleStatus}
           />
 
+          {/* Category Section */}
           <FilterCheckboxSection
             label="Category"
             options={CATEGORY_OPTIONS.map((opt) => ({
@@ -162,6 +175,7 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
             onToggle={toggleCategory}
           />
 
+          {/* Date Range Section */}
           <FilterDateRangeSection
             label="Scheduled Date"
             fromValue={filters.scheduledDateFrom}

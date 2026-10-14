@@ -40,12 +40,14 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
 }) => {
   const [queryInput, setQueryInput] = React.useState(filters.query || '');
 
+  // Sync input when filters change externally
   React.useEffect(() => {
     if (filters.query !== queryInput) {
       setQueryInput(filters.query || '');
     }
   }, [filters.query]);
 
+  // Debounced query update
   React.useEffect(() => {
     const timer = setTimeout(() => {
       if ((filters.query || '') !== queryInput) {
@@ -113,6 +115,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm space-y-3">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        {/* Search Bar */}
         <div className="relative flex-1 max-w-lg">
           <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
@@ -134,12 +137,14 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
           )}
         </div>
 
+        {/* Filter Dropdown */}
         <FilterDropdown
           title="Filter Clients"
           activeCount={activeCount}
           onClearAll={handleClearAll}
           width="md"
         >
+          {/* Status Section */}
           <FilterCheckboxSection
             label="Status"
             options={STATUS_OPTIONS.map((opt) => ({
@@ -150,6 +155,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
             onToggle={toggleStatus}
           />
 
+          {/* Service Level Section */}
           <FilterCheckboxSection
             label="Service Level"
             options={SERVICE_LEVEL_OPTIONS.map((opt) => ({
@@ -160,6 +166,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
             onToggle={toggleServiceLevel}
           />
 
+          {/* Insurance Type Section */}
           <FilterCheckboxSection
             label="Insurance Type"
             options={INSURANCE_TYPE_OPTIONS.map((opt) => ({
@@ -170,6 +177,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
             onToggle={toggleInsuranceType}
           />
 
+          {/* Date Range Section */}
           <FilterDateRangeSection
             label="Created Date"
             fromValue={filters.createdDateFrom}
