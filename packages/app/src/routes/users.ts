@@ -17,6 +17,8 @@ const updateProfileSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(100),
   lastName: z.string().min(1, 'Last name is required').max(100),
   email: z.string().min(1, 'Email is required').regex(/^[\w%+.-]+@[\d.A-Za-z-]+\.[A-Za-z]{2,}$/, 'Invalid email address'),
+  phone: z.string().max(20, 'Phone number is too long').optional().nullable(),
+  version: z.number().int().min(0, 'Invalid version number').optional(),
 });
 
 const changePasswordSchema = z.object({
@@ -78,8 +80,12 @@ export function createUsersRouter(db: Database): Router {
           email: user.email,
           firstName: user.first_name,
           lastName: user.last_name,
+          phone: user.phone || null,
           organizationId: user.organization_id,
           roles: req.user!.roles,
+          version: user.version,
+          updatedAt: user.updated_at,
+          updatedBy: user.updated_by,
         }
       });
     } catch (error) {
@@ -140,18 +146,62 @@ export function createUsersRouter(db: Database): Router {
         res.status(400).json({
           success: false,
           error: 'Email is already in use',
-          code: 'EMAIL_IN_USE'
+          code: 'EMAIL_IN_USE',
+          field: 'email'
         });
         return;
       }
 
-      // Update user profile
+      // Check version if provided (optimistic locking)
+      const currentResult = await db.query(
+        'SELECT version FROM users WHERE id = $1 AND deleted_at IS NULL',
+        [req.user!.userId]
+      );
+
+      const currentUser = currentResult.rows[0] as Record<string, unknown> | undefined;
+      if (currentUser === undefined) {
+        res.status(404).json({
+          success: false,
+          error: 'User not found',
+          code: 'USER_NOT_FOUND'
+        });
+        return;
+      }
+
+      if (validatedData.version !== undefined && validatedData.version !== currentUser.version) {
+        // Version conflict detected
+        const conflictResult = await db.query(
+          'SELECT id, email, first_name, last_name, phone, version, updated_at, updated_by FROM users WHERE id = $1 AND deleted_at IS NULL',
+          [req.user!.userId]
+        );
+        const conflictUser = conflictResult.rows[0] as Record<string, unknown> | undefined;
+
+        res.status(409).json({
+          success: false,
+          error: 'Profile was modified by another user. Please refresh and try again.',
+          code: 'VERSION_CONFLICT',
+          current: conflictUser ? {
+            id: conflictUser.id,
+            email: conflictUser.email,
+            firstName: conflictUser.first_name,
+            lastName: conflictUser.last_name,
+            phone: conflictUser.phone || null,
+            version: conflictUser.version,
+            updatedAt: conflictUser.updated_at,
+            updatedBy: conflictUser.updated_by,
+          } : null
+        });
+        return;
+      }
+
+      // Update user profile with optimistic locking
       const result = await db.query(
         `UPDATE users
-         SET first_name = $1, last_name = $2, email = $3, updated_at = $4
-         WHERE id = $5
+         SET first_name = $1, last_name = $2, email = $3, phone = $4, 
+             updated_at = NOW(), updated_by = $5, version = version + 1
+         WHERE id = $6 AND deleted_at IS NULL
          RETURNING *`,
-        [validatedData.firstName, validatedData.lastName, validatedData.email, new Date(), req.user!.userId]
+        [validatedData.firstName, validatedData.lastName, validatedData.email, validatedData.phone || null, req.user!.userId, req.user!.userId]
       );
 
       const updatedUser = result.rows[0] as Record<string, unknown> | undefined;
@@ -172,8 +222,12 @@ export function createUsersRouter(db: Database): Router {
           email: updatedUser.email,
           firstName: updatedUser.first_name,
           lastName: updatedUser.last_name,
+          phone: updatedUser.phone || null,
           organizationId: updatedUser.organization_id,
-        }
+          version: updatedUser.version,
+          updatedAt: updatedUser.updated_at,
+        },
+        timestamp: new Date().toISOString()
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
