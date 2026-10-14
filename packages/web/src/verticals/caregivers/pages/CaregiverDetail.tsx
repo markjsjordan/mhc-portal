@@ -217,35 +217,35 @@ export const CaregiverDetail: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {caregiver && (
+        <>
+          <EditCaregiverModal
+            isOpen={isEditModalOpen}
+            caregiver={caregiver}
+            onClose={() => setIsEditModalOpen(false)}
+            onSuccess={() => {
+              refetch();
+              setIsEditModalOpen(false);
+            }}
+          />
+
+          <DeleteCaregiverConfirmation
+            isOpen={isDeleteModalOpen}
+            caregiver={caregiver}
+            onClose={() => setIsDeleteModalOpen(false)}
+            onSuccess={() => {
+              navigate('/caregivers');
+            }}
+          />
+
+          <DuplicateCaregiverModal
+            isOpen={isDuplicateModalOpen}
+            caregiver={caregiver}
+            onClose={() => setIsDuplicateModalOpen(false)}
+          />
+        </>
+      )}
     </div>
-
-    {caregiver && (
-      <>
-        <EditCaregiverModal
-          isOpen={isEditModalOpen}
-          caregiver={caregiver}
-          onClose={() => setIsEditModalOpen(false)}
-          onSuccess={() => {
-            refetch();
-            setIsEditModalOpen(false);
-          }}
-        />
-
-        <DeleteCaregiverConfirmation
-          isOpen={isDeleteModalOpen}
-          caregiver={caregiver}
-          onClose={() => setIsDeleteModalOpen(false)}
-          onSuccess={() => {
-            navigate('/caregivers');
-          }}
-        />
-
-        <DuplicateCaregiverModal
-          isOpen={isDuplicateModalOpen}
-          caregiver={caregiver}
-          onClose={() => setIsDuplicateModalOpen(false)}
-        />
-      </>
-    )}
   </div>
 );
