@@ -16,7 +16,9 @@ export type CarePlanStatus =
   | 'ON_HOLD'
   | 'EXPIRED'
   | 'DISCONTINUED'
-  | 'COMPLETED';
+  | 'COMPLETED'
+  | 'SUSPENDED'
+  | 'ARCHIVED';
 
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
@@ -285,6 +287,9 @@ export interface CarePlanSearchFilters {
   expiringWithinDays?: number;
   needsReview?: boolean;
   complianceStatus?: ComplianceStatus[];
+  priority?: Priority[];
+  createdDateFrom?: string;
+  createdDateTo?: string;
 }
 
 export interface TaskInstanceSearchFilters {

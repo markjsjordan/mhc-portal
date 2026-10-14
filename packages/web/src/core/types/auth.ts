@@ -24,6 +24,7 @@ export interface User {
   name: string;
   roles: Role[];
   permissions: string[];
+  branchIds?: string[];
 }
 
 export interface AuthState {
