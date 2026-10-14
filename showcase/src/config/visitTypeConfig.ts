@@ -7,6 +7,8 @@ import {
   RotateCcw,
   Eye,
   ClipboardCheck,
+  Gem,
+  TrendingUp,
   type LucideIcon,
 } from 'lucide-react';
 import type { VisitType } from '../types/showcase-types';
@@ -111,6 +113,28 @@ export const VISIT_TYPES: Record<VisitType, VisitTypeConfig> = {
     borderClass: 'border-teal-200',
     badgeClass: 'bg-teal-100 text-teal-800 border-teal-200',
     description: 'Comprehensive clinical needs assessment and plan of care update',
+  },
+  CONCIERGE: {
+    type: 'CONCIERGE',
+    label: 'Concierge Visit',
+    icon: Gem,
+    color: 'pink',
+    colorClass: 'text-pink-600',
+    bgClass: 'bg-pink-50',
+    borderClass: 'border-pink-200',
+    badgeClass: 'bg-pink-100 text-pink-800 border-pink-200',
+    description: 'Premium personal services (errands, companionship, shopping)',
+  },
+  ONGOING_SUPPORT: {
+    type: 'ONGOING_SUPPORT',
+    label: 'Ongoing Support',
+    icon: TrendingUp,
+    color: 'cyan',
+    colorClass: 'text-cyan-600',
+    bgClass: 'bg-cyan-50',
+    borderClass: 'border-cyan-200',
+    badgeClass: 'bg-cyan-100 text-cyan-800 border-cyan-200',
+    description: 'Continued monitoring and support between scheduled visits',
   },
 };
 
