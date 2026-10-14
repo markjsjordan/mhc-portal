@@ -6,7 +6,6 @@
  */
 import React, { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
-// @ts-expect-error - Modal and Checkbox components from @/core/components need to be implemented
 import { Button, Modal, Checkbox } from '@/core/components';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
