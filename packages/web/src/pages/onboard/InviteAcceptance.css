@@ -1,0 +1,4 @@
+.invite-container { max-width: 500px; margin: 0 auto; padding: 2rem; }
+.form-group { margin-bottom: 1rem; }
+label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+.error { color: red; font-size: 0.875rem; margin-top: 0.25rem; }
