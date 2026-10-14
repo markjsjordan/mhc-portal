@@ -219,9 +219,9 @@ export const CaregiverDetail: React.FC = () => {
       </Card>
     </div>
 
-    {/* Modals */}
     {caregiver && (
       <>
+        {/* Modals */}
         <EditCaregiverModal
           isOpen={isEditModalOpen}
           caregiver={caregiver}
