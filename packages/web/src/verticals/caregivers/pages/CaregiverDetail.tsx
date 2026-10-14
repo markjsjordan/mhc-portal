@@ -248,3 +248,4 @@ export const CaregiverDetail: React.FC = () => {
       )}
     </div>
   );
+};
