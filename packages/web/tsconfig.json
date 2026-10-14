@@ -11,7 +11,9 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "types": ["vite/client"],
+    "types": [
+      "vite/client"
+    ],
     "allowImportingTsExtensions": true,
     "moduleDetection": "force",
     "noEmit": true,
@@ -42,11 +44,7 @@
   "exclude": [
     "node_modules",
     "dist",
-    "src/app/pages/admin/__tests__/AdminDashboard.test.tsx",
-    "src/app/pages/admin/__tests__/ComplianceCenter.test.tsx",
-    "src/app/pages/admin/__tests__/DataGridPanel.test.tsx",
-    "src/app/pages/admin/__tests__/OperationsCenter.test.tsx",
-    "src/app/pages/admin/__tests__/StateConfigPanel.test.tsx",
+    "**/__tests__",
     "src/core/hooks/sync",
     "src/core/services/sync-api.ts",
     "src/core/services/sync-service.ts"

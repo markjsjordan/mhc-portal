@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button.js';
-import { Input } from '@/components/ui/input.js';
-import { Checkbox } from '@/components/ui/checkbox.js';
-import { api } from '@/lib/api.js';
+import { useState, useEffect } from 'react';
+import { Button, Input } from '@folkcare/shared-components';
+import { useApiClient } from '@/core/hooks';
 import './InvitePanel.css';
 
 export const InvitePanel: React.FC<{ organizationId: string }> = ({ organizationId }) => {
+  const api = useApiClient();
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',
@@ -16,7 +15,6 @@ export const InvitePanel: React.FC<{ organizationId: string }> = ({ organization
   });
   const [pendingInvites, setPendingInvites] = useState<any[]>([]);
   const [generatedUrl, setGeneratedUrl] = useState('');
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
@@ -35,7 +33,7 @@ export const InvitePanel: React.FC<{ organizationId: string }> = ({ organization
 
   const loadPendingInvites = async () => {
     try {
-      const response = await api.get(`/api/organizations/${organizationId}/invites?status=PENDING`);
+      const response = await api.get(`/api/organizations/${organizationId}/invites?status=PENDING`) as any;
       setPendingInvites(response.data.data.invites || []);
     } catch (error) {
       console.error('Failed to load invites', error);
@@ -57,7 +55,7 @@ export const InvitePanel: React.FC<{ organizationId: string }> = ({ organization
           permissions: formData.permissions,
           expiresInHours: formData.expiresInHours,
         }
-      );
+      ) as any;
 
       setGeneratedUrl(response.data.data.inviteUrl);
       setFormData({
@@ -92,7 +90,7 @@ export const InvitePanel: React.FC<{ organizationId: string }> = ({ organization
           <Input
             type="email"
             value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, email: e.target.value })}
             disabled={isLoading}
           />
         </div>
@@ -102,7 +100,7 @@ export const InvitePanel: React.FC<{ organizationId: string }> = ({ organization
             <label>First Name *</label>
             <Input
               value={formData.firstName}
-              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, firstName: e.target.value })}
               disabled={isLoading}
             />
           </div>
@@ -110,7 +108,7 @@ export const InvitePanel: React.FC<{ organizationId: string }> = ({ organization
             <label>Last Name *</label>
             <Input
               value={formData.lastName}
-              onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, lastName: e.target.value })}
               disabled={isLoading}
             />
           </div>
@@ -121,17 +119,18 @@ export const InvitePanel: React.FC<{ organizationId: string }> = ({ organization
           <div className="permissions-grid">
             {availablePermissions.map((p) => (
               <div key={p}>
-                <Checkbox
-                  checked={formData.permissions.includes(p)}
-                  onCheckedChange={(c) => {
-                    if (c) {
-                      setFormData({ ...formData, permissions: [...formData.permissions, p] });
-                    } else {
-                      setFormData({ ...formData, permissions: formData.permissions.filter(x => x !== p) });
-                    }
-                  }}
-                  disabled={isLoading}
-                />
+              <input
+                type="checkbox"
+                checked={formData.permissions.includes(p)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  if (e.target.checked) {
+                    setFormData({ ...formData, permissions: [...formData.permissions, p] });
+                  } else {
+                    setFormData({ ...formData, permissions: formData.permissions.filter(x => x !== p) });
+                  }
+                }}
+                disabled={isLoading}
+              />
                 <label>{p}</label>
               </div>
             ))}
