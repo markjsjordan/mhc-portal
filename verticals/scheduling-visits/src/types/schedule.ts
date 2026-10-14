@@ -258,7 +258,9 @@ export type VisitType =
   | 'EMERGENCY' // Unscheduled emergency visit
   | 'MAKEUP' // Makeup for missed visit
   | 'SUPERVISION' // Supervisor visit
-  | 'ASSESSMENT'; // Assessment or evaluation
+  | 'ASSESSMENT' // Assessment or evaluation
+  | 'CONCIERGE' // Concierge service
+  | 'ONGOING_SUPPORT'; // Ongoing support
 
 export type AssignmentMethod =
   | 'MANUAL' // Manually assigned by scheduler
