@@ -62,6 +62,7 @@ import exportRouter from './export.js';
 import { createAIUsageRouter } from './ai-usage.js';
 import { createServiceTypesRouter } from './service-types.js';
 import { createVisitNotesRouter } from './visit-notes.js';
+import { validationRouter } from './validation';
 
 /**
  * Helper to create router from care plan handlers object
@@ -494,6 +495,10 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
   const visitNotesRouter = createVisitNotesRouter(db);
   app.use('/api/visit-notes', generalApiLimiter, visitNotesRouter);
   console.log('  ✓ Visit Notes routes registered (with rate limiting)');
+
+  // State Validation routes (validation helper for form state selection)
+  app.use('/api/validation', generalApiLimiter, validationRouter);
+  console.log('  ✓ State Validation routes registered (with rate limiting)');
 
   console.log('API routes setup complete\n');
 }
