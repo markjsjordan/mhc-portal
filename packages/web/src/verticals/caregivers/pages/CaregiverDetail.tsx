@@ -247,5 +247,4 @@ export const CaregiverDetail: React.FC = () => {
         </>
       )}
     </div>
-  </div>
-);
+  );
