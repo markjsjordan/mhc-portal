@@ -118,7 +118,8 @@ export class CarePlanService {
     // Generate plan number
     const planNumber = await this.generatePlanNumber();
 
-    const carePlanData = {
+    // Prepare input for repository with all required fields
+    const carePlanInput = {
       ...validatedInput,
       // Provide defaults for optional array fields
       goals: validatedInput.goals || [],
@@ -132,7 +133,7 @@ export class CarePlanService {
     // Create the plan and its v1 audit snapshot atomically
     const carePlan = await this.inTransaction(async (executor) => {
       const created = await this.repository.createCarePlan(
-        { ...carePlanData, createdBy: context.userId },
+        { ...carePlanInput, createdBy: context.userId },
         executor
       );
 
