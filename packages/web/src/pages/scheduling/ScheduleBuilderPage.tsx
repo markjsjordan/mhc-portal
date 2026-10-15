@@ -2,12 +2,14 @@ import { useState, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { useCaregivers } from '@/verticals/caregivers/hooks/useCaregivers';
-import { useCalendarVisits, useVisitApi, useCaregiverAvailability } from '@/verticals/scheduling-visits/hooks/useVisits';
-import type { Visit as ApiVisit } from '@/verticals/scheduling-visits/types';
-import { useClients } from '@/verticals/client-demographics/hooks/useClients';
-import { calculateSupervisoryCadence } from '@/verticals/scheduling-visits/utils/supervisory-cadence';
-import { SupervisionAlertBanner } from '@/verticals/scheduling-visits/components/SupervisionAlertBanner';
+import { useCaregivers } from '@/verticals/caregivers/hooks/useCaregivers.js';
+import { useCalendarVisits, useVisitApi, useCaregiverAvailability } from '@/verticals/scheduling-visits/hooks/useVisits.js';
+import type { Visit as ApiVisit } from '@/verticals/scheduling-visits/types/index.js';
+import type { VisitType } from '@/verticals/scheduling-visits/types/index.js';
+import { useClients } from '@/verticals/client-demographics/hooks/useClients.js';
+import { calculateSupervisoryCadence } from '@/verticals/scheduling-visits/utils/supervisory-cadence.js';
+import { SupervisionAlertBanner } from '@/verticals/scheduling-visits/components/SupervisionAlertBanner.js';
+import { GeneralVisitCreationModal } from '@/verticals/scheduling-visits/components/GeneralVisitCreationModal.js';
 
 interface Caregiver {
   id: string;
@@ -113,6 +115,7 @@ export default function ScheduleBuilderPage() {
   const [showSupervisionModal, setShowSupervisionModal] = useState<boolean>(
     () => initialVisitType === 'SUPERVISION'
   );
+  const [showGeneralVisitModal, setShowGeneralVisitModal] = useState(false);
   const [supervisionClientId] = useState<string>(initialClientId);
 
   const queryClient = useQueryClient();
@@ -206,6 +209,31 @@ export default function ScheduleBuilderPage() {
     toast.error('Unassigning a visit is not supported by the API yet (no unassign endpoint exists).');
   }, []);
 
+  const handleCreateGeneralVisit = useCallback(
+    async (visitType: VisitType, clientId: string, date: string) => {
+      try {
+        await visitApi.createVisit({
+          clientId,
+          visitType,
+          scheduledDate: date,
+          assignedCaregiverId: null, // Unassigned initially
+          scheduledStartTime: '09:00',
+          scheduledEndTime: '10:00',
+          scheduledDuration: 3600, // 1 hour in seconds
+          status: 'unassigned',
+          tasksPlanned: [],
+        });
+        toast.success(`${visitType} visit created successfully`);
+        await queryClient.invalidateQueries({ queryKey: ['visits'] });
+        await refetchVisits();
+      } catch (error) {
+        console.error('Error creating visit:', error);
+        toast.error(`Failed to create ${visitType} visit`);
+      }
+    },
+    [visitApi, queryClient, refetchVisits]
+  );
+
   const getVisitsForCaregiverAtTime = (caregiverId: string, hour: number) => {
     return visits.filter(v => {
       if (v.caregiverId !== caregiverId || v.date !== selectedDate) return false;
@@ -277,6 +305,12 @@ export default function ScheduleBuilderPage() {
             onClick={() => setShowPatternModal(true)}
           >
             + Recurring Schedule
+          </button>
+          <button
+            style={styles.patternButton}
+            onClick={() => setShowGeneralVisitModal(true)}
+          >
+            + Create Visit
           </button>
           <button
             style={{
@@ -488,6 +522,20 @@ export default function ScheduleBuilderPage() {
             await queryClient.invalidateQueries({ queryKey: ['visits'] });
             await refetchVisits();
           }}
+        />
+      )}
+
+      {showGeneralVisitModal && (
+        <GeneralVisitCreationModal
+          isOpen={showGeneralVisitModal}
+          onClose={() => setShowGeneralVisitModal(false)}
+          onCreateVisit={handleCreateGeneralVisit}
+          selectedDate={selectedDate}
+          clients={clients.map(c => ({
+            id: c.id,
+            firstName: c.firstName,
+            lastName: c.lastName,
+          }))}
         />
       )}
     </div>
