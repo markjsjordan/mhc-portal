@@ -9,10 +9,9 @@ import {
   Button, 
   LoadingSpinner, 
   EmptyState, 
-  ErrorMessage,
-  DemoDataBanner 
+  ErrorMessage
 } from '@/core/components/index.js';
-import { usePermissions, useDemoData } from '@/core/hooks/index.js';
+import { usePermissions } from '@/core/hooks/index.js';
 import { useCaregivers } from '../hooks/index.js';
 import { CaregiverCard, CaregiverFilters } from '../components/index.js';
 import type { CaregiverSearchFilters } from '../types/index.js';
@@ -23,14 +22,6 @@ export const CaregiverList: React.FC = () => {
   const [filters, setFilters] = useState<CaregiverSearchFilters>({});
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { data, isLoading, error, refetch } = useCaregivers(filters);
-  const {
-    hasDemoData,
-    isSeeding,
-    isClearing,
-    seedDemoData,
-    clearDemoData,
-    stats,
-  } = useDemoData();
 
   if (isLoading) {
     return (
@@ -90,16 +81,6 @@ export const CaregiverList: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Demo Data Banner */}
-      {hasDemoData && (
-        <DemoDataBanner
-          onClearDemo={clearDemoData}
-          onAddRealData={() => navigate('/caregivers/new')}
-          isClearing={isClearing}
-          stats={stats || undefined}
-        />
-      )}
 
       <CaregiverFilters filters={filters} onFiltersChange={setFilters} />
 
