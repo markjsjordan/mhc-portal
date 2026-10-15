@@ -512,7 +512,7 @@ export interface CreateClientInput {
   gender?: Gender;
   primaryPhone?: Phone;
   email?: string;
-  primaryAddress: Address;
+  primaryAddress?: Address;
   emergencyContacts?: EmergencyContact[];
   referralSource?: string;
   intakeDate?: Date;

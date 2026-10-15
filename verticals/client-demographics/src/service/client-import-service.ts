@@ -458,8 +458,10 @@ export class ClientImportService implements ImportService<ClientImportRow, Clien
     if (row.gender?.trim()) input.gender = row.gender.toUpperCase() as Gender;
 
     // Address line 2 and county
-    if (row.address_line2?.trim()) input.primaryAddress.line2 = row.address_line2.trim();
-    if (row.address_county?.trim()) input.primaryAddress.county = row.address_county.trim();
+    if (input.primaryAddress) {
+      if (row.address_line2?.trim()) input.primaryAddress.line2 = row.address_line2.trim();
+      if (row.address_county?.trim()) input.primaryAddress.county = row.address_county.trim();
+    }
 
     // Phone
     if (row.phone_number?.trim()) {
@@ -536,7 +538,14 @@ export class ClientImportService implements ImportService<ClientImportRow, Clien
       firstName: input.firstName,
       lastName: input.lastName,
       dateOfBirth: input.dateOfBirth,
-      primaryAddress: input.primaryAddress,
+      primaryAddress: input.primaryAddress || {
+        type: 'HOME',
+        line1: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        country: 'US',
+      },
       emergencyContacts: input.emergencyContacts || [],
       authorizedContacts: [],
       programs: [],
