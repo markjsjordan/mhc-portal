@@ -254,8 +254,6 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
   const { data: existingClients } = useClients({ page: 1, pageSize: 1 });
 
   const handleSubmit = async () => {
-    // No validation required - form accepts submission with any fields left blank
-    
     // In edit mode, skip branch ID requirement since we're only updating existing client
     if (!isEditMode) {
       if (!user?.organizationId) {

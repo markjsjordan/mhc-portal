@@ -3,9 +3,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { US_STATES } from '@/core/constants/us-states';
 
-/**
- * Address validation schema - all fields optional for new client intake
- */
 export const ClientAddressSchema = z.object({
   line1: z
     .string()
@@ -70,7 +67,7 @@ export const ClientIntakeSchema = z.object({
       },
       'Client must be between 18 and 120 years old'
     ),
-  address: ClientAddressSchema,
+  address: ClientAddressSchema.optional(),
 });
 
 export type ClientIntakeFormData = z.infer<typeof ClientIntakeSchema>;
