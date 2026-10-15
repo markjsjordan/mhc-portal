@@ -267,8 +267,8 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       toast.error('Date of birth is required');
       return;
     }
-    if (!intakeData.address?.line1?.trim() || !intakeData.address?.city?.trim() || !intakeData.address?.state) {
-      toast.error('Complete address (street, city, state) is required');
+    if (!intakeData.address?.line1?.trim() || !intakeData.address?.city?.trim() || !intakeData.address?.state || !intakeData.address?.postalCode?.trim()) {
+      toast.error('Complete address (street, city, state, postal code) is required');
       return;
     }
 
