@@ -5,7 +5,6 @@
  * Requires name confirmation and checkbox confirmation.
  */
 import React, { useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
 import { Button, Modal, Checkbox } from '@/core/components';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -62,7 +61,6 @@ export const DeleteCaregiverConfirmation: React.FC<DeleteCaregiverConfirmationPr
       isOpen={isOpen}
       onClose={handleClose}
       title="Delete Caregiver?"
-      icon={<AlertTriangle className="h-6 w-6 text-red-600" />}
     >
       <div className="space-y-4">
         {/* Warning message */}
@@ -117,9 +115,8 @@ export const DeleteCaregiverConfirmation: React.FC<DeleteCaregiverConfirmationPr
         {/* Checkbox confirmation */}
         <div className="flex items-start gap-2">
           <Checkbox
-            id="understand-permanent"
             checked={understandsConfirm}
-            onChange={(checked) => setUnderstandsConfirm(checked)}
+            onCheckedChange={(checked) => setUnderstandsConfirm(checked)}
             disabled={deleteMutation.isPending}
           />
           <label

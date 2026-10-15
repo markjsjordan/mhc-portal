@@ -406,7 +406,6 @@ export default function ScheduleBuilderPage() {
                             ? () => { void handleDrop(caregiver.id); }
                             : undefined
                         }
-                        onClick={undefined}
                       >
                         {isOccupied && visit && slot.hour === parseInt(visit.startTime.split(':')[0] ?? '0') && (
                           <div
@@ -1379,5 +1378,3 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
     cursor: 'pointer',
   },
 };
-
-

@@ -5,7 +5,7 @@ import {
   FilterCheckboxSection,
   FilterDateRangeSection,
 } from '@/core/components';
-import type { CarePlanSearchFilters, CarePlanStatus } from '../types';
+import type { CarePlanSearchFilters, CarePlanStatus, Priority } from '../types';
 
 export interface CarePlanFiltersProps {
   filters: CarePlanSearchFilters;
@@ -20,7 +20,7 @@ const STATUS_OPTIONS: { value: CarePlanStatus; label: string }[] = [
   { value: 'ARCHIVED', label: 'Archived' },
 ];
 
-const PRIORITY_OPTIONS = [
+const PRIORITY_OPTIONS: { value: Priority; label: string }[] = [
   { value: 'LOW', label: 'Low' },
   { value: 'MEDIUM', label: 'Medium' },
   { value: 'HIGH', label: 'High' },
@@ -70,7 +70,7 @@ export const CarePlanFilters: React.FC<CarePlanFiltersProps> = ({
     });
   };
 
-  const togglePriority = (priority: string) => {
+  const togglePriority = (priority: Priority) => {
     const current = filters.priority || [];
     const updated = current.includes(priority)
       ? current.filter((p) => p !== priority)
@@ -132,7 +132,7 @@ export const CarePlanFilters: React.FC<CarePlanFiltersProps> = ({
               label: opt.label,
               isChecked: filters.status?.includes(opt.value) ?? false,
             }))}
-            onToggle={toggleStatus}
+            onToggle={(value: string) => toggleStatus(value as CarePlanStatus)}
           />
 
           {/* Priority Section */}
@@ -143,7 +143,7 @@ export const CarePlanFilters: React.FC<CarePlanFiltersProps> = ({
               label: opt.label,
               isChecked: filters.priority?.includes(opt.value) ?? false,
             }))}
-            onToggle={togglePriority}
+            onToggle={(value: string) => togglePriority(value as Priority)}
           />
 
           {/* Date Range Section */}

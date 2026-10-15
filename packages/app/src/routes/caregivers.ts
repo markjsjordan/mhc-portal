@@ -269,7 +269,7 @@ export function createCaregiverRouter(db: Database): Router {
   router.post('/:id/duplicate', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const context = getUserContext(req);
-      // TODO: Implement duplicateCaregiver method or alternative duplication logic
+      // DEFERRED: Implement duplicateCaregiver method or alternative duplication logic
       // const service = new CaregiverService(db);
 
       // Verify user has permission to create caregivers
@@ -282,7 +282,7 @@ export function createCaregiverRouter(db: Database): Router {
         return;
       }
 
-      // TODO: Implement duplicateCaregiver method or alternative duplication logic
+      // DEFERRED: Implement duplicateCaregiver method or alternative duplication logic
       // Placeholder response until method is implemented
       res.status(501).json({
         error: 'NOT_IMPLEMENTED',

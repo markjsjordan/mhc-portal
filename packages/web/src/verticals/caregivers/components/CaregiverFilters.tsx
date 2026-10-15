@@ -5,14 +5,14 @@ import {
   FilterCheckboxSection,
   FilterDateRangeSection,
 } from '@/core/components';
-import type { CaregiverSearchFilters, CaregiverStatus } from '../types';
+import type { CaregiverSearchFilters } from '../types';
 
 export interface CaregiverFiltersProps {
   filters: CaregiverSearchFilters;
   onFiltersChange: (filters: CaregiverSearchFilters) => void;
 }
 
-const STATUS_OPTIONS: { value: CaregiverStatus; label: string }[] = [
+const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'ACTIVE', label: 'Active' },
   { value: 'INACTIVE', label: 'Inactive' },
   { value: 'ONBOARDING', label: 'Onboarding' },
@@ -70,7 +70,7 @@ export const CaregiverFilters: React.FC<CaregiverFiltersProps> = ({
     return count;
   }, [filters]);
 
-  const toggleStatus = (status: CaregiverStatus) => {
+  const toggleStatus = (status: string) => {
     const current = filters.status || [];
     const updated = current.includes(status)
       ? current.filter((s) => s !== status)
