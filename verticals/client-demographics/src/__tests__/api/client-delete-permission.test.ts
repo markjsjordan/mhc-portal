@@ -293,10 +293,10 @@ describe('Client Delete Permission Enforcement - wdvf3abfwc', () => {
 
         await request(app)
           .delete('/api/clients/client-999')
-          .expect(500); // Error gets caught by error handler and becomes 500
+          .expect(403); // PermissionError from requirePermission() maps to 403
 
-        // The error indicates permission was enforced
-        expect(mockClientService.deleteClient).toHaveBeenCalled();
+        // Permission check short-circuits before the service is invoked
+        expect(mockClientService.deleteClient).not.toHaveBeenCalled();
       });
 
       it('READ_ONLY role is denied with appropriate error', async () => {
@@ -326,9 +326,9 @@ describe('Client Delete Permission Enforcement - wdvf3abfwc', () => {
 
         await request(app)
           .delete('/api/clients/client-999')
-          .expect(500); // Error gets caught by error handler
+          .expect(403); // PermissionError from requirePermission() maps to 403
 
-        expect(mockClientService.deleteClient).toHaveBeenCalled();
+        expect(mockClientService.deleteClient).not.toHaveBeenCalled();
       });
     });
 
