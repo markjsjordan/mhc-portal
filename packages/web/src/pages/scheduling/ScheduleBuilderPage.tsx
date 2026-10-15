@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -288,7 +288,7 @@ export default function ScheduleBuilderPage() {
             }}
             onClick={() => setShowSupervisionModal(true)}
           >
-            Schedule Supervision Visit
+            + Schedule Visit
           </button>
         </div>
       </div>
@@ -1079,6 +1079,7 @@ function ScheduleSupervisionVisitModal({
 }: ScheduleSupervisionVisitModalProps) {
   const [clientId, setClientId] = useState<string>(initialClientId || clients[0]?.id || '');
   const [caregiverId, setCaregiverId] = useState<string>('');
+  const [visitType, setVisitType] = useState<string>('SUPERVISION');
   const [visitDate, setVisitDate] = useState<string>(() => new Date().toISOString().split('T')[0]!);
   const [startTime, setStartTime] = useState<string>('09:00');
   const [duration, setDuration] = useState<number>(60);
@@ -1145,13 +1146,13 @@ function ScheduleSupervisionVisitModal({
             </div>
 
             <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Supervising RN Caregiver</label>
+              <label style={modalStyles.label}>Caregiver</label>
               <select
                 value={caregiverId}
                 onChange={(e) => setCaregiverId(e.target.value)}
                 style={modalStyles.input}
               >
-                <option value="">Unassigned (Open for RN)</option>
+                <option value="">Unassigned (Auto-match)</option>
                 {caregivers.map((cg) => (
                   <option key={cg.id} value={cg.id}>
                     {cg.name}
@@ -1161,13 +1162,24 @@ function ScheduleSupervisionVisitModal({
             </div>
 
             <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Service Type</label>
-              <input
-                type="text"
-                value="RN Supervisory Visit (AHCA 59A-8 / TX §558)"
-                readOnly
-                style={{ ...modalStyles.input, backgroundColor: '#f3f4f6' }}
-              />
+              <label style={modalStyles.label}>Visit Type *</label>
+              <select
+                value={visitType}
+                onChange={(e) => setVisitType(e.target.value)}
+                style={modalStyles.input}
+                required
+              >
+                <option value="">Select a visit type...</option>
+                <option value="REGULAR">Regular Visit</option>
+                <option value="INITIAL">Initial Visit</option>
+                <option value="ASSESSMENT">Assessment Visit</option>
+                <option value="RESPITE">Respite Care</option>
+                <option value="SUPERVISION">Supervisory Nurse Visit</option>
+                <option value="EMERGENCY">Emergency Response</option>
+                <option value="DISCHARGE">Discharge Visit</option>
+                <option value="MAKEUP">Make-up Visit</option>
+                <option value="CONCIERGE">Concierge Visit</option>
+              </select>
             </div>
 
             <div style={modalStyles.formGroup}>
@@ -1199,20 +1211,25 @@ function ScheduleSupervisionVisitModal({
                 onChange={(e) => setDuration(Number(e.target.value))}
                 style={modalStyles.input}
               >
+                <option value={30}>30 minutes</option>
                 <option value={45}>45 minutes</option>
                 <option value={60}>60 minutes (Standard)</option>
                 <option value={90}>90 minutes</option>
+                <option value={120}>2 hours</option>
+                <option value={180}>3 hours</option>
+                <option value={240}>4 hours</option>
               </select>
             </div>
           </div>
 
           <div style={modalStyles.formGroupFull}>
-            <label style={modalStyles.label}>Supervisory Scope & Clinical Notes</label>
+            <label style={modalStyles.label}>Clinical Notes</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               style={modalStyles.textarea}
               rows={3}
+              placeholder="Add any relevant details about this visit..."
             />
           </div>
 
