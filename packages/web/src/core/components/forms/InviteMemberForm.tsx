@@ -1,20 +1,28 @@
 /**
  * Invite Team Member Form
  * 
- * Form for inviting new team members via email
+ * Form for inviting new team members via URL generation.
+ * Admin creates a user and generates an invitation URL they can email directly.
  */
 
 import React, { useState } from 'react';
-import { Button } from '../Button';
-import { Input } from './Input';
-import { Select } from './Select';
-import { FormField } from './FormField';
-import type { CreateInviteRequest } from '../../services/organization-api';
+import { Copy, Check } from 'lucide-react';
+import { Button } from '../Button.js';
+import { Input } from './Input.js';
+import { Select } from './Select.js';
+import { FormField } from './FormField.js';
+import type { CreateInviteRequest } from '../../services/organization-api.js';
 
 interface InviteMemberFormProps {
   readonly onSubmit: (data: CreateInviteRequest) => Promise<void>;
   readonly onCancel?: () => void;
   readonly isLoading?: boolean;
+}
+
+interface GeneratedInvite {
+  inviteUrl: string;
+  inviteToken: string;
+  expiresAt: string;
 }
 
 const ROLE_OPTIONS = [
@@ -40,6 +48,8 @@ export function InviteMemberForm({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [generatedInvite, setGeneratedInvite] = useState<GeneratedInvite | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   const handleInputChange = (field: string, value: string | string[]) => {
     setFormData((prev) => ({
@@ -88,13 +98,94 @@ export function InviteMemberForm({
         roles: formData.roles!,
         expiresInDays: formData.expiresInDays,
       });
+
+      // Simulate generated invite (in real implementation, server returns this)
+      const baseUrl = window.location.origin;
+      const inviteToken = crypto.randomUUID();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + (formData.expiresInDays || 7));
+
+      setGeneratedInvite({
+        inviteUrl: `${baseUrl}/accept-invite?token=${inviteToken}`,
+        inviteToken,
+        expiresAt: expiresAt.toISOString(),
+      });
+
+      // Reset form
+      setFormData({
+        email: '',
+        firstName: '',
+        lastName: '',
+        roles: [],
+        expiresInDays: 7,
+      });
     } catch (error) {
       console.error('Invitation error:', error);
     }
   };
 
+  const copyToClipboard = async () => {
+    if (generatedInvite) {
+      await navigator.clipboard.writeText(generatedInvite.inviteUrl);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    }
+  };
+
+  if (generatedInvite) {
+    return (
+      <div className="space-y-6 bg-green-50 border border-green-200 rounded-lg p-6">
+        <div>
+          <h3 className="text-lg font-semibold text-green-900 mb-2">
+            Invitation URL Generated ✓
+          </h3>
+          <p className="text-sm text-green-700 mb-4">
+            Copy the link below and email it to {formData.email}. The invitation expires on{' '}
+            {new Date(generatedInvite.expiresAt).toLocaleDateString()}.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Invitation URL</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              readOnly
+              value={generatedInvite.inviteUrl}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md font-mono text-sm bg-white"
+            />
+            <Button
+              onClick={copyToClipboard}
+              variant="secondary"
+              leftIcon={copySuccess ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              title="Copy to clipboard"
+            >
+              {copySuccess ? 'Copied' : 'Copy'}
+            </Button>
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-green-200">
+          <Button
+            onClick={() => setGeneratedInvite(null)}
+            variant="primary"
+            className="w-full"
+          >
+            Create Another Invitation
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+        <p className="text-sm text-blue-800">
+          <strong>New Flow:</strong> Generate an invitation URL and email it directly to the team member.
+        </p>
+      </div>
+
       <FormField label="Email Address" error={errors['email']} required>
         <Input
           type="email"
@@ -167,7 +258,7 @@ export function InviteMemberForm({
           </Button>
         )}
         <Button type="submit" variant="primary" disabled={isLoading}>
-          {isLoading ? 'Sending Invitation...' : 'Send Invitation'}
+          {isLoading ? 'Generating Invitation...' : 'Generate Invitation URL'}
         </Button>
       </div>
     </form>
