@@ -309,15 +309,24 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       ? { number: intakeData.phone, type: 'MOBILE' as const, canReceiveSMS: false }
       : undefined;
 
-    const addressInput = {
-      type: 'HOME' as const,
-      line1: intakeData.address?.line1 || '',
-      line2: intakeData.address?.line2 || undefined,
-      city: intakeData.address?.city || '',
-      state: intakeData.address?.state || '',
-      postalCode: intakeData.address?.postalCode || '',
-      country: 'US' as const,
-    };
+    // Only include address if all required fields are populated
+    const hasCompleteAddress =
+      intakeData.address?.line1 &&
+      intakeData.address?.city &&
+      intakeData.address?.state &&
+      intakeData.address?.postalCode;
+
+    const addressInput = hasCompleteAddress
+      ? {
+          type: 'HOME' as const,
+          line1: intakeData.address.line1,
+          line2: intakeData.address.line2 || undefined,
+          city: intakeData.address.city,
+          state: intakeData.address.state,
+          postalCode: intakeData.address.postalCode,
+          country: 'US' as const,
+        }
+      : undefined;
 
     const emergencyContactsInput = (intakeData.emergencyContacts || [])
       .filter((c) => c.name && c.phone)
