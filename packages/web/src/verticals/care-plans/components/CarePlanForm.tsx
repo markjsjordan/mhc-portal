@@ -14,7 +14,7 @@ import {
 } from '@/core/components';
 import { formatDate } from '@/core/utils';
 import { useAuth } from '@/core/hooks/auth';
-import type { CreateCarePlanInput, Priority } from '../types';
+import type { CreateCarePlanInput } from '../types';
 import { Plus, Trash2 } from 'lucide-react';
 
 const goalSchema = z.object({
