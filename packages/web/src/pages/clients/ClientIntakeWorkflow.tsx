@@ -254,24 +254,8 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
   const { data: existingClients } = useClients({ page: 1, pageSize: 1 });
 
   const handleSubmit = async () => {
-    // Validate early: common fields required for both create and update
-    if (!intakeData.firstName?.trim()) {
-      toast.error('First name is required');
-      return;
-    }
-    if (!intakeData.lastName?.trim()) {
-      toast.error('Last name is required');
-      return;
-    }
-    if (!intakeData.dateOfBirth) {
-      toast.error('Date of birth is required');
-      return;
-    }
-    if (!intakeData.address?.line1?.trim() || !intakeData.address?.city?.trim() || !intakeData.address?.state) {
-      toast.error('Complete address (street, city, state) is required');
-      return;
-    }
-
+    // No validation required - form accepts submission with any fields left blank
+    
     // In edit mode, skip branch ID requirement since we're only updating existing client
     if (!isEditMode) {
       if (!user?.organizationId) {
@@ -320,11 +304,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
     // too large for this pass. Rather than silently dropping this data (which would
     // be WORSE than today's honest-fake alert(), since it would look captured when
     // it wasn't), we keep collecting it in the UI but do NOT claim it is saved.
-    const consentsComplete = Object.values(intakeData.consents || {}).every(Boolean);
-    if (!consentsComplete || !intakeData.signature) {
-      toast.error('Please complete all consents and provide a signature before submitting.');
-      return;
-    }
+    // NOTE: Consent/signature validation removed per requirements to accept all submissions
 
     // Build the common data structure for both create and update
     const phoneInput = intakeData.phone
@@ -488,7 +468,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               <h3 style={styles.sectionHeading}>Basic Information</h3>
               <div style={styles.formRow}>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>First Name *</label>
+                  <label style={styles.label}>First Name</label>
                   <input
                     type="text"
                     style={styles.input}
@@ -498,7 +478,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   />
                 </div>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Last Name *</label>
+                  <label style={styles.label}>Last Name</label>
                   <input
                     type="text"
                     style={styles.input}
@@ -511,7 +491,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
 
               <div style={styles.formRow}>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Date of Birth *</label>
+                  <label style={styles.label}>Date of Birth</label>
                   <input
                     type="date"
                     style={styles.input}
@@ -520,7 +500,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   />
                 </div>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Phone *</label>
+                  <label style={styles.label}>Phone</label>
                   <input
                     type="tel"
                     style={styles.input}
@@ -546,7 +526,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
             <div style={styles.formSection}>
               <h3 style={styles.sectionHeading}>Address</h3>
               <div style={styles.formGroup}>
-                <label style={styles.label}>Street Address *</label>
+                <label style={styles.label}>Street Address</label>
                 <input
                   type="text"
                   style={styles.input}
@@ -567,7 +547,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </div>
               <div style={styles.formRow}>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>City *</label>
+                  <label style={styles.label}>City</label>
                   <input
                     type="text"
                     style={styles.input}
@@ -577,7 +557,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   />
                 </div>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>State *</label>
+                  <label style={styles.label}>State</label>
                   <select
                     style={styles.input}
                     value={intakeData.address?.state || ''}
@@ -590,7 +570,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   </select>
                 </div>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>ZIP Code *</label>
+                  <label style={styles.label}>ZIP Code</label>
                   <input
                     type="text"
                     style={styles.input}
@@ -608,7 +588,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 <div key={index} style={styles.contactGroup}>
                   <div style={styles.formRow}>
                     <div style={styles.formGroup}>
-                      <label style={styles.label}>Name *</label>
+                      <label style={styles.label}>Name</label>
                       <input
                         type="text"
                         style={styles.input}
@@ -622,7 +602,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                       />
                     </div>
                     <div style={styles.formGroup}>
-                      <label style={styles.label}>Relationship *</label>
+                      <label style={styles.label}>Relationship</label>
                       <input
                         type="text"
                         style={styles.input}
@@ -636,7 +616,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                       />
                     </div>
                     <div style={styles.formGroup}>
-                      <label style={styles.label}>Phone *</label>
+                      <label style={styles.label}>Phone</label>
                       <input
                         type="tel"
                         style={styles.input}
@@ -661,7 +641,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               <h3 style={styles.sectionHeading}>Insurance Information</h3>
               <div style={styles.formRow}>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Insurance Type *</label>
+                  <label style={styles.label}>Insurance Type</label>
                   <select
                     style={styles.input}
                     value={intakeData.insurance?.type || ''}
@@ -675,7 +655,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   </select>
                 </div>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Member ID *</label>
+                  <label style={styles.label}>Member ID</label>
                   <input
                     type="text"
                     style={styles.input}
@@ -745,7 +725,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               <h3 style={styles.sectionHeading}>Mobility & Cognitive Status</h3>
               <div style={styles.formRow}>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Mobility *</label>
+                  <label style={styles.label}>Mobility</label>
                   <select
                     style={styles.input}
                     value={intakeData.mobility || ''}
@@ -759,7 +739,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   </select>
                 </div>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Cognitive Status *</label>
+                  <label style={styles.label}>Cognitive Status</label>
                   <select
                     style={styles.input}
                     value={intakeData.cognitive || ''}
@@ -851,7 +831,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               <h3 style={styles.sectionHeading}>Visit Schedule</h3>
               <div style={styles.formRow}>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Visit Frequency *</label>
+                  <label style={styles.label}>Visit Frequency</label>
                   <select
                     style={styles.input}
                     value={intakeData.visitFrequency || ''}
@@ -865,7 +845,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   </select>
                 </div>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Visit Duration (minutes) *</label>
+                  <label style={styles.label}>Visit Duration (minutes)</label>
                   <select
                     style={styles.input}
                     value={intakeData.visitDuration || ''}
@@ -1013,7 +993,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
             <div style={styles.formSection}>
               <h3 style={styles.sectionHeading}>Schedule Start Date</h3>
               <div style={styles.formGroup}>
-                <label style={styles.label}>First Visit Date *</label>
+                <label style={styles.label}>First Visit Date</label>
                 <input
                   type="date"
                   style={styles.input}
@@ -1142,7 +1122,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
             <div style={styles.formSection}>
               <h3 style={styles.sectionHeading}>Signature</h3>
               <div style={styles.formGroup}>
-                <label style={styles.label}>Client/Representative Name *</label>
+                <label style={styles.label}>Client/Representative Name</label>
                 <input
                   type="text"
                   style={styles.input}
