@@ -1378,5 +1378,3 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
     cursor: 'pointer',
   },
 };
-
-}
