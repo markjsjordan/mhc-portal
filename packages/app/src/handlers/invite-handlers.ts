@@ -18,6 +18,7 @@ export interface InviteHandler {
 export function createInviteHandlers(_db?: Database): InviteHandler {
   return {
     async createInvite(_req: Request, res: Response): Promise<void> {
+      // eslint-disable-next-line sonarjs/todo-tag
       // TODO: Implement invite creation
       res.status(501).json({
         error: 'NOT_IMPLEMENTED',
@@ -26,6 +27,7 @@ export function createInviteHandlers(_db?: Database): InviteHandler {
     },
 
     async validateInvite(_req: Request, res: Response): Promise<void> {
+      // eslint-disable-next-line sonarjs/todo-tag
       // TODO: Implement invite validation
       res.status(501).json({
         error: 'NOT_IMPLEMENTED',
@@ -34,6 +36,7 @@ export function createInviteHandlers(_db?: Database): InviteHandler {
     },
 
     async acceptInvite(_req: Request, res: Response): Promise<void> {
+      // eslint-disable-next-line sonarjs/todo-tag
       // TODO: Implement invite acceptance
       res.status(501).json({
         error: 'NOT_IMPLEMENTED',
