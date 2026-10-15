@@ -68,7 +68,7 @@ export const InvitePanel: React.FC<{ organizationId: string }> = ({ organization
       });
       await loadPendingInvites();
     } catch (error: any) {
-      setErrors({ submit: error.response?.data?.error || 'Failed to generate invite' });
+      console.error('Failed to generate invite:', error.response?.data?.error || error);
     } finally {
       setIsLoading(false);
     }

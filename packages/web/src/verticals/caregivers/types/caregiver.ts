@@ -27,9 +27,28 @@ export interface Caregiver {
   complianceStatus: 'COMPLIANT' | 'PENDING_VERIFICATION' | 'EXPIRING_SOON' | 'EXPIRED' | 'NON_COMPLIANT';
   credentials: Credential[];
   training: TrainingRecord[];
+  payRate?: number;
+  primaryAddress?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+    country?: string;
+  };
+  emergencyContacts?: EmergencyContact[];
+  version?: number;
   isDemoData?: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface EmergencyContact {
+  id?: string;
+  firstName: string;
+  lastName: string;
+  relationship: string;
+  phone: string;
+  email?: string;
 }
 
 export interface Credential {
