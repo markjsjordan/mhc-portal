@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useApiClient } from '@/core/hooks';
+import VisitTypeSelector from '@/verticals/scheduling-visits/components/VisitTypeSelector';
+import type { VisitType } from '@/verticals/scheduling-visits/types';
 
 interface VisitFormData {
   clientId: string;
   caregiverId?: string;
   serviceTypeId: string;
+  visitType: VisitType;
   scheduledDate: string;
   scheduledStartTime: string;
   scheduledEndTime: string;
@@ -31,15 +34,17 @@ export const VisitForm: React.FC<VisitFormProps> = ({
   isSubmitting = false,
 }) => {
   const apiClient = useApiClient();
+  const [visitType, setVisitType] = useState<VisitType>('REGULAR');
   const [formData, setFormData] = useState<VisitFormData>({
     clientId: '',
     serviceTypeId: '',
+    visitType: 'REGULAR',
     scheduledDate: initialDate || new Date().toISOString().split('T')[0]!,
     scheduledStartTime: initialStartTime,
     scheduledEndTime: initialEndTime,
   });
 
-  const [errors, setErrors] = useState<Partial<VisitFormData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof VisitFormData, string>>>({});
 
   // Fetch clients
   const { data: clients = [] } = useQuery({
@@ -69,6 +74,8 @@ export const VisitForm: React.FC<VisitFormProps> = ({
     if (!formData.serviceTypeId) {
       newErrors.serviceTypeId = 'Service type is required';
     }
+
+
 
     if (!formData.scheduledDate) {
       newErrors.scheduledDate = 'Date is required';
@@ -112,11 +119,19 @@ export const VisitForm: React.FC<VisitFormProps> = ({
     }
   };
 
-  const handleChange = (field: keyof VisitFormData, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  const handleChange = (field: keyof VisitFormData, value: string | VisitType) => {
+    if (field === 'visitType') {
+      setVisitType(value as VisitType);
+      setFormData((prev) => ({
+        ...prev,
+        visitType: value as VisitType,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    }
     // Clear error for this field
     if (errors[field]) {
       setErrors((prev) => ({
@@ -243,6 +258,15 @@ export const VisitForm: React.FC<VisitFormProps> = ({
           rows={3}
           placeholder="Internal notes"
         />
+      </div>
+
+      {/* Visit Type Selection */}
+      <div>
+        <VisitTypeSelector
+          value={visitType}
+          onChange={(type) => handleChange('visitType', type)}
+        />
+
       </div>
 
       {/* Client Instructions */}

@@ -358,6 +358,7 @@ export function createVisitRouter(db: Database): Router {
         caregiverId,
         serviceTypeId,
         serviceTypeName,
+        visitType,
         scheduledDate,
         scheduledStartTime,
         scheduledEndTime,
@@ -392,6 +393,16 @@ export function createVisitRouter(db: Database): Router {
         res.status(400).json({
           success: false,
           error: 'scheduledStartTime and scheduledEndTime must be in HH:MM format (24-hour)',
+        });
+        return;
+      }
+
+      // Validate visitType is in allowed list
+      const ALLOWED_VISIT_TYPES = ['REGULAR', 'INITIAL', 'DISCHARGE', 'RESPITE', 'EMERGENCY', 'MAKEUP', 'SUPERVISION', 'ASSESSMENT', 'CONCIERGE', 'ONGOING_SUPPORT'];
+      if (visitType && !ALLOWED_VISIT_TYPES.includes(visitType)) {
+        res.status(400).json({
+          success: false,
+          error: `Invalid visitType. Must be one of: ${ALLOWED_VISIT_TYPES.join(', ')}`,
         });
         return;
       }
@@ -459,6 +470,7 @@ export function createVisitRouter(db: Database): Router {
         `INSERT INTO visits (
           id, organization_id, branch_id, client_id, assigned_caregiver_id,
           service_type_id, service_type_name,
+          visit_type,
           scheduled_date, scheduled_start_time, scheduled_end_time,
           address, notes, client_instructions,
           status, assignment_method,
@@ -466,10 +478,11 @@ export function createVisitRouter(db: Database): Router {
         ) VALUES (
           gen_random_uuid(), $1, $2, $3, $4,
           $5, $6,
-          $7, $8, $9,
-          $10, $11, $12,
-          $13, $14,
-          $15, $15, NOW(), NOW()
+          $7,
+          $8, $9, $10,
+          $11, $12, $13,
+          $14, $15,
+          $16, $16, NOW(), NOW()
         ) RETURNING *`,
         [
           context.organizationId,
@@ -478,6 +491,7 @@ export function createVisitRouter(db: Database): Router {
           assignedCaregiverId,
           serviceTypeId,
           serviceTypeName || null,
+          visitType || 'REGULAR',
           scheduledDate,
           scheduledStartTime,
           scheduledEndTime,
