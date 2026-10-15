@@ -120,6 +120,9 @@ export class CarePlanService {
 
     const carePlanData = {
       ...validatedInput,
+      // Provide defaults for optional array fields
+      goals: validatedInput.goals || [],
+      interventions: validatedInput.interventions || [],
       planNumber,
       planReviewIntervalDays: reviewIntervalDays,
       nextReviewDue,
