@@ -5,10 +5,9 @@ import {
   Button, 
   LoadingSpinner, 
   ErrorMessage, 
-  EmptyState,
-  DemoDataBanner 
+  EmptyState
 } from '@/core/components';
-import { usePermissions, useDemoData } from '@/core/hooks';
+import { usePermissions } from '@/core/hooks';
 import { useClients } from '../hooks';
 import { ClientCard, ClientFilters } from '../components';
 import type { ClientSearchFilters } from '../types';
@@ -19,14 +18,6 @@ export const ClientList: React.FC = () => {
   const [filters, setFilters] = useState<ClientSearchFilters>({});
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { data, isLoading, error, refetch } = useClients(filters);
-  const {
-    hasDemoData,
-    isSeeding,
-    isClearing,
-    seedDemoData,
-    clearDemoData,
-    stats,
-  } = useDemoData();
 
   if (isLoading) {
     return (
@@ -84,16 +75,6 @@ export const ClientList: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Demo Data Banner */}
-      {hasDemoData && (
-        <DemoDataBanner
-          onClearDemo={clearDemoData}
-          onAddRealData={() => navigate('/clients/intake')}
-          isClearing={isClearing}
-          stats={stats || undefined}
-        />
-      )}
 
       <ClientFilters filters={filters} onFiltersChange={setFilters} />
 
