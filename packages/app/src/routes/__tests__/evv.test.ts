@@ -8,8 +8,8 @@
  * more complex setup and are planned for future work.
  */
 
-/* eslint-disable @typescript-eslint/strict-boolean-expressions */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
+ 
 /* eslint-disable sonarjs/redundant-type-aliases */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

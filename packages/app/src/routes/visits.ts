@@ -1590,7 +1590,7 @@ export function createVisitRouter(db: Database): Router {
 
 // POST /visits/compliance-check
   // Automated compliance checking for visits (AI-powered)
-  // eslint-disable-next-line sonarjs/cognitive-complexity -- Sequential validation guards are inherently branchy
+   
   router.post('/compliance-check', async (req: Request, res: Response, next: NextFunction) => {
     const knexDb = getKnexInstance();
     const auditService = new AuditService(db);
@@ -1610,7 +1610,7 @@ export function createVisitRouter(db: Database): Router {
       const { visitId, clientId, lookbackDays } = parseResult.data;
 
       // Get user context for permission checking
-      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+       
       if (!req.user) {
         res.status(401).json({ success: false, error: 'Unauthorized' });
         return;
@@ -1630,7 +1630,7 @@ export function createVisitRouter(db: Database): Router {
       // Check that user has permission to read visits (required for compliance checking)
       // The requireAuth middleware already ensures the user is authenticated
       // Here we ensure they have proper organization context
-      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+       
       if (!context.organizationId) {
         res.status(403).json({
           success: false,
@@ -1674,7 +1674,7 @@ export function createVisitRouter(db: Database): Router {
     } catch (error) {
       // Log failure audit event
       const user = req.user;
-      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+       
       if (user) {
         const context: UserContext = {
           userId: user.userId,

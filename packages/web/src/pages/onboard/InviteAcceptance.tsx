@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button.js';
-import { Input } from '@/components/ui/input.js';
-import { Checkbox } from '@/components/ui/checkbox.js';
-import { Alert } from '@/components/ui/alert.js';
-import { api } from '@/lib/api.js';
+import { Button, Input } from '@folkcare/shared-components';
+import { useApiClient } from '@/core/hooks';
 import './InviteAcceptance.css';
 
 export const InviteAcceptance: React.FC = () => {
+  const api = useApiClient();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get('invite');
@@ -33,7 +31,7 @@ export const InviteAcceptance: React.FC = () => {
       }
 
       try {
-        const response = await api.get(`/invites/${token}/details`);
+        const response = await api.get(`/invites/${token}/details`) as any;
         setInviteDetails(response.data.data);
         setStep('details');
       } catch (error: any) {
@@ -86,7 +84,7 @@ export const InviteAcceptance: React.FC = () => {
         password: formData.password,
         acceptTermsOfService: formData.acceptTerms,
         acceptPrivacyPolicy: formData.acceptPrivacy,
-      });
+      }) as any;
 
       localStorage.setItem('accessToken', response.data.data.tokens.accessToken);
       localStorage.setItem('refreshToken', response.data.data.tokens.refreshToken);
@@ -103,7 +101,7 @@ export const InviteAcceptance: React.FC = () => {
   };
 
   if (step === 'loading') return <div>Loading...</div>;
-  if (step === 'error') return <div><Alert>{errorMessage}</Alert></div>;
+  if (step === 'error') return <div className="alert">{errorMessage}</div>;
   if (step === 'success') return <div>✓ Account Activated! Redirecting...</div>;
 
   if (step === 'details' && inviteDetails) {
@@ -147,24 +145,26 @@ export const InviteAcceptance: React.FC = () => {
         </div>
 
         <div className="form-group">
-          <Checkbox
+          <input
+            type="checkbox"
             checked={formData.acceptTerms}
-            onCheckedChange={(c) => setFormData({ ...formData, acceptTerms: c as boolean })}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, acceptTerms: e.target.checked })}
           />
           <label>I agree to Terms of Service</label>
           {errors.acceptTerms && <p className="error">{errors.acceptTerms}</p>}
         </div>
 
         <div className="form-group">
-          <Checkbox
+          <input
+            type="checkbox"
             checked={formData.acceptPrivacy}
-            onCheckedChange={(c) => setFormData({ ...formData, acceptPrivacy: c as boolean })}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, acceptPrivacy: e.target.checked })}
           />
           <label>I agree to Privacy Policy</label>
           {errors.acceptPrivacy && <p className="error">{errors.acceptPrivacy}</p>}
         </div>
 
-        {errorMessage && <Alert>{errorMessage}</Alert>}
+        {errorMessage && <div className="alert">{errorMessage}</div>}
 
         <Button type="submit" disabled={isLoading}>
           {isLoading ? 'Activating...' : 'Activate Account'}

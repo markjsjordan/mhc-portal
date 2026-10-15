@@ -275,7 +275,9 @@ export type VisitType =
   | 'EMERGENCY'
   | 'MAKEUP'
   | 'SUPERVISION'
-  | 'ASSESSMENT';
+  | 'ASSESSMENT'
+  | 'CONCIERGE'
+  | 'ONGOING_SUPPORT';
 
 export type VisitStatus =
   | 'SCHEDULED'

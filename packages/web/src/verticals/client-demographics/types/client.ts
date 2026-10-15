@@ -91,6 +91,12 @@ export interface UpdateClientInput {
 export interface ClientSearchFilters {
   query?: string;
   status?: ClientStatus[];
+  serviceLevel?: string[];
+  insuranceType?: string[];
   city?: string;
   state?: string;
+  createdDateFrom?: string;
+  createdDateTo?: string;
 }
+
+export interface ClientFiltersFilters extends ClientSearchFilters {}

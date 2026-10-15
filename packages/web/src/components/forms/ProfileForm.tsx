@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -37,6 +37,7 @@ const profileFormSchema = z.object({
     )
     .optional()
     .nullable(),
+  version: z.number().optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileFormSchema>;

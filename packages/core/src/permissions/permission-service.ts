@@ -219,7 +219,7 @@ export class PermissionService {
    * Assert permission or throw error
    */
   requirePermission(context: UserContext | null, permission: string): void {
-    if (!context) {
+    if (context === null) {
       throw new PermissionError(
         `Invalid user context`,
         { permission }

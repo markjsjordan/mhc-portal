@@ -212,13 +212,22 @@ export function setContext(key: string, context: Record<string, unknown>): void 
 
 export function addBreadcrumb(message: string, data?: Record<string, unknown>, category?: string): void {
   if (process.env.NODE_ENV === 'production' && Sentry !== null) {
-    Sentry.addBreadcrumb({
+    const breadcrumb: {
+      message: string;
+      category: string;
+      level: string;
+      timestamp: number;
+      data?: Record<string, unknown>;
+    } = {
       message,
       category: category ?? 'custom',
       level: 'info',
-      data,
       timestamp: Date.now() / 1000,
-    });
+    };
+    if (data !== undefined) {
+      breadcrumb.data = data;
+    }
+    Sentry.addBreadcrumb(breadcrumb);
   }
   
   // Also log breadcrumb for local development

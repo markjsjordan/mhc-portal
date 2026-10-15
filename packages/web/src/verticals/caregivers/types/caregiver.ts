@@ -80,6 +80,8 @@ export interface CaregiverSearchFilters {
   complianceStatus?: string[];
   branchId?: string;
   credentialExpiring?: boolean;
+  hireDateFrom?: string;
+  hireDateTo?: string;
 }
 
 export interface PaginatedCaregivers {

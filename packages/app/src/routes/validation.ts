@@ -10,7 +10,7 @@ const StateValidationSchema = z.object({
     .string()
     .length(2, 'State code must be exactly 2 characters')
     .refine(
-      code => US_STATES.some(s => s.code === code),
+      (code: string) => US_STATES.some((s: { code: string; name: string }) => s.code === code),
       { message: 'Invalid state code. Must be a valid US state or territory code.' }
     ),
 });
@@ -29,7 +29,7 @@ const AddressValidationSchema = z.object({
     .string()
     .length(2, 'State code must be exactly 2 characters')
     .refine(
-      code => US_STATES.some(s => s.code === code),
+      (code: string) => US_STATES.some((s: { code: string; name: string }) => s.code === code),
       { message: 'Invalid state code. Must be a valid US state or territory code.' }
     ),
   postalCode: z
@@ -41,7 +41,7 @@ const AddressValidationSchema = z.object({
  * GET /api/validation/states
  * Get list of all valid state codes
  */
-router.get('/states', (req: Request, res: Response) => {
+router.get('/states', (_req: Request, res: Response) => {
   try {
     res.json({
       states: US_STATES,
@@ -58,10 +58,10 @@ router.get('/states', (req: Request, res: Response) => {
  * POST /api/validation/state
  * Validate a single state code
  */
-router.post('/state', (req: Request, res: Response) => {
+router.post('/state', (req: Request, res: Response): void => {
   try {
     const { stateCode } = StateValidationSchema.parse(req.body);
-    const state = US_STATES.find(s => s.code === stateCode);
+    const state = US_STATES.find((s: { code: string; name: string }) => s.code === stateCode);
     const territories = ['AS', 'GU', 'MP', 'PR', 'VI'];
 
     res.json({
@@ -72,11 +72,12 @@ router.post('/state', (req: Request, res: Response) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({
+      res.status(400).json({
         valid: false,
-        error: error.issues[0].message,
+        error: error.issues[0]?.message,
         details: error.issues,
       });
+      return;
     }
     handleError(error, res);
   }
@@ -86,7 +87,7 @@ router.post('/state', (req: Request, res: Response) => {
  * POST /api/validation/address
  * Validate complete address with state code
  */
-router.post('/address', (req: Request, res: Response) => {
+router.post('/address', (req: Request, res: Response): void => {
   try {
     const address = AddressValidationSchema.parse(req.body);
     const stateName = getStateName(address.state);
@@ -101,15 +102,16 @@ router.post('/address', (req: Request, res: Response) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({
+      res.status(400).json({
         valid: false,
         error: 'Address validation failed',
-        details: error.issues.map(issue => ({
-          field: issue.path.join('.'),
+        details: error.issues.map((issue) => ({
+          field: (issue.path as (string | number)[]).join('.'),
           message: issue.message,
           code: issue.code,
         })),
       });
+      return;
     }
     handleError(error, res);
   }
@@ -119,25 +121,27 @@ router.post('/address', (req: Request, res: Response) => {
  * GET /api/validation/state/:code
  * Validate and get details for a specific state code
  */
-router.get('/state/:code', (req: Request, res: Response) => {
+router.get('/state/:code', (req: Request, res: Response): void => {
   try {
     const { code } = req.params;
 
-    if (!code || code.length !== 2) {
-      return res.status(400).json({
+    if (!code?.length || code.length !== 2) {
+      res.status(400).json({
         valid: false,
         error: 'State code must be exactly 2 characters',
       });
+      return;
     }
 
-    const state = US_STATES.find(s => s.code === code.toUpperCase());
+    const state = US_STATES.find((s: { code: string; name: string }) => s.code === code.toUpperCase());
 
     if (!state) {
-      return res.status(404).json({
+      res.status(404).json({
         valid: false,
         code: code.toUpperCase(),
         error: 'State code not found',
       });
+      return;
     }
 
     const territories = ['AS', 'GU', 'MP', 'PR', 'VI'];

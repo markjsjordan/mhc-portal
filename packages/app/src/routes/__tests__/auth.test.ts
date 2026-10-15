@@ -11,8 +11,6 @@
  * Security-critical: 100% coverage required
  */
 
-/* eslint-disable sonarjs/no-hardcoded-passwords */
-
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import express, { Express } from 'express';
 import request from 'supertest';
@@ -30,7 +28,7 @@ const mockAuthService = {
 
 const mockAuthMiddleware = {
   requireAuth: vi.fn((req, res, next) => {
-    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+     
     if (req.headers.authorization) {
       req.user = {
         userId: '123e4567-e89b-12d3-a456-426614174000',
@@ -235,6 +233,7 @@ describe('Authentication Routes', () => {
         .set('User-Agent', 'Mozilla/5.0')
         .send({
           email: 'admin@example.com',
+          // eslint-disable-next-line sonarjs/no-hardcoded-passwords
           password: 'SecurePassword123!', // Test password
         });
 
@@ -244,9 +243,11 @@ describe('Authentication Routes', () => {
       expect(response.body.data.tokens).toEqual(mockTokens);
 
       // Verify audit logging parameters
+      // eslint-disable-next-line sonarjs/no-hardcoded-passwords
+      const expectedPassword = 'SecurePassword123!';
       expect(mockAuthService.authenticateWithPassword).toHaveBeenCalledWith(
         'admin@example.com',
-        'SecurePassword123!',
+        expectedPassword,
         expect.any(String), // IP address
         'Mozilla/5.0' // User agent
       );
@@ -255,6 +256,7 @@ describe('Authentication Routes', () => {
     it('should return 400 when email is missing', async () => {
       const response = await request(app)
         .post('/api/auth/login')
+        // eslint-disable-next-line sonarjs/no-hardcoded-passwords
         .send({ password: 'password123' }); // Test password
 
       expect(response.status).toBe(400);
@@ -277,6 +279,7 @@ describe('Authentication Routes', () => {
     it('should return 400 when email is not a string', async () => {
       const response = await request(app)
         .post('/api/auth/login')
+        // eslint-disable-next-line sonarjs/no-hardcoded-passwords
         .send({ email: 12345, password: 'password123' });
 
       expect(response.status).toBe(400);
@@ -302,6 +305,7 @@ describe('Authentication Routes', () => {
         .post('/api/auth/login')
         .send({
           email: 'user@example.com',
+          // eslint-disable-next-line sonarjs/no-hardcoded-passwords
           password: 'wrongpassword', // Test password
         });
 
@@ -320,6 +324,7 @@ describe('Authentication Routes', () => {
         .post('/api/auth/login')
         .send({
           email: 'user@example.com',
+          // eslint-disable-next-line sonarjs/no-hardcoded-passwords
           password: 'password123', // Test password
         });
 

@@ -5,11 +5,11 @@ import { Button, LoadingSpinner, EmptyState, ErrorMessage } from '@/core/compone
 import { usePermissions } from '@/core/hooks';
 import { useCarePlans } from '../hooks';
 import { CarePlanCard, CarePlanFilters } from '../components';
-import type { CarePlanFiltersFilters } from '../types';
+import type { CarePlanSearchFilters } from '../types';
 
 export const CarePlanList: React.FC = () => {
   const { can } = usePermissions();
-  const [filters, setFilters] = useState<CarePlanFiltersFilters>({});
+  const [filters, setFilters] = useState<CarePlanSearchFilters>({});
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { data, isLoading, error, refetch } = useCarePlans(filters);
 

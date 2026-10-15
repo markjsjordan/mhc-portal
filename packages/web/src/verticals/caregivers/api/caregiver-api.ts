@@ -2,9 +2,19 @@
  * Caregiver API Client
  *
  * API methods for caregiver CRUD operations including edit, delete, and duplicate.
+ * 
+ * Note: This module relies on axiosInstance which is provided by the API client factory.
+ * In a React component context, use useApiClient() hook instead.
  */
-import { axiosInstance } from '@/core/api/axios-instance.js';
 import type { Caregiver } from '../types/index.js';
+
+// Placeholder for axiosInstance - this will be injected at runtime
+// or used via useApiClient() hook in React components
+let axiosInstance: any = null;
+
+export const setApiInstance = (instance: any) => {
+  axiosInstance = instance;
+};
 
 export const caregiverApi = {
   /**

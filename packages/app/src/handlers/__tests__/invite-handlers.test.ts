@@ -41,6 +41,7 @@ describe('Invite Handlers', () => {
       const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
       const req = {
         params: { token: 'a'.repeat(64) },
+        // eslint-disable-next-line sonarjs/no-hardcoded-passwords
         body: { password: 'SecurePass123!', acceptTermsOfService: true, acceptPrivacyPolicy: true },
         headers: { 'user-agent': 'Mozilla' },
         ip: '127.0.0.1',

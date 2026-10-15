@@ -18,6 +18,7 @@ import {
 import { OrganizationRepository } from '../repository/organization-repository';
 import { UserRepository, CreateUserRequest } from '../repository/user-repository';
 import { Database } from '../db/connection';
+import { EmailService, createEmailService } from './email-service';
 
 export interface TeamMember {
   id: UUID;
@@ -54,10 +55,12 @@ export interface IOrganizationService {
 export class OrganizationService implements IOrganizationService {
   private organizationRepo: OrganizationRepository;
   private userRepo: UserRepository;
+  private emailService: EmailService;
 
   constructor(private db: Database) {
     this.organizationRepo = new OrganizationRepository(db);
     this.userRepo = new UserRepository(db);
+    this.emailService = createEmailService();
   }
 
   /**
@@ -181,7 +184,7 @@ export class OrganizationService implements IOrganizationService {
     createdBy: UUID
   ): Promise<InviteToken> {
     // Validate organization exists
-    await this.getOrganizationById(organizationId);
+    const organization = await this.getOrganizationById(organizationId);
 
     // Validate email format
     if (!this.isValidEmail(request.email)) {
@@ -200,11 +203,34 @@ export class OrganizationService implements IOrganizationService {
     }
 
     // Create invitation token
-    return await this.userRepo.createInviteToken(
+    const inviteToken = await this.userRepo.createInviteToken(
       organizationId,
       request,
       createdBy
     );
+
+    // Send invitation email notification
+    try {
+      // Get the inviter's details to personalize the email
+      const inviter = await this.userRepo.getUserById(createdBy);
+      const inviterName = inviter 
+        ? `${inviter.firstName} ${inviter.lastName}`.trim() 
+        : 'A team member';
+
+      await this.emailService.sendInvitation({
+        recipientEmail: request.email,
+        recipientName: request.firstName ?? request.email,
+        inviterName,
+        organizationName: organization.name,
+        invitationToken: inviteToken.token,
+        expiresAt: inviteToken.expiresAt,
+      });
+    } catch (emailError) {
+      // Log email sending error but don't fail the entire invitation
+      console.error('[OrganizationService] Failed to send invitation email:', emailError);
+    }
+
+    return inviteToken;
   }
 
   async getInvitationDetails(token: string): Promise<InviteDetails> {
@@ -244,7 +270,7 @@ export class OrganizationService implements IOrganizationService {
     }
 
     // Create user within transaction
-    return await this.db.transaction(async () => {
+    const userId = await this.db.transaction(async () => {
       const passwordHash = this.hashPassword(request.password);
       const username = this.generateUsername(request.firstName, request.lastName);
 
@@ -268,6 +294,20 @@ export class OrganizationService implements IOrganizationService {
 
       return newUser.id;
     });
+
+    // Send welcome email notification
+    try {
+      await this.emailService.sendWelcome({
+        recipientEmail: inviteDetails.email,
+        recipientName: `${request.firstName} ${request.lastName}`.trim(),
+        organizationName: inviteDetails.organizationName,
+      });
+    } catch (emailError) {
+      // Log email sending error but don't fail the account creation
+      console.error('[OrganizationService] Failed to send welcome email:', emailError);
+    }
+
+    return userId;
   }
 
   async revokeInvitation(token: string, revokedBy: UUID): Promise<void> {
@@ -418,7 +458,43 @@ export class OrganizationService implements IOrganizationService {
   }
 
   async resendInvitation(invitationId: UUID, organizationId: UUID, resendBy: UUID): Promise<void> {
+    // Get the invitation to retrieve its details
+    const invites = await this.userRepo.getOrganizationInvites(organizationId);
+    const invite = invites.find((i) => i.id === invitationId);
+
+    if (invite === null || invite === undefined) {
+      throw new NotFoundError('Invitation not found', { id: invitationId });
+    }
+
+    if (invite.status !== 'PENDING') {
+      throw new ValidationError('Only pending invitations can be resent', {
+        status: invite.status,
+      });
+    }
+
+    // Resend the invitation
     await this.userRepo.resendInviteToken(invitationId, organizationId, resendBy);
+
+    // Send invitation email notification again
+    try {
+      const organization = await this.getOrganizationById(organizationId);
+      const inviter = await this.userRepo.getUserById(resendBy);
+      const inviterName = inviter 
+        ? `${inviter.firstName} ${inviter.lastName}`.trim() 
+        : 'A team member';
+
+      await this.emailService.sendInvitation({
+        recipientEmail: invite.email,
+        recipientName: invite.firstName ?? invite.email,
+        inviterName,
+        organizationName: organization.name,
+        invitationToken: invite.token,
+        expiresAt: invite.expiresAt,
+      });
+    } catch (emailError) {
+      // Log email sending error but don't fail the resend operation
+      console.error('[OrganizationService] Failed to send resend invitation email:', emailError);
+    }
   }
 
   async revokeInvitationById(invitationId: UUID, organizationId: UUID, revokedBy: UUID): Promise<void> {

@@ -257,6 +257,14 @@ export function getVisitTypeDisplay(type: VisitType): {
       label: 'Assessment',
       description: 'Client assessment or evaluation',
     },
+    CONCIERGE: {
+      label: 'Concierge Service',
+      description: 'Premium personal services',
+    },
+    ONGOING_SUPPORT: {
+      label: 'Ongoing Support',
+      description: 'Continued monitoring and support',
+    },
   };
   
   return typeMap[type];

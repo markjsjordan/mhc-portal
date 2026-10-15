@@ -4,7 +4,7 @@
  * Tests for Stripe webhook handling endpoints.
  */
 
-/* eslint-disable @typescript-eslint/strict-boolean-expressions */
+ 
 /* eslint-disable sonarjs/redundant-type-aliases */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 

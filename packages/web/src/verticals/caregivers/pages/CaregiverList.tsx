@@ -15,12 +15,12 @@ import {
 import { usePermissions, useDemoData } from '@/core/hooks/index.js';
 import { useCaregivers } from '../hooks/index.js';
 import { CaregiverCard, CaregiverFilters } from '../components/index.js';
-import type { CaregiverFiltersFilters } from '../types/index.js';
+import type { CaregiverSearchFilters } from '../types/index.js';
 
 export const CaregiverList: React.FC = () => {
   const navigate = useNavigate();
   const { can } = usePermissions();
-  const [filters, setFilters] = useState<CaregiverFiltersFilters>({});
+  const [filters, setFilters] = useState<CaregiverSearchFilters>({});
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { data, isLoading, error, refetch } = useCaregivers(filters);
   const {

@@ -11,12 +11,12 @@ import {
 import { usePermissions, useDemoData } from '@/core/hooks';
 import { useClients } from '../hooks';
 import { ClientCard, ClientFilters } from '../components';
-import type { ClientFiltersFilters } from '../types';
+import type { ClientSearchFilters } from '../types';
 
 export const ClientList: React.FC = () => {
   const navigate = useNavigate();
   const { can } = usePermissions();
-  const [filters, setFilters] = useState<ClientFiltersFilters>({});
+  const [filters, setFilters] = useState<ClientSearchFilters>({});
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { data, isLoading, error, refetch } = useClients(filters);
   const {

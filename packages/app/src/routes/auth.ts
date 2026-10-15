@@ -99,7 +99,7 @@ export function createAuthRouter(db: Database): Router {
     try {
       const { idToken, organizationId } = req.body;
 
-      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+       
       if (!idToken || typeof idToken !== 'string') {
         return res.status(400).json({
           success: false,
@@ -211,7 +211,7 @@ export function createAuthRouter(db: Database): Router {
       const { email, password } = req.body;
 
       // Validate required fields
-      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+       
       if (!email || typeof email !== 'string') {
         return res.status(400).json({
           success: false,
@@ -220,7 +220,7 @@ export function createAuthRouter(db: Database): Router {
         });
       }
 
-      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+       
       if (!password || typeof password !== 'string') {
         return res.status(400).json({
           success: false,
@@ -313,7 +313,7 @@ export function createAuthRouter(db: Database): Router {
     try {
       const { refreshToken } = req.body;
 
-      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+       
       if (!refreshToken || typeof refreshToken !== 'string') {
         return res.status(400).json({
           success: false,
@@ -378,7 +378,7 @@ export function createAuthRouter(db: Database): Router {
    */
    router.post('/logout', authMiddleware.requireAuth, async (req: Request, res: Response) => {
     try {
-      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+       
       if (!req.user) {
         return res.status(401).json({
           success: false,
@@ -451,7 +451,7 @@ export function createAuthRouter(db: Database): Router {
    */
    router.get('/me', authMiddleware.requireAuth, async (req: Request, res: Response) => {
     try {
-      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+       
       if (!req.user) {
         return res.status(401).json({
           success: false,
@@ -520,7 +520,7 @@ export function createAuthRouter(db: Database): Router {
         }
 
         const { caregiverId } = req.body as { caregiverId?: string };
-        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+         
         if (!caregiverId || typeof caregiverId !== 'string') {
           return res.status(400).json({
             success: false,
