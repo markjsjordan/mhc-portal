@@ -132,7 +132,7 @@ export const CarePlanFilters: React.FC<CarePlanFiltersProps> = ({
               label: opt.label,
               isChecked: filters.status?.includes(opt.value) ?? false,
             }))}
-            onToggle={toggleStatus}
+            onToggle={(value: string) => toggleStatus(value as CarePlanStatus)}
           />
 
           {/* Priority Section */}

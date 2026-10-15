@@ -160,7 +160,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
     onSubmit({
       ...data,
       interventions: [],
-    });
+    } as CreateCarePlanInput);
   };
 
   const renderBasicInfo = () => (
