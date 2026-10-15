@@ -38,6 +38,7 @@ export * from './service/geocoding.service';
 export * from './service/email-service';
 export * from './service/stripe.service';
 export * from './constants/cache-keys';
+export * from './constants/us-states';
 export * from './middleware/auth-middleware';
 export * from './middleware/request-logger';
 export * from './middleware/metrics';
@@ -54,6 +55,7 @@ export * from './utils/metrics';
 export * from './utils/error-tracker';
 export * from './utils/performance';
 export * from './utils/alerting';
+export * from './utils/error-handler';
 export * from './validation/common-schemas';
 // HTTP error handlers and middleware (import directly if needed)
 export {

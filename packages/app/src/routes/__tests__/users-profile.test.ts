@@ -20,6 +20,9 @@ describe('User Profile API', () => {
     // eslint-disable-next-line sonarjs/pseudo-random
     testUserId = 'test-user-id-' + Math.random().toString(36).slice(2, 11);
     testUserVersion = 1;
+    // Initialize test token and database
+    testToken = 'test-jwt-token-placeholder';
+    db = {} as Database; // Mock database object for tests
   });
 
   describe('GET /api/users/profile', () => {
