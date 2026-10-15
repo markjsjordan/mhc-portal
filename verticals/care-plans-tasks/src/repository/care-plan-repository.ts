@@ -31,8 +31,17 @@ export class CarePlanRepository extends Repository<CarePlan> {
 
   /**
    * Validate that JSON fields can be serialized/deserialized properly
+   * Handles undefined/null gracefully by returning their string representations
    */
   private validateJsonField(fieldName: string, value: unknown): string {
+    // Handle null and undefined gracefully
+    if (value === null) {
+      return 'null';
+    }
+    if (value === undefined) {
+      return 'undefined';
+    }
+
     try {
       // Attempt to stringify and parse to ensure valid JSON
       const json = JSON.stringify(value);

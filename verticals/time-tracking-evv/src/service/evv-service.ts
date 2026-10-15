@@ -932,7 +932,7 @@ export class EVVService {
         [caregiverId, organizationId]
       );
 
-      if (supervisorResult.rows[0]?.['supervisor_id']) {
+      if (supervisorResult?.rows?.[0]?.['supervisor_id']) {
         const supervisorId = supervisorResult.rows[0]['supervisor_id'] as string;
         if (!seenIds.has(supervisorId)) {
           recipients.push({
@@ -954,14 +954,16 @@ export class EVVService {
         [caregiverId]
       );
 
-      for (const row of coordResult.rows) {
-        const userId = row['id'] as string;
-        if (userId && !seenIds.has(userId)) {
-          recipients.push({
-            userId,
-            preferredChannels: ['EMAIL' as NotificationChannel],
-          });
-          seenIds.add(userId);
+      if (coordResult?.rows) {
+        for (const row of coordResult.rows) {
+          const userId = row['id'] as string;
+          if (userId && !seenIds.has(userId)) {
+            recipients.push({
+              userId,
+              preferredChannels: ['EMAIL' as NotificationChannel],
+            });
+            seenIds.add(userId);
+          }
         }
       }
 
@@ -978,30 +980,32 @@ export class EVVService {
         [clientId]
       );
 
-      for (const row of familyResult.rows) {
-        const familyMemberId = row['id'] as string;
-        if (familyMemberId && !seenIds.has(familyMemberId)) {
-          const preferredMethod = row['preferred_contact_method'] as string;
-          
-          // Map preferred contact method to notification channels
-          const channels: NotificationChannel[] = [];
-          if (preferredMethod === 'EMAIL' || preferredMethod === 'BOTH') {
-            channels.push('EMAIL' as NotificationChannel);
-          }
-          if (preferredMethod === 'SMS' || preferredMethod === 'BOTH') {
-            channels.push('SMS' as NotificationChannel);
-          }
-          
-          // Default to EMAIL if no preference specified
-          if (channels.length === 0) {
-            channels.push('EMAIL' as NotificationChannel);
-          }
+      if (familyResult?.rows) {
+        for (const row of familyResult.rows) {
+          const familyMemberId = row['id'] as string;
+          if (familyMemberId && !seenIds.has(familyMemberId)) {
+            const preferredMethod = row['preferred_contact_method'] as string;
+            
+            // Map preferred contact method to notification channels
+            const channels: NotificationChannel[] = [];
+            if (preferredMethod === 'EMAIL' || preferredMethod === 'BOTH') {
+              channels.push('EMAIL' as NotificationChannel);
+            }
+            if (preferredMethod === 'SMS' || preferredMethod === 'BOTH') {
+              channels.push('SMS' as NotificationChannel);
+            }
+            
+            // Default to EMAIL if no preference specified
+            if (channels.length === 0) {
+              channels.push('EMAIL' as NotificationChannel);
+            }
 
-          recipients.push({
-            userId: familyMemberId,
-            preferredChannels: channels,
-          });
-          seenIds.add(familyMemberId);
+            recipients.push({
+              userId: familyMemberId,
+              preferredChannels: channels,
+            });
+            seenIds.add(familyMemberId);
+          }
         }
       }
     } catch (error) {
