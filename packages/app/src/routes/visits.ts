@@ -358,6 +358,7 @@ export function createVisitRouter(db: Database): Router {
         caregiverId,
         serviceTypeId,
         serviceTypeName,
+        visitType,
         scheduledDate,
         scheduledStartTime,
         scheduledEndTime,

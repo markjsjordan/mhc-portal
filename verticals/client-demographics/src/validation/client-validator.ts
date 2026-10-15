@@ -54,7 +54,7 @@ const createClientSchema = z.object({
   gender: z.enum(['MALE', 'FEMALE', 'NON_BINARY', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
   primaryPhone: phoneSchema.optional(),
   email: z.string().email().optional(),
-  primaryAddress: addressSchema,
+  primaryAddress: addressSchema.optional(),
   emergencyContacts: z.array(emergencyContactSchema).optional(),
   referralSource: z.string().max(200).optional(),
   intakeDate: z.coerce.date().optional(),

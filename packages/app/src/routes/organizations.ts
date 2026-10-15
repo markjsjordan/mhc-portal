@@ -485,6 +485,17 @@ export function createOrganizationRouter(db: Database): Router {
           return;
         }
         
+        // Check user has permission to invite members
+        const userRoles = req.user?.roles ?? [];
+        if (!userRoles.includes('ORG_ADMIN') && !userRoles.includes('BRANCH_ADMIN')) {
+          res.status(403).json({
+            success: false,
+            error: 'You do not have permission to invite team members',
+            code: 'INSUFFICIENT_PERMISSIONS',
+          });
+          return;
+        }
+        
         const request: CreateInviteRequest = req.body;
         
         // Use authenticated user ID from JWT
