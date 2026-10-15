@@ -23,7 +23,7 @@ const goalSchema = z.object({
   category: z.string().optional(),
   targetDate: z.string().optional(),
   status: z.string().optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
 });
 
 const carePlanSchema = z.object({
@@ -360,7 +360,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
                       <Select
                         options={priorityOptions}
                         value={getValues(`goals.${index}.priority`)}
-                        onChange={(e) => setValue(`goals.${index}.priority`, e.target.value)}
+                        onChange={(e) => setValue(`goals.${index}.priority`, e.target.value as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT')}
                       />
                     </FormField>
 
