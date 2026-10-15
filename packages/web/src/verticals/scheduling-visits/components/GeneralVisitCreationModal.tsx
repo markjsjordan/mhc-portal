@@ -6,7 +6,7 @@
 
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { Button } from '../Button.js';
+import { Button } from '@/core/components/Button.js';
 import { VisitTypeSelector } from '@/verticals/scheduling-visits/components/VisitTypeSelector.js';
 import type { VisitType } from '@/verticals/scheduling-visits/types/index.js';
 
