@@ -78,7 +78,6 @@ export const VisitForm: React.FC<VisitFormProps> = ({
     if (!formData.visitType) {
       newErrors.visitType = 'Visit type is required';
     }
-=======
 
     if (!formData.scheduledDate) {
       newErrors.scheduledDate = 'Date is required';
