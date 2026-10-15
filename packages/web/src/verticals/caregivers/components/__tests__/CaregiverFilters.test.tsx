@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CaregiverFilters } from './CaregiverFilters';
+import { CaregiverFilters } from './CaregiverFilters.js';
 import type { CaregiverSearchFilters } from '../types';
 
 describe('CaregiverFilters', () => {

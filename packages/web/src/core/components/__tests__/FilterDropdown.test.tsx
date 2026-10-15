@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { FilterDropdown } from './FilterDropdown';
-import { FilterCheckboxSection } from './FilterCheckboxSection';
+import { FilterDropdown } from './FilterDropdown.js';
+import { FilterCheckboxSection } from './FilterCheckboxSection.js';
 
 describe('FilterDropdown', () => {
   it('renders trigger button with title and active count', () => {
