@@ -406,11 +406,6 @@ export default function ScheduleBuilderPage() {
                             ? () => { void handleDrop(caregiver.id); }
                             : undefined
                         }
-                        onClick={
-                          isAvailable && !isOccupied
-                            ? () => handleTimeSlotClick(caregiver.id, slot.hour)
-                            : undefined
-                        }
                       >
                         {isOccupied && visit && slot.hour === parseInt(visit.startTime.split(':')[0] ?? '0') && (
                           <div
@@ -492,21 +487,6 @@ export default function ScheduleBuilderPage() {
             setShowSupervisionModal(false);
             await queryClient.invalidateQueries({ queryKey: ['visits'] });
             await refetchVisits();
-          }}
-        />
-      )}
-
-      {showCreateModal && createModalData && (
-        <CreateAppointmentModal
-          data={createModalData}
-          clients={clients}
-          onClose={() => {
-            setShowCreateModal(false);
-            setCreateModalData(null);
-          }}
-          onSubmit={handleCreateVisit}
-          onChange={(updates) => {
-            setCreateModalData({ ...createModalData, ...updates });
           }}
         />
       )}
@@ -1399,112 +1379,4 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
   },
 };
 
-interface CreateAppointmentModalProps {
-  data: {
-    clientId: string;
-    caregiverId?: string;
-    date: string;
-    startTime: string;
-    duration: number;
-  };
-  clients: Array<{ id: string; firstName: string; lastName: string }>;
-  onClose: () => void;
-  onSubmit: () => Promise<void>;
-  onChange: (updates: Partial<{
-    clientId: string;
-    caregiverId?: string;
-    date: string;
-    startTime: string;
-    duration: number;
-  }>) => void;
-}
-
-function CreateAppointmentModal({
-  data,
-  clients,
-  onClose,
-  onSubmit,
-  onChange,
-}: CreateAppointmentModalProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    try {
-      await onSubmit();
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <div style={styles.modalOverlay}>
-      <div style={styles.modal}>
-        <button onClick={onClose} style={styles.closeBtn}>✕</button>
-        <h2 style={styles.modalTitle}>Create Appointment</h2>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Client</label>
-          <select
-            value={data.clientId}
-            onChange={(e) => onChange({ clientId: e.target.value })}
-            style={styles.input}
-          >
-            {clients.map(client => (
-              <option key={client.id} value={client.id}>
-                {client.firstName} {client.lastName}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Date</label>
-          <input
-            type="date"
-            value={data.date}
-            onChange={(e) => onChange({ date: e.target.value })}
-            style={styles.input}
-          />
-        </div>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Start Time</label>
-          <input
-            type="time"
-            value={data.startTime}
-            onChange={(e) => onChange({ startTime: e.target.value })}
-            style={styles.input}
-          />
-        </div>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Duration (hours)</label>
-          <input
-            type="number"
-            min="1"
-            max="8"
-            value={data.duration}
-            onChange={(e) => onChange({ duration: parseInt(e.target.value) || 1 })}
-            style={styles.input}
-          />
-        </div>
-
-        <div style={styles.footer}>
-          <button onClick={onClose} style={styles.cancelBtn}>Cancel</button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            style={{
-              ...styles.submitBtn,
-              opacity: isSubmitting ? 0.6 : 1,
-              cursor: isSubmitting ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {isSubmitting ? 'Creating...' : 'Create'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }

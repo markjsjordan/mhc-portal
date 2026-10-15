@@ -5,7 +5,7 @@
  * Creates a new caregiver with PENDING_ONBOARDING status.
  */
 import React, { useState } from 'react';
-import { Copy } from 'lucide-react';
+import { } from 'lucide-react';
 import { Button, Modal, Checkbox, Input, Select } from '@/core/components';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -125,8 +125,6 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
       isOpen={isOpen}
       onClose={handleClose}
       title="Duplicate Caregiver"
-      icon={<Copy className="h-6 w-6 text-blue-600" />}
-      size="lg"
     >
       <div className="space-y-4">
         {/* Source info */}
@@ -178,7 +176,7 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
           <Select
             label="New Status"
             value={newStatus}
-            onChange={(value) => setNewStatus(value)}
+            onChange={(e) => setNewStatus(e.target.value)}
             options={statusOptions}
             disabled={duplicateMutation.isPending}
           />
@@ -199,9 +197,8 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
             ].map(({ id, label }) => (
               <div key={id} className="flex items-center gap-2">
                 <Checkbox
-                  id={`copy-${id}`}
                   checked={copyFields[id as keyof CopyFieldsOptions]}
-                  onChange={(checked) =>
+                  onCheckedChange={(checked) =>
                     setCopyFields((prev) => ({
                       ...prev,
                       [id]: checked,

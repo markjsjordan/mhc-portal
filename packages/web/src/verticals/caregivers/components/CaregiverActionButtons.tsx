@@ -45,6 +45,8 @@ const CaregiverMoreMenu: React.FC<{
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
+
+    return undefined;
   }, [isOpen, onOpenChange]);
 
   return (

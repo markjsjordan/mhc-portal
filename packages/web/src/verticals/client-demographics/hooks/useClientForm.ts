@@ -34,7 +34,7 @@ export const ClientAddressSchema = z.object({
     .optional()
     .or(z.literal(''))
     .refine(
-      code => code === '' || /^\d{5}(-\d{4})?$/.test(code),
+      (code) => (code === '' || code === undefined) || /^\d{5}(-\d{4})?$/.test(code ?? ''),
       { message: 'ZIP code must be in format 12345 or 12345-6789' }
     ),
 });

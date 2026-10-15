@@ -14,7 +14,7 @@ import {
 } from '@/core/components';
 import { formatDate } from '@/core/utils';
 import { useAuth } from '@/core/hooks/auth';
-import type { CreateCarePlanInput } from '../types';
+import type { CreateCarePlanInput, Priority } from '../types';
 import { Plus, Trash2 } from 'lucide-react';
 
 const goalSchema = z.object({
@@ -23,7 +23,7 @@ const goalSchema = z.object({
   category: z.string().optional(),
   targetDate: z.string().optional(),
   status: z.string().optional(),
-  priority: z.string().optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
 });
 
 const carePlanSchema = z.object({

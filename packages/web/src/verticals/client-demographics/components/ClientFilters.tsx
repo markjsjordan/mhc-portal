@@ -152,7 +152,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
               label: opt.label,
               isChecked: filters.status?.includes(opt.value) ?? false,
             }))}
-            onToggle={toggleStatus}
+            onToggle={(value: string) => toggleStatus(value as ClientStatus)}
           />
 
           {/* Service Level Section */}
