@@ -78,6 +78,7 @@ export const VisitForm: React.FC<VisitFormProps> = ({
     if (!formData.visitType) {
       newErrors.visitType = 'Visit type is required';
     }
+=======
 
     if (!formData.scheduledDate) {
       newErrors.scheduledDate = 'Date is required';
@@ -270,6 +271,15 @@ export const VisitForm: React.FC<VisitFormProps> = ({
           rows={3}
           placeholder="Internal notes"
         />
+      </div>
+
+      {/* Visit Type Selection */}
+      <div>
+        <VisitTypeSelector
+          value={visitType}
+          onChange={(type) => handleChange('visitType', type)}
+        />
+
       </div>
 
       {/* Client Instructions */}

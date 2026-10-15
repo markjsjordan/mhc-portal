@@ -7,7 +7,7 @@ import { Button } from '@folkcare/shared-components';
 import { FormField } from '@/components/forms/FormField';
 import { useApiClient } from '@/core/hooks';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { User, Lock, Bell, Users, UserPlus, Mail, Clock, CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import { User, Lock, Bell, Users, UserPlus, Mail, Clock, CheckCircle, XCircle, Trash2, Copy } from 'lucide-react';
 
 type SettingsTab = 'profile' | 'account' | 'preferences' | 'team';
 
@@ -520,6 +520,7 @@ interface Invitation {
   status: 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED';
   expiresAt: string;
   createdAt: string;
+  invitationToken: string;
 }
 
 interface TeamSettingsProps {
@@ -775,6 +776,18 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                       ))}
                     </div>
                     <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const url = `${window.location.origin}/join/${invitation.invitationToken}`;
+                          navigator.clipboard.writeText(url);
+                          onSuccess('Invitation link copied to clipboard');
+                        }}
+                      >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy Link
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
