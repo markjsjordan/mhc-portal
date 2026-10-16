@@ -58,7 +58,7 @@ export class AuthMiddleware {
         res.status(401).json({
           success: false,
           error: 'No authentication token provided',
-          code: 'NO_TOKEN'
+          code: 'AUTH_REQUIRED'
         });
         return;
       }
@@ -88,7 +88,7 @@ export class AuthMiddleware {
 
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (!user) {
-        res.status(401).json({
+        res.status(404).json({
           success: false,
           error: 'User account not found',
           code: 'USER_NOT_FOUND'

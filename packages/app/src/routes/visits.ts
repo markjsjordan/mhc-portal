@@ -321,6 +321,32 @@ export function createVisitRouter(db: Database): Router {
     }
   });
 
+const ALLOWED_VISIT_TYPES = ['REGULAR', 'INITIAL', 'DISCHARGE', 'RESPITE', 'EMERGENCY', 'MAKEUP', 'SUPERVISION', 'ASSESSMENT', 'CONCIERGE', 'ONGOING_SUPPORT'];
+const SCHEDULED_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const SCHEDULED_TIME_REGEX = /^([01]?\d|2[0-3]):[0-5]\d$/;
+
+function validateVisitPayload(body: Record<string, unknown>): string | null {
+  const { clientId, serviceTypeId, scheduledDate, scheduledStartTime, scheduledEndTime, visitType } = body;
+  if (!clientId || !serviceTypeId || !scheduledDate || !scheduledStartTime || !scheduledEndTime) {
+    return 'Missing required fields: clientId, serviceTypeId, scheduledDate, scheduledStartTime, scheduledEndTime';
+  }
+  if (typeof scheduledDate !== 'string' || !SCHEDULED_DATE_REGEX.test(scheduledDate)) {
+    return 'scheduledDate must be in YYYY-MM-DD format';
+  }
+  if (
+    typeof scheduledStartTime !== 'string' ||
+    typeof scheduledEndTime !== 'string' ||
+    !SCHEDULED_TIME_REGEX.test(scheduledStartTime) ||
+    !SCHEDULED_TIME_REGEX.test(scheduledEndTime)
+  ) {
+    return 'scheduledStartTime and scheduledEndTime must be in HH:MM format (24-hour)';
+  }
+  if (typeof visitType === 'string' && !ALLOWED_VISIT_TYPES.includes(visitType)) {
+    return `Invalid visitType. Must be one of: ${ALLOWED_VISIT_TYPES.join(', ')}`;
+  }
+  return null;
+}
+
   /**
    * POST /api/visits
    * Create a single visit (called from Schedule calendar view)
@@ -353,6 +379,15 @@ export function createVisitRouter(db: Database): Router {
         return;
       }
 
+      const validationError = validateVisitPayload(req.body);
+      if (validationError) {
+        res.status(400).json({
+          success: false,
+          error: validationError,
+        });
+        return;
+      }
+
       const {
         clientId,
         caregiverId,
@@ -367,45 +402,6 @@ export function createVisitRouter(db: Database): Router {
         clientInstructions,
         status = 'UNASSIGNED',
       } = req.body;
-
-      // Validate required fields
-      if (!clientId || !serviceTypeId || !scheduledDate || !scheduledStartTime || !scheduledEndTime) {
-        res.status(400).json({
-          success: false,
-          error: 'Missing required fields: clientId, serviceTypeId, scheduledDate, scheduledStartTime, scheduledEndTime',
-        });
-        return;
-      }
-
-      // Validate date format (YYYY-MM-DD)
-      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-      if (!dateRegex.test(scheduledDate)) {
-        res.status(400).json({
-          success: false,
-          error: 'scheduledDate must be in YYYY-MM-DD format',
-        });
-        return;
-      }
-
-      // Validate time format (HH:MM in 24-hour format)
-      const timeRegex = /^([01]?\d|2[0-3]):[0-5]\d$/;
-      if (!timeRegex.test(scheduledStartTime) || !timeRegex.test(scheduledEndTime)) {
-        res.status(400).json({
-          success: false,
-          error: 'scheduledStartTime and scheduledEndTime must be in HH:MM format (24-hour)',
-        });
-        return;
-      }
-
-      // Validate visitType is in allowed list
-      const ALLOWED_VISIT_TYPES = ['REGULAR', 'INITIAL', 'DISCHARGE', 'RESPITE', 'EMERGENCY', 'MAKEUP', 'SUPERVISION', 'ASSESSMENT', 'CONCIERGE', 'ONGOING_SUPPORT'];
-      if (visitType && !ALLOWED_VISIT_TYPES.includes(visitType)) {
-        res.status(400).json({
-          success: false,
-          error: `Invalid visitType. Must be one of: ${ALLOWED_VISIT_TYPES.join(', ')}`,
-        });
-        return;
-      }
 
       // Verify client exists and belongs to organization
       const clientCheck = await db.query(
