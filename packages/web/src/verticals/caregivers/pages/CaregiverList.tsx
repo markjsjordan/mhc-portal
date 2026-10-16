@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Grid, List, Users, Sparkles } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { 
   Button, 
   LoadingSpinner, 
@@ -44,12 +45,16 @@ export const CaregiverList: React.FC = () => {
     return (
       <ErrorMessage
         message={(error as Error).message || 'Failed to load caregivers'}
-        retry={refetch}
+        retry={() => {
+          refetch().catch((err: unknown) => {
+            toast.error(err instanceof Error ? err.message : 'Failed to reload caregivers');
+          });
+        }}
       />
     );
   }
 
-  const caregivers = data?.items || [];
+  const caregivers = data?.items ?? [];
 
   return (
     <div className="space-y-6">
@@ -57,7 +62,7 @@ export const CaregiverList: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Caregivers</h1>
           <p className="text-gray-600 mt-1">
-            {data?.total || 0} total caregivers
+            {data?.total ?? 0} total caregivers
           </p>
         </div>
         <div className="flex gap-2">
@@ -94,10 +99,18 @@ export const CaregiverList: React.FC = () => {
       {/* Demo Data Banner */}
       {hasDemoData && (
         <DemoDataBanner
-          onClearDemo={clearDemoData}
-          onAddRealData={() => navigate('/caregivers/new')}
+          onClearDemo={() => {
+            clearDemoData().catch((err: unknown) => {
+              toast.error(err instanceof Error ? err.message : 'Failed to clear demo data');
+            });
+          }}
+          onAddRealData={() => {
+          Promise.resolve(navigate('/caregivers/new')).catch((err: unknown) => {
+            toast.error(err instanceof Error ? err.message : 'Navigation failed');
+          });
+        }}
           isClearing={isClearing}
-          stats={stats || undefined}
+          stats={stats ?? undefined}
         />
       )}
 
@@ -130,7 +143,11 @@ export const CaregiverList: React.FC = () => {
                   variant="primary"
                   size="lg"
                   leftIcon={<Plus className="h-4 w-4" />}
-                  onClick={() => navigate('/caregivers/new')}
+                  onClick={() => {
+                Promise.resolve(navigate('/caregivers/new')).catch((err: unknown) => {
+                  toast.error(err instanceof Error ? err.message : 'Navigation failed');
+                });
+              }}
                 >
                   Add Caregiver
                 </Button>
@@ -143,7 +160,11 @@ export const CaregiverList: React.FC = () => {
                 variant="outline"
                 size="lg"
                 leftIcon={<Plus className="h-4 w-4" />}
-                onClick={() => navigate('/caregivers/new')}
+                onClick={() => {
+                Promise.resolve(navigate('/caregivers/new')).catch((err: unknown) => {
+                  toast.error(err instanceof Error ? err.message : 'Navigation failed');
+                });
+              }}
               >
                 Add Caregiver
               </Button>

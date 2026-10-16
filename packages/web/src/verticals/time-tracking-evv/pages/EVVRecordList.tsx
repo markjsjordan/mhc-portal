@@ -4,6 +4,7 @@ import { LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
 import { useEVVRecords } from '../hooks';
 import { EVVRecordCard, EVVRecordSearch } from '../components';
 import type { EVVSearchFilters } from '../types';
+import toast from 'react-hot-toast';
 
 export const EVVRecordList: React.FC = () => {
   const [filters, setFilters] = useState<EVVSearchFilters>({});
@@ -22,12 +23,16 @@ export const EVVRecordList: React.FC = () => {
     return (
       <ErrorMessage
         message={(error as Error).message || 'Failed to load EVV records'}
-        retry={refetch}
+        retry={() => {
+          refetch().catch((err: unknown) => {
+            toast.error(err instanceof Error ? err.message : 'Failed to reload records');
+          });
+        }}
       />
     );
   }
 
-  const records = data?.items || [];
+  const records = data?.items ?? [];
 
   return (
     <div className="space-y-6">
@@ -35,7 +40,7 @@ export const EVVRecordList: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Time Tracking & EVV</h1>
           <p className="text-gray-600 mt-1">
-            {data?.total || 0} total records
+            {data?.total ?? 0} total records
           </p>
         </div>
         <div className="flex gap-2">

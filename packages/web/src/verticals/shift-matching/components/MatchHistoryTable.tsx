@@ -33,7 +33,7 @@ export const MatchHistoryTable: React.FC<MatchHistoryTableProps> = ({
   records: initialRecords,
 }) => {
   // Mock data for demonstration
-  const mockRecords: MatchHistoryRecord[] = initialRecords || [
+  const mockRecords: MatchHistoryRecord[] = initialRecords ?? [
     {
       id: '1',
       date: new Date('2025-01-10T14:30:00'),
@@ -137,7 +137,7 @@ export const MatchHistoryTable: React.FC<MatchHistoryTableProps> = ({
           r.matchScore,
           r.outcome,
           r.responseTimeMinutes || 'N/A',
-          r.overrideReason || ''
+          r.overrideReason ?? ''
         ].join(',')
       )
     ].join('\n');

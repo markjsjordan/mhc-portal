@@ -28,8 +28,8 @@ function caregiverToFormValues(caregiver: Caregiver): CaregiverFormValues {
   return {
     firstName: caregiver.firstName || '',
     lastName: caregiver.lastName || '',
-    middleName: caregiver.middleName || '',
-    preferredName: caregiver.preferredName || '',
+    middleName: caregiver.middleName ?? '',
+    preferredName: caregiver.preferredName ?? '',
     email: caregiver.email || '',
     phoneNumber: caregiver.primaryPhone?.number || '',
     phoneType: caregiver.primaryPhone?.type || 'MOBILE',
@@ -40,19 +40,19 @@ function caregiverToFormValues(caregiver: Caregiver): CaregiverFormValues {
     status: caregiver.status || 'ACTIVE',
     branchIdsRaw: caregiver.branchIds?.join(', ') || '',
     primaryBranchId: caregiver.primaryBranchId || '',
-    payRateAmount: caregiver.payRate?.amount?.toString() || '',
-    payRateUnit: caregiver.payRate?.unit || 'HOURLY',
+    payRateAmount: caregiver.payRate?.amount?.toString() ?? '',
+    payRateUnit: caregiver.payRate?.unit ?? 'HOURLY',
     payRateEffectiveDate: caregiver.payRate?.effectiveDate
       ? caregiver.payRate.effectiveDate.split('T')[0]
       : '',
-    addressLine1: caregiver.primaryAddress?.line1 || '',
-    addressLine2: caregiver.primaryAddress?.line2 || '',
-    addressCity: caregiver.primaryAddress?.city || '',
-    addressState: caregiver.primaryAddress?.state || '',
-    addressPostalCode: caregiver.primaryAddress?.postalCode || '',
-    emergencyContactName: caregiver.emergencyContacts?.[0]?.name || '',
-    emergencyContactRelationship: caregiver.emergencyContacts?.[0]?.relationship || '',
-    emergencyContactPhone: caregiver.emergencyContacts?.[0]?.phone || '',
+    addressLine1: caregiver.primaryAddress?.line1 ?? '',
+    addressLine2: caregiver.primaryAddress?.line2 ?? '',
+    addressCity: caregiver.primaryAddress?.city ?? '',
+    addressState: caregiver.primaryAddress?.state ?? '',
+    addressPostalCode: caregiver.primaryAddress?.postalCode ?? '',
+    emergencyContactName: caregiver.emergencyContacts?.[0]?.name ?? '',
+    emergencyContactRelationship: caregiver.emergencyContacts?.[0]?.relationship ?? '',
+    emergencyContactPhone: caregiver.emergencyContacts?.[0]?.phone ?? '',
   };
 }
 
@@ -136,7 +136,7 @@ export const EditCaregiverModal: React.FC<EditCaregiverModalProps> = ({
           'Record was modified by another user. Please refresh and try again.'
         );
       } else {
-        toast.error(error.response?.data?.message || 'Failed to update caregiver');
+        toast.error(error.response?.data?.message ?? 'Failed to update caregiver');
       }
     },
   });

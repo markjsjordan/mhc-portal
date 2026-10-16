@@ -78,7 +78,7 @@ export const SubmissionTrackingDashboard: React.FC = () => {
         await loadData();
       } else {
         const error = await response.json();
-        alert(`Retry failed: ${error.error?.message || 'Unknown error'}`);
+        alert(`Retry failed: ${error.error?.message ?? 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error retrying submission:', error);
@@ -143,7 +143,11 @@ export const SubmissionTrackingDashboard: React.FC = () => {
           EVV Aggregator Submissions
         </h2>
         <button
-          onClick={handleRetryAll}
+          onClick={() => {
+              handleRetryAll().catch((err: unknown) => {
+                alert(err instanceof Error ? err.message : 'Failed to trigger retry process');
+              });
+            }}
           disabled={retrying === 'all' || pendingSubmissions.length === 0}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
@@ -247,11 +251,15 @@ export const SubmissionTrackingDashboard: React.FC = () => {
                       {submission.retryCount} / {submission.maxRetries}
                     </td>
                     <td className="px-6 py-4 text-sm text-red-600 max-w-xs truncate">
-                      {submission.errorMessage || '-'}
+                      {submission.errorMessage ?? '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button
-                        onClick={() => handleRetry(submission.id)}
+                        onClick={() => {
+                            handleRetry(submission.id).catch((err: unknown) => {
+                              alert(err instanceof Error ? err.message : 'Failed to retry submission');
+                            });
+                          }}
                         disabled={
                           retrying === submission.id ||
                           submission.retryCount >= submission.maxRetries
