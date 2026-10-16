@@ -5,20 +5,23 @@ export interface ModalProps {
   onClose: () => void;
   title?: string;
   children: ReactNode;
+  icon?: ReactNode;
+  size?: string;
 }
 
 /**
  * Modal Component
  * Stub implementation for modal dialogs
  */
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, icon, size: _size, children }) => {
   if (!isOpen) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         {title && (
-          <div className="modal-header">
+          <div className="modal-header flex items-center gap-2">
+            {icon}
             <h2>{title}</h2>
             <button onClick={onClose} className="modal-close">×</button>
           </div>
