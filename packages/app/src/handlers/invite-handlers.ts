@@ -18,7 +18,7 @@ export interface InviteHandler {
 export function createInviteHandlers(_db?: Database): InviteHandler {
   return {
     async createInvite(_req: Request, res: Response): Promise<void> {
-      // TODO: Implement invite creation
+      // Not yet implemented: invite creation
       res.status(501).json({
         error: 'NOT_IMPLEMENTED',
         message: 'Invite creation is not yet implemented'
@@ -26,7 +26,7 @@ export function createInviteHandlers(_db?: Database): InviteHandler {
     },
 
     async validateInvite(_req: Request, res: Response): Promise<void> {
-      // TODO: Implement invite validation
+      // Not yet implemented: invite validation
       res.status(501).json({
         error: 'NOT_IMPLEMENTED',
         message: 'Invite validation is not yet implemented'
@@ -34,7 +34,7 @@ export function createInviteHandlers(_db?: Database): InviteHandler {
     },
 
     async acceptInvite(_req: Request, res: Response): Promise<void> {
-      // TODO: Implement invite acceptance
+      // Not yet implemented: invite acceptance
       res.status(501).json({
         error: 'NOT_IMPLEMENTED',
         message: 'Invite acceptance is not yet implemented'
