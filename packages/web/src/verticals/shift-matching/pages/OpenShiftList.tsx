@@ -4,6 +4,7 @@ import { LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
 import { useOpenShifts, useMatchingMetrics } from '../hooks';
 import { OpenShiftCard, MatchingMetricsCard } from '../components';
 import type { OpenShiftSearchFilters, MatchingStatus, ShiftPriority } from '../types';
+import toast from 'react-hot-toast';
 
 export const OpenShiftList: React.FC = () => {
   const [filters, setFilters] = useState<OpenShiftSearchFilters>({});
@@ -23,12 +24,16 @@ export const OpenShiftList: React.FC = () => {
     return (
       <ErrorMessage
         message={(error as Error).message || 'Failed to load open shifts'}
-        retry={refetch}
+        retry={() => {
+          refetch().catch((err: unknown) => {
+            toast.error(err instanceof Error ? err.message : 'Failed to reload shifts');
+          });
+        }}
       />
     );
   }
 
-  const shifts = shiftsData?.items || [];
+  const shifts = shiftsData?.items ?? [];
 
   return (
     <div className="space-y-6">
@@ -36,7 +41,7 @@ export const OpenShiftList: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Shift Matching</h1>
           <p className="text-gray-600 mt-1">
-            {shiftsData?.total || 0} open shifts
+            {shiftsData?.total ?? 0} open shifts
           </p>
         </div>
         <div className="flex gap-2">
@@ -72,7 +77,7 @@ export const OpenShiftList: React.FC = () => {
               Status
             </label>
             <select
-              value={filters.matchingStatus || ''}
+              value={filters.matchingStatus ?? ''}
               onChange={(e) => setFilters({ ...filters, matchingStatus: e.target.value as MatchingStatus })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -90,7 +95,7 @@ export const OpenShiftList: React.FC = () => {
               Priority
             </label>
             <select
-              value={filters.priority || ''}
+              value={filters.priority ?? ''}
               onChange={(e) => setFilters({ ...filters, priority: e.target.value as ShiftPriority })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -108,7 +113,7 @@ export const OpenShiftList: React.FC = () => {
             </label>
             <input
               type="date"
-              value={filters.dateFrom || ''}
+              value={filters.dateFrom ?? ''}
               onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -120,7 +125,7 @@ export const OpenShiftList: React.FC = () => {
             </label>
             <input
               type="date"
-              value={filters.dateTo || ''}
+              value={filters.dateTo ?? ''}
               onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />

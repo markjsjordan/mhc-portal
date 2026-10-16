@@ -62,13 +62,15 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
         </div>
       );
       handleClose();
-      navigate(`/caregivers/${newCaregiver.id}`);
+      Promise.resolve(navigate(`/caregivers/${newCaregiver.id}`)).catch((err: unknown) => {
+        toast.error(err instanceof Error ? err.message : 'Navigation failed');
+      });
     },
     onError: (error: any) => {
       if (error.response?.data?.error === 'DUPLICATE_EMAIL') {
         toast.error('Email already in use');
       } else {
-        toast.error(error.response?.data?.message || 'Failed to duplicate caregiver');
+        toast.error(error.response?.data?.message ?? 'Failed to duplicate caregiver');
       }
     },
   });

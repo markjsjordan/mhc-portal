@@ -10,6 +10,7 @@ import { ArrowLeft, Calendar, User, FileText, AlertTriangle } from 'lucide-react
 import { Button, Card, LoadingSpinner } from '@/core/components';
 import { useAuditDetail } from '../hooks';
 import { FindingCard, CorrectiveActionCard } from '../components';
+import toast from 'react-hot-toast';
 
 export const AuditDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -37,7 +38,11 @@ export const AuditDetailPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={() => navigate('/quality-assurance/audits')}>
+        <Button variant="ghost" onClick={() => {
+          Promise.resolve(navigate('/quality-assurance/audits')).catch((err: unknown) => {
+            toast.error(err instanceof Error ? err.message : 'Navigation failed');
+          });
+        }}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">

@@ -25,7 +25,7 @@ export const EVVRecordSearch: React.FC<EVVRecordSearchProps> = ({
             Status
           </label>
           <select
-            value={filters.status || ''}
+            value={filters.status ?? ''}
             onChange={(e) => handleFilterChange('status', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
@@ -43,7 +43,7 @@ export const EVVRecordSearch: React.FC<EVVRecordSearchProps> = ({
             Verification Level
           </label>
           <select
-            value={filters.verificationLevel || ''}
+            value={filters.verificationLevel ?? ''}
             onChange={(e) => handleFilterChange('verificationLevel', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
@@ -62,7 +62,7 @@ export const EVVRecordSearch: React.FC<EVVRecordSearchProps> = ({
           </label>
           <input
             type="date"
-            value={filters.startDate || ''}
+            value={filters.startDate ?? ''}
             onChange={(e) => handleFilterChange('startDate', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />

@@ -52,7 +52,7 @@ export const AuditsPage: React.FC = () => {
     );
   }
 
-  const audits = auditsResult?.items || [];
+  const audits = auditsResult?.items ?? [];
 
   return (
     <div className="space-y-6">

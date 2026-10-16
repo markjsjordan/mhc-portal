@@ -47,17 +47,17 @@ export const CaregiverSearch: React.FC<CaregiverSearchProps> = ({ filters, onFil
   const [showAdvanced, setShowAdvanced] = React.useState(false);
 
   // Search input state with 300ms debounce
-  const [queryInput, setQueryInput] = React.useState(filters.query || '');
+  const [queryInput, setQueryInput] = React.useState(filters.query ?? '');
   const [prevQuery, setPrevQuery] = React.useState(filters.query);
 
   if (filters.query !== prevQuery) {
     setPrevQuery(filters.query);
-    setQueryInput(filters.query || '');
+    setQueryInput(filters.query ?? '');
   }
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      if ((filters.query || '') !== queryInput) {
+      if ((filters.query ?? '') !== queryInput) {
         onFiltersChange({ ...filters, query: queryInput || undefined });
       }
     }, 300);

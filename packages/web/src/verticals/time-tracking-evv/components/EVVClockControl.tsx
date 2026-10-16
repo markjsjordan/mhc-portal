@@ -219,7 +219,11 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
 
       {!isComplete && !isClockedIn && (
         <Button
-          onClick={handleClockIn}
+          onClick={() => {
+            handleClockIn().catch((err: unknown) => {
+              toast.error(err instanceof Error ? err.message : 'Clock-in failed');
+            });
+          }}
           disabled={busy}
           leftIcon={<Clock className="h-4 w-4" />}
           className="w-full"
@@ -230,7 +234,11 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
 
       {isClockedIn && !isComplete && (
         <Button
-          onClick={handleClockOut}
+          onClick={() => {
+            handleClockOut().catch((err: unknown) => {
+              toast.error(err instanceof Error ? err.message : 'Clock-out failed');
+            });
+          }}
           disabled={busy}
           variant="outline"
           leftIcon={<Clock className="h-4 w-4" />}

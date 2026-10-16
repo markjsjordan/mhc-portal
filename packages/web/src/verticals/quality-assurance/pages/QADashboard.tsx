@@ -11,6 +11,7 @@ import { AlertTriangle, CheckCircle, Clock, TrendingUp, Plus } from 'lucide-reac
 import { Button, Card, LoadingSpinner } from '@/core/components';
 import { useAuditDashboard } from '../hooks';
 import { AuditCard, FindingCard, CorrectiveActionCard } from '../components';
+import toast from 'react-hot-toast';
 
 export const QADashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -218,7 +219,11 @@ export const QADashboard: React.FC = () => {
                 <FindingCard
                   key={finding.id}
                   finding={finding}
-                  onClick={() => navigate(`/quality-assurance/audits/${finding.auditId}`)}
+                  onClick={() => {
+                  Promise.resolve(navigate(`/quality-assurance/audits/${finding.auditId}`)).catch((err: unknown) => {
+                    toast.error(err instanceof Error ? err.message : 'Navigation failed');
+                  });
+                }}
                 />
               ))
             ) : (
@@ -250,7 +255,11 @@ export const QADashboard: React.FC = () => {
                 <CorrectiveActionCard
                   key={action.id}
                   action={action}
-                  onClick={() => navigate(`/quality-assurance/audits/${action.auditId}`)}
+                  onClick={() => {
+                  Promise.resolve(navigate(`/quality-assurance/audits/${action.auditId}`)).catch((err: unknown) => {
+                    toast.error(err instanceof Error ? err.message : 'Navigation failed');
+                  });
+                }}
                 />
               ))
             ) : (

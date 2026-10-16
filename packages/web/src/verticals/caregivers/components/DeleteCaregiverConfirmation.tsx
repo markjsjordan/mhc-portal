@@ -43,7 +43,7 @@ export const DeleteCaregiverConfirmation: React.FC<DeleteCaregiverConfirmationPr
       if (error.response?.data?.error === 'INVALID_STATUS_TRANSITION') {
         toast.error('Cannot delete terminated caregiver');
       } else {
-        toast.error(error.response?.data?.message || 'Failed to delete caregiver');
+        toast.error(error.response?.data?.message ?? 'Failed to delete caregiver');
       }
     },
   });
