@@ -12,6 +12,45 @@ import { VisitDurationPredictionService } from '@folkcare/scheduling-visits';
 import knex from 'knex';
 
 /**
+ * Returns an error message when date/time/visitType format is invalid, otherwise null.
+ * Checks run in the same order as the original inline validation.
+ */
+function validateVisitFormats(input: {
+  scheduledDate: string;
+  scheduledStartTime: string;
+  scheduledEndTime: string;
+  visitType?: string;
+}): string | null {
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(input.scheduledDate)) {
+    return 'scheduledDate must be in YYYY-MM-DD format';
+  }
+  const timeRegex = /^([01]?\d|2[0-3]):[0-5]\d$/;
+  if (!timeRegex.test(input.scheduledStartTime) || !timeRegex.test(input.scheduledEndTime)) {
+    return 'scheduledStartTime and scheduledEndTime must be in HH:MM format (24-hour)';
+  }
+  const ALLOWED_VISIT_TYPES = ['REGULAR', 'INITIAL', 'DISCHARGE', 'RESPITE', 'EMERGENCY', 'MAKEUP', 'SUPERVISION', 'ASSESSMENT', 'CONCIERGE', 'ONGOING_SUPPORT'];
+  if (input.visitType && !ALLOWED_VISIT_TYPES.includes(input.visitType)) {
+    return `Invalid visitType. Must be one of: ${ALLOWED_VISIT_TYPES.join(', ')}`;
+  }
+  return null;
+}
+
+/**
+ * True when any required field needed to create a visit is missing or falsy.
+ */
+function isMissingRequiredVisitFields(fields: {
+  clientId?: unknown;
+  serviceTypeId?: unknown;
+  scheduledDate?: unknown;
+  scheduledStartTime?: unknown;
+  scheduledEndTime?: unknown;
+}): boolean {
+  return !fields.clientId || !fields.serviceTypeId || !fields.scheduledDate
+    || !fields.scheduledStartTime || !fields.scheduledEndTime;
+}
+
+/**
  * Extract user context from authenticated request
  *
  * SECURITY: Reads from req.user (set by AuthMiddleware.requireAuth after
@@ -369,7 +408,7 @@ export function createVisitRouter(db: Database): Router {
       } = req.body;
 
       // Validate required fields
-      if (!clientId || !serviceTypeId || !scheduledDate || !scheduledStartTime || !scheduledEndTime) {
+      if (isMissingRequiredVisitFields({ clientId, serviceTypeId, scheduledDate, scheduledStartTime, scheduledEndTime })) {
         res.status(400).json({
           success: false,
           error: 'Missing required fields: clientId, serviceTypeId, scheduledDate, scheduledStartTime, scheduledEndTime',
@@ -377,32 +416,12 @@ export function createVisitRouter(db: Database): Router {
         return;
       }
 
-      // Validate date format (YYYY-MM-DD)
-      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-      if (!dateRegex.test(scheduledDate)) {
+      // Validate date, time, and visitType formats
+      const formatError = validateVisitFormats({ scheduledDate, scheduledStartTime, scheduledEndTime, visitType });
+      if (formatError) {
         res.status(400).json({
           success: false,
-          error: 'scheduledDate must be in YYYY-MM-DD format',
-        });
-        return;
-      }
-
-      // Validate time format (HH:MM in 24-hour format)
-      const timeRegex = /^([01]?\d|2[0-3]):[0-5]\d$/;
-      if (!timeRegex.test(scheduledStartTime) || !timeRegex.test(scheduledEndTime)) {
-        res.status(400).json({
-          success: false,
-          error: 'scheduledStartTime and scheduledEndTime must be in HH:MM format (24-hour)',
-        });
-        return;
-      }
-
-      // Validate visitType is in allowed list
-      const ALLOWED_VISIT_TYPES = ['REGULAR', 'INITIAL', 'DISCHARGE', 'RESPITE', 'EMERGENCY', 'MAKEUP', 'SUPERVISION', 'ASSESSMENT', 'CONCIERGE', 'ONGOING_SUPPORT'];
-      if (visitType && !ALLOWED_VISIT_TYPES.includes(visitType)) {
-        res.status(400).json({
-          success: false,
-          error: `Invalid visitType. Must be one of: ${ALLOWED_VISIT_TYPES.join(', ')}`,
+          error: formatError,
         });
         return;
       }
