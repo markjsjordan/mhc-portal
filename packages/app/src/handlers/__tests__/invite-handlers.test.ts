@@ -6,6 +6,7 @@ describe('Invite Handlers', () => {
   const mockDb = { query: vi.fn() } as any;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     handlers = createInviteHandlers(mockDb);
   });
 
@@ -32,6 +33,40 @@ describe('Invite Handlers', () => {
       const req = { params: { orgId: 'org-123' }, headers: {}, body: {} } as any;
       await handlers.generateInvite(req, res);
       expect(res.status).toHaveBeenCalledWith(401);
+    });
+  });
+
+  describe('validateInvite', () => {
+    it('should return 200 on valid token', async () => {
+      const res = { status: vi.fn().mockReturnThis(), json: vi.fn() } as any;
+      const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const req = {
+        params: { token: 'valid-token-123' },
+      } as any;
+
+      mockDb.query.mockResolvedValueOnce({
+        rows: [{
+          id: 'invite-id',
+          email: 'test@example.com',
+          organization_id: 'org-123',
+          role: 'TEAM_MEMBER',
+          status: 'PENDING',
+          expires_at: futureDate,
+        }],
+      });
+
+      await handlers.validateInvite(req, res);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          data: expect.objectContaining({
+            id: 'invite-id',
+            email: 'test@example.com',
+            status: 'PENDING',
+          }),
+        })
+      );
     });
   });
 

@@ -293,10 +293,10 @@ describe('Client Delete Permission Enforcement - wdvf3abfwc', () => {
 
         await request(app)
           .delete('/api/clients/client-999')
-          .expect(500); // Error gets caught by error handler and becomes 500
+          .expect(403); // Permission denied returns 403 Forbidden
 
-        // The error indicates permission was enforced
-        expect(mockClientService.deleteClient).toHaveBeenCalled();
+        // The error indicates permission was enforced by middleware
+        expect(mockClientService.deleteClient).not.toHaveBeenCalled();
       });
 
       it('READ_ONLY role is denied with appropriate error', async () => {
@@ -319,16 +319,16 @@ describe('Client Delete Permission Enforcement - wdvf3abfwc', () => {
         const router = createClientRouter(mockClientService, {} as any);
         app.use('/api', router);
 
-        // READ_ONLY lacks clients:delete, so service should reject
+        // READ_ONLY lacks clients:delete, so middleware rejects
         mockClientService.deleteClient.mockRejectedValue(
           new Error('Permission denied: clients:delete')
         );
 
         await request(app)
           .delete('/api/clients/client-999')
-          .expect(500); // Error gets caught by error handler
+          .expect(403); // Permission denied returns 403 Forbidden
 
-        expect(mockClientService.deleteClient).toHaveBeenCalled();
+        expect(mockClientService.deleteClient).not.toHaveBeenCalled();
       });
     });
 

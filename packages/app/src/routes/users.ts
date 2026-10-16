@@ -80,7 +80,7 @@ export function createUsersRouter(db: Database): Router {
           email: user.email,
           firstName: user.first_name,
           lastName: user.last_name,
-          phone: user.phone || null,
+          phone: user.phone ?? null,
           organizationId: user.organization_id,
           roles: req.user!.roles,
           version: user.version,
@@ -185,7 +185,7 @@ export function createUsersRouter(db: Database): Router {
             email: conflictUser.email,
             firstName: conflictUser.first_name,
             lastName: conflictUser.last_name,
-            phone: conflictUser.phone || null,
+            phone: conflictUser.phone ?? null,
             version: conflictUser.version,
             updatedAt: conflictUser.updated_at,
             updatedBy: conflictUser.updated_by,
@@ -201,7 +201,7 @@ export function createUsersRouter(db: Database): Router {
              updated_at = NOW(), updated_by = $5, version = version + 1
          WHERE id = $6 AND deleted_at IS NULL
          RETURNING *`,
-        [validatedData.firstName, validatedData.lastName, validatedData.email, validatedData.phone || null, req.user!.userId, req.user!.userId]
+        [validatedData.firstName, validatedData.lastName, validatedData.email, validatedData.phone ?? null, req.user!.userId, req.user!.userId]
       );
 
       const updatedUser = result.rows[0] as Record<string, unknown> | undefined;
@@ -222,10 +222,11 @@ export function createUsersRouter(db: Database): Router {
           email: updatedUser.email,
           firstName: updatedUser.first_name,
           lastName: updatedUser.last_name,
-          phone: updatedUser.phone || null,
+          phone: updatedUser.phone ?? null,
           organizationId: updatedUser.organization_id,
           version: updatedUser.version,
           updatedAt: updatedUser.updated_at,
+          updatedBy: updatedUser.updated_by,
         },
         timestamp: new Date().toISOString()
       });

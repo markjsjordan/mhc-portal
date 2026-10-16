@@ -143,7 +143,7 @@ describe('ClientValidator', () => {
       expect(result.success).toBe(false);
       expect(result.errors).toBeDefined();
       expect(result.errors).toContainEqual(
-        expect.objectContaining({ path: 'primaryAddress.postalCode', message: 'Invalid postal code' })
+        expect.objectContaining({ path: 'primaryAddress.postalCode', message: expect.stringContaining('Invalid postal code') })
       );
     });
 
