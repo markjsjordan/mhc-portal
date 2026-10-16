@@ -9,6 +9,7 @@ import {
   FileCheck2,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { Button, LoadingSpinner, ErrorMessage } from '@/core/components';
 import { usePermissions } from '@/core/hooks';
 import {
@@ -71,8 +72,8 @@ export const BillingDashboard: React.FC = () => {
   // Mutations
   const generateBatchMutation = useGenerateInvoicesForVerifiedVisits();
 
-  const claims = useMemo(() => claimsQueueData?.items || [], [claimsQueueData]);
-  const summary = claimsQueueData?.summary || {
+  const claims = useMemo(() => claimsQueueData?.items ?? [], [claimsQueueData]);
+  const summary = claimsQueueData?.summary ?? {
     totalUnbilledAmount: 0,
     totalUnbilledCount: 0,
     pendingEVVCount: 0,
@@ -95,13 +96,13 @@ export const BillingDashboard: React.FC = () => {
 
     for (const c of claims) {
       if (c.payorType === 'MEDICAID' || c.payorType === 'MANAGED_CARE') {
-        counts.MEDICAID_MCO = (counts.MEDICAID_MCO || 0) + 1;
+        counts.MEDICAID_MCO = (counts.MEDICAID_MCO ?? 0) + 1;
       } else if (c.payorType === 'MEDICARE' || c.payorType === 'MEDICARE_ADVANTAGE') {
-        counts.MEDICARE = (counts.MEDICARE || 0) + 1;
+        counts.MEDICARE = (counts.MEDICARE ?? 0) + 1;
       } else if (c.payorType === 'PRIVATE_PAY') {
-        counts.PRIVATE_PAY = (counts.PRIVATE_PAY || 0) + 1;
+        counts.PRIVATE_PAY = (counts.PRIVATE_PAY ?? 0) + 1;
       } else if (c.payorType === 'VETERANS_BENEFITS') {
-        counts.VA = (counts.VA || 0) + 1;
+        counts.VA = (counts.VA ?? 0) + 1;
       }
     }
 
@@ -182,7 +183,7 @@ export const BillingDashboard: React.FC = () => {
     return (
       <ErrorMessage
         message={(claimsError as Error).message || 'Failed to load billing & claims queue'}
-        retry={refetchClaims}
+        retry={() => { refetchClaims().catch((err: unknown) => { toast.error(billingErrorMessage(err, 'Failed to refresh claims queue')); }); }}
       />
     );
   }
@@ -208,8 +209,9 @@ export const BillingDashboard: React.FC = () => {
           <Button
             variant="outline"
             onClick={() => {
-              refetchClaims();
-              refetchInvoices();
+              Promise.all([refetchClaims(), refetchInvoices()]).catch((err: unknown) => {
+                toast.error(billingErrorMessage(err, 'Failed to refresh billing data'));
+              });
             }}
             leftIcon={<RefreshCw className="h-4 w-4" />}
             className="text-xs"
@@ -286,7 +288,7 @@ export const BillingDashboard: React.FC = () => {
           <Receipt className="h-4 w-4" />
           <span>Generated Invoices</span>
           <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-gray-100 text-gray-700">
-            {invoiceData?.total || 0}
+            {invoiceData?.total ?? 0}
           </span>
         </button>
       </div>
@@ -305,7 +307,11 @@ export const BillingDashboard: React.FC = () => {
           <BatchActionsBar
             onGenerateInvoices={handleGenerateInvoices}
             isGenerating={generateBatchMutation.isPending}
-            onOpenExportModal={(type) => handleOpenExportModal(type)}
+            onOpenExportModal={(type) => {
+              handleOpenExportModal(type).catch((err: unknown) => {
+                toast.error(billingErrorMessage(err, 'Failed to open export'));
+              });
+            }}
             search={search}
             onSearchChange={setSearch}
             selectedCount={selectedClaimIds.length}
@@ -321,7 +327,11 @@ export const BillingDashboard: React.FC = () => {
               selected ? addClaimToSelection(claimId) : removeClaimFromSelection(claimId)
             }
             onSelectAll={(selected) => setSelectedClaimIds(selected ? claims.map((c) => c.id) : [])}
-            onViewExport={(claim) => handleOpenExportModal('837p', claim)}
+            onViewExport={(claim) => {
+              handleOpenExportModal('837p', claim).catch((err: unknown) => {
+                toast.error(billingErrorMessage(err, 'Failed to open export'));
+              });
+            }}
           />
         </div>
       )}
@@ -333,7 +343,7 @@ export const BillingDashboard: React.FC = () => {
             <div className="flex justify-center py-12">
               <LoadingSpinner size="md" />
             </div>
-          ) : (invoiceData?.items || []).length === 0 ? (
+          ) : (invoiceData?.items ?? []).length === 0 ? (
             <div className="bg-white rounded-lg border border-gray-200 p-12 text-center text-gray-500">
               <FileText className="h-10 w-10 mx-auto text-gray-300 mb-2" />
               <p className="text-sm font-semibold text-gray-900">No invoices generated yet</p>
@@ -343,7 +353,7 @@ export const BillingDashboard: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {(invoiceData?.items || []).map((invoice) => (
+              {(invoiceData?.items ?? []).map((invoice) => (
                 <InvoiceCard key={invoice.id} invoice={invoice} />
               ))}
             </div>

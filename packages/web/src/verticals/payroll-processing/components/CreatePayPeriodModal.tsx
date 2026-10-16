@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { X } from 'lucide-react';
 import { Button, FormField, Select } from '@/core/components';
 import { useAuth } from '@/core/hooks';
@@ -70,7 +71,7 @@ export const CreatePayPeriodModal: React.FC<CreatePayPeriodModalProps> = ({
           />
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => { handleSubmit(e).catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to submit'); }); }}>
           <div className="p-6 space-y-4">
             <FormField label="Period Type" required>
               <Select

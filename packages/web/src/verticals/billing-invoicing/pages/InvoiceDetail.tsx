@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, Send, Ban, Edit } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Button, LoadingSpinner, ErrorMessage } from '@/core/components';
 import { usePermissions } from '@/core/hooks';
 import { 
@@ -16,6 +17,12 @@ export const InvoiceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { can } = usePermissions();
+
+  const goTo = (path: string) => {
+    Promise.resolve(navigate(path)).catch((err: unknown) => {
+      toast.error(err instanceof Error ? err.message : 'Navigation failed');
+    });
+  };
 
   const { data: invoice, isLoading, error } = useInvoice(id);
   const { data: payments } = useInvoicePayments(id);
@@ -35,7 +42,7 @@ export const InvoiceDetail: React.FC = () => {
     return (
       <ErrorMessage
         message="Failed to load invoice"
-        retry={() => navigate('/billing')}
+        retry={() => goTo('/billing')}
       />
     );
   }
@@ -48,7 +55,7 @@ export const InvoiceDetail: React.FC = () => {
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
-            onClick={() => navigate('/billing')}
+            onClick={() => goTo('/billing')}
             leftIcon={<ArrowLeft className="h-4 w-4" />}
           >
             Back
@@ -76,7 +83,7 @@ export const InvoiceDetail: React.FC = () => {
             <>
               <Button
                 variant="outline"
-                onClick={() => navigate(`/billing/${invoice.id}/edit`)}
+                onClick={() => goTo(`/billing/${invoice.id}/edit`)}
                 leftIcon={<Edit className="h-4 w-4" />}
               >
                 Edit

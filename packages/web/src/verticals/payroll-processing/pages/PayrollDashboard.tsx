@@ -5,6 +5,7 @@
  * Shows current pay period, recent periods, and quick actions
  */
 
+import toast from 'react-hot-toast';
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -91,8 +92,9 @@ export const PayrollDashboard: React.FC = () => {
         isOpen={isCreatePeriodOpen}
         onClose={() => setIsCreatePeriodOpen(false)}
         onCreated={() => {
-          void refetchCurrent();
-          void refetchRecent();
+          Promise.all([refetchCurrent(), refetchRecent()]).catch((err: unknown) => {
+            toast.error(err instanceof Error ? err.message : 'Failed to refresh payroll data');
+          });
         }}
       />
       <CreatePayRunModal
@@ -237,7 +239,7 @@ const PayPeriodCard: React.FC<PayPeriodCardProps> = ({ period, isCurrent = false
             {formatDate(period.startDate)} - {formatDate(period.endDate)}
           </p>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[period.status] || statusColors.DRAFT}`}>
+        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[period.status] ?? statusColors.DRAFT}`}>
           {period.status}
         </span>
       </div>

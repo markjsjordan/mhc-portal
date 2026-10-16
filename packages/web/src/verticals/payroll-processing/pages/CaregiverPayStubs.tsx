@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { Download, Eye } from 'lucide-react';
 import { LoadingSpinner, EmptyState, ErrorMessage, Card, Button } from '@/core/components';
 import { useAuth } from '@/core/hooks';
@@ -28,12 +29,12 @@ export const CaregiverPayStubs: React.FC = () => {
     return (
       <ErrorMessage
         message={(error as Error).message || 'Failed to load pay stubs'}
-        retry={refetch}
+        retry={() => { refetch().catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to refresh pay stubs'); }); }}
       />
     );
   }
 
-  const payStubs = payStubData?.items || [];
+  const payStubs = payStubData?.items ?? [];
 
   // Calculate YTD totals
   const ytdTotals = payStubs.reduce(
@@ -53,7 +54,7 @@ export const CaregiverPayStubs: React.FC = () => {
       PAID: 'bg-green-100 text-green-800',
       VOID: 'bg-red-100 text-red-800',
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[status] ?? 'bg-gray-100 text-gray-800';
   };
 
   return (

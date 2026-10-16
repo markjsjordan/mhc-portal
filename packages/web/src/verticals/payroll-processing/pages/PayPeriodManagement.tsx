@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { Plus, Lock, Unlock, Play } from 'lucide-react';
 import { Button, LoadingSpinner, EmptyState, ErrorMessage, Card } from '@/core/components';
 import { usePermissions } from '@/core/hooks';
@@ -29,12 +30,12 @@ export const PayPeriodManagement: React.FC = () => {
     return (
       <ErrorMessage
         message={(error as Error).message || 'Failed to load pay periods'}
-        retry={refetch}
+        retry={() => { refetch().catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to refresh pay periods'); }); }}
       />
     );
   }
 
-  const payPeriods = payPeriodData?.items || [];
+  const payPeriods = payPeriodData?.items ?? [];
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -46,7 +47,7 @@ export const PayPeriodManagement: React.FC = () => {
       PAID: 'bg-green-100 text-green-800',
       CLOSED: 'bg-gray-100 text-gray-800',
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[status] ?? 'bg-gray-100 text-gray-800';
   };
 
   const handleProcessPayroll = async (payPeriod: PayPeriod) => {
@@ -71,7 +72,7 @@ export const PayPeriodManagement: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Pay Period Management</h1>
           <p className="text-gray-600 mt-1">
-            {payPeriodData?.total || 0} pay periods
+            {payPeriodData?.total ?? 0} pay periods
           </p>
         </div>
         {can('payroll:write') && (
@@ -84,7 +85,7 @@ export const PayPeriodManagement: React.FC = () => {
       <CreatePayPeriodModal
         isOpen={isCreatePeriodOpen}
         onClose={() => setIsCreatePeriodOpen(false)}
-        onCreated={() => { void refetch(); }}
+        onCreated={() => { refetch().catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to refresh pay periods'); }); }}
       />
 
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -96,7 +97,7 @@ export const PayPeriodManagement: React.FC = () => {
             </label>
             <select
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              value={filters.status || ''}
+              value={filters.status ?? ''}
               onChange={(e) =>
                 setFilters({ ...filters, status: (e.target.value || undefined) as PayrollSearchFilters['status'] })
               }
@@ -117,7 +118,7 @@ export const PayPeriodManagement: React.FC = () => {
             </label>
             <select
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              value={filters.year || ''}
+              value={filters.year ?? ''}
               onChange={(e) =>
                 setFilters({ ...filters, year: e.target.value ? parseInt(e.target.value) : undefined })
               }
@@ -134,7 +135,7 @@ export const PayPeriodManagement: React.FC = () => {
             </label>
             <select
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              value={filters.periodType || ''}
+              value={filters.periodType ?? ''}
               onChange={(e) =>
                 setFilters({ ...filters, periodType: (e.target.value || undefined) as PayrollSearchFilters['periodType'] })
               }
@@ -235,7 +236,7 @@ export const PayPeriodManagement: React.FC = () => {
                           <Button
                             size="sm"
                             leftIcon={<Play className="h-4 w-4" />}
-                            onClick={() => handleProcessPayroll(period)}
+                            onClick={() => { handleProcessPayroll(period).catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to process payroll'); }); }}
                             disabled={createPayRun.isPending}
                           >
                             Process

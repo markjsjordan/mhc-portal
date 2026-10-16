@@ -25,7 +25,7 @@ export const PayRunSearch: React.FC<PayRunSearchProps> = ({
             Status
           </label>
           <select
-            value={filters.status || ''}
+            value={filters.status ?? ''}
             onChange={(e) => handleFilterChange('status', e.target.value as PayRunStatus)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
@@ -49,7 +49,7 @@ export const PayRunSearch: React.FC<PayRunSearchProps> = ({
           </label>
           <input
             type="date"
-            value={filters.startDate || ''}
+            value={filters.startDate ?? ''}
             onChange={(e) => handleFilterChange('startDate', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -61,7 +61,7 @@ export const PayRunSearch: React.FC<PayRunSearchProps> = ({
           </label>
           <input
             type="date"
-            value={filters.endDate || ''}
+            value={filters.endDate ?? ''}
             onChange={(e) => handleFilterChange('endDate', e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />

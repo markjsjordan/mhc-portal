@@ -53,7 +53,7 @@ export const DeductionsList: React.FC<DeductionsListProps> = ({ deductions }) =>
                     <span className="text-gray-700">{deduction.description}</span>
                     {deduction.hasLimit && deduction.yearlyLimit && (
                       <div className="text-xs text-gray-500 mt-1">
-                        YTD: {formatCurrency(deduction.yearToDateAmount || 0)} of{' '}
+                        YTD: {formatCurrency(deduction.yearToDateAmount ?? 0)} of{' '}
                         {formatCurrency(deduction.yearlyLimit)}
                       </div>
                     )}
