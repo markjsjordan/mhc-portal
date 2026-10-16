@@ -2,7 +2,8 @@
  * Tests for Edit Caregiver Modal
  */
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithQueryClient as render } from '@/test/renderWithQueryClient';
 import userEvent from '@testing-library/user-event';
 import { EditCaregiverModal } from '../EditCaregiverModal';
 import { caregiverApi } from '../../api/index';
@@ -97,7 +98,7 @@ describe('EditCaregiverModal', () => {
       />
     );
 
-    expect(screen.getByDisplayValue('Sarah')).toBeInTheDocument();
+    expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
     expect(screen.getByDisplayValue('Martinez')).toBeInTheDocument();
     expect(screen.getByDisplayValue('sarah@example.com')).toBeInTheDocument();
   });
@@ -127,7 +128,7 @@ describe('EditCaregiverModal', () => {
       />
     );
 
-    const firstNameInput = screen.getByDisplayValue('Sarah');
+    const firstNameInput = screen.getByLabelText(/first name/i);
     await user.clear(firstNameInput);
     await user.type(firstNameInput, 'Jennifer');
 
@@ -149,7 +150,7 @@ describe('EditCaregiverModal', () => {
       />
     );
 
-    const firstNameInput = screen.getByDisplayValue('Sarah');
+    const firstNameInput = screen.getByLabelText(/first name/i);
     await user.clear(firstNameInput);
     await user.type(firstNameInput, 'Jennifer');
 
@@ -186,7 +187,7 @@ describe('EditCaregiverModal', () => {
       />
     );
 
-    const firstNameInput = screen.getByDisplayValue('Sarah');
+    const firstNameInput = screen.getByLabelText(/first name/i);
     await user.clear(firstNameInput);
     await user.type(firstNameInput, 'Jennifer');
 
@@ -226,7 +227,7 @@ describe('EditCaregiverModal', () => {
       />
     );
 
-    const firstNameInput = screen.getByDisplayValue('Sarah');
+    const firstNameInput = screen.getByLabelText(/first name/i);
     await user.clear(firstNameInput);
     await user.type(firstNameInput, 'Jennifer');
 
@@ -262,7 +263,7 @@ describe('EditCaregiverModal', () => {
       />
     );
 
-    const firstNameInput = screen.getByDisplayValue('Sarah');
+    const firstNameInput = screen.getByLabelText(/first name/i);
     await user.clear(firstNameInput);
     await user.type(firstNameInput, 'Jennifer');
 
@@ -281,8 +282,11 @@ describe('EditCaregiverModal', () => {
 
   test('shows loading state during save', async () => {
     const user = userEvent.setup();
-    const deferredPromise = new Promise(resolve => setTimeout(() => resolve(mockCaregiver), 100));
-    (caregiverApi.updateCaregiver as any).mockReturnValue(deferredPromise);
+    // Hold the request open until the test explicitly resolves it, so the
+    // in-flight "saving" state is observable deterministically (no timer race).
+    let resolveSave!: (value: unknown) => void;
+    const pendingSave = new Promise(resolve => { resolveSave = resolve; });
+    (caregiverApi.updateCaregiver as any).mockReturnValue(pendingSave);
 
     render(
       <EditCaregiverModal
@@ -293,7 +297,7 @@ describe('EditCaregiverModal', () => {
       />
     );
 
-    const firstNameInput = screen.getByDisplayValue('Sarah');
+    const firstNameInput = screen.getByLabelText(/first name/i);
     await user.clear(firstNameInput);
     await user.type(firstNameInput, 'Jennifer');
 
@@ -305,10 +309,13 @@ describe('EditCaregiverModal', () => {
 
     await user.click(saveButton);
 
-    // Button should show loading text
+    // Button should show loading text while the save is in flight
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /saving/i })).toBeInTheDocument();
     });
+
+    // Let the request finish so the component settles before teardown
+    resolveSave(mockCaregiver);
   });
 
   test('cancels without changes', async () => {
@@ -346,7 +353,7 @@ describe('EditCaregiverModal', () => {
       />
     );
 
-    const firstNameInput = screen.getByDisplayValue('Sarah');
+    const firstNameInput = screen.getByLabelText(/first name/i);
     await user.clear(firstNameInput);
     await user.type(firstNameInput, 'Jennifer');
 
@@ -374,7 +381,7 @@ describe('EditCaregiverModal', () => {
       />
     );
 
-    const firstNameInput = screen.getByDisplayValue('Sarah');
+    const firstNameInput = screen.getByLabelText(/first name/i);
     await user.clear(firstNameInput);
     await user.type(firstNameInput, 'Jennifer');
 
@@ -398,7 +405,7 @@ describe('EditCaregiverModal', () => {
       />
     );
 
-    const firstNameInput = screen.getByDisplayValue('Sarah');
+    const firstNameInput = screen.getByLabelText(/first name/i);
     await user.clear(firstNameInput);
     await user.type(firstNameInput, 'Jennifer');
 

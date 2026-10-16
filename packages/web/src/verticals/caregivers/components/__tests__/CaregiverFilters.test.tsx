@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CaregiverFilters } from './CaregiverFilters.js';
+import { CaregiverFilters } from '../CaregiverFilters.js';
 import type { CaregiverSearchFilters } from '../types';
 
 describe('CaregiverFilters', () => {
@@ -38,7 +38,7 @@ describe('CaregiverFilters', () => {
     fireEvent.click(filterButton);
 
     expect(screen.getByText('Filter Caregivers')).toBeInTheDocument();
-    expect(screen.getByText('STATUS')).toBeInTheDocument();
+    expect(screen.getByText(/^status$/i)).toBeInTheDocument();
     expect(screen.getByText('Employment Type')).toBeInTheDocument();
     expect(screen.getByText('Compliance Status')).toBeInTheDocument();
   });

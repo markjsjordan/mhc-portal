@@ -35,10 +35,15 @@ export class ErrorBoundary extends React.Component<Props, State> {
     }
   }
 
-  override render() {
+  // The boundary intentionally returns either the fallback UI or the children,
+  // both typed ReactNode. sonarjs/function-return-type is a false positive for
+  // this React render contract, so the rule is suppressed on this method only.
+  // eslint-disable-next-line sonarjs/function-return-type
+  override render(): ReactNode {
     if (this.state.hasError) {
-      return (
-        this.props.fallback || (
+      const fallback: ReactNode = this.props.fallback;
+      const errorUi: ReactNode = (
+        fallback || (
           <div
             style={{
               padding: '20px',
@@ -88,8 +93,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
           </div>
         )
       );
+      return errorUi;
     }
-
     return this.props.children;
   }
 }

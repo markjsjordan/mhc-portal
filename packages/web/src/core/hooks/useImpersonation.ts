@@ -19,7 +19,6 @@ export const useImpersonation = () => {
 
   // For now, we'll track impersonation status by checking if the user's email
   // is different from what we'd expect. In a full implementation, we'd parse the JWT.
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const isImpersonating = false; // Placeholder - would need JWT parsing to implement properly
 
   // Get impersonation details

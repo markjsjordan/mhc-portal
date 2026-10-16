@@ -66,6 +66,11 @@ interface ConflictDialogProps {
 function ConflictDialog({ isOpen, currentValues, userChanges, onResolve, onCancel }: ConflictDialogProps) {
   if (!isOpen) return null;
 
+  // Either side can be absent (e.g. a conflict surfaced via updateError before any
+  // local submit captured pendingFormData). Render empty values instead of crashing.
+  const latest = currentValues ?? {};
+  const mine = userChanges ?? {};
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <Card className="w-full max-w-lg">
@@ -90,18 +95,18 @@ function ConflictDialog({ isOpen, currentValues, userChanges, onResolve, onCance
             <div>
               <h5 className="font-semibold text-gray-900 text-sm mb-2">Current Values (Latest):</h5>
               <div className="bg-gray-50 rounded p-3 text-sm space-y-1">
-                <p><span className="font-medium">Name:</span> {currentValues.firstName} {currentValues.lastName}</p>
-                <p><span className="font-medium">Email:</span> {currentValues.email}</p>
-                {currentValues.phone && <p><span className="font-medium">Phone:</span> {currentValues.phone}</p>}
+                <p><span className="font-medium">Name:</span> {latest.firstName} {latest.lastName}</p>
+                <p><span className="font-medium">Email:</span> {latest.email}</p>
+                {latest.phone && <p><span className="font-medium">Phone:</span> {latest.phone}</p>}
               </div>
             </div>
 
             <div>
               <h5 className="font-semibold text-gray-900 text-sm mb-2">Your Changes:</h5>
               <div className="bg-blue-50 rounded p-3 text-sm space-y-1">
-                <p><span className="font-medium">Name:</span> {userChanges.firstName} {userChanges.lastName}</p>
-                <p><span className="font-medium">Email:</span> {userChanges.email}</p>
-                {userChanges.phone && <p><span className="font-medium">Phone:</span> {userChanges.phone}</p>}
+                <p><span className="font-medium">Name:</span> {mine.firstName} {mine.lastName}</p>
+                <p><span className="font-medium">Email:</span> {mine.email}</p>
+                {mine.phone && <p><span className="font-medium">Phone:</span> {mine.phone}</p>}
               </div>
             </div>
           </div>
@@ -261,7 +266,11 @@ export function ProfileForm({
       <Card>
         <Card.Content>
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            <div
+              role="progressbar"
+              aria-label="Loading profile"
+              className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"
+            ></div>
           </div>
         </Card.Content>
       </Card>
@@ -278,7 +287,7 @@ export function ProfileForm({
         <Card.Content>
           <form onSubmit={(e) => { void handleSubmit(handleFormSubmit)(e); }} className="space-y-6">
             {/* Error message */}
-            {updateError && !((updateError as any)?.response?.data?.code === 'VERSION_CONFLICT') && (
+            {updateError && (updateError as any)?.response?.data?.code !== 'VERSION_CONFLICT' && (
               <div className="flex gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
                 <div>

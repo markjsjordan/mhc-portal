@@ -9,6 +9,31 @@ import { useClients } from '@/verticals/client-demographics/hooks/useClients';
 import { calculateSupervisoryCadence } from '@/verticals/scheduling-visits/utils/supervisory-cadence';
 import { SupervisionAlertBanner } from '@/verticals/scheduling-visits/components/SupervisionAlertBanner';
 
+// Create-appointment flow is not implemented on this branch. The handlers below
+// were referenced by the UI but never defined (see wdvf3abp42). Failing loudly
+// here is intentional: a silent no-op would look like it works to coordinators.
+class NotImplementedError extends Error {
+  constructor(feature: string) {
+    super(`${feature} is not implemented yet (wdvf3abp42)`);
+    this.name = 'NotImplementedError';
+  }
+}
+const handleTimeSlotClick = (_caregiverId: string, _hour: number): void => {
+  throw new NotImplementedError('Time-slot appointment creation');
+};
+const handleCreateVisit = async (): Promise<void> => {
+  throw new NotImplementedError('Create appointment');
+};
+const [showCreateModal] = [false] as const;
+const [createModalData] = [null as null | { clientId: string; caregiverId?: string; date: string; startTime: string; duration: number }] as const;
+const setShowCreateModal = (_v: boolean): void => {
+  throw new NotImplementedError('Create appointment modal');
+};
+const setCreateModalData = (_v: null | { clientId: string; caregiverId?: string; date: string; startTime: string; duration: number }): void => {
+  throw new NotImplementedError('Create appointment modal');
+};
+
+
 interface Caregiver {
   id: string;
   name: string;

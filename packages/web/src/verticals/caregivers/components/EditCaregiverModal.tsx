@@ -5,7 +5,6 @@
  * Pre-populates with existing caregiver data and handles PATCH requests.
  */
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
 import { Button, Modal, LoadingSpinner } from '@/core/components';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -31,19 +30,19 @@ function caregiverToFormValues(caregiver: Caregiver): CaregiverFormValues {
     middleName: caregiver.middleName ?? '',
     preferredName: caregiver.preferredName ?? '',
     email: caregiver.email || '',
-    phoneNumber: caregiver.primaryPhone?.number || '',
-    phoneType: caregiver.primaryPhone?.type || 'MOBILE',
-    dateOfBirth: caregiver.dateOfBirth ? caregiver.dateOfBirth.split('T')[0] : '',
-    employmentType: caregiver.employmentType || 'FULL_TIME',
-    hireDate: caregiver.hireDate ? caregiver.hireDate.split('T')[0] : '',
-    role: caregiver.role || 'CAREGIVER',
-    status: caregiver.status || 'ACTIVE',
+    phoneNumber: caregiver.primaryPhone?.number ?? '',
+    phoneType: caregiver.primaryPhone?.type ?? 'MOBILE',
+    dateOfBirth: caregiver.dateOfBirth ? String(caregiver.dateOfBirth).split('T')[0] ?? '' : '',
+    employmentType: caregiver.employmentType ?? 'FULL_TIME',
+    hireDate: caregiver.hireDate ? String(caregiver.hireDate).split('T')[0] ?? '' : '',
+    role: caregiver.role ?? 'CAREGIVER',
+    status: caregiver.status ?? 'ACTIVE',
     branchIdsRaw: caregiver.branchIds?.join(', ') || '',
     primaryBranchId: caregiver.primaryBranchId || '',
     payRateAmount: caregiver.payRate?.amount?.toString() ?? '',
     payRateUnit: caregiver.payRate?.unit ?? 'HOURLY',
     payRateEffectiveDate: caregiver.payRate?.effectiveDate
-      ? caregiver.payRate.effectiveDate.split('T')[0]
+      ? (String(caregiver.payRate.effectiveDate).split('T')[0] ?? '')
       : '',
     addressLine1: caregiver.primaryAddress?.line1 ?? '',
     addressLine2: caregiver.primaryAddress?.line2 ?? '',
@@ -114,9 +113,11 @@ export const EditCaregiverModal: React.FC<EditCaregiverModalProps> = ({
   const [formValues, setFormValues] = useState<CaregiverFormValues>(caregiverToFormValues(caregiver));
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Reset form when modal opens
+  // Reset form when modal opens. Intentional sync from props; the form is
+  // reset on every open so stale edits never leak between caregivers.
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormValues(caregiverToFormValues(caregiver));
       setHasChanges(false);
     }
@@ -142,7 +143,7 @@ export const EditCaregiverModal: React.FC<EditCaregiverModalProps> = ({
   });
 
   const handleSave = () => {
-    const payload = formValuesToPayload(formValues, caregiver.version);
+    const payload = formValuesToPayload(formValues, caregiver.version ?? 0);
     updateMutation.mutate(payload);
   };
 
@@ -157,15 +158,15 @@ export const EditCaregiverModal: React.FC<EditCaregiverModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleCancel} size="lg" title={`Edit Caregiver: ${caregiver.firstName || 'Unknown'}`}>
+    <Modal isOpen={isOpen} onClose={handleCancel} title={`Edit Caregiver: ${caregiver.firstName || 'Unknown'}`}>
       <div className="space-y-4">
         <CaregiverForm
-          initialValues={formValues}
+          values={formValues}
           onChange={(values) => {
             setFormValues(values);
             setHasChanges(true);
           }}
-          isLoading={updateMutation.isPending}
+          disabled={updateMutation.isPending}
         />
 
         <div className="flex justify-end gap-3 pt-4 border-t">

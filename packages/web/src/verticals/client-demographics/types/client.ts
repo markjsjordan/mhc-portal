@@ -99,4 +99,4 @@ export interface ClientSearchFilters {
   createdDateTo?: string;
 }
 
-export interface ClientFiltersFilters extends ClientSearchFilters {}
+export type ClientFiltersFilters = ClientSearchFilters;

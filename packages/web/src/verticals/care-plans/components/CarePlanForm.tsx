@@ -14,7 +14,7 @@ import {
 } from '@/core/components';
 import { formatDate } from '@/core/utils';
 import { useAuth } from '@/core/hooks/auth';
-import type { CreateCarePlanInput } from '../types';
+import type { CreateCarePlanInput, CarePlanGoal } from '../types';
 import { Plus, Trash2 } from 'lucide-react';
 
 const goalSchema = z.object({
@@ -159,6 +159,14 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
   const onFormSubmit = (data: CarePlanFormData) => {
     onSubmit({
       ...data,
+      goals: (data.goals ?? []).map((g) => ({
+        name: g.name,
+        description: g.description ?? '',
+        category: g.category ?? '',
+        targetDate: g.targetDate ?? '',
+        status: g.status ?? '',
+        priority: g.priority ?? '',
+      })) as Omit<CarePlanGoal, 'id'>[],
       interventions: [],
     });
   };

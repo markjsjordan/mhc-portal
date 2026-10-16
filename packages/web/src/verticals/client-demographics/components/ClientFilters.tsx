@@ -67,7 +67,8 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
     return count;
   }, [filters]);
 
-  const toggleStatus = (status: ClientStatus) => {
+  const toggleStatus = (value: string) => {
+    const status = value as ClientStatus;
     const current = filters.status || [];
     const updated = current.includes(status)
       ? current.filter((s) => s !== status)

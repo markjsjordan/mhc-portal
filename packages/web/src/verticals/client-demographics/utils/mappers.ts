@@ -1,5 +1,7 @@
 import type { Client } from '../types/client';
 
+type BathingLevel = 'independent' | 'assistance' | 'dependent';
+
 /**
  * IntakeData interface used by ClientIntakeWorkflow
  * Mirrors the form data structure used in the workflow
@@ -44,18 +46,18 @@ export interface IntakeData {
 
   // Step 2: Care Assessment
   adls: {
-    bathing: 'independent' | 'assistance' | 'dependent';
-    dressing: 'independent' | 'assistance' | 'dependent';
-    toileting: 'independent' | 'assistance' | 'dependent';
-    transferring: 'independent' | 'assistance' | 'dependent';
-    feeding: 'independent' | 'assistance' | 'dependent';
+    bathing: BathingLevel;
+    dressing: BathingLevel;
+    toileting: BathingLevel;
+    transferring: BathingLevel;
+    feeding: BathingLevel;
   };
   iadls: {
-    housekeeping: 'independent' | 'assistance' | 'dependent';
-    laundry: 'independent' | 'assistance' | 'dependent';
-    mealPrep: 'independent' | 'assistance' | 'dependent';
-    medication: 'independent' | 'assistance' | 'dependent';
-    transportation: 'independent' | 'assistance' | 'dependent';
+    housekeeping: BathingLevel;
+    laundry: BathingLevel;
+    mealPrep: BathingLevel;
+    medication: BathingLevel;
+    transportation: BathingLevel;
   };
   mobility: 'ambulatory' | 'walker' | 'wheelchair' | 'bedbound';
   cognitive: 'normal' | 'mild' | 'moderate' | 'severe';

@@ -2,7 +2,8 @@
  * Tests for Duplicate Caregiver Modal
  */
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { renderWithQueryClient as render } from '@/test/renderWithQueryClient';
 import userEvent from '@testing-library/user-event';
 import { DuplicateCaregiverModal } from '../DuplicateCaregiverModal';
 import { caregiverApi } from '../../api/index';
@@ -357,11 +358,9 @@ describe('DuplicateCaregiverModal', () => {
     );
 
     const statusSelect = screen.getByDisplayValue('Pending Onboarding');
-    await user.click(statusSelect);
 
-    // Select a different status
-    const activeOption = screen.getByRole('option', { name: /^Active$/ });
-    await user.click(activeOption);
+    // Native <select>: change the value the way a user does
+    await user.selectOptions(statusSelect, 'ACTIVE');
 
     expect(screen.getByDisplayValue('Active')).toBeInTheDocument();
   });

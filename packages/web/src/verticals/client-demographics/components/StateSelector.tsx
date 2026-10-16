@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { US_STATES, getStateName, type USStateCode } from '@/core/constants/us-states';
 import { Select, type SelectOption } from '@/core/components/forms/Select';
 import { cn } from '@/core/utils/classnames';

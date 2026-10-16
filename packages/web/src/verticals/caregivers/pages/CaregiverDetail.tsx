@@ -92,7 +92,7 @@ export const CaregiverDetail: React.FC = () => {
             onDelete={() => setIsDeleteModalOpen(true)}
             onDuplicate={() => setIsDuplicateModalOpen(true)}
             onViewHistory={() => {
-              // TODO: Navigate to audit history page
+              // Not yet implemented: navigate to audit history page (tracked in wdvf3abp43)
               console.log('View audit history');
             }}
           />

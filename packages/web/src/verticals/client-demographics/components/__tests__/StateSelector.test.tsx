@@ -18,7 +18,7 @@ describe('StateSelector Component', () => {
   });
 
   it('calls onChange callback', () => {
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     const { container } = render(<StateSelector id="test-state" label="State" onChange={onChange} />);
     const select = container.querySelector('select') as HTMLSelectElement;
     fireEvent.change(select, { target: { value: 'CA' } });

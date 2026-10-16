@@ -393,7 +393,6 @@ function PreferencesSettings({ onSuccess, onError }: Readonly<Omit<SettingsSecti
   const {
     register,
     handleSubmit,
-    formState: { },
     reset,
   } = useForm<PreferencesFormData>({
     resolver: zodResolver(preferencesSchema as any),
