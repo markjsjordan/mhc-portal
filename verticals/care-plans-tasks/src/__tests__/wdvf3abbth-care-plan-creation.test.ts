@@ -338,6 +338,8 @@ describe('wdvf3abbth Care Plan Creation Fixes', () => {
         name: 'Plan 1',
         planType: 'PERSONAL_CARE',
         effectiveDate: new Date(),
+        goals: [],
+        interventions: [],
       };
 
       const validInput2 = {
@@ -346,6 +348,8 @@ describe('wdvf3abbth Care Plan Creation Fixes', () => {
         name: 'Plan 2',
         planType: 'SKILLED_NURSING',
         effectiveDate: new Date(),
+        goals: [],
+        interventions: [],
       };
 
       const [result1, result2] = await Promise.all([
