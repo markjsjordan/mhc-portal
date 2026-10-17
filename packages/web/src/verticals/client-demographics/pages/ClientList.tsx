@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Grid, List, Users, Sparkles } from 'lucide-react';
-import { 
+import {
   Button, 
   LoadingSpinner, 
   ErrorMessage, 
-  EmptyState,
-  DemoDataBanner 
+  EmptyState
 } from '@/core/components';
 import { usePermissions, useDemoData } from '@/core/hooks';
 import { useClients } from '../hooks';
@@ -22,10 +21,7 @@ export const ClientList: React.FC = () => {
   const {
     hasDemoData,
     isSeeding,
-    isClearing,
     seedDemoData,
-    clearDemoData,
-    stats,
   } = useDemoData();
 
   if (isLoading) {
@@ -85,15 +81,7 @@ export const ClientList: React.FC = () => {
         </div>
       </div>
 
-      {/* Demo Data Banner */}
-      {hasDemoData && (
-        <DemoDataBanner
-          onClearDemo={clearDemoData}
-          onAddRealData={() => navigate('/clients/intake')}
-          isClearing={isClearing}
-          stats={stats || undefined}
-        />
-      )}
+      {/* Demo Data Banner removed: not shown in the current build */}
 
       <ClientFilters filters={filters} onFiltersChange={setFilters} />
 
