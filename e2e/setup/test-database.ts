@@ -103,13 +103,20 @@ export class TestDatabase {
     const db = this.getInstance();
 
     try {
+      // Serialize resets across parallel workers. Each worker runs a table-wide
+      // TRUNCATE; concurrent truncates lock tables in different orders and
+      // deadlock. A transaction-scoped advisory lock lets one reset run at a
+      // time and releases automatically when the transaction ends.
       await db.query(`
+        BEGIN;
+        SELECT pg_advisory_xact_lock(hashtext('folkcare_e2e_cleanup'));
+        SET LOCAL lock_timeout = '60s';
         DO $$
         DECLARE
           r RECORD;
         BEGIN
           -- Disable triggers temporarily
-          SET session_replication_role = replica;
+          SET LOCAL session_replication_role = replica;
 
           -- Truncate all tables
           FOR r IN (
@@ -120,10 +127,8 @@ export class TestDatabase {
           ) LOOP
             EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.tablename) || ' CASCADE';
           END LOOP;
-
-          -- Re-enable triggers
-          SET session_replication_role = DEFAULT;
         END $$;
+        COMMIT;
       `);
     } catch (error: unknown) {
       const err = error as Error;
