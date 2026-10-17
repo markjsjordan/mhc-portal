@@ -43,16 +43,27 @@ export default async function globalSetup() {
   try {
     // Step 1: Create test database if it doesn't exist
     console.log(`📦 Creating test database: ${dbName}...`);
+    // Connect over TCP using the same URL the tests use. A bare `createdb`
+    // falls back to the Unix socket, which CI runners do not expose.
+    const { hostname, port, username, password } = new URL(dbUrl);
+    const createEnv = {
+      ...process.env,
+      PGHOST: hostname,
+      PGPORT: port || '5432',
+      PGUSER: decodeURIComponent(username),
+      PGPASSWORD: decodeURIComponent(password),
+    };
     try {
-      await execAsync(`createdb ${dbName}`);
+      await execAsync(`createdb ${dbName}`, { env: createEnv });
       console.log(`✅ Database ${dbName} created successfully`);
     } catch (error: unknown) {
       const err = error as Error & { stderr?: string };
       if (err.stderr && err.stderr.includes('already exists')) {
         console.log(`ℹ️  Database ${dbName} already exists, skipping creation`);
       } else {
-        console.error(`⚠️  Error creating database: ${err.message}`);
-        // Continue anyway - database might already exist
+        // A connection failure here means the tests cannot run; fail loudly
+        // instead of continuing against an unreachable database.
+        throw new Error(`Could not create E2E database ${dbName}: ${err.message}`);
       }
     }
 
