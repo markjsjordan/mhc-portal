@@ -22,12 +22,6 @@ const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: 'ISSUE_REPORTED', label: 'Issue Reported' },
 ];
 
-const PRIORITY_OPTIONS = [
-  { value: 'LOW', label: 'Low' },
-  { value: 'MEDIUM', label: 'Medium' },
-  { value: 'HIGH', label: 'High' },
-  { value: 'URGENT', label: 'Urgent' },
-];
 
 const CATEGORY_OPTIONS: { value: TaskCategory; label: string }[] = [
   { value: 'PERSONAL_HYGIENE', label: 'Personal Hygiene' },
@@ -83,7 +77,8 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
     return count;
   }, [filters]);
 
-  const toggleStatus = (status: TaskStatus) => {
+  const toggleStatus = (value: string) => {
+    const status = value as TaskStatus;
     const current = filters.status || [];
     const updated = current.includes(status)
       ? current.filter((s) => s !== status)
@@ -94,7 +89,8 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
     });
   };
 
-  const toggleCategory = (category: TaskCategory) => {
+  const toggleCategory = (value: string) => {
+    const category = value as TaskCategory;
     const current = filters.category || [];
     const updated = current.includes(category)
       ? current.filter((c) => c !== category)

@@ -1,15 +1,9 @@
 name: E2E Tests
 
-# E2E tests run on PRs to main/preview and scheduled nightly runs
-# Skipped on develop to reduce CI time - rely on nightly runs for comprehensive testing
+# E2E tests are MANUAL ONLY. They do not run on pull requests, pushes, or a
+# nightly schedule. Trigger them with the /mhc-e2e-testing skill (which calls
+# workflow_dispatch) or `gh workflow run e2e-tests.yml`.
 on:
-  pull_request:
-    branches: [production, preview]
-  push:
-    branches: [production, preview]
-  schedule:
-    # Run nightly at 2 AM UTC
-    - cron: '0 2 * * *'
   workflow_dispatch:
     inputs:
       browser:
@@ -34,7 +28,7 @@ jobs:
   e2e-tests:
     name: E2E Tests (${{ matrix.browser || 'chromium' }})
     runs-on: ubuntu-latest
-    timeout-minutes: 15  # 15 min max - tests should be fast
+    timeout-minutes: 30  # 30 min: full 13-spec suite + web preview + retries (owner-approved)
 
     strategy:
       fail-fast: true  # Stop on first failure
@@ -115,13 +109,24 @@ jobs:
 
       - name: Run E2E tests
         env:
-          E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/${{ env.DATABASE_NAME }}
-          E2E_BASE_URL: http://localhost:3000
+          E2E_DATABASE_URL: postgresql://postgres:***@localhost:5432/${{ env.DATABASE_NAME }}
+          E2E_BASE_URL: http://localhost:5173
           CI: true
           JWT_SECRET: ${{ secrets.JWT_SECRET_E2E || 'ci-test-jwt-secret-minimum-32-characters-required-for-security-testing' }}
           JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET_E2E || 'ci-test-jwt-refresh-secret-minimum-32-characters-required-for-testing' }}
         run: |
           echo "Running E2E tests for ${{ matrix.browser }}..."
+          # UI tests need the built web app (React SPA). The API on :3000 has no
+          # static serving, so /login never rendered. Serve packages/web/dist on
+          # :5173 via vite preview (which proxies /api to :3000), and point the
+          # UI tests at it. API-only specs keep working against :3000.
+          (npm run preview --workspace=@folkcare/web -- --port 5173 --strictPort > /tmp/e2e-web.log 2>&1 &)
+          for i in $(seq 1 60); do
+            c=$(curl -s -m 2 -o /dev/null -w "%{http_code}" http://localhost:5173/login || true)
+            [ "$c" = "200" ] && { echo "WEB_READY_HTTP_200 after ${i}s"; break; }
+            sleep 1
+          done
+          echo "--- web preview log (first 40 lines) ---"; head -40 /tmp/e2e-web.log || true
           npm run test:e2e -- --project=${{ matrix.browser }} --reporter=html,json,junit
 
       - name: Generate accessibility report
@@ -142,7 +147,7 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: junit-results-${{ matrix.browser }}
-          path: test-results/junit.xml
+          path: e2e-results.xml
           retention-days: 30
 
       - name: Upload test videos

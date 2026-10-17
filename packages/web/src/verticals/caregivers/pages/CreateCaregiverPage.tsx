@@ -162,7 +162,9 @@ export const CreateCaregiverPage: React.FC = () => {
       const payload = toCreatePayload(values, user.organizationId);
       const created = await caregiverApi.createCaregiver(payload as unknown as Partial<Caregiver>);
       toast.success('Caregiver created successfully');
-      navigate(`/caregivers/${created.id}`);
+      Promise.resolve(navigate(`/caregivers/${created.id}`)).catch((err: unknown) => {
+        toast.error(err instanceof Error ? err.message : 'Navigation failed');
+      });
     } catch (error) {
       // Surface the real API error (e.g. Zod validation messages from the
       // backend) instead of alert() or silently succeeding.
@@ -179,7 +181,7 @@ export const CreateCaregiverPage: React.FC = () => {
         <p className="text-gray-600 mt-1">Create a new caregiver record</p>
       </div>
 
-      <form onSubmit={(e) => void handleSubmit(e)} className="bg-white rounded-lg shadow p-6 space-y-6">
+      <form onSubmit={(e) => { handleSubmit(e).catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to submit form'); }); }} className="bg-white rounded-lg shadow p-6 space-y-6">
         <CaregiverForm
           values={values}
           onChange={setValues}
@@ -194,7 +196,11 @@ export const CreateCaregiverPage: React.FC = () => {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate('/caregivers')}
+            onClick={() => {
+            Promise.resolve(navigate('/caregivers')).catch((err: unknown) => {
+              toast.error(err instanceof Error ? err.message : 'Navigation failed');
+            });
+          }}
             disabled={isSubmitting}
           >
             Cancel

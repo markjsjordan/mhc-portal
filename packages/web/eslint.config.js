@@ -19,7 +19,8 @@ export default [
       parserOptions: {
         ecmaVersion: 2020,
         sourceType: 'module',
-        project: './tsconfig.json',
+        // Lint-only config includes __tests__ (the build tsconfig excludes them).
+        project: './tsconfig.eslint.json',
         ecmaFeatures: {
           jsx: true,
         },

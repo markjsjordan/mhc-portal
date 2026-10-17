@@ -5,7 +5,7 @@ import {
   getAllVisitTypes,
   getNurseRequiredVisitTypes,
   isValidVisitType,
-} from '../config/visitTypeConfig';
+} from '../visitTypeConfig';
 import type { VisitType } from '../types';
 
 describe('visitTypeConfig', () => {

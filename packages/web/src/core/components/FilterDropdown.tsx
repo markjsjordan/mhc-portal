@@ -40,14 +40,15 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = ({
     };
   }, [isOpen]);
 
-  // Close on ESC key
+  // Close on ESC key. Listen on window so Escape is caught regardless of
+  // which element dispatched it (keyboard events bubble to window).
   useEffect(() => {
     if (!isOpen) return;
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setIsOpen(false);
     };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
   }, [isOpen]);
 
   return (

@@ -2,6 +2,18 @@
  * Caregiver frontend types
  */
 
+export type CaregiverStatus =
+  | 'APPLICATION'
+  | 'INTERVIEWING'
+  | 'PENDING_ONBOARDING'
+  | 'ONBOARDING'
+  | 'ACTIVE'
+  | 'INACTIVE'
+  | 'ON_LEAVE'
+  | 'SUSPENDED'
+  | 'TERMINATED'
+  | 'RETIRED';
+
 export interface Caregiver {
   id: string;
   organizationId: string;
@@ -12,7 +24,7 @@ export interface Caregiver {
   middleName?: string;
   lastName: string;
   preferredName?: string;
-  dateOfBirth: Date;
+  dateOfBirth: Date | string;
   email: string;
   primaryPhone: {
     number: string;
@@ -21,7 +33,7 @@ export interface Caregiver {
   };
   employmentType: 'FULL_TIME' | 'PART_TIME' | 'PER_DIEM' | 'CONTRACT' | 'TEMPORARY' | 'SEASONAL';
   employmentStatus: 'ACTIVE' | 'ON_LEAVE' | 'SUSPENDED' | 'TERMINATED' | 'RETIRED';
-  hireDate: Date;
+  hireDate: Date | string;
   role: string;
   status: 'APPLICATION' | 'INTERVIEWING' | 'PENDING_ONBOARDING' | 'ONBOARDING' | 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'SUSPENDED' | 'TERMINATED' | 'RETIRED';
   complianceStatus: 'COMPLIANT' | 'PENDING_VERIFICATION' | 'EXPIRING_SOON' | 'EXPIRED' | 'NON_COMPLIANT';
@@ -30,6 +42,39 @@ export interface Caregiver {
   isDemoData?: boolean;
   createdAt: Date;
   updatedAt: Date;
+  // Persisted by CaregiverRepository (primary_address, emergency_contacts, pay_rate, version).
+  // Optional: parsed with defaults and may be absent on older records.
+  primaryAddress?: CaregiverAddress;
+  emergencyContacts?: CaregiverEmergencyContact[];
+  payRate?: CaregiverPayRate;
+  version?: number;
+}
+
+export interface CaregiverAddress {
+  type?: 'HOME' | 'MAILING';
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+}
+
+export interface CaregiverEmergencyContact {
+  id?: string;
+  name: string;
+  relationship: string;
+  phone: string;
+  alternatePhone?: string;
+  email?: string;
+}
+
+export interface CaregiverPayRate {
+  id?: string;
+  rateType?: string;
+  amount: number;
+  unit: 'HOURLY' | 'VISIT' | 'DAILY' | 'SALARY';
+  effectiveDate: Date | string;
+  endDate?: Date | string;
 }
 
 export interface Credential {

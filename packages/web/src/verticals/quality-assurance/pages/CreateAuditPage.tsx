@@ -23,6 +23,7 @@ import {
 } from '@/core/components';
 import { useCreateAudit } from '../hooks';
 import type { CreateAuditInput } from '../types';
+import toast from 'react-hot-toast';
 
 const auditSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -103,7 +104,9 @@ export const CreateAuditPage: React.FC = () => {
     const input: CreateAuditInput = { ...data };
     try {
       const newAudit = await createAudit.mutateAsync(input);
-      navigate(`/quality-assurance/audits/${newAudit.id}`);
+      Promise.resolve(navigate(`/quality-assurance/audits/${newAudit.id}`)).catch((err: unknown) => {
+        toast.error(err instanceof Error ? err.message : 'Navigation failed');
+      });
     } catch {
       // Error is handled by the mutation
     }
@@ -141,7 +144,7 @@ export const CreateAuditPage: React.FC = () => {
       <Card>
         <CardHeader title="Audit Details" />
         <CardContent>
-          <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+          <form onSubmit={(e) => { handleSubmit(onFormSubmit)(e).catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to submit audit'); }); }} className="space-y-6">
             <FormField label="Title" error={errors.title?.message} required>
               <Input {...register('title')} placeholder="Enter audit title" />
             </FormField>

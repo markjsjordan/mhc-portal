@@ -2,7 +2,8 @@
  * Tests for Delete Caregiver Confirmation Dialog
  */
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { renderWithQueryClient as render } from '@/test/renderWithQueryClient';
 import userEvent from '@testing-library/user-event';
 import { DeleteCaregiverConfirmation } from '../DeleteCaregiverConfirmation';
 import { caregiverApi } from '../../api/index';
@@ -61,7 +62,7 @@ describe('DeleteCaregiverConfirmation', () => {
       />
     );
 
-    expect(screen.getByText(/delete caregiver/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /delete caregiver/i })).toBeInTheDocument();
     expect(screen.getByText('Sarah Martinez')).toBeInTheDocument();
   });
 

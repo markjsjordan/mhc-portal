@@ -11,6 +11,7 @@
 import React, { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Phone, Calendar, Briefcase, GraduationCap, ShieldCheck } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardHeader, CardContent } from '@/core/components';
 import { Button, StatusBadge, LoadingSpinner, ErrorMessage } from '@/core/components';
 import { formatDate, formatPhone } from '@/core/utils';
@@ -45,7 +46,11 @@ export const CaregiverDetail: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <ErrorMessage
           message={(error as Error)?.message || 'Failed to load caregiver'}
-          retry={refetch}
+          retry={() => {
+            refetch().catch((err: unknown) => {
+              toast.error(err instanceof Error ? err.message : 'Failed to reload caregiver');
+            });
+          }}
         />
       </div>
     );
@@ -59,7 +64,11 @@ export const CaregiverDetail: React.FC = () => {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <div className="flex items-center gap-3">
         <button
-          onClick={() => navigate('/caregivers')}
+          onClick={() => {
+            Promise.resolve(navigate('/caregivers')).catch((err: unknown) => {
+              toast.error(err instanceof Error ? err.message : 'Navigation failed');
+            });
+          }}
           className="text-gray-500 hover:text-gray-700"
           aria-label="Back to caregivers"
         >
@@ -68,7 +77,7 @@ export const CaregiverDetail: React.FC = () => {
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-900">
-              {caregiver.preferredName || fullName}
+              {caregiver.preferredName ?? fullName}
             </h1>
             <StatusBadge status={caregiver.status} />
           </div>
@@ -83,7 +92,7 @@ export const CaregiverDetail: React.FC = () => {
             onDelete={() => setIsDeleteModalOpen(true)}
             onDuplicate={() => setIsDuplicateModalOpen(true)}
             onViewHistory={() => {
-              // TODO: Navigate to audit history page
+              // Not yet implemented: navigate to audit history page (tracked in wdvf3abp43)
               console.log('View audit history');
             }}
           />
@@ -225,7 +234,9 @@ export const CaregiverDetail: React.FC = () => {
             caregiver={caregiver}
             onClose={() => setIsEditModalOpen(false)}
             onSuccess={() => {
-              refetch();
+              refetch().catch((err: unknown) => {
+                toast.error(err instanceof Error ? err.message : 'Failed to refresh caregiver');
+              });
               setIsEditModalOpen(false);
             }}
           />
@@ -235,7 +246,9 @@ export const CaregiverDetail: React.FC = () => {
             caregiver={caregiver}
             onClose={() => setIsDeleteModalOpen(false)}
             onSuccess={() => {
-              navigate('/caregivers');
+              Promise.resolve(navigate('/caregivers')).catch((err: unknown) => {
+                toast.error(err instanceof Error ? err.message : 'Navigation failed');
+              });
             }}
           />
 

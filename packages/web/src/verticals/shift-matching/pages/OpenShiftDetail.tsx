@@ -6,6 +6,7 @@ import { usePermissions } from '@/core/hooks';
 import { useOpenShift, useMatchCandidates, useMatchShift, useCreateProposal } from '../hooks';
 import { MatchCandidateCard } from '../components';
 import { getShiftPriorityColor, getMatchingStatusColor, formatDuration } from '../utils';
+import toast from 'react-hot-toast';
 
 export const OpenShiftDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,12 +30,16 @@ export const OpenShiftDetail: React.FC = () => {
     return (
       <ErrorMessage
         message="Failed to load open shift"
-        retry={() => navigate('/shift-matching')}
+        retry={() => {
+          Promise.resolve(navigate('/shift-matching')).catch((err: unknown) => {
+            toast.error(err instanceof Error ? err.message : 'Navigation failed');
+          });
+        }}
       />
     );
   }
 
-  const candidates = candidatesData?.items || [];
+  const candidates = candidatesData?.items ?? [];
   const priorityColor = getShiftPriorityColor(shift.priority);
   const statusColor = getMatchingStatusColor(shift.matchingStatus);
 
@@ -56,7 +61,11 @@ export const OpenShiftDetail: React.FC = () => {
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
-            onClick={() => navigate('/shift-matching')}
+            onClick={() => {
+              Promise.resolve(navigate('/shift-matching')).catch((err: unknown) => {
+                toast.error(err instanceof Error ? err.message : 'Navigation failed');
+              });
+            }}
             leftIcon={<ArrowLeft className="h-4 w-4" />}
           >
             Back
@@ -163,7 +172,7 @@ export const OpenShiftDetail: React.FC = () => {
             <div>
               <p className="text-sm text-gray-500">Proposals</p>
               <p className="text-2xl font-bold text-gray-900">
-                {shift.proposedAssignments?.length || 0}
+                {shift.proposedAssignments?.length ?? 0}
               </p>
             </div>
             <div>

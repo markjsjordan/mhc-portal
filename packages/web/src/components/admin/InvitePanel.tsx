@@ -3,7 +3,11 @@ import { Button, Input } from '@folkcare/shared-components';
 import { useApiClient } from '@/core/hooks';
 import './InvitePanel.css';
 
-export const InvitePanel: React.FC<{ organizationId: string }> = ({ organizationId }) => {
+interface InvitePanelProps {
+  organizationId: string;
+}
+
+export function InvitePanel({ organizationId }: InvitePanelProps): React.JSX.Element {
   const api = useApiClient();
   const [formData, setFormData] = useState({
     email: '',
@@ -17,6 +21,7 @@ export const InvitePanel: React.FC<{ organizationId: string }> = ({ organization
   const [generatedUrl, setGeneratedUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const availablePermissions = [
     'VIEW_SHIFTS',
@@ -137,6 +142,10 @@ export const InvitePanel: React.FC<{ organizationId: string }> = ({ organization
           </div>
         </div>
 
+        {errors.submit && (
+          <p className="text-sm text-red-600" role="alert">{errors.submit}</p>
+        )}
+
         <Button type="submit" disabled={isLoading}>
           {isLoading ? 'Generating...' : 'Generate Invite URL'}
         </Button>
@@ -169,4 +178,4 @@ export const InvitePanel: React.FC<{ organizationId: string }> = ({ organization
       </div>
     </div>
   );
-};
+}

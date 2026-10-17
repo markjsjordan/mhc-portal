@@ -269,6 +269,8 @@ export function createCaregiverRouter(db: Database): Router {
   router.post('/:id/duplicate', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const context = getUserContext(req);
+      // Not yet implemented: duplicateCaregiver method or alternative duplication logic
+      // const service = new CaregiverService(db);
 
       // Verify user has permission to create caregivers
       if (!context.permissions.includes('caregivers:create') && 
@@ -280,7 +282,8 @@ export function createCaregiverRouter(db: Database): Router {
         return;
       }
 
-      // Placeholder response until duplication method is implemented
+      // Not yet implemented: duplicateCaregiver method or alternative duplication logic
+      // Placeholder response until method is implemented
       res.status(501).json({
         error: 'NOT_IMPLEMENTED',
         message: 'Caregiver duplication feature is not yet implemented'

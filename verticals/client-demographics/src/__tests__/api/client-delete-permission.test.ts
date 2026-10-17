@@ -293,9 +293,9 @@ describe('Client Delete Permission Enforcement - wdvf3abfwc', () => {
 
         await request(app)
           .delete('/api/clients/client-999')
-          .expect(403); // Permission denied returns 403 Forbidden
+          .expect(403); // PermissionError from requirePermission() maps to 403
 
-        // The error indicates permission was enforced by middleware
+        // Permission check short-circuits before the service is invoked
         expect(mockClientService.deleteClient).not.toHaveBeenCalled();
       });
 
@@ -319,14 +319,14 @@ describe('Client Delete Permission Enforcement - wdvf3abfwc', () => {
         const router = createClientRouter(mockClientService, {} as any);
         app.use('/api', router);
 
-        // READ_ONLY lacks clients:delete, so middleware rejects
+        // READ_ONLY lacks clients:delete, so service should reject
         mockClientService.deleteClient.mockRejectedValue(
           new Error('Permission denied: clients:delete')
         );
 
         await request(app)
           .delete('/api/clients/client-999')
-          .expect(403); // Permission denied returns 403 Forbidden
+          .expect(403); // PermissionError from requirePermission() maps to 403
 
         expect(mockClientService.deleteClient).not.toHaveBeenCalled();
       });

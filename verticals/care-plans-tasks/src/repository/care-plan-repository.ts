@@ -41,7 +41,13 @@ export class CarePlanRepository extends Repository<CarePlan> {
     }
     try {
       // Attempt to stringify and parse to ensure valid JSON
+      // JSON.stringify returns undefined (not a string) for undefined/functions/symbols.
+      // Those values have no JSON representation; return their String() form without
+      // round-tripping through JSON.parse (which would reject "undefined").
       const json = JSON.stringify(value);
+      if (json === undefined) {
+        return String(value);
+      }
       JSON.parse(json);
       return json;
     } catch (error) {

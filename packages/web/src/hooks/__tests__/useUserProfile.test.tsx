@@ -3,13 +3,41 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useUserProfile, formatSyncedTime } from '@/hooks/useUserProfile';
 
-// Mock API client
-vi.mock('@/core/hooks', () => ({
-  useApiClient: () => ({
-    get: vi.fn(),
-    put: vi.fn(),
-  }),
+// Mock API client. The hook reads `response.data` from GET and returns the
+// full UpdateProfileResponse from PUT, so the stub must mirror those shapes.
+// Each test gets a fresh, stateful profile so updates are observable.
+const mockProfile = {
+  id: 'user-1',
+  firstName: 'John',
+  lastName: 'Doe',
+  email: 'john@example.com',
+  phone: '(555) 123-4567',
+  organizationId: 'org-1',
+  roles: ['user'],
+  version: 1,
+  updatedAt: '2026-01-01T00:00:00.000Z',
+  updatedBy: 'system',
+};
+
+const mockClient = vi.hoisted(() => ({
+  get: vi.fn(),
+  put: vi.fn(),
 }));
+
+vi.mock('@/core/hooks', () => ({
+  useApiClient: () => mockClient,
+}));
+
+beforeEach(() => {
+  mockClient.get.mockReset();
+  mockClient.put.mockReset();
+  mockClient.get.mockResolvedValue({ success: true, data: { ...mockProfile } });
+  mockClient.put.mockImplementation(async (_url: string, body: Record<string, unknown>) => ({
+    success: true,
+    data: { ...mockProfile, ...body, version: mockProfile.version + 1 },
+    timestamp: new Date().toISOString(),
+  }));
+});
 
 describe('useUserProfile Hook', () => {
   let queryClient: QueryClient;
@@ -213,9 +241,16 @@ describe('formatSyncedTime', () => {
     expect(result).toBe('Just now');
   });
 
-  it('should return minutes ago format', () => {
+  it('should return "Just now" for anything under a minute', () => {
+    // formatSyncedTime treats sub-minute elapsed time as "Just now" (product rule).
     const fiftyNineSecondsAgo = new Date(Date.now() - 59 * 1000);
     const result = formatSyncedTime(fiftyNineSecondsAgo);
+    expect(result).toBe('Just now');
+  });
+
+  it('should return minutes ago once a full minute has elapsed', () => {
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+    const result = formatSyncedTime(oneMinuteAgo);
     expect(result).toMatch(/\dm ago/);
   });
 

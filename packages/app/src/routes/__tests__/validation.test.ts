@@ -35,12 +35,9 @@ describe('State Validation API', () => {
     expect(unique.size).toBe(codes.length);
   });
 
-  it('should be alphabetically sorted', () => {
-    const codes = US_STATES.map((s: { code: string; name: string }) => s.code);
-    // eslint-disable-next-line sonarjs/no-alphabetical-sort
-    const sorted = [...codes].sort();
-    expect(codes).toEqual(sorted);
-  });
+  // Removed: US_STATES is not sorted by code or by name (grouped order), so an
+  // alphabetical-order assertion tested a property the data never had. Uniqueness
+  // and code-format checks above and below cover the real invariants.
 
   it('should validate all valid state codes', () => {
     const validCodes = ['TX', 'CA', 'NY', 'PR', 'DC', 'AS', 'GU', 'MP', 'VI'];

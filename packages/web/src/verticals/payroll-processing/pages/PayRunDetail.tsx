@@ -1,4 +1,5 @@
 import React from 'react';
+import toast from 'react-hot-toast';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calculator, CheckCircle, Play, AlertCircle } from 'lucide-react';
 import { Button, LoadingSpinner, ErrorMessage } from '@/core/components';
@@ -35,13 +36,13 @@ export const PayRunDetail: React.FC = () => {
     return (
       <ErrorMessage
         message="Failed to load pay run"
-        retry={() => navigate('/payroll')}
+        retry={() => { Promise.resolve(navigate('/payroll')).catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Navigation failed'); }); }}
       />
     );
   }
 
   const statusColor = getPayRunStatusColor(payRun.status);
-  const payStubs = payStubsData?.items || [];
+  const payStubs = payStubsData?.items ?? [];
 
   return (
     <div className="space-y-6">
@@ -49,7 +50,7 @@ export const PayRunDetail: React.FC = () => {
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
-            onClick={() => navigate('/payroll')}
+            onClick={() => { Promise.resolve(navigate('/payroll')).catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Navigation failed'); }); }}
             leftIcon={<ArrowLeft className="h-4 w-4" />}
           >
             Back

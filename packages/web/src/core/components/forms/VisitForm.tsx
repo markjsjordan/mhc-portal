@@ -194,7 +194,6 @@ export const VisitForm: React.FC<VisitFormProps> = ({
         <VisitTypeSelector
           value={visitType}
           onChange={(type) => handleChange('visitType', type)}
-          required={true}
         />
         {errors.visitType && <p className="mt-2 text-sm text-red-500">{errors.visitType}</p>}
       </div>

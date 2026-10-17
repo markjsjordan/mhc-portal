@@ -89,8 +89,10 @@ export const useCreatePayPeriod = () => {
 
   return useMutation({
     mutationFn: (input: CreatePayPeriodInput) => payrollApi.createPayPeriod(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pay-periods'] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['pay-periods'] }),
+      ]);
       toast.success('Pay period created successfully');
     },
     onError: (error: Error) => {
@@ -105,8 +107,10 @@ export const useOpenPayPeriod = () => {
 
   return useMutation({
     mutationFn: (id: string) => payrollApi.openPayPeriod(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pay-periods'] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['pay-periods'] }),
+      ]);
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to open pay period');
@@ -120,8 +124,10 @@ export const useLockPayPeriod = () => {
 
   return useMutation({
     mutationFn: (id: string) => payrollApi.lockPayPeriod(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pay-periods'] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['pay-periods'] }),
+      ]);
       toast.success('Pay period locked');
     },
     onError: (error: Error) => {
@@ -136,8 +142,10 @@ export const useUnlockPayPeriod = () => {
 
   return useMutation({
     mutationFn: (id: string) => payrollApi.unlockPayPeriod(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pay-periods'] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['pay-periods'] }),
+      ]);
       toast.success('Pay period unlocked');
     },
     onError: (error: Error) => {
@@ -152,10 +160,12 @@ export const useCreatePayRun = () => {
 
   return useMutation({
     mutationFn: (input: CreatePayRunInput) => payrollApi.createPayRun(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pay-runs'] });
-      queryClient.invalidateQueries({ queryKey: ['pay-periods'] });
-      queryClient.invalidateQueries({ queryKey: ['payroll-summary'] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['pay-runs'] }),
+        queryClient.invalidateQueries({ queryKey: ['pay-periods'] }),
+        queryClient.invalidateQueries({ queryKey: ['payroll-summary'] }),
+      ]);
       toast.success('Pay run created successfully');
     },
     onError: (error: Error) => {
@@ -170,9 +180,11 @@ export const useCalculatePayRun = () => {
 
   return useMutation({
     mutationFn: (id: string) => payrollApi.calculatePayRun(id),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['pay-runs'] });
-      queryClient.invalidateQueries({ queryKey: ['pay-runs', data.id] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['pay-runs'] }),
+        queryClient.invalidateQueries({ queryKey: ['pay-runs', data.id] }),
+      ]);
       toast.success('Pay run calculated successfully');
     },
     onError: (error: Error) => {
@@ -188,10 +200,12 @@ export const useApprovePayRun = () => {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input?: ApprovePayRunInput }) =>
       payrollApi.approvePayRun(id, input),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['pay-runs'] });
-      queryClient.invalidateQueries({ queryKey: ['pay-runs', data.id] });
-      queryClient.invalidateQueries({ queryKey: ['payroll-summary'] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['pay-runs'] }),
+        queryClient.invalidateQueries({ queryKey: ['pay-runs', data.id] }),
+        queryClient.invalidateQueries({ queryKey: ['payroll-summary'] }),
+      ]);
       toast.success('Pay run approved successfully');
     },
     onError: (error: Error) => {
@@ -206,11 +220,13 @@ export const useProcessPayRun = () => {
 
   return useMutation({
     mutationFn: (id: string) => payrollApi.processPayRun(id),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['pay-runs'] });
-      queryClient.invalidateQueries({ queryKey: ['pay-runs', data.id] });
-      queryClient.invalidateQueries({ queryKey: ['pay-stubs'] });
-      queryClient.invalidateQueries({ queryKey: ['payroll-summary'] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['pay-runs'] }),
+        queryClient.invalidateQueries({ queryKey: ['pay-runs', data.id] }),
+        queryClient.invalidateQueries({ queryKey: ['pay-stubs'] }),
+        queryClient.invalidateQueries({ queryKey: ['payroll-summary'] }),
+      ]);
       toast.success('Pay run processed successfully');
     },
     onError: (error: Error) => {

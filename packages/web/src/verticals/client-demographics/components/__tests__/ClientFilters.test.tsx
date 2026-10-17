@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { ClientFilters } from './ClientFilters.js';
+import { ClientFilters } from '../ClientFilters.js';
 import type { ClientSearchFilters } from '../types';
 
 describe('ClientFilters', () => {
@@ -60,7 +60,7 @@ describe('ClientFilters', () => {
     fireEvent.click(filterButton);
 
     expect(screen.getByText('Filter Clients')).toBeInTheDocument();
-    expect(screen.getByText('STATUS')).toBeInTheDocument();
+    expect(screen.getByText(/^status$/i)).toBeInTheDocument();
     expect(screen.getByText('Service Level')).toBeInTheDocument();
     expect(screen.getByText('Insurance Type')).toBeInTheDocument();
   });

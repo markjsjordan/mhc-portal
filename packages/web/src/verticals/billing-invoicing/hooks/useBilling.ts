@@ -69,10 +69,12 @@ export const useCreateInvoice = () => {
 
   return useMutation({
     mutationFn: (input: CreateInvoiceInput) => billingApi.createInvoice(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['billing-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['claims-queue'] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['invoices'] }),
+        queryClient.invalidateQueries({ queryKey: ['billing-summary'] }),
+        queryClient.invalidateQueries({ queryKey: ['claims-queue'] }),
+      ]);
       toast.success('Invoice created successfully');
     },
     onError: (error: Error) => {
@@ -88,11 +90,13 @@ export const useUpdateInvoice = () => {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateInvoiceInput }) =>
       billingApi.updateInvoice(id, input),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['invoices', data.id] });
-      queryClient.invalidateQueries({ queryKey: ['billing-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['claims-queue'] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['invoices'] }),
+        queryClient.invalidateQueries({ queryKey: ['invoices', data.id] }),
+        queryClient.invalidateQueries({ queryKey: ['billing-summary'] }),
+        queryClient.invalidateQueries({ queryKey: ['claims-queue'] }),
+      ]);
       toast.success('Invoice updated successfully');
     },
     onError: (error: Error) => {
@@ -107,10 +111,12 @@ export const useDeleteInvoice = () => {
 
   return useMutation({
     mutationFn: (id: string) => billingApi.deleteInvoice(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['billing-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['claims-queue'] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['invoices'] }),
+        queryClient.invalidateQueries({ queryKey: ['billing-summary'] }),
+        queryClient.invalidateQueries({ queryKey: ['claims-queue'] }),
+      ]);
       toast.success('Invoice deleted successfully');
     },
     onError: (error: Error) => {
@@ -125,11 +131,13 @@ export const useSendInvoice = () => {
 
   return useMutation({
     mutationFn: (id: string) => billingApi.sendInvoice(id),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['invoices', data.id] });
-      queryClient.invalidateQueries({ queryKey: ['billing-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['claims-queue'] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['invoices'] }),
+        queryClient.invalidateQueries({ queryKey: ['invoices', data.id] }),
+        queryClient.invalidateQueries({ queryKey: ['billing-summary'] }),
+        queryClient.invalidateQueries({ queryKey: ['claims-queue'] }),
+      ]);
       toast.success('Invoice sent successfully');
     },
     onError: (error: Error) => {
@@ -144,11 +152,13 @@ export const useTransitionToReadyToSubmit = () => {
 
   return useMutation({
     mutationFn: ({ id }: { id: string }) => billingApi.transitionToReadyToSubmit(id),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['invoices', data.id] });
-      queryClient.invalidateQueries({ queryKey: ['billing-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['claims-queue'] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['invoices'] }),
+        queryClient.invalidateQueries({ queryKey: ['invoices', data.id] }),
+        queryClient.invalidateQueries({ queryKey: ['billing-summary'] }),
+        queryClient.invalidateQueries({ queryKey: ['claims-queue'] }),
+      ]);
       toast.success('EVV verified: Transitioned to READY_TO_SUBMIT');
     },
     onError: (error: Error) => {
@@ -164,10 +174,12 @@ export const useGenerateInvoicesForVerifiedVisits = () => {
   return useMutation({
     mutationFn: (options?: { payerId?: string; billableItemIds?: string[] }) =>
       billingApi.generateInvoicesForVerifiedVisits(options),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['billing-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['claims-queue'] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['invoices'] }),
+        queryClient.invalidateQueries({ queryKey: ['billing-summary'] }),
+        queryClient.invalidateQueries({ queryKey: ['claims-queue'] }),
+      ]);
 
       if (data.verifiedVisitsCount > 0) {
         toast.success(
@@ -194,11 +206,13 @@ export const useVoidInvoice = () => {
 
   return useMutation({
     mutationFn: (id: string) => billingApi.voidInvoice(id),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['invoices', data.id] });
-      queryClient.invalidateQueries({ queryKey: ['billing-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['claims-queue'] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['invoices'] }),
+        queryClient.invalidateQueries({ queryKey: ['invoices', data.id] }),
+        queryClient.invalidateQueries({ queryKey: ['billing-summary'] }),
+        queryClient.invalidateQueries({ queryKey: ['claims-queue'] }),
+      ]);
       toast.success('Invoice voided successfully');
     },
     onError: (error: Error) => {
@@ -213,12 +227,14 @@ export const useCreatePayment = () => {
 
   return useMutation({
     mutationFn: (input: CreatePaymentInput) => billingApi.createPayment(input),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['invoices', data.invoiceId] });
-      queryClient.invalidateQueries({ queryKey: ['payments'] });
-      queryClient.invalidateQueries({ queryKey: ['billing-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['claims-queue'] });
+    onSuccess: async (data) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['invoices'] }),
+        queryClient.invalidateQueries({ queryKey: ['invoices', data.invoiceId] }),
+        queryClient.invalidateQueries({ queryKey: ['payments'] }),
+        queryClient.invalidateQueries({ queryKey: ['billing-summary'] }),
+        queryClient.invalidateQueries({ queryKey: ['claims-queue'] }),
+      ]);
       toast.success('Payment recorded successfully');
     },
     onError: (error: Error) => {

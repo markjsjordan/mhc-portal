@@ -36,7 +36,28 @@ export async function seedDatabase(db: Database): Promise<void> {
         country: 'USA',
       }),
       'ACTIVE',
-      'system',
+      '00000000-e2e0-4000-8000-000000000100',
+    ]
+  );
+
+  // Create the shared actor user after the organization (users.organization_id
+  // is a foreign key). Its created_by/updated_by require a real users row, and this spec seeds only this scenario. The
+  // password_hash is a deliberate non-loginable marker: this is a data-only
+  // actor for referential integrity, not an account anyone can sign in to.
+  await db.query(
+    `INSERT INTO users (
+      id, organization_id, username, email, password_hash, first_name, last_name,
+      status, created_at, created_by, updated_at, updated_by, version
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'ACTIVE', NOW(), $1, NOW(), $1, 1)
+    ON CONFLICT (id) DO NOTHING`,
+    [
+      E2E_UUIDS.ADMIN_USER,
+      E2E_UUIDS.ORG_E2E,
+      'e2e-actor',
+      'e2e-actor@e2e-test.invalid',
+      '!non-loginable-seed-actor',
+      'E2E',
+      'Actor',
     ]
   );
 
@@ -59,22 +80,23 @@ export async function seedDatabase(db: Database): Promise<void> {
         longitude: -97.7431,
       }),
       'ACTIVE',
-      'system',
+      '00000000-e2e0-4000-8000-000000000100',
     ]
   );
 
   // Create client
   await db.query(
     `INSERT INTO clients (
-      id, organization_id, branch_id, first_name, last_name, date_of_birth,
-      primary_address, status, created_at, created_by, updated_at, updated_by, version
+      id, organization_id, branch_id, client_number, first_name, last_name, date_of_birth,
+      primary_address, service_eligibility, status, created_at, created_by, updated_at, updated_by, version
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9, NOW(), $9, 1)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), $11, NOW(), $11, 1)
     ON CONFLICT (id) DO NOTHING`,
     [
       clientId,
       orgId,
       branchId,
+      'CL-VISIT-LIFECYCLE-001',
       'John',
       'Doe',
       '1950-01-01',
@@ -87,27 +109,39 @@ export async function seedDatabase(db: Database): Promise<void> {
         longitude: -97.7431,
         geofence_radius: 100, // meters
       }),
+      JSON.stringify({}),
       'ACTIVE',
-      'system',
+      '00000000-e2e0-4000-8000-000000000100',
     ]
   );
 
   // Create caregiver with valid credentials
   await db.query(
     `INSERT INTO caregivers (
-      id, organization_id, branch_id, first_name, last_name, employee_number,
-      credentials, background_checks, compliance_status, status,
+      id, organization_id, primary_branch_id, branch_ids, first_name, last_name, employee_number,
+      date_of_birth, email, primary_phone, primary_address, role, employment_type, hire_date,
+      pay_rate, availability, credentials, background_check, compliance_status, status,
       created_at, created_by, updated_at, updated_by, version
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), $11, NOW(), $11, 1)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW(), $21, NOW(), $21, 1)
     ON CONFLICT (id) DO NOTHING`,
     [
       caregiverId,
       orgId,
       branchId,
+      [branchId],
       'Jane',
       'Caregiver',
       'CG-001',
+      '1985-06-15',
+      'jane.caregiver@e2e-test.invalid',
+      JSON.stringify({ number: '555-0100', type: 'MOBILE' }),
+      JSON.stringify({ street: '1 Test Ln', city: 'Austin', state: 'TX', postalCode: '78701', country: 'USA' }),
+      'CAREGIVER',
+      'FULL_TIME',
+      '2024-01-01',
+      JSON.stringify({ hourlyRate: 25.0, currency: 'USD' }),
+      JSON.stringify({ monday: true, tuesday: true, wednesday: true, thursday: true, friday: true }),
       JSON.stringify([
         {
           type: 'CPR',
@@ -142,7 +176,7 @@ export async function seedDatabase(db: Database): Promise<void> {
       }),
       'COMPLIANT',
       'ACTIVE',
-      'system',
+      '00000000-e2e0-4000-8000-000000000100',
     ]
   );
 
@@ -189,7 +223,7 @@ export async function seedDatabase(db: Database): Promise<void> {
           completed: false,
         },
       ]),
-      'system',
+      '00000000-e2e0-4000-8000-000000000100',
     ]
   );
 

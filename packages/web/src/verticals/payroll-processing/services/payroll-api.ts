@@ -107,7 +107,7 @@ export const createPayrollApiService = (apiClient: ApiClient): PayrollApiService
     },
 
     approvePayRun: async (id: string, input?: ApprovePayRunInput) => {
-      return apiClient.post<PayRun>(`/api/payroll/pay-runs/${id}/approve`, input || {});
+      return apiClient.post<PayRun>(`/api/payroll/pay-runs/${id}/approve`, input ?? {});
     },
 
     processPayRun: async (id: string) => {

@@ -1,4 +1,5 @@
 import React from 'react';
+import toast from 'react-hot-toast';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download } from 'lucide-react';
 import { Button, LoadingSpinner, ErrorMessage, Card } from '@/core/components';
@@ -25,7 +26,7 @@ export const PayStubDetail: React.FC = () => {
     return (
       <ErrorMessage
         message="Failed to load pay stub"
-        retry={() => navigate('/payroll/pay-stubs')}
+        retry={() => { Promise.resolve(navigate('/payroll/pay-stubs')).catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Navigation failed'); }); }}
       />
     );
   }
@@ -37,7 +38,7 @@ export const PayStubDetail: React.FC = () => {
       PAID: 'bg-green-100 text-green-800',
       VOID: 'bg-red-100 text-red-800',
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[status] ?? 'bg-gray-100 text-gray-800';
   };
 
   return (
@@ -46,7 +47,7 @@ export const PayStubDetail: React.FC = () => {
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
-            onClick={() => navigate('/payroll/pay-stubs')}
+            onClick={() => { Promise.resolve(navigate('/payroll/pay-stubs')).catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Navigation failed'); }); }}
             leftIcon={<ArrowLeft className="h-4 w-4" />}
           >
             Back

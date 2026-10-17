@@ -41,19 +41,19 @@ export const CaregiverFilters: React.FC<CaregiverFiltersProps> = ({
   filters,
   onFiltersChange,
 }) => {
-  const [queryInput, setQueryInput] = React.useState(filters.query || '');
+  const [queryInput, setQueryInput] = React.useState(filters.query ?? '');
 
   // Sync input when filters change externally
   React.useEffect(() => {
     if (filters.query !== queryInput) {
-      setQueryInput(filters.query || '');
+      setQueryInput(filters.query ?? '');
     }
   }, [filters.query]);
 
   // Debounced query update
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      if ((filters.query || '') !== queryInput) {
+      if ((filters.query ?? '') !== queryInput) {
         onFiltersChange({ ...filters, query: queryInput || undefined });
       }
     }, 300);
@@ -70,8 +70,9 @@ export const CaregiverFilters: React.FC<CaregiverFiltersProps> = ({
     return count;
   }, [filters]);
 
-  const toggleStatus = (status: CaregiverStatus) => {
-    const current = filters.status || [];
+  const toggleStatus = (value: string) => {
+    const status = value as CaregiverStatus;
+    const current = filters.status ?? [];
     const updated = current.includes(status)
       ? current.filter((s) => s !== status)
       : [...current, status];
@@ -82,7 +83,7 @@ export const CaregiverFilters: React.FC<CaregiverFiltersProps> = ({
   };
 
   const toggleEmploymentType = (type: string) => {
-    const current = filters.employmentType || [];
+    const current = filters.employmentType ?? [];
     const updated = current.includes(type)
       ? current.filter((t) => t !== type)
       : [...current, type];
@@ -93,7 +94,7 @@ export const CaregiverFilters: React.FC<CaregiverFiltersProps> = ({
   };
 
   const toggleComplianceStatus = (status: string) => {
-    const current = filters.complianceStatus || [];
+    const current = filters.complianceStatus ?? [];
     const updated = current.includes(status)
       ? current.filter((s) => s !== status)
       : [...current, status];

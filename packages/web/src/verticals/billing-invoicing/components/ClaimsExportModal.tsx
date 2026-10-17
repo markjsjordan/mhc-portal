@@ -58,10 +58,19 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
   if (!isOpen) return null;
 
   const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    toast.success("Copied to clipboard");
-    setTimeout(() => setCopied(false), 2000);
+    const copy = async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+        toast.success("Copied to clipboard");
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to copy to clipboard");
+      }
+    };
+    copy().catch((err: unknown) => {
+      toast.error(err instanceof Error ? err.message : "Failed to copy to clipboard");
+    });
   };
 
   const downloadTextFile = (

@@ -46,6 +46,16 @@ beforeEach(() => {
   }
 });
 
+// happy-dom does not implement window.confirm; provide a default so tests can
+// spy on it (vi.spyOn requires an existing function). Tests override per-case.
+if (typeof window.confirm !== 'function') {
+  Object.defineProperty(window, 'confirm', {
+    writable: true,
+    configurable: true,
+    value: vi.fn(() => true),
+  });
+}
+
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,

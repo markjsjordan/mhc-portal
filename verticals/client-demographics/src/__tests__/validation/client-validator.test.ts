@@ -142,8 +142,12 @@ describe('ClientValidator', () => {
 
       expect(result.success).toBe(false);
       expect(result.errors).toBeDefined();
+      // Validator maps address errors to an actionable message that still names the field
       expect(result.errors).toContainEqual(
-        expect.objectContaining({ path: 'primaryAddress.postalCode', message: expect.stringContaining('Invalid postal code') })
+        expect.objectContaining({
+          path: 'primaryAddress.postalCode',
+          message: expect.stringContaining('Invalid postal code'),
+        })
       );
     });
 

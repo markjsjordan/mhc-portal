@@ -5,7 +5,6 @@
  * Requires name confirmation and checkbox confirmation.
  */
 import React, { useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
 import { Button, Modal, Checkbox } from '@/core/components';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -43,7 +42,7 @@ export const DeleteCaregiverConfirmation: React.FC<DeleteCaregiverConfirmationPr
       if (error.response?.data?.error === 'INVALID_STATUS_TRANSITION') {
         toast.error('Cannot delete terminated caregiver');
       } else {
-        toast.error(error.response?.data?.message || 'Failed to delete caregiver');
+        toast.error(error.response?.data?.message ?? 'Failed to delete caregiver');
       }
     },
   });
@@ -57,12 +56,23 @@ export const DeleteCaregiverConfirmation: React.FC<DeleteCaregiverConfirmationPr
     onClose();
   };
 
+  // Clear confirmation state whenever the dialog is closed by the parent.
+  // Derive reset from isOpen during render (not in an effect) so reopening
+  // always starts from empty confirmation fields.
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (prevIsOpen !== isOpen) {
+    setPrevIsOpen(isOpen);
+    if (!isOpen) {
+      setNameConfirmation('');
+      setUnderstandsConfirm(false);
+    }
+  }
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
       title="Delete Caregiver?"
-      icon={<AlertTriangle className="h-6 w-6 text-red-600" />}
     >
       <div className="space-y-4">
         {/* Warning message */}
@@ -117,9 +127,8 @@ export const DeleteCaregiverConfirmation: React.FC<DeleteCaregiverConfirmationPr
         {/* Checkbox confirmation */}
         <div className="flex items-start gap-2">
           <Checkbox
-            id="understand-permanent"
             checked={understandsConfirm}
-            onChange={(checked) => setUnderstandsConfirm(checked)}
+            onCheckedChange={(checked) => setUnderstandsConfirm(checked)}
             disabled={deleteMutation.isPending}
           />
           <label

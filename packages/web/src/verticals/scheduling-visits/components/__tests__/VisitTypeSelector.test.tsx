@@ -22,9 +22,9 @@ describe('VisitTypeSelector', () => {
 
   test('calls onChange when type selected', () => {
     const onChange = vi.fn();
-    render(<VisitTypeSelector value={null} onChange={onChange} />);
+    const { container } = render(<VisitTypeSelector value={null} onChange={onChange} />);
 
-    const regularOption = screen.getAllByRole('radio', { name: '' })[0];
+    const regularOption = container.querySelector('input[value="REGULAR"]') as HTMLInputElement;
     fireEvent.click(regularOption);
 
     expect(onChange).toHaveBeenCalledWith('REGULAR');
@@ -44,7 +44,8 @@ describe('VisitTypeSelector', () => {
     const onChange = vi.fn();
     render(<VisitTypeSelector value={null} onChange={onChange} />);
 
-    expect(screen.getByText(/Requires: RN, LPN/)).toBeInTheDocument(); // INITIAL and ASSESSMENT
+    // INITIAL and ASSESSMENT both require RN, LPN
+    expect(screen.getAllByText(/Requires: RN, LPN/)).toHaveLength(2);
   });
 
   test('hides required certifications text for non-nurse types', () => {
@@ -88,21 +89,15 @@ describe('VisitTypeSelector', () => {
     ];
 
     visitTypes.forEach(type => {
-      const { unmount } = render(<VisitTypeSelector value={null} onChange={onChange} />);
-      const radios = screen.getAllByRole('radio');
-      const typeRadio = radios.find(r => {
-        const parent = r.closest('label');
-        const label = parent?.querySelector('p');
-        return label?.textContent?.includes(type);
-      });
-      if (typeRadio) {
-        fireEvent.click(typeRadio);
-      }
+      const { container, unmount } = render(<VisitTypeSelector value={null} onChange={onChange} />);
+      const typeRadio = container.querySelector(`input[value="${type}"]`) as HTMLInputElement;
+      expect(typeRadio).not.toBeNull();
+      fireEvent.click(typeRadio);
       unmount();
     });
 
-    // Should have called onChange at least once for each type
-    expect(onChange.mock.calls.length).toBeGreaterThanOrEqual(visitTypes.length);
+    // Every visit type must emit its own value exactly once
+    expect(onChange.mock.calls.map(c => c[0])).toEqual(visitTypes);
   });
 
   test('shows descriptions when showDescription is true', () => {
@@ -156,7 +151,7 @@ describe('VisitTypeSelector', () => {
 
     const radios = screen.getAllByRole('radio');
     radios.forEach((radio, index) => {
-      expect(radio).toHaveValue(expectedValues[index]);
+      expect(radio).toHaveAttribute('value', expectedValues[index]);
     });
   });
 });

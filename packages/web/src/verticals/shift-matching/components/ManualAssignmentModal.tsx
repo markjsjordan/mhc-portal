@@ -12,6 +12,7 @@ import React, { useState } from 'react';
 import { Search, AlertTriangle, Info, X, CheckCircle } from 'lucide-react';
 import { Button, LoadingSpinner } from '@/core/components';
 import type { MatchCandidate, OpenShift } from '../types';
+import toast from 'react-hot-toast';
 
 interface ManualAssignmentModalProps {
   shift: OpenShift;
@@ -316,7 +317,11 @@ export const ManualAssignmentModal: React.FC<ManualAssignmentModalProps> = ({
               Cancel
             </Button>
             <Button
-              onClick={handleAssign}
+              onClick={() => {
+                handleAssign().catch((err: unknown) => {
+                  toast.error(err instanceof Error ? err.message : 'Failed to assign candidate');
+                });
+              }}
               variant="primary"
               disabled={!selectedCandidate || isAssigning}
               className="min-w-32"

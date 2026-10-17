@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { Plus, Grid, List } from 'lucide-react';
 import { Button, LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
 import { usePermissions } from '@/core/hooks';
@@ -26,12 +27,12 @@ export const PayRunList: React.FC = () => {
     return (
       <ErrorMessage
         message={(error as Error).message || 'Failed to load pay runs'}
-        retry={refetch}
+        retry={() => { refetch().catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to refresh pay runs'); }); }}
       />
     );
   }
 
-  const payRuns = payRunData?.items || [];
+  const payRuns = payRunData?.items ?? [];
 
   return (
     <div className="space-y-6">
@@ -39,7 +40,7 @@ export const PayRunList: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Payroll Processing</h1>
           <p className="text-gray-600 mt-1">
-            {payRunData?.total || 0} total pay runs
+            {payRunData?.total ?? 0} total pay runs
           </p>
         </div>
         <div className="flex gap-2">
@@ -74,7 +75,7 @@ export const PayRunList: React.FC = () => {
       <CreatePayRunModal
         isOpen={isCreateRunOpen}
         onClose={() => setIsCreateRunOpen(false)}
-        onCreated={() => { void refetch(); }}
+        onCreated={() => { refetch().catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to refresh pay runs'); }); }}
       />
 
       {isSummaryLoading ? (
@@ -84,7 +85,7 @@ export const PayRunList: React.FC = () => {
       ) : summaryError ? (
         <ErrorMessage
           message={(summaryError as Error).message || 'Failed to load payroll summary'}
-          retry={refetchSummary}
+          retry={() => { refetchSummary().catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to refresh payroll summary'); }); }}
         />
       ) : summary ? (
         <PayrollSummaryCard summary={summary} />

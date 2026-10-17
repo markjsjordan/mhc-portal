@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { Grid, List, Filter } from 'lucide-react';
 import { Button, LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
 import { usePayStubs } from '../hooks';
@@ -24,12 +25,12 @@ export const PayStubList: React.FC = () => {
     return (
       <ErrorMessage
         message={(error as Error).message || 'Failed to load pay stubs'}
-        retry={refetch}
+        retry={() => { refetch().catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to refresh pay stubs'); }); }}
       />
     );
   }
 
-  const payStubs = payStubData?.items || [];
+  const payStubs = payStubData?.items ?? [];
 
   return (
     <div className="space-y-6">
@@ -37,7 +38,7 @@ export const PayStubList: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Pay Stubs</h1>
           <p className="text-gray-600 mt-1">
-            {payStubData?.total || 0} total pay stubs
+            {payStubData?.total ?? 0} total pay stubs
           </p>
         </div>
         <div className="flex gap-2">
@@ -81,7 +82,7 @@ export const PayStubList: React.FC = () => {
               </label>
               <select
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                value={filters.status || ''}
+                value={filters.status ?? ''}
                 onChange={(e) =>
                   setFilters({ ...filters, status: (e.target.value || undefined) as PayStubSearchFilters['status'] })
                 }
@@ -99,7 +100,7 @@ export const PayStubList: React.FC = () => {
               </label>
               <select
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                value={filters.paymentMethod || ''}
+                value={filters.paymentMethod ?? ''}
                 onChange={(e) =>
                   setFilters({ ...filters, paymentMethod: (e.target.value || undefined) as PayStubSearchFilters['paymentMethod'] })
                 }
@@ -117,7 +118,7 @@ export const PayStubList: React.FC = () => {
               <input
                 type="date"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                value={filters.startDate || ''}
+                value={filters.startDate ?? ''}
                 onChange={(e) =>
                   setFilters({ ...filters, startDate: e.target.value || undefined })
                 }

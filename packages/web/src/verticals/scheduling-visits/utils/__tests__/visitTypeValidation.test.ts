@@ -210,18 +210,20 @@ describe('visitTypeValidation', () => {
       expect(eligible).not.toContain('SUPERVISION');
     });
 
-    test('returns all types when caregiver has RN', () => {
+    // Contract: INITIAL and ASSESSMENT require BOTH RN and LPN (see visitTypeConfig);
+    // RN alone unlocks only SUPERVISION among the nurse-gated types.
+    test('returns RN-gated types when caregiver has RN only', () => {
       const eligible = getEligibleVisitTypesForCaregiver(['RN']);
-      expect(eligible).toContain('INITIAL');
-      expect(eligible).toContain('ASSESSMENT');
       expect(eligible).toContain('SUPERVISION');
       expect(eligible).toContain('REGULAR');
+      expect(eligible).not.toContain('INITIAL');
+      expect(eligible).not.toContain('ASSESSMENT');
     });
 
     test('returns appropriate types for RN + other certs', () => {
       const eligible = getEligibleVisitTypesForCaregiver(['RN', 'CPR', 'BLS']);
       expect(eligible).toContain('SUPERVISION');
-      expect(eligible).toContain('INITIAL');
+      expect(eligible).not.toContain('INITIAL');
     });
 
     test('returns nurse types when caregiver has RN and LPN', () => {
@@ -263,16 +265,12 @@ describe('visitTypeValidation', () => {
       });
     });
 
-    test('exactly 7 types available with RN certification', () => {
-      // Types without required certs + INITIAL + ASSESSMENT + SUPERVISION
-      // REGULAR, RESPITE, EMERGENCY, DISCHARGE, MAKEUP, CONCIERGE, ONGOING_SUPPORT (7 no-cert)
-      // + INITIAL, ASSESSMENT, SUPERVISION (3 with RN)
-      // = 10 total (should include all with RN requirements met)
+    test('RN-only caregiver gets the 8 types whose requirements RN satisfies', () => {
+      // INITIAL/ASSESSMENT need RN+LPN, so they are excluded for RN-only.
+      // Remaining: 7 no-cert types + SUPERVISION (RN) = 8.
       const eligible = getEligibleVisitTypesForCaregiver(['RN']);
       const expectedWithRN = [
         'REGULAR',
-        'INITIAL',
-        'ASSESSMENT',
         'RESPITE',
         'SUPERVISION',
         'EMERGENCY',
@@ -281,7 +279,7 @@ describe('visitTypeValidation', () => {
         'CONCIERGE',
         'ONGOING_SUPPORT',
       ];
-      expect(eligible.sort()).toEqual(expectedWithRN.sort());
+      expect([...eligible].sort((a, b) => a.localeCompare(b))).toEqual([...expectedWithRN].sort((a, b) => a.localeCompare(b)));
     });
 
     test('exactly 7 types available without certification', () => {

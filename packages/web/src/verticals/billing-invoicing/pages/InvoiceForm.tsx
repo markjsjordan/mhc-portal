@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft } from 'lucide-react';
+import toast from 'react-hot-toast';
 import {
   Button,
   Card,
@@ -22,6 +23,7 @@ import {
   ErrorMessage,
 } from '@/core/components';
 import { useInvoice, useCreateInvoice, useUpdateInvoice } from '../hooks';
+import { billingErrorMessage } from '../services/billing-api';
 import type { CreateInvoiceInput, UpdateInvoiceInput } from '../types';
 
 const payerTypeOptions = [
@@ -152,18 +154,18 @@ export const InvoiceForm: React.FC = () => {
   React.useEffect(() => {
     if (isEditMode && existingInvoice) {
       reset({
-        clientId: existingInvoice.clientId || '',
+        clientId: existingInvoice.clientId ?? '',
         payerId: existingInvoice.payerId,
         payerType: existingInvoice.payerType,
         payerName: existingInvoice.payerName,
-        invoiceDate: existingInvoice.invoiceDate?.slice(0, 10) || '',
-        dueDate: existingInvoice.dueDate?.slice(0, 10) || '',
-        periodStart: existingInvoice.periodStart?.slice(0, 10) || '',
-        periodEnd: existingInvoice.periodEnd?.slice(0, 10) || '',
+        invoiceDate: existingInvoice.invoiceDate?.slice(0, 10) ?? '',
+        dueDate: existingInvoice.dueDate?.slice(0, 10) ?? '',
+        periodStart: existingInvoice.periodStart?.slice(0, 10) ?? '',
+        periodEnd: existingInvoice.periodEnd?.slice(0, 10) ?? '',
         billableItemIdsRaw: (existingInvoice.lineItems || [])
           .map((item) => item.billableItemId)
           .join('\n'),
-        notes: existingInvoice.notes || '',
+        notes: existingInvoice.notes ?? '',
         status: existingInvoice.status,
         taxAmount: String(existingInvoice.taxAmount ?? ''),
         discountAmount: String(existingInvoice.discountAmount ?? ''),
@@ -182,7 +184,7 @@ export const InvoiceForm: React.FC = () => {
           discountAmount: data.discountAmount ? Number(data.discountAmount) : undefined,
         };
         const result = await updateInvoice.mutateAsync({ id, input: updateInput });
-        navigate(`/billing/${result.id}`);
+        await navigate(`/billing/${result.id}`);
       } else {
         const createInput: CreateInvoiceInput = {
           clientId: data.clientId || undefined,
@@ -197,10 +199,12 @@ export const InvoiceForm: React.FC = () => {
           notes: data.notes || undefined,
         };
         const result = await createInvoice.mutateAsync(createInput);
-        navigate(`/billing/${result.id}`);
+        await navigate(`/billing/${result.id}`);
       }
-    } catch {
-      // Error is handled by the mutation
+    } catch (err) {
+      // The mutation's onError already surfaces a toast; keep a console trace so
+      // the failure is never fully silent.
+      console.error('Invoice save failed', err);
     }
   };
 
@@ -248,7 +252,7 @@ export const InvoiceForm: React.FC = () => {
       <Card>
         <CardHeader title="Invoice Details" />
         <CardContent>
-          <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+          <form onSubmit={(e) => { handleSubmit(onFormSubmit)(e).catch((err: unknown) => { toast.error(billingErrorMessage(err, 'Failed to save invoice')); }); }} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField label="Client ID" error={errors.clientId?.message}>
                 <Input {...register('clientId')} placeholder="Optional client ID" disabled={isEditMode} data-testid="invoice-client-id" />

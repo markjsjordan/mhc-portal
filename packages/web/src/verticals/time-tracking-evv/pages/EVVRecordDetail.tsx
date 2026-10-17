@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin } from 'lucide-react';
 import { Button, LoadingSpinner, ErrorMessage } from '@/core/components';
 import { useEVVRecord } from '../hooks';
+import toast from 'react-hot-toast';
 
 export const EVVRecordDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,7 +24,11 @@ export const EVVRecordDetail: React.FC = () => {
         message="Failed to load EVV record"
         action={
           // @ts-ignore
-          <Button onClick={() => navigate('/time-tracking')}>
+          <Button onClick={() => {
+          Promise.resolve(navigate('/time-tracking')).catch((err: unknown) => {
+            toast.error(err instanceof Error ? err.message : 'Navigation failed');
+          });
+        }}>
             Back to List
           </Button>
         }
@@ -37,7 +42,11 @@ export const EVVRecordDetail: React.FC = () => {
         {/* @ts-ignore */}
         <Button
           variant="outline"
-          onClick={() => navigate('/time-tracking')}
+          onClick={() => {
+              Promise.resolve(navigate('/time-tracking')).catch((err: unknown) => {
+                toast.error(err instanceof Error ? err.message : 'Navigation failed');
+              });
+            }}
           leftIcon={(() => { 
             // @ts-ignore
             return <ArrowLeft className="h-4 w-4" />; 

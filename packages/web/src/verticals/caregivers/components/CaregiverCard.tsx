@@ -21,7 +21,7 @@ export const CaregiverCard: React.FC<CaregiverCardProps> = ({ caregiver, compact
         <div className="flex justify-between items-start gap-4">
           <div className="min-w-0 flex-1">
             <h3 className="text-lg font-semibold text-gray-900 truncate">
-              {caregiver.preferredName || fullName}
+              {caregiver.preferredName ?? fullName}
             </h3>
             <p className="text-sm text-gray-600 truncate">{caregiver.employeeNumber}</p>
             <p className="text-sm text-gray-600 truncate">{caregiver.role}</p>

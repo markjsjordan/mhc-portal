@@ -133,6 +133,9 @@ export default defineConfig({
       NODE_ENV: 'test',
       DATABASE_URL: process.env['E2E_DATABASE_URL'] || process.env['DATABASE_URL'] || 'postgresql://postgres:postgres@localhost:5432/folkcare_e2e_test',
       PORT: '3000',
+      // UI tests run against the built web app on :5173 (vite preview), which
+      // calls this API cross-origin. Allow it or every login 500s on CORS.
+      CORS_ORIGIN: 'http://localhost:5173,http://localhost:3000',
       // JWT secrets for authentication
       // Generate cryptographically secure random secrets if not provided
       JWT_SECRET: process.env['JWT_SECRET'] || generateTestSecret(),

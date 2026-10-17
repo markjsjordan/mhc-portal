@@ -5,7 +5,7 @@
  * Creates a new caregiver with PENDING_ONBOARDING status.
  */
 import React, { useState } from 'react';
-import { Copy } from 'lucide-react';
+import type { CaregiverStatus } from '../types/index.js';
 import { Button, Modal, Checkbox, Input, Select } from '@/core/components';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -40,7 +40,7 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
   const [newFirstName, setNewFirstName] = useState(caregiver.firstName || '');
   const [newLastName, setNewLastName] = useState(`${caregiver.lastName || ''}-Copy`);
   const [newEmail, setNewEmail] = useState('');
-  const [newStatus, setNewStatus] = useState('PENDING_ONBOARDING');
+  const [newStatus, setNewStatus] = useState<CaregiverStatus>('PENDING_ONBOARDING');
 
   const [copyFields, setCopyFields] = useState<CopyFieldsOptions>({
     skills: true,
@@ -62,13 +62,15 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
         </div>
       );
       handleClose();
-      navigate(`/caregivers/${newCaregiver.id}`);
+      Promise.resolve(navigate(`/caregivers/${newCaregiver.id}`)).catch((err: unknown) => {
+        toast.error(err instanceof Error ? err.message : 'Navigation failed');
+      });
     },
     onError: (error: any) => {
       if (error.response?.data?.error === 'DUPLICATE_EMAIL') {
         toast.error('Email already in use');
       } else {
-        toast.error(error.response?.data?.message || 'Failed to duplicate caregiver');
+        toast.error(error.response?.data?.message ?? 'Failed to duplicate caregiver');
       }
     },
   });
@@ -125,8 +127,6 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
       isOpen={isOpen}
       onClose={handleClose}
       title="Duplicate Caregiver"
-      icon={<Copy className="h-6 w-6 text-blue-600" />}
-      size="lg"
     >
       <div className="space-y-4">
         {/* Source info */}
@@ -178,7 +178,7 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
           <Select
             label="New Status"
             value={newStatus}
-            onChange={(value) => setNewStatus(value)}
+            onChange={(e) => setNewStatus(e.target.value as CaregiverStatus)}
             options={statusOptions}
             disabled={duplicateMutation.isPending}
           />
@@ -199,9 +199,9 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
             ].map(({ id, label }) => (
               <div key={id} className="flex items-center gap-2">
                 <Checkbox
-                  id={`copy-${id}`}
+                  label={label}
                   checked={copyFields[id as keyof CopyFieldsOptions]}
-                  onChange={(checked) =>
+                  onCheckedChange={(checked) =>
                     setCopyFields((prev) => ({
                       ...prev,
                       [id]: checked,
@@ -209,12 +209,6 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
                   }
                   disabled={duplicateMutation.isPending}
                 />
-                <label
-                  htmlFor={`copy-${id}`}
-                  className="text-sm text-gray-700 cursor-pointer"
-                >
-                  {label}
-                </label>
               </div>
             ))}
           </div>

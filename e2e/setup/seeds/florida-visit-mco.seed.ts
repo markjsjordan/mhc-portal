@@ -34,22 +34,23 @@ export async function seedDatabase(db: Database): Promise<void> {
         },
       }),
       'ACTIVE',
-      'system',
+      '00000000-e2e0-4000-8000-000000000100',
     ]
   );
 
   await db.query(
     `INSERT INTO clients (
-      id, organization_id, branch_id, first_name, last_name, date_of_birth,
-      primary_address, medicaid_number, mco_name, state_program, status,
+      id, organization_id, branch_id, client_number, first_name, last_name, date_of_birth,
+      primary_address, service_eligibility, medicaid_number, mco_name, state_program, status,
       created_at, created_by, updated_at, updated_by, version
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), $12, NOW(), $12, 1)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), $14, NOW(), $14, 1)
     ON CONFLICT (id) DO NOTHING`,
     [
       clientId,
       orgId,
       branchId,
+      'CL-FL-MCO-001',
       'Robert',
       'Johnson',
       '1940-08-22',
@@ -63,18 +64,19 @@ export async function seedDatabase(db: Database): Promise<void> {
         longitude: -81.3792,
         geofence_radius: 150,
       }),
+      JSON.stringify({}),
       'FL-MCD-789012',
       'Sunshine Health',
       'Medicaid Managed Care',
       'ACTIVE',
-      'system',
+      '00000000-e2e0-4000-8000-000000000100',
     ]
   );
 
   await db.query(
     `INSERT INTO caregivers (
       id, organization_id, branch_id, first_name, last_name, employee_number,
-      credentials, background_checks, compliance_status, status,
+      credentials, background_check, compliance_status, status,
       created_at, created_by, updated_at, updated_by, version
     )
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), $11, NOW(), $11, 1)
@@ -108,7 +110,7 @@ export async function seedDatabase(db: Database): Promise<void> {
       }),
       'COMPLIANT',
       'ACTIVE',
-      'system',
+      '00000000-e2e0-4000-8000-000000000100',
     ]
   );
 
@@ -139,7 +141,7 @@ export async function seedDatabase(db: Database): Promise<void> {
           completed: false,
         },
       ]),
-      'system',
+      '00000000-e2e0-4000-8000-000000000100',
     ]
   );
 
