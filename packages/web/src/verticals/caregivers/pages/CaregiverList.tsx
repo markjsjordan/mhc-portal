@@ -10,8 +10,7 @@ import {
   Button, 
   LoadingSpinner, 
   EmptyState, 
-  ErrorMessage,
-  DemoDataBanner 
+  ErrorMessage
 } from '@/core/components/index.js';
 import { usePermissions, useDemoData } from '@/core/hooks/index.js';
 import { useCaregivers } from '../hooks/index.js';
@@ -27,10 +26,7 @@ export const CaregiverList: React.FC = () => {
   const {
     hasDemoData,
     isSeeding,
-    isClearing,
     seedDemoData,
-    clearDemoData,
-    stats,
   } = useDemoData();
 
   if (isLoading) {
@@ -96,23 +92,7 @@ export const CaregiverList: React.FC = () => {
         </div>
       </div>
 
-      {/* Demo Data Banner */}
-      {hasDemoData && (
-        <DemoDataBanner
-          onClearDemo={() => {
-            clearDemoData().catch((err: unknown) => {
-              toast.error(err instanceof Error ? err.message : 'Failed to clear demo data');
-            });
-          }}
-          onAddRealData={() => {
-          Promise.resolve(navigate('/caregivers/new')).catch((err: unknown) => {
-            toast.error(err instanceof Error ? err.message : 'Navigation failed');
-          });
-        }}
-          isClearing={isClearing}
-          stats={stats ?? undefined}
-        />
-      )}
+      {/* Demo Data Banner removed: not shown in the current build */}
 
       <CaregiverFilters filters={filters} onFiltersChange={setFilters} />
 
