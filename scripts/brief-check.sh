@@ -6,7 +6,7 @@ set -e
 set -o pipefail
 
 # Ensure root node_modules/.bin is in PATH for workspace scripts
-export PATH="$(pwd)/node_modules/.bin:/usr/local/bin:/opt/homebrew/bin:$PATH"
+export PATH="$(pwd)/node_modules/.bin:$PATH:/usr/local/bin:/opt/homebrew/bin"
 
 # Colors for output
 RED='\033[0;31m'
@@ -38,10 +38,21 @@ start_time=$(date +%s)
 echo -e "${YELLOW}▶ ⚡ Using turbo cache for fast incremental checks${NC}"
 echo ""
 
+# Detect changed packages from staged files for pre-commit
+CHANGED_PKGS=$(git diff --cached --name-only 2>/dev/null | awk -F/ '{if ($1=="packages" || $1=="verticals") print $1"/"$2}' | sort -u || true)
+FILTER_ARGS=""
+if [ -n "$CHANGED_PKGS" ]; then
+  for pkg in $CHANGED_PKGS; do
+    FILTER_ARGS="$FILTER_ARGS --filter=./$pkg..."
+  done
+  echo -e "${BLUE}Scoped to staged packages:${NC} $CHANGED_PKGS"
+  echo ""
+fi
+
 # 1. Lint
 echo -e "${YELLOW}▶ 🔍 Lint${NC}"
 lint_start=$(date +%s)
-if npx turbo run lint --cache-dir=.turbo 2>&1 | tee /tmp/lint.log | tail -20; then
+if npx turbo run lint $FILTER_ARGS --cache-dir=.turbo 2>&1 | tee /tmp/lint.log | tail -20; then
   lint_end=$(date +%s)
   echo -e "${GREEN}✅ Lint passed${NC} ($((lint_end - lint_start))s)"
 else
@@ -57,7 +68,7 @@ echo ""
 # 2. TypeCheck
 echo -e "${YELLOW}▶ 🔍 TypeCheck${NC}"
 typecheck_start=$(date +%s)
-if npx turbo run typecheck --cache-dir=.turbo 2>&1 | tee /tmp/typecheck.log | tail -20; then
+if npx turbo run typecheck $FILTER_ARGS --cache-dir=.turbo 2>&1 | tee /tmp/typecheck.log | tail -20; then
   typecheck_end=$(date +%s)
   echo -e "${GREEN}✅ TypeCheck passed${NC} ($((typecheck_end - typecheck_start))s)"
 else
@@ -73,7 +84,7 @@ echo ""
 # 3. Tests
 echo -e "${YELLOW}▶ 🧪 Tests${NC}"
 test_start=$(date +%s)
-if npx turbo run test --cache-dir=.turbo 2>&1 | tee /tmp/test.log | tail -20; then
+if npx turbo run test $FILTER_ARGS --cache-dir=.turbo 2>&1 | tee /tmp/test.log | tail -20; then
   test_end=$(date +%s)
   echo -e "${GREEN}✅ Tests passed${NC} ($((test_end - test_start))s)"
 else
@@ -89,7 +100,7 @@ echo ""
 # 4. Build
 echo -e "${YELLOW}▶ 🏗️  Build${NC}"
 build_start=$(date +%s)
-if npx turbo run build --cache-dir=.turbo 2>&1 | tee /tmp/build.log | tail -20; then
+if npx turbo run build $FILTER_ARGS --cache-dir=.turbo 2>&1 | tee /tmp/build.log | tail -20; then
   build_end=$(date +%s)
   echo -e "${GREEN}✅ Build passed${NC} ($((build_end - build_start))s)"
 else

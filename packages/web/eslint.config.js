@@ -171,12 +171,9 @@ export default [
       'scripts/**/*.js',
       'scripts/**/*.d.ts',
       'scripts/**/*.js.map',
-      // Temporarily exclude broken admin test files (pre-existing issues)
-      'src/app/pages/admin/__tests__/AdminDashboard.test.tsx',
-      'src/app/pages/admin/__tests__/ComplianceCenter.test.tsx',
-      'src/app/pages/admin/__tests__/DataGridPanel.test.tsx',
-      'src/app/pages/admin/__tests__/OperationsCenter.test.tsx',
-      'src/app/pages/admin/__tests__/StateConfigPanel.test.tsx',
+      // Exclude test files since they are excluded from tsconfig.json
+      '**/__tests__/**',
+      '**/tests/**',
       // Exclude sync files that depend on @folkcare/core (pre-existing issues)
       'src/core/hooks/sync/**/*',
       'src/core/services/sync-api.ts',

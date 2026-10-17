@@ -1,10 +1,12 @@
 import React from 'react';
 
-export interface CheckboxProps {
+export interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   checked: boolean;
-  onCheckedChange: (checked: boolean) => void;
+  onChange?: (checked: boolean) => void;
+  onCheckedChange?: (checked: boolean) => void;
   disabled?: boolean;
   label?: string;
+  id?: string;
 }
 
 /**
@@ -12,14 +14,21 @@ export interface CheckboxProps {
  * Stub implementation for checkboxes
  */
 export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ checked, onCheckedChange, disabled = false, label, ...props }, ref) => {
+  ({ checked, onChange, onCheckedChange, disabled = false, label, id, ...props }, ref) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const isChecked = e.target.checked;
+      if (onChange) onChange(isChecked);
+      if (onCheckedChange) onCheckedChange(isChecked);
+    };
+
     return (
-      <label className="checkbox-wrapper">
+      <label htmlFor={id} className="checkbox-wrapper">
         <input
           ref={ref}
+          id={id}
           type="checkbox"
           checked={checked}
-          onChange={(e) => onCheckedChange(e.target.checked)}
+          onChange={handleChange}
           disabled={disabled}
           {...props}
         />

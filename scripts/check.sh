@@ -6,7 +6,7 @@ set -e
 set -o pipefail
 
 # Ensure root node_modules/.bin is in PATH for workspace scripts
-export PATH="$(pwd)/node_modules/.bin:/usr/local/bin:/opt/homebrew/bin:$PATH"
+export PATH="$(pwd)/node_modules/.bin:$PATH:/usr/local/bin:/opt/homebrew/bin"
 
 # Colors for output
 RED='\033[0;31m'

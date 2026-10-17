@@ -34,28 +34,55 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-      <div className="flex items-center justify-between h-16 px-4">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between h-16 px-3 sm:px-4">
+        {/* Left: Hamburger menu + Logo */}
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 mr-2 sm:mr-4">
           <Button
             variant="ghost"
             size="sm"
             onClick={onMenuClick}
-            className="lg:hidden"
+            className="lg:hidden min-w-[44px] min-h-[44px] h-11 w-11 p-0 flex items-center justify-center shrink-0"
+            aria-label="Open navigation menu"
           >
             <Menu className="h-6 w-6" />
           </Button>
-          <img
-            src={mqtLogo}
-            alt="Marquette Home Care"
-            className="h-10 w-auto"
-            title="Marquette Home Care"
-          />
+
+          <div className="flex items-center min-w-0 overflow-hidden">
+            {/* Icon-only mark below 360px (e.g. 320px) to ensure legibility and eliminate overlap */}
+            <div
+              className="block min-[360px]:hidden w-9 h-9 overflow-hidden shrink-0 rounded"
+              title="Marquette Home Care"
+              data-testid="header-logo-icon"
+            >
+              <img
+                src={mqtLogo}
+                alt="Marquette Home Care"
+                className="h-9 w-auto max-w-none object-left"
+              />
+            </div>
+
+            {/* Scaled full logo for >= 360px widths (375px, 390px, 430px, and desktop) */}
+            <img
+              src={mqtLogo}
+              alt="Marquette Home Care"
+              title="Marquette Home Care"
+              data-testid="header-logo-full"
+              className="hidden min-[360px]:block h-7 min-[390px]:h-8 sm:h-9 md:h-10 w-auto max-w-full object-contain object-left shrink"
+            />
+          </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm">
+        {/* Right: Bell notifications + Profile avatar */}
+        <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="min-w-[44px] min-h-[44px] h-11 w-11 p-0 flex items-center justify-center shrink-0"
+            aria-label="Notifications"
+          >
             <Bell className="h-5 w-5" />
           </Button>
+
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
               <p className="text-sm font-medium text-gray-900">{user?.name}</p>
@@ -70,9 +97,16 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                 </span>
               </div>
             </div>
-            <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
-              <User className="h-5 w-5" />
-            </div>
+
+            <button
+              type="button"
+              className="min-w-[44px] min-h-[44px] h-11 w-11 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 shrink-0"
+              aria-label="User profile"
+            >
+              <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
+                <User className="h-5 w-5" />
+              </div>
+            </button>
           </div>
         </div>
       </div>
