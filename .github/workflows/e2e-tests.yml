@@ -1,15 +1,9 @@
 name: E2E Tests
 
-# E2E tests run on PRs to main/preview and scheduled nightly runs
-# Skipped on develop to reduce CI time - rely on nightly runs for comprehensive testing
+# E2E tests are MANUAL ONLY. They do not run on pull requests, pushes, or a
+# nightly schedule. Trigger them with the /mhc-e2e-testing skill (which calls
+# workflow_dispatch) or `gh workflow run e2e-tests.yml`.
 on:
-  pull_request:
-    branches: [production, preview]
-  push:
-    branches: [production, preview]
-  schedule:
-    # Run nightly at 2 AM UTC
-    - cron: '0 2 * * *'
   workflow_dispatch:
     inputs:
       browser:
