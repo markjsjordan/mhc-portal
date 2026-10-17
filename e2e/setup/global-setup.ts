@@ -84,10 +84,8 @@ export default async function globalSetup() {
     // Step 2: Run migrations
     console.log('\n🔄 Running database migrations...');
     const migrationCommand = `DATABASE_URL=${dbUrl} npm run db:migrate --workspace=@folkcare/core`;
-    console.log(`[diag] migration start ${new Date().toISOString()}`);
     try {
       const { stdout, stderr } = await execAsync(migrationCommand);
-      console.log(`[diag] migration returned ${new Date().toISOString()}`);
       if (stdout) console.log(stdout);
       if (stderr) console.warn(stderr);
       console.log('✅ Migrations completed successfully');
