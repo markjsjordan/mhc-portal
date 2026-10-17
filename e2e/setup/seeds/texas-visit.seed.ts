@@ -48,23 +48,24 @@ export async function seedDatabase(db: Database): Promise<void> {
         },
       }),
       'ACTIVE',
-      'system',
+      '00000000-e2e0-4000-8000-000000000100',
     ]
   );
 
   // Create Texas client
   await db.query(
     `INSERT INTO clients (
-      id, organization_id, branch_id, first_name, last_name, date_of_birth,
-      primary_address, medicaid_number, state_program, status,
+      id, organization_id, branch_id, client_number, first_name, last_name, date_of_birth,
+      primary_address, service_eligibility, medicaid_number, state_program, status,
       created_at, created_by, updated_at, updated_by, version
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), $11, NOW(), $11, 1)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), $13, NOW(), $13, 1)
     ON CONFLICT (id) DO NOTHING`,
     [
       clientId,
       orgId,
       branchId,
+      'CL-TX-VISIT-001',
       'Maria',
       'Rodriguez',
       '1945-03-15',
@@ -78,10 +79,11 @@ export async function seedDatabase(db: Database): Promise<void> {
         longitude: -97.7600,
         geofence_radius: 100,
       }),
+      JSON.stringify({}),
       'TX-MCD-123456',
       'STAR+PLUS',
       'ACTIVE',
-      'system',
+      '00000000-e2e0-4000-8000-000000000100',
     ]
   );
 
@@ -89,7 +91,7 @@ export async function seedDatabase(db: Database): Promise<void> {
   await db.query(
     `INSERT INTO caregivers (
       id, organization_id, branch_id, first_name, last_name, employee_number,
-      credentials, background_checks, compliance_status, status,
+      credentials, background_check, compliance_status, status,
       created_at, created_by, updated_at, updated_by, version
     )
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), $11, NOW(), $11, 1)
@@ -130,7 +132,7 @@ export async function seedDatabase(db: Database): Promise<void> {
       }),
       'COMPLIANT',
       'ACTIVE',
-      'system',
+      '00000000-e2e0-4000-8000-000000000100',
     ]
   );
 
@@ -176,7 +178,7 @@ export async function seedDatabase(db: Database): Promise<void> {
         gpsAccuracyThreshold: 50,
         vmurRequired: false,
       }),
-      'system',
+      '00000000-e2e0-4000-8000-000000000100',
     ]
   );
 

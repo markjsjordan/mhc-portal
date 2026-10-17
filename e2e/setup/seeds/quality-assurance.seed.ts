@@ -22,7 +22,7 @@ export async function seedDatabase(db: Database): Promise<void> {
   const findingId = '00000000-e2e0-4000-8000-000000004002';
   const correctiveActionId = '00000000-e2e0-4000-8000-000000004003';
   // created_by/updated_by columns are UUID-typed; use the seeded admin user's id
-  // rather than the literal string 'system' (which fails UUID validation).
+  // rather than the literal string '00000000-0000-0000-0000-000000000000' (which fails UUID validation).
   const systemUserId = E2E_UUIDS.ADMIN_USER;
 
   // Create organization (idempotent — shared with other seeds)
