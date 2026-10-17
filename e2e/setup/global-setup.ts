@@ -125,7 +125,7 @@ export default async function globalSetup() {
       await seedDb.query(
         `INSERT INTO users (id, organization_id, username, email, password_hash, first_name, last_name, status, roles, permissions, created_at, created_by, updated_at, updated_by, version)
          VALUES ($1, $2, $3, $4, $5, 'Admin', 'User', 'ACTIVE', $6, $7, NOW(), $1, NOW(), $1, 1)
-         ON CONFLICT (id) DO NOTHING`,
+         ON CONFLICT DO NOTHING`,
         [
           E2E_ADMIN.userId,
           E2E_ADMIN.orgId,
