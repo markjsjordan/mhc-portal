@@ -34,7 +34,7 @@ jobs:
   e2e-tests:
     name: E2E Tests (${{ matrix.browser || 'chromium' }})
     runs-on: ubuntu-latest
-    timeout-minutes: 15  # 15 min max - tests should be fast
+    timeout-minutes: 30  # 30 min: full 13-spec suite + web preview + retries (owner-approved)
 
     strategy:
       fail-fast: true  # Stop on first failure
