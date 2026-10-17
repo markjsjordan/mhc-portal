@@ -123,6 +123,15 @@ jobs:
           JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET_E2E || 'ci-test-jwt-refresh-secret-minimum-32-characters-required-for-testing' }}
         run: |
           echo "Running E2E tests for ${{ matrix.browser }}..."
+          # Diagnostic: start the server ourselves with output visible, and prove
+          # whether it answers /health, independent of Playwright's webServer.
+          (npm run test:e2e:server > /tmp/e2e-server.log 2>&1 &)
+          for i in $(seq 1 60); do
+            c=$(curl -s -m 2 -o /dev/null -w "%{http_code}" http://localhost:3000/health || true)
+            [ "$c" = "200" ] && { echo "SERVER_READY_HTTP_200 after ${i}s"; break; }
+            sleep 1
+          done
+          echo "--- server log (first 60 lines) ---"; head -60 /tmp/e2e-server.log || true
           npm run test:e2e -- --project=${{ matrix.browser }} --reporter=html,json,junit
 
       - name: Generate accessibility report
