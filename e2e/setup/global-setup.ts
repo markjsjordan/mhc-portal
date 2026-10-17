@@ -1,6 +1,20 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { Database, DatabaseConfig } from '../../packages/core/src/db/connection.js';
+import { PasswordUtils } from '../../packages/core/src/utils/password-utils.js';
+import { E2E_UUIDS } from '../fixtures/test-data.js';
+
+/**
+ * The admin the specs log in as. IDs come from the shared fixture so the
+ * seeded account matches the rest of the E2E data. Email and password are the
+ * credentials the specs already use (see e2e/tests/*.spec.ts).
+ */
+const E2E_ADMIN = {
+  orgId: E2E_UUIDS.ORG_E2E,
+  userId: E2E_UUIDS.ADMIN_USER,
+  email: 'admin@folkcare.example',
+  password: 'Admin123!',
+};
 
 const execAsync = promisify(exec);
 
@@ -94,6 +108,38 @@ export default async function globalSetup() {
     const result = await db.query<{ version: string }>('SELECT version()');
     console.log(`✅ Connected to PostgreSQL: ${result.rows[0]?.version.split(',')[0]}`);
     await db.close();
+
+    // Step 4: Seed the admin account the specs log in as. Specs use
+    // admin@folkcare.example with the shared E2E password; the password is
+    // hashed with the project's own PasswordUtils so the real login path can
+    // verify it. Idempotent (ON CONFLICT), so reruns against a shared DB are safe.
+    console.log('\n👤 Seeding E2E admin account...');
+    const seedDb = new Database(parseDatabaseUrl(dbUrl));
+    try {
+      await seedDb.query(
+        `INSERT INTO organizations (id, name, primary_address, status, created_at, created_by, updated_at, updated_by, version)
+         VALUES ($1, $2, $3, 'ACTIVE', NOW(), $1, NOW(), $1, 1)
+         ON CONFLICT (id) DO NOTHING`,
+        [E2E_ADMIN.orgId, 'E2E Test Organization', JSON.stringify({ street: '1 Test Ln', city: 'Austin', state: 'TX', postalCode: '78701', country: 'USA' })]
+      );
+      await seedDb.query(
+        `INSERT INTO users (id, organization_id, username, email, password_hash, first_name, last_name, status, roles, permissions, created_at, created_by, updated_at, updated_by, version)
+         VALUES ($1, $2, $3, $4, $5, 'Admin', 'User', 'ACTIVE', $6, $7, NOW(), $1, NOW(), $1, 1)
+         ON CONFLICT (id) DO NOTHING`,
+        [
+          E2E_ADMIN.userId,
+          E2E_ADMIN.orgId,
+          'admin',
+          E2E_ADMIN.email,
+          PasswordUtils.hashPassword(E2E_ADMIN.password),
+          ['SUPER_ADMIN'],
+          ['*:*'],
+        ]
+      );
+      console.log(`✅ Admin account ready: ${E2E_ADMIN.email}`);
+    } finally {
+      await seedDb.close();
+    }
 
     console.log('\n✨ E2E test environment ready!\n');
   } catch (error) {
