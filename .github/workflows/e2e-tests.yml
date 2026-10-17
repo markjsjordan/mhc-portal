@@ -147,7 +147,7 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: junit-results-${{ matrix.browser }}
-          path: test-results/junit.xml
+          path: e2e-results.xml
           retention-days: 30
 
       - name: Upload test videos
