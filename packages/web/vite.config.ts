@@ -170,6 +170,18 @@ export default defineConfig({
       },
     },
   },
+  // `vite preview` does not inherit server.proxy; mirror it so the built app
+  // can reach the API when served for E2E UI tests.
+  preview: {
+    port: parseInt(process.env.WEB_PREVIEW_PORT ?? '5173', 10),
+    strictPort: true,
+    proxy: {
+      '/api': {
+        target: `http://localhost:${process.env.API_PORT ?? '3000'}`,
+        changeOrigin: true,
+      },
+    },
+  },
   build: {
     outDir: 'dist',
     sourcemap: true,

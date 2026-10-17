@@ -117,7 +117,7 @@ jobs:
         env:
           DEBUG: pw:webserver,pw:test*
           E2E_DATABASE_URL: postgresql://postgres:***@localhost:5432/${{ env.DATABASE_NAME }}
-          E2E_BASE_URL: http://localhost:3000
+          E2E_BASE_URL: http://localhost:5173
           CI: true
           JWT_SECRET: ${{ secrets.JWT_SECRET_E2E || 'ci-test-jwt-secret-minimum-32-characters-required-for-security-testing' }}
           JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET_E2E || 'ci-test-jwt-refresh-secret-minimum-32-characters-required-for-testing' }}
@@ -132,6 +132,17 @@ jobs:
             sleep 1
           done
           echo "--- server log (first 60 lines) ---"; head -60 /tmp/e2e-server.log || true
+          # UI tests need the built web app (React SPA). The API on :3000 has no
+          # static serving, so /login never rendered. Serve packages/web/dist on
+          # :5173 via vite preview (which proxies /api to :3000), and point the
+          # UI tests at it. API-only specs keep working against :3000.
+          (npm run preview --workspace=@folkcare/web -- --port 5173 --strictPort > /tmp/e2e-web.log 2>&1 &)
+          for i in $(seq 1 60); do
+            c=$(curl -s -m 2 -o /dev/null -w "%{http_code}" http://localhost:5173/login || true)
+            [ "$c" = "200" ] && { echo "WEB_READY_HTTP_200 after ${i}s"; break; }
+            sleep 1
+          done
+          echo "--- web preview log (first 40 lines) ---"; head -40 /tmp/e2e-web.log || true
           npm run test:e2e -- --project=${{ matrix.browser }} --reporter=html,json,junit
 
       - name: Generate accessibility report
