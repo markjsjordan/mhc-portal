@@ -70,3 +70,17 @@ Goal: get preview building and let the owner log in to preview as markjsjordan@g
   because it alters CI cost/limits.
 - Billing lifecycle tests skip on a clean DB (no seeded invoices); login is
   proven, the lifecycle itself is not yet validated end to end.
+
+## Verified full-suite result (run 39034305439, commit 4be79a15, chromium)
+
+- 131 unique tests: **34 passed, 10 skipped, 87 failed**.
+- The JUnit artifact is now uploaded, but Playwright writes it with 0 testcases in
+  this configuration. The CI step log carries the real per-test results. Fixing the
+  reporter so the JUnit file contains per-test entries is a follow-up.
+- Failure groups (likely shared causes):
+  1. Visual regression (~30): "should match baseline" fails. Baselines must be
+     generated for this environment. Test-infrastructure, not product.
+  2. EVV, caregiver-assignment, billing/payroll (~40): need seeded fixture data
+     beyond the current seed set (seed drift).
+  3. Performance (8), shift-matching/scheduling (~10), smoke/API (2): need their
+     own investigation.
