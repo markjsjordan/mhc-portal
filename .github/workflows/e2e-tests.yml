@@ -115,7 +115,8 @@ jobs:
 
       - name: Run E2E tests
         env:
-          E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/${{ env.DATABASE_NAME }}
+          DEBUG: pw:webserver,pw:test*
+          E2E_DATABASE_URL: postgresql://postgres:***@localhost:5432/${{ env.DATABASE_NAME }}
           E2E_BASE_URL: http://localhost:3000
           CI: true
           JWT_SECRET: ${{ secrets.JWT_SECRET_E2E || 'ci-test-jwt-secret-minimum-32-characters-required-for-security-testing' }}
