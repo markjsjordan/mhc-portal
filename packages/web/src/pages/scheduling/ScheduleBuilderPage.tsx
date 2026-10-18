@@ -338,6 +338,21 @@ export default function ScheduleBuilderPage() {
             width: 100% !important;
           }
         }
+        @media (max-width: 767px) {
+          .modal-form-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .modal-container {
+            max-height: 85vh !important;
+            border-radius: 8px !important;
+          }
+          .modal-header {
+            padding: 16px !important;
+          }
+          .modal-form {
+            padding: 16px !important;
+          }
+        }
       `}</style>
       <div
         className="schedule-builder-header"
@@ -1218,8 +1233,8 @@ function CreateRecurringPatternModal({
 
   return (
     <div style={modalStyles.overlay}>
-      <div style={modalStyles.container}>
-        <div style={modalStyles.header}>
+      <div style={modalStyles.container} className="modal-container">
+        <div style={modalStyles.header} className="modal-header">
           <div>
             <h2 style={modalStyles.title}>Create Recurring Schedule</h2>
             <p style={modalStyles.subtitle}>
@@ -1229,8 +1244,8 @@ function CreateRecurringPatternModal({
           <button onClick={onClose} style={modalStyles.closeBtn}>✕</button>
         </div>
 
-        <form onSubmit={handleSubmit} style={modalStyles.form}>
-          <div style={modalStyles.formGrid}>
+        <form onSubmit={handleSubmit} style={modalStyles.form} className="modal-form">
+          <div style={modalStyles.formGrid} className="modal-form-grid">
             <div style={modalStyles.formGroup}>
               <label style={modalStyles.label}>Client *</label>
               {clients.length > 0 ? (
@@ -1613,6 +1628,7 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
+    padding: '16px',
   },
   container: {
     backgroundColor: '#ffffff',
@@ -1622,6 +1638,7 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
     maxHeight: '90vh',
     overflowY: 'auto',
     boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    margin: '0 auto',
   },
   header: {
     padding: '20px 24px',
