@@ -8,7 +8,7 @@
  * - Quick actions
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/hooks';
 import { Card, CardHeader, CardContent, Button, EmptyState, LoadingSpinner, ErrorMessage } from '@/core/components';
@@ -26,11 +26,14 @@ import {
   Award,
   CreditCard,
   FileSpreadsheet,
+  LogIn,
+  X,
 } from 'lucide-react';
 import {
   useOperationalKPIs,
   useComplianceAlerts,
 } from '@/verticals/analytics-reporting/hooks/useAnalytics';
+import { LoginAsModal } from './admin/components/index.js';
 
 interface StatCardProps {
   label: string;
@@ -156,8 +159,9 @@ const QuickAction: React.FC<QuickActionProps> = ({ title, description, icon, onC
 };
 
 export const AdministratorDashboard: React.FC = () => {
-  useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const [isLoginAsOpen, setIsLoginAsOpen] = useState(false);
 
   // Memoize filters to prevent infinite re-renders
   const kpiFilters = useMemo(() => {
@@ -327,6 +331,12 @@ export const AdministratorDashboard: React.FC = () => {
 
   const quickActions = [
     {
+      title: 'Login As Caregiver',
+      description: 'Impersonate caregiver view for support',
+      icon: <LogIn className="h-5 w-5" />,
+      onClick: () => setIsLoginAsOpen(true),
+    },
+    {
       title: 'Approve Timesheets',
       description: '23 pending approvals',
       icon: <Clock className="h-5 w-5" />,
@@ -360,14 +370,52 @@ export const AdministratorDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Administrator Dashboard
-        </h1>
-        <p className="mt-1 text-gray-600">
-          Organization-wide overview and compliance monitoring
-        </p>
+      {/* Impersonation Banner */}
+      {user && user.roles?.includes('CAREGIVER') && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center gap-3">
+          <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-yellow-800">
+              You are currently logged in as a caregiver
+            </p>
+            <p className="text-xs text-yellow-700 mt-1">
+              This is an impersonation session. Your actions are being audited for compliance.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              localStorage.removeItem('auth-storage');
+              window.location.href = '/login';
+            }}
+            className="text-yellow-600 hover:text-yellow-800 flex-shrink-0"
+            aria-label="End impersonation"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
+      {/* Welcome Header with Login As Button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Administrator Dashboard
+          </h1>
+          <p className="mt-1 text-gray-600">
+            Organization-wide overview and compliance monitoring
+          </p>
+        </div>
+        {!user?.roles?.includes('CAREGIVER') && (
+          <Button
+            onClick={() => setIsLoginAsOpen(true)}
+            variant="primary"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <LogIn className="h-4 w-4" />
+            <span>Login As Caregiver</span>
+          </Button>
+        )}
       </div>
 
       {/* Organization Stats */}
@@ -442,6 +490,33 @@ export const AdministratorDashboard: React.FC = () => {
           />
         </CardContent>
       </Card>
+
+      {/* Login As Modal */}
+      <LoginAsModal
+        isOpen={isLoginAsOpen}
+        onClose={() => setIsLoginAsOpen(false)}
+        onImpersonateStart={(accessToken, caregiver) => {
+          localStorage.setItem(
+            'auth-storage',
+            JSON.stringify({
+              state: {
+                user: {
+                  id: caregiver.id,
+                  email: caregiver.email,
+                  organizationId: user?.organizationId || '',
+                  name: caregiver.name,
+                  roles: ['CAREGIVER'],
+                  permissions: [],
+                },
+                token: accessToken,
+                isAuthenticated: true,
+              },
+              version: 0,
+            })
+          );
+          window.location.reload();
+        }}
+      />
     </div>
   );
 };
