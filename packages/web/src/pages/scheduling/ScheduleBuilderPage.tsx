@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import { useIsMobile } from '@/core/hooks';
 import { useCaregivers } from '@/verticals/caregivers/hooks/useCaregivers';
 import { useCalendarVisits, useVisitApi, useCaregiverAvailability } from '@/verticals/scheduling-visits/hooks/useVisits';
 import type { Visit as ApiVisit } from '@/verticals/scheduling-visits/types';
@@ -127,6 +128,7 @@ function getNextWeekDates(): string[] {
 }
 
 export default function ScheduleBuilderPage() {
+  const isMobile = useIsMobile();
   const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]!);
   const [draggedVisit, setDraggedVisit] = useState<Visit | null>(null);
   const [viewMode, setViewMode] = useState<'week' | 'day'>('day');
@@ -253,59 +255,169 @@ export default function ScheduleBuilderPage() {
   );
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
+    <div
+      className="schedule-builder-container"
+      style={isMobile ? styles.containerMobile : styles.container}
+    >
+      <style>{`
+        @media (max-width: 767px) {
+          .schedule-builder-container {
+            padding: 16px 12px !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+          }
+          .schedule-builder-header {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 16px !important;
+            margin-bottom: 20px !important;
+          }
+          .schedule-builder-controls {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+            width: 100% !important;
+          }
+          .schedule-builder-controls-row {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 8px !important;
+            width: 100% !important;
+          }
+          .schedule-builder-toggle {
+            display: flex !important;
+            flex-shrink: 0 !important;
+          }
+          .schedule-builder-toggle button {
+            min-height: 44px !important;
+            min-width: 44px !important;
+            padding: 10px 14px !important;
+          }
+          .schedule-builder-date-select {
+            min-height: 44px !important;
+            padding: 10px 12px !important;
+            flex: 1 !important;
+            min-width: 0 !important;
+          }
+          .schedule-builder-action-btn {
+            min-height: 44px !important;
+            width: 100% !important;
+            justify-content: center !important;
+          }
+          .schedule-builder-content {
+            flex-direction: column !important;
+            gap: 20px !important;
+            width: 100% !important;
+          }
+          .schedule-builder-sidebar {
+            width: 100% !important;
+          }
+        }
+      `}</style>
+      <div
+        className="schedule-builder-header"
+        style={isMobile ? styles.headerMobile : styles.header}
+      >
         <div>
-          <h1 style={styles.title}>Schedule Builder</h1>
+          <h1 style={isMobile ? styles.titleMobile : styles.title}>Schedule Builder</h1>
           <p style={styles.subtitle}>
             Drag unassigned visits to caregiver time slots
           </p>
         </div>
-        <div style={styles.headerControls}>
-          <div style={styles.viewToggle}>
-            <button
-              style={{
-                ...styles.viewButton,
-                ...(viewMode === 'day' ? styles.viewButtonActive : {}),
-              }}
-              onClick={() => setViewMode('day')}
-            >
-              Day
-            </button>
-            <button
-              style={{
-                ...styles.viewButton,
-                ...(viewMode === 'week' ? styles.viewButtonActive : {}),
-              }}
-              onClick={() => setViewMode('week')}
-            >
-              Week
-            </button>
-          </div>
-          <select
-            value={selectedDate}
-            onChange={e => setSelectedDate(e.target.value)}
-            style={styles.dateSelect}
-          >
-            {weekDates.map(date => (
-              <option key={date} value={date}>
-                {new Date(date).toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </option>
-            ))}
-          </select>
+        <div
+          className="schedule-builder-controls"
+          style={isMobile ? styles.headerControlsMobile : styles.headerControls}
+        >
+          {isMobile ? (
+            <div className="schedule-builder-controls-row" style={styles.controlsRowMobile}>
+              <div className="schedule-builder-toggle" style={styles.viewToggleMobile}>
+                <button
+                  style={{
+                    ...styles.viewButtonMobile,
+                    ...(viewMode === 'day' ? styles.viewButtonActive : {}),
+                  }}
+                  onClick={() => setViewMode('day')}
+                >
+                  Day
+                </button>
+                <button
+                  style={{
+                    ...styles.viewButtonMobile,
+                    ...(viewMode === 'week' ? styles.viewButtonActive : {}),
+                  }}
+                  onClick={() => setViewMode('week')}
+                >
+                  Week
+                </button>
+              </div>
+              <select
+                value={selectedDate}
+                onChange={e => setSelectedDate(e.target.value)}
+                className="schedule-builder-date-select"
+                style={styles.dateSelectMobile}
+              >
+                {weekDates.map(date => (
+                  <option key={date} value={date}>
+                    {new Date(date).toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <>
+              <div style={styles.viewToggle}>
+                <button
+                  style={{
+                    ...styles.viewButton,
+                    ...(viewMode === 'day' ? styles.viewButtonActive : {}),
+                  }}
+                  onClick={() => setViewMode('day')}
+                >
+                  Day
+                </button>
+                <button
+                  style={{
+                    ...styles.viewButton,
+                    ...(viewMode === 'week' ? styles.viewButtonActive : {}),
+                  }}
+                  onClick={() => setViewMode('week')}
+                >
+                  Week
+                </button>
+              </div>
+              <select
+                value={selectedDate}
+                onChange={e => setSelectedDate(e.target.value)}
+                style={styles.dateSelect}
+              >
+                {weekDates.map(date => (
+                  <option key={date} value={date}>
+                    {new Date(date).toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
           <button
-            style={styles.patternButton}
+            className="schedule-builder-action-btn"
+            style={isMobile ? styles.patternButtonMobile : styles.patternButton}
             onClick={() => setShowPatternModal(true)}
           >
             + Recurring Schedule
           </button>
           <button
+            className="schedule-builder-action-btn"
             style={{
-              ...styles.patternButton,
+              ...(isMobile ? styles.patternButtonMobile : styles.patternButton),
               backgroundColor: '#1d4ed8',
               color: '#ffffff',
               border: 'none',
@@ -319,7 +431,7 @@ export default function ScheduleBuilderPage() {
       </div>
 
       {supervisionCadence && supervisionCadence.showAlert && (
-        <div style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: '20px', maxWidth: '100%' }}>
           <SupervisionAlertBanner
             cadence={supervisionCadence}
             onSchedule={() => setShowSupervisionModal(true)}
@@ -327,9 +439,15 @@ export default function ScheduleBuilderPage() {
         </div>
       )}
 
-      <div style={styles.content}>
+      <div
+        className="schedule-builder-content"
+        style={isMobile ? styles.contentMobile : styles.content}
+      >
         {/* Unassigned visits sidebar */}
-        <div style={styles.sidebar}>
+        <div
+          className="schedule-builder-sidebar"
+          style={isMobile ? styles.sidebarMobile : styles.sidebar}
+        >
           <h3 style={styles.sidebarTitle}>
             Unassigned Visits ({unassignedVisits.length})
           </h3>
@@ -544,6 +662,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: '24px',
     maxWidth: '1600px',
     margin: '0 auto',
+    boxSizing: 'border-box',
+  },
+  containerMobile: {
+    padding: '16px 12px',
+    maxWidth: '100%',
+    margin: '0 auto',
+    boxSizing: 'border-box',
+    overflowX: 'hidden',
   },
   header: {
     display: 'flex',
@@ -551,8 +677,21 @@ const styles: { [key: string]: React.CSSProperties } = {
     alignItems: 'flex-start',
     marginBottom: '24px',
   },
+  headerMobile: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: '16px',
+    marginBottom: '20px',
+    width: '100%',
+  },
   title: {
     fontSize: '28px',
+    fontWeight: 'bold',
+    marginBottom: '4px',
+  },
+  titleMobile: {
+    fontSize: '24px',
     fontWeight: 'bold',
     marginBottom: '4px',
   },
@@ -565,11 +704,31 @@ const styles: { [key: string]: React.CSSProperties } = {
     gap: '12px',
     alignItems: 'center',
   },
+  headerControlsMobile: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: '10px',
+    width: '100%',
+  },
+  controlsRowMobile: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    width: '100%',
+  },
   viewToggle: {
     display: 'flex',
     border: '1px solid #e5e7eb',
     borderRadius: '6px',
     overflow: 'hidden',
+  },
+  viewToggleMobile: {
+    display: 'flex',
+    border: '1px solid #e5e7eb',
+    borderRadius: '6px',
+    overflow: 'hidden',
+    flexShrink: 0,
   },
   viewButton: {
     padding: '8px 16px',
@@ -577,6 +736,19 @@ const styles: { [key: string]: React.CSSProperties } = {
     backgroundColor: 'white',
     cursor: 'pointer',
     fontSize: '14px',
+  },
+  viewButtonMobile: {
+    padding: '10px 14px',
+    minHeight: '44px',
+    minWidth: '44px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: 'none',
+    backgroundColor: 'white',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 500,
   },
   viewButtonActive: {
     backgroundColor: '#3b82f6',
@@ -588,13 +760,34 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '6px',
     fontSize: '14px',
   },
+  dateSelectMobile: {
+    padding: '10px 12px',
+    border: '1px solid #e5e7eb',
+    borderRadius: '6px',
+    fontSize: '14px',
+    minHeight: '44px',
+    flex: 1,
+    minWidth: 0,
+    backgroundColor: 'white',
+  },
   content: {
     display: 'flex',
     gap: '24px',
     marginBottom: '24px',
   },
+  contentMobile: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+    marginBottom: '24px',
+    width: '100%',
+  },
   sidebar: {
     width: '300px',
+    flexShrink: 0,
+  },
+  sidebarMobile: {
+    width: '100%',
     flexShrink: 0,
   },
   sidebarTitle: {
@@ -777,6 +970,24 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+  },
+  patternButtonMobile: {
+    padding: '10px 16px',
+    backgroundColor: '#10b981',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: 500,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+    minHeight: '44px',
+    width: '100%',
+    boxSizing: 'border-box',
     boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
   },
   recurringBadge: {
