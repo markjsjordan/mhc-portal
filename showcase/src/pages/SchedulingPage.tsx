@@ -17,6 +17,7 @@ import { ShowcaseLayout } from '../components/ShowcaseLayout';
 import { SummaryCard } from '../components/visits/SummaryCard';
 import { VisitCard } from '../components/visits/VisitCard';
 import { VisitFilters } from '../components/visits/VisitFilters';
+import { VisitDetailsPanel } from '../components/visits/VisitDetailsPanel';
 import { useVisitProvider } from '@/core/providers/context';
 import type { Visit, VisitSearchFilters } from '../types/showcase-types.js';
 import { getVisitTypeConfig } from '../config/visitTypeConfig.js';
@@ -24,6 +25,9 @@ import { getVisitTypeConfig } from '../config/visitTypeConfig.js';
 export const SchedulingPage: React.FC = () => {
   const navigate = useNavigate();
   const visitProvider = useVisitProvider();
+
+  // Selected visit ID for side panel
+  const [selectedVisitId, setSelectedVisitId] = useState<string | null>(null);
 
   // Search state with 300ms debounce
   const [searchQuery, setSearchQuery] = useState('');
@@ -427,12 +431,20 @@ export const SchedulingPage: React.FC = () => {
               <VisitCard
                 key={visit.id}
                 visit={visit}
-                onClick={() => navigate(`/scheduling/visits/${visit.id}`)}
+                onClick={() => setSelectedVisitId(visit.id)}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Visit Details Side Panel */}
+      {selectedVisitId && (
+        <VisitDetailsPanel
+          visitId={selectedVisitId}
+          onClose={() => setSelectedVisitId(null)}
+        />
+      )}
     </ShowcaseLayout>
   );
 };
