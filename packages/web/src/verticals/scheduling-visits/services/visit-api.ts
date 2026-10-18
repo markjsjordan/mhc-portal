@@ -76,6 +76,7 @@ export interface CreateVisitPayload {
   caregiverId?: string;
   serviceTypeId: string;
   serviceTypeName?: string;
+  visitType?: string;
   scheduledDate: string;
   scheduledStartTime: string;
   scheduledEndTime: string;

@@ -9,31 +9,6 @@ import { useClients } from '@/verticals/client-demographics/hooks/useClients';
 import { calculateSupervisoryCadence } from '@/verticals/scheduling-visits/utils/supervisory-cadence';
 import { SupervisionAlertBanner } from '@/verticals/scheduling-visits/components/SupervisionAlertBanner';
 
-// Create-appointment flow is not implemented on this branch. The handlers below
-// were referenced by the UI but never defined (see wdvf3abp42). Failing loudly
-// here is intentional: a silent no-op would look like it works to coordinators.
-class NotImplementedError extends Error {
-  constructor(feature: string) {
-    super(`${feature} is not implemented yet (wdvf3abp42)`);
-    this.name = 'NotImplementedError';
-  }
-}
-const handleTimeSlotClick = (_caregiverId: string, _hour: number): void => {
-  throw new NotImplementedError('Time-slot appointment creation');
-};
-const handleCreateVisit = async (): Promise<void> => {
-  throw new NotImplementedError('Create appointment');
-};
-const [showCreateModal] = [false] as const;
-const [createModalData] = [null as null | { clientId: string; caregiverId?: string; date: string; startTime: string; duration: number }] as const;
-const setShowCreateModal = (_v: boolean): void => {
-  throw new NotImplementedError('Create appointment modal');
-};
-const setCreateModalData = (_v: null | { clientId: string; caregiverId?: string; date: string; startTime: string; duration: number }): void => {
-  throw new NotImplementedError('Create appointment modal');
-};
-
-
 interface Caregiver {
   id: string;
   name: string;
@@ -140,6 +115,17 @@ export default function ScheduleBuilderPage() {
   );
   const [supervisionClientId] = useState<string>(initialClientId);
 
+  // General visit creation modal state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createModalData, setCreateModalData] = useState<{
+    clientId: string;
+    caregiverId?: string;
+    date: string;
+    startTime: string;
+    duration: number;
+    visitType: string;
+  } | null>(null);
+
   const queryClient = useQueryClient();
   const visitApi = useVisitApi();
 
@@ -231,6 +217,44 @@ export default function ScheduleBuilderPage() {
     toast.error('Unassigning a visit is not supported by the API yet (no unassign endpoint exists).');
   }, []);
 
+  const handleTimeSlotClick = useCallback((caregiverId: string, hour: number) => {
+    const startHour = String(hour).padStart(2, '0');
+    setCreateModalData({
+      clientId: '',
+      caregiverId,
+      date: selectedDate,
+      startTime: `${startHour}:00`,
+      duration: 1,
+      visitType: 'REGULAR',
+    });
+    setShowCreateModal(true);
+  }, [selectedDate]);
+
+  const handleCreateVisit = useCallback(async () => {
+    if (!createModalData) return;
+    const endHour = String(parseInt(createModalData.startTime.split(':')[0] ?? '9') + createModalData.duration).padStart(2, '0');
+    const endTime = `${endHour}:00`;
+    try {
+      await visitApi.createVisit({
+        clientId: createModalData.clientId,
+        caregiverId: createModalData.caregiverId,
+        serviceTypeId: '00000000-0000-0000-0000-000000000002',
+        visitType: createModalData.visitType as import('@/verticals/scheduling-visits/types').VisitType,
+        scheduledDate: createModalData.date,
+        scheduledStartTime: createModalData.startTime,
+        scheduledEndTime: endTime,
+      });
+      toast.success('Visit created successfully');
+      setShowCreateModal(false);
+      setCreateModalData(null);
+      await queryClient.invalidateQueries({ queryKey: ['visits'] });
+      await refetchVisits();
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Failed to create visit';
+      toast.error(msg);
+    }
+  }, [createModalData, visitApi, queryClient, refetchVisits]);
+
   const getVisitsForCaregiverAtTime = (caregiverId: string, hour: number) => {
     return visits.filter(v => {
       if (v.caregiverId !== caregiverId || v.date !== selectedDate) return false;
@@ -302,6 +326,27 @@ export default function ScheduleBuilderPage() {
             onClick={() => setShowPatternModal(true)}
           >
             + Recurring Schedule
+          </button>
+          <button
+            style={{
+              ...styles.patternButton,
+              backgroundColor: '#059669',
+              color: '#ffffff',
+              border: 'none',
+              fontWeight: 600,
+            }}
+            onClick={() => {
+              setCreateModalData({
+                clientId: '',
+                date: selectedDate,
+                startTime: '09:00',
+                duration: 1,
+                visitType: 'REGULAR',
+              });
+              setShowCreateModal(true);
+            }}
+          >
+            + New Visit
           </button>
           <button
             style={{
@@ -788,6 +833,89 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: 600,
     border: '1px solid #a7f3d0',
     display: 'inline-block',
+  },
+  modalOverlay: {
+    position: 'fixed' as const,
+    inset: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  modal: {
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    padding: '24px',
+    width: '100%',
+    maxWidth: '480px',
+    boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
+    position: 'relative' as const,
+  },
+  modalTitle: {
+    fontSize: '18px',
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: '20px',
+  },
+  closeBtn: {
+    position: 'absolute' as const,
+    top: '16px',
+    right: '16px',
+    background: 'none',
+    border: 'none',
+    fontSize: '18px',
+    color: '#9ca3af',
+    cursor: 'pointer',
+    padding: '4px',
+  },
+  formGroup: {
+    marginBottom: '16px',
+  },
+  label: {
+    display: 'block',
+    fontSize: '13px',
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: '6px',
+  },
+  input: {
+    width: '100%',
+    padding: '8px 12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '14px',
+    color: '#111827',
+    backgroundColor: '#ffffff',
+    outline: 'none',
+    boxSizing: 'border-box' as const,
+  },
+  footer: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '12px',
+    marginTop: '20px',
+    paddingTop: '16px',
+    borderTop: '1px solid #e5e7eb',
+  },
+  cancelBtn: {
+    padding: '8px 16px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    backgroundColor: '#ffffff',
+    color: '#374151',
+    fontSize: '14px',
+    cursor: 'pointer',
+  },
+  submitBtn: {
+    padding: '8px 18px',
+    border: 'none',
+    borderRadius: '6px',
+    backgroundColor: '#059669',
+    color: '#ffffff',
+    fontSize: '14px',
+    fontWeight: '500' as const,
+    cursor: 'pointer',
   },
 };
 
@@ -1431,6 +1559,7 @@ interface CreateAppointmentModalProps {
     date: string;
     startTime: string;
     duration: number;
+    visitType: string;
   };
   clients: Array<{ id: string; firstName: string; lastName: string }>;
   onClose: () => void;
@@ -1441,6 +1570,7 @@ interface CreateAppointmentModalProps {
     date: string;
     startTime: string;
     duration: number;
+    visitType: string;
   }>) => void;
 }
 
@@ -1454,6 +1584,10 @@ function CreateAppointmentModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
+    if (!data.clientId) {
+      toast.error('Please select a client');
+      return;
+    }
     setIsSubmitting(true);
     try {
       await onSubmit();
@@ -1475,11 +1609,32 @@ function CreateAppointmentModal({
             onChange={(e) => onChange({ clientId: e.target.value })}
             style={styles.input}
           >
+            <option value="">Select a client...</option>
             {clients.map(client => (
               <option key={client.id} value={client.id}>
                 {client.firstName} {client.lastName}
               </option>
             ))}
+          </select>
+        </div>
+
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Visit Type <span style={{ color: '#ef4444' }}>*</span></label>
+          <select
+            value={data.visitType}
+            onChange={(e) => onChange({ visitType: e.target.value })}
+            style={styles.input}
+          >
+            <option value="REGULAR">Regular Visit</option>
+            <option value="INITIAL">Initial Visit</option>
+            <option value="ASSESSMENT">Assessment Visit</option>
+            <option value="RESPITE">Respite Care</option>
+            <option value="SUPERVISION">Supervisory Nurse Visit</option>
+            <option value="EMERGENCY">Emergency Response</option>
+            <option value="DISCHARGE">Discharge Visit</option>
+            <option value="MAKEUP">Make-up Visit</option>
+            <option value="CONCIERGE">Concierge Visit</option>
+            <option value="ONGOING_SUPPORT">Ongoing Support</option>
           </select>
         </div>
 

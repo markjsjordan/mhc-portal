@@ -7,6 +7,7 @@ interface VisitTypeSelectorProps {
   onChange: (type: VisitType) => void;
   disabled?: boolean;
   showDescription?: boolean;
+  required?: boolean;
 }
 
 /**
