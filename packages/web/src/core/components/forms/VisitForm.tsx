@@ -22,6 +22,7 @@ interface VisitFormProps {
   initialDate?: string;
   initialStartTime?: string;
   initialEndTime?: string;
+  initialVisitType?: VisitType;
   onSubmit: (data: VisitFormData) => Promise<void>;
   isSubmitting?: boolean;
 }
@@ -30,19 +31,27 @@ export const VisitForm: React.FC<VisitFormProps> = ({
   initialDate,
   initialStartTime = '09:00',
   initialEndTime = '10:00',
+  initialVisitType = 'REGULAR',
   onSubmit,
   isSubmitting = false,
 }) => {
   const apiClient = useApiClient();
-  const [visitType, setVisitType] = useState<VisitType>('REGULAR');
+  const [visitType, setVisitType] = useState<VisitType>(initialVisitType);
   const [formData, setFormData] = useState<VisitFormData>({
     clientId: '',
     serviceTypeId: '',
-    visitType: 'REGULAR',
+    visitType: initialVisitType,
     scheduledDate: initialDate || new Date().toISOString().split('T')[0]!,
     scheduledStartTime: initialStartTime,
     scheduledEndTime: initialEndTime,
   });
+
+  React.useEffect(() => {
+    if (initialVisitType) {
+      setVisitType(initialVisitType);
+      setFormData((prev) => ({ ...prev, visitType: initialVisitType }));
+    }
+  }, [initialVisitType]);
 
   const [errors, setErrors] = useState<Partial<Record<keyof VisitFormData, string>>>({});
 
@@ -269,15 +278,6 @@ export const VisitForm: React.FC<VisitFormProps> = ({
           rows={3}
           placeholder="Internal notes"
         />
-      </div>
-
-      {/* Visit Type Selection */}
-      <div>
-        <VisitTypeSelector
-          value={visitType}
-          onChange={(type) => handleChange('visitType', type)}
-        />
-
       </div>
 
       {/* Client Instructions */}

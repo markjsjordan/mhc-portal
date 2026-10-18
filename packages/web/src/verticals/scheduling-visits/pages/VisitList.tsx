@@ -15,12 +15,15 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Zap,
-  Stethoscope,
+  Plus,
+  ChevronDown,
 } from 'lucide-react';
 import { LoadingSpinner, EmptyState, ErrorMessage, Button } from '@/core/components';
+import { CreateVisitModal } from '@/core/components/forms/CreateVisitModal';
 import { useVisits } from '../hooks/useVisits';
 import { VisitCard, SummaryCard, VisitFilters } from '../components';
-import type { VisitSearchFilters, Visit } from '../types';
+import { VISIT_TYPES } from '../config/visitTypeConfig';
+import type { VisitSearchFilters, Visit, VisitType } from '../types';
 import { VISIT_STATUS_LABELS, VISIT_TYPE_LABELS } from '../types';
 
 const getDefaultFilters = (): VisitSearchFilters => ({
@@ -34,6 +37,17 @@ export const VisitList: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+
+  // Visit creation modal state
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedVisitType, setSelectedVisitType] = useState<VisitType>('REGULAR');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const handleOpenCreateModal = (type: VisitType = 'REGULAR') => {
+    setSelectedVisitType(type);
+    setIsCreateModalOpen(true);
+    setIsDropdownOpen(false);
+  };
 
   // Search state with 300ms debounce
   const [searchQuery, setSearchQuery] = useState('');
@@ -263,13 +277,61 @@ export const VisitList: React.FC = () => {
         </div>
 
         <div className="flex gap-3 items-center">
-          <Link to="/scheduling/builder?visitType=SUPERVISION">
+          <div className="relative inline-flex rounded-md shadow-sm">
+            <Button
+              variant="primary"
+              size="sm"
+              leftIcon={<Plus className="h-4 w-4" />}
+              onClick={() => handleOpenCreateModal('REGULAR')}
+            >
+              Schedule Visit
+            </Button>
+            <button
+              type="button"
+              onClick={() => setIsDropdownOpen((prev) => !prev)}
+              className="inline-flex items-center px-2 py-1.5 border border-l-0 border-blue-600 rounded-r-md bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Select visit type to schedule"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </button>
+
+            {isDropdownOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setIsDropdownOpen(false)}
+                />
+                <div className="absolute right-0 top-full mt-1 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 py-1 max-h-80 overflow-y-auto">
+                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">
+                    Schedule by Visit Type
+                  </div>
+                  {Object.entries(VISIT_TYPES).map(([typeKey, config]) => {
+                    const type = typeKey as VisitType;
+                    const Icon = config.icon;
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => handleOpenCreateModal(type)}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                      >
+                        <Icon className={`h-4 w-4 flex-shrink-0 ${config.colorClass}`} />
+                        <span className="truncate">{config.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+
+          <Link to="/scheduling/builder">
             <Button
               variant="outline"
               size="sm"
-              leftIcon={<Stethoscope className="h-4 w-4 text-blue-600" />}
+              leftIcon={<Calendar className="h-4 w-4 text-gray-600" />}
             >
-              Schedule Supervision Visit
+              Schedule Builder
             </Button>
           </Link>
           <div className="flex border border-gray-300 rounded-md">
@@ -615,6 +677,15 @@ export const VisitList: React.FC = () => {
           )}
         </>
       )}
+
+      <CreateVisitModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        initialVisitType={selectedVisitType}
+        onSuccess={() => {
+          void refetch();
+        }}
+      />
     </div>
   );
 };
