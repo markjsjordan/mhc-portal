@@ -4,3 +4,4 @@ export { VisitStatusLegend } from './VisitStatusLegend';
 export { SupervisionAlertBanner } from './SupervisionAlertBanner';
 export { SummaryCard } from './SummaryCard';
 export { VisitFilters } from './VisitFilters';
+export { EditVisitModal } from './EditVisitModal';

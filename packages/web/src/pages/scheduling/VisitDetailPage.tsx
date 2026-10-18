@@ -16,8 +16,11 @@ import {
   Calendar,
   Check,
   Building,
+  Edit3,
+  Lock,
 } from 'lucide-react';
-import { useVisit } from '../../verticals/scheduling-visits';
+import { useVisit, EditVisitModal } from '../../verticals/scheduling-visits';
+import { usePermissions } from '@/core/hooks';
 import { getVisitTypeConfig } from './visitTypeConfig';
 import type { Visit } from '../../verticals/scheduling-visits/types';
 
@@ -88,7 +91,35 @@ export const VisitDetailPage: React.FC = () => {
     };
   }, [id]);
 
-  const visit: Visit | null = apiVisit || fallbackVisit;
+  const [modifiedVisit, setModifiedVisit] = useState<Visit | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const { can, hasAnyRole } = usePermissions();
+  const canEditVisit =
+    can('schedules:update') ||
+    can('schedules:*') ||
+    can('visits:*') ||
+    can('visits:update') ||
+    hasAnyRole([
+      'ADMINISTRATOR',
+      'ORG_ADMIN',
+      'SUPER_ADMIN',
+      'BRANCH_ADMIN',
+      'COORDINATOR',
+      'SCHEDULER',
+      'SUPERVISOR',
+    ]);
+
+  const visit: Visit | null = modifiedVisit || apiVisit || fallbackVisit;
+
+  const isLocked = useMemo(() => {
+    if (!visit) return false;
+    return (
+      visit.status === 'COMPLETED' ||
+      visit.status === 'CANCELLED' ||
+      Boolean(visit.actualStartTime)
+    );
+  }, [visit]);
 
   // Initial task checklist
   const initialTasks = useMemo<VisitTaskItem[]>(() => {
@@ -225,14 +256,44 @@ export const VisitDetailPage: React.FC = () => {
           <button
             type="button"
             onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors min-h-[44px]"
             title="Print Summary"
           >
             <Printer className="w-4 h-4 text-gray-500" />
             <span className="hidden sm:inline">Print</span>
           </button>
+          {!isLocked && canEditVisit && (
+            <button
+              type="button"
+              onClick={() => setIsEditModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-colors min-h-[44px]"
+              data-testid="edit-visit-button"
+            >
+              <Edit3 className="w-4 h-4" />
+              <span>Edit Visit</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Locked Notice if completed, cancelled, or EVV active */}
+      {isLocked && (
+        <div
+          role="status"
+          className="rounded-xl p-4 bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3 shadow-sm"
+          data-testid="locked-visit-banner"
+        >
+          <Lock className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="text-xs space-y-1">
+            <p className="font-bold text-sm">Visit Record Locked ({statusStyle.label})</p>
+            <p className="text-amber-800 leading-relaxed">
+              {visit.status === 'COMPLETED'
+                ? 'This visit has been verified and completed under 21st Century Cures Act §12006 EVV mandates. Post-visit modifications are locked to preserve audit integrity. Corrections require a supervisor unlock or Visit Maintenance Unlock Request (VMUR).'
+                : 'This visit has been cancelled or has active field execution and cannot be edited. Please schedule a new visit if further care is required.'}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Visit Banner with Visit Type + Status */}
       <div
@@ -331,24 +392,26 @@ export const VisitDetailPage: React.FC = () => {
             </div>
 
             {/* Service Address */}
-            <div className="pt-3 border-t border-gray-100">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-blue-600" />
-                Service Location
-              </p>
-              <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-xs text-gray-700 space-y-0.5">
-                <p className="font-semibold text-gray-900">{visit.address.line1}</p>
-                {visit.address.line2 && <p>{visit.address.line2}</p>}
-                <p>
-                  {visit.address.city}, {visit.address.state} {visit.address.postalCode}
+            {visit.address && (
+              <div className="pt-3 border-t border-gray-100">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                  Service Location
                 </p>
-                {visit.address.latitude && visit.address.longitude && (
-                  <p className="text-[11px] text-gray-500 font-mono pt-1">
-                    GPS: {visit.address.latitude.toFixed(4)}, {visit.address.longitude.toFixed(4)}
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-xs text-gray-700 space-y-0.5">
+                  <p className="font-semibold text-gray-900">{visit.address.line1}</p>
+                  {visit.address.line2 && <p>{visit.address.line2}</p>}
+                  <p>
+                    {visit.address.city}, {visit.address.state} {visit.address.postalCode}
                   </p>
-                )}
+                  {visit.address.latitude && visit.address.longitude && (
+                    <p className="text-[11px] text-gray-500 font-mono pt-1">
+                      GPS: {visit.address.latitude.toFixed(4)}, {visit.address.longitude.toFixed(4)}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Access Instructions Callout */}
             <div className="pt-2">
@@ -623,6 +686,17 @@ export const VisitDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
+      {/* Edit Visit Modal */}
+      {visit && isEditModalOpen && (
+        <EditVisitModal
+          visit={visit}
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onSaved={(updated) => {
+            setModifiedVisit(updated);
+          }}
+        />
+      )}
     </div>
   );
 };
