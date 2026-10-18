@@ -47,6 +47,7 @@ export interface CarePlanApiService {
   createCarePlan(input: CreateCarePlanInput): Promise<CarePlan>;
   updateCarePlan(id: string, input: UpdateCarePlanInput): Promise<CarePlan>;
   activateCarePlan(id: string): Promise<CarePlan>;
+  deleteCarePlan(id: string): Promise<void>;
   getTasks(filters?: TaskInstanceSearchFilters & SearchParams): Promise<PaginatedResult<TaskInstance>>;
   getTaskById(id: string): Promise<TaskInstance>;
   completeTask(id: string, input: CompleteTaskInput): Promise<TaskInstance>;
@@ -95,6 +96,10 @@ export const createCarePlanApiService = (apiClient: ApiClient): CarePlanApiServi
 
     async activateCarePlan(id: string): Promise<CarePlan> {
       return apiClient.post<CarePlan>(`/api/care-plans/${id}/activate`);
+    },
+
+    async deleteCarePlan(id: string): Promise<void> {
+      await apiClient.delete(`/api/care-plans/${id}`);
     },
 
     async getTasks(filters?: TaskInstanceSearchFilters & SearchParams): Promise<PaginatedResult<TaskInstance>> {

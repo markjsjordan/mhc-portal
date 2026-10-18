@@ -88,6 +88,22 @@ export const useActivateCarePlan = () => {
   });
 };
 
+export const useDeleteCarePlan = () => {
+  const carePlanApi = useCarePlanApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => carePlanApi.deleteCarePlan(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['care-plans'] });
+      toast.success('Care plan deleted successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete care plan');
+    },
+  });
+};
+
 export const useTasks = (filters?: TaskInstanceSearchFilters & SearchParams, enablePolling = false) => {
   const carePlanApi = useCarePlanApi();
 

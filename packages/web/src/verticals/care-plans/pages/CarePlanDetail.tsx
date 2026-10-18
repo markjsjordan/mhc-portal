@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Edit, 
@@ -9,19 +9,23 @@ import {
   Target, 
   AlertTriangle,
   CheckCircle,
-  FileText
+  FileText,
+  Trash2
 } from 'lucide-react';
 import { Button, Card, CardHeader, CardContent, LoadingSpinner, ErrorMessage, StatusBadge } from '@/core/components';
 import { usePermissions } from '@/core/hooks';
 import { formatDate } from '@/core/utils';
-import { useCarePlan, useActivateCarePlan } from '../hooks';
+import { useCarePlan, useActivateCarePlan, useDeleteCarePlan } from '../hooks';
 
 export const CarePlanDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { can } = usePermissions();
   const { data: carePlan, isLoading, error, refetch } = useCarePlan(id);
   const activateCarePlan = useActivateCarePlan();
+  const deleteCarePlan = useDeleteCarePlan();
   const [now] = useState(() => Date.now());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleActivate = async () => {
     if (!carePlan) return;
@@ -29,6 +33,17 @@ export const CarePlanDetail: React.FC = () => {
     try {
       await activateCarePlan.mutateAsync(carePlan.id);
       refetch();
+    } catch {
+      // Error is handled by the mutation
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!carePlan) return;
+    
+    try {
+      await deleteCarePlan.mutateAsync(carePlan.id);
+      navigate('/care-plans');
     } catch {
       // Error is handled by the mutation
     }
@@ -98,6 +113,13 @@ export const CarePlanDetail: React.FC = () => {
                   Edit
                 </Button>
               </Link>
+              <Button 
+                variant="outline" 
+                leftIcon={<Trash2 className="h-4 w-4" />}
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                Delete
+              </Button>
             </>
           )}
         </div>
@@ -395,6 +417,35 @@ export const CarePlanDetail: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Care Plan</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Are you sure you want to delete this care plan? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleteCarePlan.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleDelete}
+                isLoading={deleteCarePlan.isPending}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
