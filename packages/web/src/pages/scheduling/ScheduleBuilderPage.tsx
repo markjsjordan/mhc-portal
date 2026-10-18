@@ -1053,6 +1053,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
+    padding: '16px',
   },
   modal: {
     backgroundColor: '#ffffff',
@@ -1060,8 +1061,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: '24px',
     width: '100%',
     maxWidth: '480px',
+    maxHeight: '90vh',
+    overflowY: 'auto',
     boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
     position: 'relative' as const,
+    margin: '0 auto',
   },
   modalTitle: {
     fontSize: '18px',
@@ -1809,7 +1813,7 @@ function CreateAppointmentModal({
 
   return (
     <div style={styles.modalOverlay}>
-      <div style={styles.modal}>
+      <div style={styles.modal} className="modal-container">
         <button onClick={onClose} style={styles.closeBtn}>✕</button>
         <h2 style={styles.modalTitle}>Create Appointment</h2>
 
