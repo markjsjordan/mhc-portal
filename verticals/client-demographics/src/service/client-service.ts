@@ -45,6 +45,17 @@ export class ClientService {
     // Check permissions
     this.permissionService.requirePermission(context, 'clients:create');
 
+    // Resolve branchId if not provided or empty
+    let branchId = input.branchId;
+    if (!branchId || typeof branchId !== 'string' || branchId.trim() === '') {
+      if (context.branchIds && context.branchIds.length > 0 && context.branchIds[0]) {
+        branchId = context.branchIds[0];
+      } else {
+        branchId = await this.repository.getOrCreateDefaultBranchId(input.organizationId, context.userId);
+      }
+      input.branchId = branchId;
+    }
+
     // Validate input
     const validation = this.validator.validateCreate(input);
     if (!validation.success) {
@@ -584,5 +595,20 @@ export class ClientService {
     ) {
       throw new PermissionError('No access to this branch');
     }
+  }
+
+  /**
+   * List all branches for organization (or auto-create default if none exists)
+   */
+  async listBranches(
+    organizationId: string,
+    userId: string
+  ): Promise<Array<{ id: string; name: string; code?: string; status?: string }>> {
+    let branches = await this.repository.listBranchesByOrganization(organizationId);
+    if (branches.length === 0) {
+      await this.repository.getOrCreateDefaultBranchId(organizationId, userId);
+      branches = await this.repository.listBranchesByOrganization(organizationId);
+    }
+    return branches;
   }
 }

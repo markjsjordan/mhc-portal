@@ -503,7 +503,7 @@ export interface Allergy {
  */
 export interface CreateClientInput {
   organizationId: UUID;
-  branchId: UUID;
+  branchId?: UUID;
   firstName: string;
   middleName?: string;
   lastName: string;

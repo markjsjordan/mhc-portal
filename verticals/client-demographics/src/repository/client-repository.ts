@@ -536,4 +536,56 @@ export class ClientRepository extends Repository<Client> {
 
     return result.rows.map((row) => this.mapRowToEntity(row));
   }
+
+  /**
+   * Find default branch for an organization
+   */
+  async findDefaultBranchId(organizationId: string): Promise<string | null> {
+    const query = `
+      SELECT id FROM branches
+      WHERE organization_id = $1
+        AND deleted_at IS NULL
+      ORDER BY created_at ASC
+      LIMIT 1
+    `;
+    const result = await this.database.query(query, [organizationId]);
+    if (result.rows.length > 0 && (result.rows[0] as Record<string, unknown>)['id']) {
+      return (result.rows[0] as Record<string, unknown>)['id'] as string;
+    }
+    return null;
+  }
+
+  /**
+   * Get existing branch or create a default 'Main Branch' if none exists
+   */
+  async getOrCreateDefaultBranchId(organizationId: string, createdBy: string): Promise<string> {
+    const existing = await this.findDefaultBranchId(organizationId);
+    if (existing) {
+      return existing;
+    }
+
+    const query = `
+      INSERT INTO branches (id, organization_id, name, code, phone, address, status, created_by, updated_by)
+      VALUES (gen_random_uuid(), $1, 'Main Branch', 'MAIN', '', '{}'::jsonb, 'ACTIVE', $2, $2)
+      RETURNING id
+    `;
+    const result = await this.database.query(query, [organizationId, createdBy]);
+    return (result.rows[0] as Record<string, unknown>)['id'] as string;
+  }
+
+  /**
+   * List all branches for an organization
+   */
+  async listBranchesByOrganization(
+    organizationId: string
+  ): Promise<Array<{ id: string; name: string; code?: string; status?: string }>> {
+    const query = `
+      SELECT id, name, code, status FROM branches
+      WHERE organization_id = $1
+        AND deleted_at IS NULL
+      ORDER BY name ASC
+    `;
+    const result = await this.database.query(query, [organizationId]);
+    return result.rows as Array<{ id: string; name: string; code?: string; status?: string }>;
+  }
 }

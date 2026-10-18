@@ -39,7 +39,7 @@ const emergencyContactSchema = z.object({
 
 const createClientSchema = z.object({
   organizationId: z.string().uuid(),
-  branchId: z.string().uuid(),
+  branchId: z.string().uuid().optional(),
   firstName: z.string().min(1, 'First name required').max(100),
   middleName: z.string().max(100).optional(),
   lastName: z.string().min(1, 'Last name required').max(100),

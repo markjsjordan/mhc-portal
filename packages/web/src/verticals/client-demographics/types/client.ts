@@ -59,7 +59,7 @@ export interface Client {
 
 export interface CreateClientInput {
   organizationId: string;
-  branchId: string;
+  branchId?: string;
   firstName: string;
   middleName?: string;
   lastName: string;
@@ -68,7 +68,7 @@ export interface CreateClientInput {
   gender?: Gender;
   primaryPhone?: Phone;
   email?: string;
-  primaryAddress: Address;
+  primaryAddress?: Address;
   emergencyContacts?: EmergencyContact[];
   status?: ClientStatus;
 }

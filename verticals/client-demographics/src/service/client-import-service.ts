@@ -533,7 +533,7 @@ export class ClientImportService implements ImportService<ClientImportRow, Clien
     return {
       id: uuidv4(),
       organizationId: input.organizationId,
-      branchId: input.branchId,
+      branchId: input.branchId || '',
       clientNumber: 'PREVIEW-' + Math.random().toString(36).substring(7).toUpperCase(),
       firstName: input.firstName,
       lastName: input.lastName,
