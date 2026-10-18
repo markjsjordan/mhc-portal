@@ -6,7 +6,7 @@ import { useCaregivers } from '@/verticals/caregivers/hooks/useCaregivers';
 import { useCalendarVisits, useVisitApi, useCaregiverAvailability } from '@/verticals/scheduling-visits/hooks/useVisits';
 import type { Visit as ApiVisit } from '@/verticals/scheduling-visits/types';
 import { useClients } from '@/verticals/client-demographics/hooks/useClients';
-import { calculateSupervisoryCadence } from '@/verticals/scheduling-visits/utils/supervisory-cadence';
+import { calculateSupervisoryCadence, type SupervisoryCadenceResult } from '@/verticals/scheduling-visits/utils/supervisory-cadence';
 import { SupervisionAlertBanner } from '@/verticals/scheduling-visits/components/SupervisionAlertBanner';
 
 // Create-appointment flow is not implemented on this branch. The handlers below
@@ -253,16 +253,107 @@ export default function ScheduleBuilderPage() {
   );
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
+    <div style={styles.container} className="schedule-builder-page">
+      <style>{`
+        @media (max-width: 640px) {
+          .schedule-builder-page {
+            padding: 12px !important;
+            max-width: 100vw !important;
+            overflow-x: hidden !important;
+          }
+          .schedule-builder-header {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 12px !important;
+          }
+          .schedule-builder-controls {
+            width: 100% !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 8px !important;
+          }
+          .schedule-builder-view-toggle {
+            width: 100% !important;
+            display: flex !important;
+          }
+          .schedule-builder-view-toggle > button {
+            flex: 1 !important;
+            min-height: 44px !important;
+          }
+          .schedule-builder-date-select {
+            width: 100% !important;
+            min-height: 44px !important;
+            font-size: 16px !important;
+          }
+          .schedule-builder-button {
+            width: 100% !important;
+            min-height: 44px !important;
+            justify-content: center !important;
+          }
+          .mobile-sheet-drag-handle {
+            display: block !important;
+            width: 36px !important;
+            height: 4px !important;
+            background: #cbd5e1 !important;
+            border-radius: 2px !important;
+            margin: 8px auto 4px auto !important;
+          }
+          .schedule-supervision-modal-overlay,
+          .schedule-pattern-modal-overlay {
+            padding: 0 !important;
+            align-items: flex-end !important;
+          }
+          .schedule-supervision-modal-container,
+          .schedule-pattern-modal-container {
+            width: 100% !important;
+            max-width: 100vw !important;
+            max-height: 92vh !important;
+            border-radius: 16px 16px 0 0 !important;
+            margin: 0 !important;
+          }
+          .schedule-supervision-modal-header,
+          .schedule-pattern-modal-header {
+            padding: 14px 16px !important;
+          }
+          .schedule-supervision-modal-scroll,
+          .schedule-pattern-modal-scroll {
+            padding: 14px 16px 24px 16px !important;
+            max-height: calc(92vh - 80px) !important;
+          }
+          .schedule-supervision-grid,
+          .schedule-pattern-grid {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+          }
+          .schedule-modal-input,
+          .schedule-modal-textarea {
+            font-size: 16px !important;
+            min-height: 44px !important;
+          }
+          .schedule-modal-footer {
+            flex-direction: column-reverse !important;
+            gap: 8px !important;
+          }
+          .schedule-modal-footer > button {
+            width: 100% !important;
+            min-height: 44px !important;
+          }
+        }
+        @media (min-width: 641px) {
+          .mobile-sheet-drag-handle {
+            display: none !important;
+          }
+        }
+      `}</style>
+      <div style={styles.header} className="schedule-builder-header">
         <div>
           <h1 style={styles.title}>Schedule Builder</h1>
           <p style={styles.subtitle}>
             Drag unassigned visits to caregiver time slots
           </p>
         </div>
-        <div style={styles.headerControls}>
-          <div style={styles.viewToggle}>
+        <div style={styles.headerControls} className="schedule-builder-controls">
+          <div style={styles.viewToggle} className="schedule-builder-view-toggle">
             <button
               style={{
                 ...styles.viewButton,
@@ -286,6 +377,7 @@ export default function ScheduleBuilderPage() {
             value={selectedDate}
             onChange={e => setSelectedDate(e.target.value)}
             style={styles.dateSelect}
+            className="schedule-builder-date-select"
           >
             {weekDates.map(date => (
               <option key={date} value={date}>
@@ -299,6 +391,7 @@ export default function ScheduleBuilderPage() {
           </select>
           <button
             style={styles.patternButton}
+            className="schedule-builder-button"
             onClick={() => setShowPatternModal(true)}
           >
             + Recurring Schedule
@@ -311,6 +404,7 @@ export default function ScheduleBuilderPage() {
               border: 'none',
               fontWeight: 600,
             }}
+            className="schedule-builder-button"
             onClick={() => setShowSupervisionModal(true)}
           >
             Schedule Supervision Visit
@@ -544,12 +638,15 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: '24px',
     maxWidth: '1600px',
     margin: '0 auto',
+    boxSizing: 'border-box',
   },
   header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: '24px',
+    flexWrap: 'wrap',
+    gap: '16px',
   },
   title: {
     fontSize: '28px',
@@ -564,12 +661,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     gap: '12px',
     alignItems: 'center',
+    flexWrap: 'wrap',
   },
   viewToggle: {
     display: 'flex',
     border: '1px solid #e5e7eb',
     borderRadius: '6px',
     overflow: 'hidden',
+    flexShrink: 0,
   },
   viewButton: {
     padding: '8px 16px',
@@ -577,6 +676,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     backgroundColor: 'white',
     cursor: 'pointer',
     fontSize: '14px',
+    minHeight: '44px',
+    minWidth: '44px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   viewButtonActive: {
     backgroundColor: '#3b82f6',
@@ -587,6 +691,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     border: '1px solid #e5e7eb',
     borderRadius: '6px',
     fontSize: '14px',
+    minHeight: '44px',
+    backgroundColor: '#ffffff',
   },
   content: {
     display: 'flex',
@@ -776,7 +882,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: '6px',
+    minHeight: '44px',
     boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
   },
   recurringBadge: {
@@ -878,219 +986,233 @@ function CreateRecurringPatternModal({
   ];
 
   return (
-    <div style={modalStyles.overlay}>
-      <div style={modalStyles.container}>
-        <div style={modalStyles.header}>
+    <div style={modalStyles.overlay} className="schedule-pattern-modal-overlay">
+      <div style={modalStyles.container} className="schedule-pattern-modal-container">
+        <div className="mobile-sheet-drag-handle" />
+        <div style={modalStyles.header} className="schedule-pattern-modal-header">
           <div>
             <h2 style={modalStyles.title}>Create Recurring Schedule</h2>
             <p style={modalStyles.subtitle}>
               Generate concrete visits automatically across a rolling horizon
             </p>
           </div>
-          <button onClick={onClose} style={modalStyles.closeBtn}>✕</button>
+          <button onClick={onClose} style={modalStyles.closeBtn} aria-label="Close modal">✕</button>
         </div>
 
-        <form onSubmit={handleSubmit} style={modalStyles.form}>
-          <div style={modalStyles.formGrid}>
-            <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Client *</label>
-              {clients.length > 0 ? (
+        <div style={modalStyles.scrollBody} className="schedule-pattern-modal-scroll">
+          <form onSubmit={handleSubmit} style={modalStyles.form}>
+            <div style={modalStyles.formGrid} className="schedule-pattern-grid">
+              <div style={modalStyles.formGroup}>
+                <label style={modalStyles.label}>Client *</label>
+                {clients.length > 0 ? (
+                  <select
+                    value={clientId}
+                    onChange={(e) => setClientId(e.target.value)}
+                    style={modalStyles.input}
+                    className="schedule-modal-input"
+                    required
+                  >
+                    <option value="">Select a client...</option>
+                    {clients.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.firstName} {c.lastName}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    placeholder="Client name or ID"
+                    value={customClientName}
+                    onChange={(e) => setCustomClientName(e.target.value)}
+                    style={modalStyles.input}
+                    className="schedule-modal-input"
+                    required
+                  />
+                )}
+              </div>
+
+              <div style={modalStyles.formGroup}>
+                <label style={modalStyles.label}>Caregiver</label>
                 <select
-                  value={clientId}
-                  onChange={(e) => setClientId(e.target.value)}
+                  value={caregiverId}
+                  onChange={(e) => setCaregiverId(e.target.value)}
                   style={modalStyles.input}
-                  required
+                  className="schedule-modal-input"
                 >
-                  <option value="">Select a client...</option>
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.firstName} {c.lastName}
+                  <option value="">Unassigned (Auto-match)</option>
+                  {caregivers.map((cg) => (
+                    <option key={cg.id} value={cg.id}>
+                      {cg.name}
                     </option>
                   ))}
                 </select>
-              ) : (
-                <input
-                  type="text"
-                  placeholder="Client name or ID"
-                  value={customClientName}
-                  onChange={(e) => setCustomClientName(e.target.value)}
+              </div>
+
+              <div style={modalStyles.formGroup}>
+                <label style={modalStyles.label}>Service Type</label>
+                <select
+                  value={serviceTypeName}
+                  onChange={(e) => setServiceTypeName(e.target.value)}
                   style={modalStyles.input}
-                  required
-                />
-              )}
-            </div>
+                  className="schedule-modal-input"
+                >
+                  <option value="Personal Care">Personal Care</option>
+                  <option value="Home Health Aide">Home Health Aide</option>
+                  <option value="Skilled Nursing">Skilled Nursing</option>
+                  <option value="Physical Therapy">Physical Therapy</option>
+                  <option value="Companion Care">Companion Care</option>
+                  <option value="Respite Care">Respite Care</option>
+                </select>
+              </div>
 
-            <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Caregiver</label>
-              <select
-                value={caregiverId}
-                onChange={(e) => setCaregiverId(e.target.value)}
-                style={modalStyles.input}
-              >
-                <option value="">Unassigned (Auto-match)</option>
-                {caregivers.map((cg) => (
-                  <option key={cg.id} value={cg.id}>
-                    {cg.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Service Type</label>
-              <select
-                value={serviceTypeName}
-                onChange={(e) => setServiceTypeName(e.target.value)}
-                style={modalStyles.input}
-              >
-                <option value="Personal Care">Personal Care</option>
-                <option value="Home Health Aide">Home Health Aide</option>
-                <option value="Skilled Nursing">Skilled Nursing</option>
-                <option value="Physical Therapy">Physical Therapy</option>
-                <option value="Companion Care">Companion Care</option>
-                <option value="Respite Care">Respite Care</option>
-              </select>
-            </div>
-
-            <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Frequency</label>
-              <select
-                value={frequency}
-                onChange={(e) => setFrequency(e.target.value)}
-                style={modalStyles.input}
-              >
-                <option value="WEEKLY">Weekly</option>
-                <option value="DAILY">Daily</option>
-                <option value="BIWEEKLY">Bi-weekly</option>
-                <option value="MONTHLY">Monthly</option>
-              </select>
-            </div>
-          </div>
-
-          {(frequency === 'WEEKLY' || frequency === 'BIWEEKLY') && (
-            <div style={modalStyles.formGroupFull}>
-              <label style={modalStyles.label}>Days of Week *</label>
-              <div style={modalStyles.daysRow}>
-                {DAYS.map((day) => {
-                  const active = selectedDays.includes(day.value);
-                  return (
-                    <button
-                      key={day.value}
-                      type="button"
-                      onClick={() => toggleDay(day.value)}
-                      style={{
-                        ...modalStyles.dayPill,
-                        ...(active ? modalStyles.dayPillActive : {}),
-                      }}
-                    >
-                      {day.label}
-                    </button>
-                  );
-                })}
+              <div style={modalStyles.formGroup}>
+                <label style={modalStyles.label}>Frequency</label>
+                <select
+                  value={frequency}
+                  onChange={(e) => setFrequency(e.target.value)}
+                  style={modalStyles.input}
+                  className="schedule-modal-input"
+                >
+                  <option value="WEEKLY">Weekly</option>
+                  <option value="DAILY">Daily</option>
+                  <option value="BIWEEKLY">Bi-weekly</option>
+                  <option value="MONTHLY">Monthly</option>
+                </select>
               </div>
             </div>
-          )}
 
-          <div style={modalStyles.formGrid}>
-            <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Start Time *</label>
-              <input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                style={modalStyles.input}
-                required
+            {(frequency === 'WEEKLY' || frequency === 'BIWEEKLY') && (
+              <div style={modalStyles.formGroupFull}>
+                <label style={modalStyles.label}>Days of Week *</label>
+                <div style={modalStyles.daysRow}>
+                  {DAYS.map((day) => {
+                    const active = selectedDays.includes(day.value);
+                    return (
+                      <button
+                        key={day.value}
+                        type="button"
+                        onClick={() => toggleDay(day.value)}
+                        style={{
+                          ...modalStyles.dayPill,
+                          ...(active ? modalStyles.dayPillActive : {}),
+                        }}
+                      >
+                        {day.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div style={modalStyles.formGrid} className="schedule-pattern-grid">
+              <div style={modalStyles.formGroup}>
+                <label style={modalStyles.label}>Start Time *</label>
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  style={modalStyles.input}
+                  className="schedule-modal-input"
+                  required
+                />
+              </div>
+
+              <div style={modalStyles.formGroup}>
+                <label style={modalStyles.label}>Duration *</label>
+                <select
+                  value={duration}
+                  onChange={(e) => setDuration(Number(e.target.value))}
+                  style={modalStyles.input}
+                  className="schedule-modal-input"
+                >
+                  <option value={60}>1 hour (60 min)</option>
+                  <option value={120}>2 hours (120 min)</option>
+                  <option value={180}>3 hours (180 min)</option>
+                  <option value={240}>4 hours (240 min)</option>
+                  <option value={360}>6 hours (360 min)</option>
+                  <option value={480}>8 hours (480 min)</option>
+                </select>
+              </div>
+
+              <div style={modalStyles.formGroup}>
+                <label style={modalStyles.label}>Start Date *</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  style={modalStyles.input}
+                  className="schedule-modal-input"
+                  required
+                />
+              </div>
+
+              <div style={modalStyles.formGroup}>
+                <label style={modalStyles.label}>End Date</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  style={modalStyles.input}
+                  className="schedule-modal-input"
+                />
+              </div>
+            </div>
+
+            <div style={modalStyles.checkboxRow}>
+              <label style={modalStyles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={skipHolidays}
+                  onChange={(e) => setSkipHolidays(e.target.checked)}
+                  style={modalStyles.checkbox}
+                />
+                <span>Skip US Federal Holidays (automated compliance)</span>
+              </label>
+            </div>
+
+            <div style={modalStyles.formGroupFull}>
+              <label style={modalStyles.label}>Care Notes / Instructions</label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="e.g. Assist with morning routine, medication reminders, meal preparation"
+                style={modalStyles.textarea}
+                className="schedule-modal-textarea"
+                rows={2}
               />
             </div>
 
-            <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Duration *</label>
-              <select
-                value={duration}
-                onChange={(e) => setDuration(Number(e.target.value))}
-                style={modalStyles.input}
+            <div style={modalStyles.footer} className="schedule-modal-footer">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={submitting}
+                style={modalStyles.cancelBtn}
               >
-                <option value={60}>1 hour (60 min)</option>
-                <option value={120}>2 hours (120 min)</option>
-                <option value={180}>3 hours (180 min)</option>
-                <option value={240}>4 hours (240 min)</option>
-                <option value={360}>6 hours (360 min)</option>
-                <option value={480}>8 hours (480 min)</option>
-              </select>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                style={modalStyles.submitBtn}
+              >
+                {submitting ? 'Generating Schedule...' : 'Generate Recurring Visits'}
+              </button>
             </div>
-
-            <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Start Date *</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                style={modalStyles.input}
-                required
-              />
-            </div>
-
-            <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>End Date</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                style={modalStyles.input}
-              />
-            </div>
-          </div>
-
-          <div style={modalStyles.checkboxRow}>
-            <label style={modalStyles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={skipHolidays}
-                onChange={(e) => setSkipHolidays(e.target.checked)}
-                style={modalStyles.checkbox}
-              />
-              <span>Skip US Federal Holidays (automated compliance)</span>
-            </label>
-          </div>
-
-          <div style={modalStyles.formGroupFull}>
-            <label style={modalStyles.label}>Care Notes / Instructions</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Assist with morning routine, medication reminders, meal preparation"
-              style={modalStyles.textarea}
-              rows={2}
-            />
-          </div>
-
-          <div style={modalStyles.footer}>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={submitting}
-              style={modalStyles.cancelBtn}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              style={modalStyles.submitBtn}
-            >
-              {submitting ? 'Generating Schedule...' : 'Generate Recurring Visits'}
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );
 }
 
 interface ScheduleSupervisionVisitModalProps {
-  clients: Array<{ id: string; firstName: string; lastName: string; primaryAddress?: any }>;
+  clients: Array<{ id: string; firstName: string; lastName: string; primaryAddress?: any; intakeDate?: string; createdAt?: string }>;
   caregivers: Caregiver[];
   initialClientId?: string;
+  cadence?: SupervisoryCadenceResult | null;
   onClose: () => void;
   onSuccess: () => Promise<void> | void;
 }
@@ -1099,6 +1221,7 @@ function ScheduleSupervisionVisitModal({
   clients,
   caregivers,
   initialClientId,
+  cadence: initialCadence,
   onClose,
   onSuccess,
 }: ScheduleSupervisionVisitModalProps) {
@@ -1111,9 +1234,24 @@ function ScheduleSupervisionVisitModal({
     'Mandated RN Supervisory Visit (Florida AHCA Ch. 59A-8 / Texas HHSC 26 TAC §558). Review care plan delivery and client satisfaction.'
   );
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [isAlertCollapsed, setIsAlertCollapsed] = useState<boolean>(false);
 
   const selectedClient = clients.find((c) => c.id === clientId);
   const stateCode = selectedClient?.primaryAddress?.state || 'FL';
+
+  const cadence = useMemo(() => {
+    if (initialCadence && initialCadence.clientId === clientId) {
+      return initialCadence;
+    }
+    if (!selectedClient) return null;
+    return calculateSupervisoryCadence({
+      clientId: selectedClient.id,
+      state: stateCode,
+      isSkilledNursing: true,
+      lastSupervisoryVisitDate: selectedClient.intakeDate || selectedClient.createdAt,
+      referenceDate: new Date(),
+    });
+  }, [initialCadence, clientId, selectedClient, stateCode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1136,127 +1274,190 @@ function ScheduleSupervisionVisitModal({
   };
 
   return (
-    <div style={modalStyles.overlay}>
-      <div style={modalStyles.container}>
-        <div style={modalStyles.header}>
-          <div>
+    <div style={modalStyles.overlay} className="schedule-supervision-modal-overlay">
+      <div style={modalStyles.container} className="schedule-supervision-modal-container">
+        <div className="mobile-sheet-drag-handle" />
+        <div style={modalStyles.header} className="schedule-supervision-modal-header">
+          <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
             <h2 style={modalStyles.title}>Schedule Supervision Visit</h2>
             <p style={modalStyles.subtitle}>
               Mandated RN supervisory visit cadence for {stateCode} licensure compliance (60-day cycle)
             </p>
           </div>
-          <button style={modalStyles.closeBtn} onClick={onClose}>
+          <button style={modalStyles.closeBtn} onClick={onClose} aria-label="Close modal">
             ✕
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={modalStyles.form}>
-          <div style={modalStyles.formGrid}>
-            <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Client *</label>
-              <select
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-                style={modalStyles.input}
-                required
-              >
-                <option value="">Select a client...</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.firstName} {c.lastName}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Supervising RN Caregiver</label>
-              <select
-                value={caregiverId}
-                onChange={(e) => setCaregiverId(e.target.value)}
-                style={modalStyles.input}
-              >
-                <option value="">Unassigned (Open for RN)</option>
-                {caregivers.map((cg) => (
-                  <option key={cg.id} value={cg.id}>
-                    {cg.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Service Type</label>
-              <input
-                type="text"
-                value="RN Supervisory Visit (AHCA 59A-8 / TX §558)"
-                readOnly
-                style={{ ...modalStyles.input, backgroundColor: '#f3f4f6' }}
-              />
-            </div>
-
-            <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Visit Date *</label>
-              <input
-                type="date"
-                value={visitDate}
-                onChange={(e) => setVisitDate(e.target.value)}
-                style={modalStyles.input}
-                required
-              />
-            </div>
-
-            <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Start Time *</label>
-              <input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                style={modalStyles.input}
-                required
-              />
-            </div>
-
-            <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Duration (minutes)</label>
-              <select
-                value={duration}
-                onChange={(e) => setDuration(Number(e.target.value))}
-                style={modalStyles.input}
-              >
-                <option value={45}>45 minutes</option>
-                <option value={60}>60 minutes (Standard)</option>
-                <option value={90}>90 minutes</option>
-              </select>
-            </div>
-          </div>
-
-          <div style={modalStyles.formGroupFull}>
-            <label style={modalStyles.label}>Supervisory Scope & Clinical Notes</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              style={modalStyles.textarea}
-              rows={3}
-            />
-          </div>
-
-          <div style={modalStyles.footer}>
-            <button type="button" onClick={onClose} style={modalStyles.cancelBtn}>
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
+        <div style={modalStyles.scrollBody} className="schedule-supervision-modal-scroll">
+          {cadence && cadence.showAlert && (
+            <div
               style={{
-                ...modalStyles.submitBtn,
-                backgroundColor: '#2563eb',
+                ...modalStyles.alertCard,
+                borderColor: cadence.isOverdue ? '#fca5a5' : '#fcd34d',
+                backgroundColor: cadence.isOverdue ? '#fef2f2' : '#fffbeb',
               }}
             >
-              {submitting ? 'Scheduling...' : 'Confirm & Schedule Supervision'}
-            </button>
-          </div>
-        </form>
+              <div style={modalStyles.alertHeader}>
+                <div style={modalStyles.alertTitleRow}>
+                  <span style={{ fontSize: '16px' }}>{cadence.isOverdue ? '🚨' : '⚠️'}</span>
+                  <strong style={{ fontSize: '13px', color: cadence.isOverdue ? '#991b1b' : '#92400e' }}>
+                    {cadence.alertTitle}
+                  </strong>
+                  <span
+                    style={{
+                      ...modalStyles.alertBadge,
+                      backgroundColor: cadence.isOverdue ? '#fee2e2' : '#fef3c7',
+                      color: cadence.isOverdue ? '#991b1b' : '#92400e',
+                      borderColor: cadence.isOverdue ? '#fecaca' : '#fde68a',
+                    }}
+                  >
+                    {cadence.regulationCitation}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAlertCollapsed(!isAlertCollapsed)}
+                  style={modalStyles.alertToggleBtn}
+                  aria-label={isAlertCollapsed ? 'Expand alert details' : 'Collapse alert details'}
+                >
+                  {isAlertCollapsed ? 'Show Details ▼' : 'Collapse ▲'}
+                </button>
+              </div>
+              {!isAlertCollapsed && (
+                <div style={modalStyles.alertDetails}>
+                  <p style={modalStyles.alertMessage}>{cadence.alertMessage}</p>
+                  {cadence.recommendation && (
+                    <p style={modalStyles.alertRecommendation}>
+                      Recommendation: {cadence.recommendation}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} style={modalStyles.form}>
+            <div style={modalStyles.formGrid} className="schedule-supervision-grid">
+              <div style={modalStyles.formGroup}>
+                <label style={modalStyles.label}>Client *</label>
+                <select
+                  value={clientId}
+                  onChange={(e) => setClientId(e.target.value)}
+                  style={modalStyles.input}
+                  className="schedule-modal-input"
+                  required
+                >
+                  <option value="">Select a client...</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.firstName} {c.lastName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={modalStyles.formGroup}>
+                <label style={modalStyles.label}>Supervising RN Caregiver</label>
+                <select
+                  value={caregiverId}
+                  onChange={(e) => setCaregiverId(e.target.value)}
+                  style={modalStyles.input}
+                  className="schedule-modal-input"
+                >
+                  <option value="">Unassigned (Open for RN)</option>
+                  {caregivers.map((cg) => (
+                    <option key={cg.id} value={cg.id}>
+                      {cg.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={modalStyles.formGroup}>
+                <label style={modalStyles.label}>Service Type</label>
+                <input
+                  type="text"
+                  value="RN Supervisory Visit (AHCA 59A-8 / TX §558)"
+                  readOnly
+                  title="RN Supervisory Visit (AHCA 59A-8 / TX §558)"
+                  style={{ ...modalStyles.input, backgroundColor: '#f3f4f6', cursor: 'default' }}
+                  className="schedule-modal-input"
+                />
+              </div>
+
+              <div style={modalStyles.formGroup}>
+                <label style={modalStyles.label}>Visit Date *</label>
+                <input
+                  type="date"
+                  value={visitDate}
+                  onChange={(e) => setVisitDate(e.target.value)}
+                  style={modalStyles.input}
+                  className="schedule-modal-input"
+                  required
+                />
+              </div>
+
+              <div style={modalStyles.formGroup}>
+                <label style={modalStyles.label}>Start Time *</label>
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  style={modalStyles.input}
+                  className="schedule-modal-input"
+                  required
+                />
+              </div>
+
+              <div style={modalStyles.formGroup}>
+                <label style={modalStyles.label}>Duration (minutes)</label>
+                <select
+                  value={duration}
+                  onChange={(e) => setDuration(Number(e.target.value))}
+                  style={modalStyles.input}
+                  className="schedule-modal-input"
+                >
+                  <option value={45}>45 minutes</option>
+                  <option value={60}>60 minutes (Standard)</option>
+                  <option value={90}>90 minutes</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={modalStyles.formGroupFull}>
+              <label style={modalStyles.label}>Supervisory Scope & Clinical Notes</label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                style={modalStyles.textarea}
+                className="schedule-modal-textarea"
+                rows={3}
+              />
+            </div>
+
+            <div style={modalStyles.footer} className="schedule-modal-footer">
+              <button
+                type="button"
+                onClick={onClose}
+                style={modalStyles.cancelBtn}
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                style={{
+                  ...modalStyles.submitBtn,
+                  backgroundColor: '#2563eb',
+                }}
+              >
+                {submitting ? 'Scheduling...' : 'Confirm & Schedule Supervision'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -1274,6 +1475,8 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
+    padding: '16px',
+    boxSizing: 'border-box',
   },
   container: {
     backgroundColor: '#ffffff',
@@ -1281,8 +1484,11 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
     width: '100%',
     maxWidth: '680px',
     maxHeight: '90vh',
-    overflowY: 'auto',
+    overflow: 'hidden',
     boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
   },
   header: {
     padding: '20px 24px',
@@ -1290,6 +1496,8 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    gap: '12px',
+    flexShrink: 0,
   },
   title: {
     fontSize: '20px',
@@ -1306,13 +1514,87 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
   closeBtn: {
     background: 'none',
     border: 'none',
-    fontSize: '18px',
+    fontSize: '20px',
     color: '#9ca3af',
     cursor: 'pointer',
-    padding: '4px',
+    padding: '8px',
+    minHeight: '44px',
+    minWidth: '44px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '6px',
+  },
+  scrollBody: {
+    padding: '20px 24px',
+    overflowY: 'auto',
+    WebkitOverflowScrolling: 'touch',
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+    boxSizing: 'border-box',
+  },
+  alertCard: {
+    backgroundColor: '#fffbeb',
+    border: '1px solid #fcd34d',
+    borderRadius: '8px',
+    padding: '12px 14px',
+    marginBottom: '8px',
+  },
+  alertHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '8px',
+  },
+  alertTitleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flexWrap: 'wrap',
+  },
+  alertBadge: {
+    fontSize: '11px',
+    backgroundColor: '#fef3c7',
+    color: '#92400e',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    marginLeft: '6px',
+    border: '1px solid #fde68a',
+  },
+  alertToggleBtn: {
+    background: 'none',
+    border: '1px solid #d97706',
+    borderRadius: '4px',
+    color: '#92400e',
+    fontSize: '12px',
+    fontWeight: 500,
+    cursor: 'pointer',
+    padding: '6px 10px',
+    minHeight: '36px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+  },
+  alertDetails: {
+    marginTop: '10px',
+    paddingTop: '8px',
+    borderTop: '1px solid #fde68a',
+    fontSize: '13px',
+    color: '#78350f',
+  },
+  alertMessage: {
+    margin: '0 0 6px 0',
+    lineHeight: '1.4',
+  },
+  alertRecommendation: {
+    margin: 0,
+    fontSize: '12px',
+    fontStyle: 'italic',
+    color: '#92400e',
   },
   form: {
-    padding: '24px',
     display: 'flex',
     flexDirection: 'column',
     gap: '16px',
@@ -1326,12 +1608,14 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     flexDirection: 'column',
     gap: '6px',
+    minWidth: 0,
   },
   formGroupFull: {
     display: 'flex',
     flexDirection: 'column',
     gap: '6px',
     width: '100%',
+    minWidth: 0,
   },
   label: {
     fontSize: '13px',
@@ -1339,22 +1623,28 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
     color: '#374151',
   },
   input: {
-    padding: '8px 12px',
+    padding: '10px 12px',
     border: '1px solid #d1d5db',
     borderRadius: '6px',
     fontSize: '14px',
     color: '#111827',
     backgroundColor: '#ffffff',
     outline: 'none',
+    minHeight: '44px',
+    boxSizing: 'border-box',
+    width: '100%',
   },
   textarea: {
-    padding: '8px 12px',
+    padding: '10px 12px',
     border: '1px solid #d1d5db',
     borderRadius: '6px',
     fontSize: '14px',
     color: '#111827',
     outline: 'none',
     resize: 'vertical',
+    minHeight: '80px',
+    boxSizing: 'border-box',
+    width: '100%',
   },
   daysRow: {
     display: 'flex',
@@ -1362,7 +1652,11 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
     flexWrap: 'wrap',
   },
   dayPill: {
-    padding: '6px 14px',
+    padding: '8px 14px',
+    minHeight: '44px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: '20px',
     border: '1px solid #d1d5db',
     backgroundColor: '#f9fafb',
@@ -1381,6 +1675,7 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
+    minHeight: '44px',
   },
   checkboxLabel: {
     display: 'flex',
@@ -1389,10 +1684,11 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
     fontSize: '13px',
     color: '#374151',
     cursor: 'pointer',
+    minHeight: '44px',
   },
   checkbox: {
-    width: '16px',
-    height: '16px',
+    width: '20px',
+    height: '20px',
     cursor: 'pointer',
   },
   footer: {
@@ -1402,18 +1698,24 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
     marginTop: '12px',
     paddingTop: '16px',
     borderTop: '1px solid #e5e7eb',
+    flexWrap: 'wrap',
   },
   cancelBtn: {
-    padding: '8px 16px',
+    padding: '10px 18px',
     border: '1px solid #d1d5db',
     borderRadius: '6px',
     backgroundColor: '#ffffff',
     color: '#374151',
     fontSize: '14px',
+    fontWeight: '500',
     cursor: 'pointer',
+    minHeight: '44px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   submitBtn: {
-    padding: '8px 18px',
+    padding: '10px 18px',
     border: 'none',
     borderRadius: '6px',
     backgroundColor: '#10b981',
@@ -1421,6 +1723,10 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
     fontSize: '14px',
     fontWeight: '500',
     cursor: 'pointer',
+    minHeight: '44px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 };
 
@@ -1463,71 +1769,80 @@ function CreateAppointmentModal({
   };
 
   return (
-    <div style={styles.modalOverlay}>
-      <div style={styles.modal}>
-        <button onClick={onClose} style={styles.closeBtn}>✕</button>
-        <h2 style={styles.modalTitle}>Create Appointment</h2>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Client</label>
-          <select
-            value={data.clientId}
-            onChange={(e) => onChange({ clientId: e.target.value })}
-            style={styles.input}
-          >
-            {clients.map(client => (
-              <option key={client.id} value={client.id}>
-                {client.firstName} {client.lastName}
-              </option>
-            ))}
-          </select>
+    <div style={modalStyles.overlay} className="schedule-pattern-modal-overlay">
+      <div style={modalStyles.container} className="schedule-pattern-modal-container">
+        <div className="mobile-sheet-drag-handle" />
+        <div style={modalStyles.header} className="schedule-pattern-modal-header">
+          <h2 style={modalStyles.title}>Create Appointment</h2>
+          <button onClick={onClose} style={modalStyles.closeBtn} aria-label="Close modal">✕</button>
         </div>
 
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Date</label>
-          <input
-            type="date"
-            value={data.date}
-            onChange={(e) => onChange({ date: e.target.value })}
-            style={styles.input}
-          />
-        </div>
+        <div style={modalStyles.scrollBody} className="schedule-pattern-modal-scroll">
+          <div style={modalStyles.formGroup}>
+            <label style={modalStyles.label}>Client</label>
+            <select
+              value={data.clientId}
+              onChange={(e) => onChange({ clientId: e.target.value })}
+              style={modalStyles.input}
+              className="schedule-modal-input"
+            >
+              {clients.map(client => (
+                <option key={client.id} value={client.id}>
+                  {client.firstName} {client.lastName}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Start Time</label>
-          <input
-            type="time"
-            value={data.startTime}
-            onChange={(e) => onChange({ startTime: e.target.value })}
-            style={styles.input}
-          />
-        </div>
+          <div style={modalStyles.formGroup}>
+            <label style={modalStyles.label}>Date</label>
+            <input
+              type="date"
+              value={data.date}
+              onChange={(e) => onChange({ date: e.target.value })}
+              style={modalStyles.input}
+              className="schedule-modal-input"
+            />
+          </div>
 
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Duration (hours)</label>
-          <input
-            type="number"
-            min="1"
-            max="8"
-            value={data.duration}
-            onChange={(e) => onChange({ duration: parseInt(e.target.value) || 1 })}
-            style={styles.input}
-          />
-        </div>
+          <div style={modalStyles.formGroup}>
+            <label style={modalStyles.label}>Start Time</label>
+            <input
+              type="time"
+              value={data.startTime}
+              onChange={(e) => onChange({ startTime: e.target.value })}
+              style={modalStyles.input}
+              className="schedule-modal-input"
+            />
+          </div>
 
-        <div style={styles.footer}>
-          <button onClick={onClose} style={styles.cancelBtn}>Cancel</button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            style={{
-              ...styles.submitBtn,
-              opacity: isSubmitting ? 0.6 : 1,
-              cursor: isSubmitting ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {isSubmitting ? 'Creating...' : 'Create'}
-          </button>
+          <div style={modalStyles.formGroup}>
+            <label style={modalStyles.label}>Duration (hours)</label>
+            <input
+              type="number"
+              min="1"
+              max="8"
+              value={data.duration}
+              onChange={(e) => onChange({ duration: parseInt(e.target.value) || 1 })}
+              style={modalStyles.input}
+              className="schedule-modal-input"
+            />
+          </div>
+
+          <div style={modalStyles.footer} className="schedule-modal-footer">
+            <button onClick={onClose} style={modalStyles.cancelBtn}>Cancel</button>
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              style={{
+                ...modalStyles.submitBtn,
+                opacity: isSubmitting ? 0.6 : 1,
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {isSubmitting ? 'Creating...' : 'Create'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
