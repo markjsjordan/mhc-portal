@@ -1043,6 +1043,34 @@ export class ClientHandlers {
       },
     });
   });
+
+  /**
+   * @openapi
+   * /api/branches:
+   *   get:
+   *     tags:
+   *       - Branches
+   *     summary: List all branches for current organization
+   *     security:
+   *       - bearerAuth: []
+   *     responses:
+   *       200:
+   *         description: List of branches
+   */
+  listBranches = asyncHandler(async (req: Request, res: Response) => {
+    const context = getUserContext(req);
+    if (!context.organizationId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Organization context is required',
+      });
+    }
+    const branches = await this.clientService.listBranches(context.organizationId, context.userId);
+    return res.json({
+      success: true,
+      data: branches,
+    });
+  });
 }
 
 /**
@@ -1092,6 +1120,7 @@ export function createClientRouter(clientService: ClientService, db: Database): 
   router.patch('/clients/:id/risk-flags/:flagId/resolve', handlers.resolveRiskFlag);
 
   // Branch operations
+  router.get('/branches', handlers.listBranches);
   router.get('/branches/:branchId/clients', handlers.getClientsByBranch);
 
   return router;
