@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -49,6 +49,14 @@ export function Settings() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const apiClient = useApiClient();
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    const activeEl = tabRefs.current[activeTab];
+    if (activeEl) {
+      activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }
+  }, [activeTab]);
 
   // Fetch current user profile
   const { data: userProfile, isLoading: isLoadingProfile } = useQuery({
@@ -80,7 +88,7 @@ export function Settings() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full overflow-x-hidden">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
@@ -102,24 +110,37 @@ export function Settings() {
       )}
 
       {/* Tab Navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+      <div className="border-b border-gray-200 -mx-4 px-4 sm:mx-0 sm:px-0">
+        <nav
+          role="tablist"
+          aria-label="Settings Tabs"
+          className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
           {tabs.map((tab) => {
             const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
+                ref={(el) => {
+                  tabRefs.current[tab.id] = el;
+                }}
+                id={`settings-tab-${tab.id}`}
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`settings-panel-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
                 className={`
-                  flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm
+                  flex items-center gap-2 py-3 sm:py-4 px-3 sm:px-1 min-h-[44px] whitespace-nowrap flex-shrink-0 border-b-2 font-medium text-sm transition-colors
                   ${
-                    activeTab === tab.id
+                    isActive
                       ? 'border-primary-500 text-primary-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }
                 `}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className="w-5 h-5 flex-shrink-0" />
                 {tab.label}
               </button>
             );
@@ -128,7 +149,12 @@ export function Settings() {
       </div>
 
       {/* Tab Content */}
-      <div className="mt-6">
+      <div
+        role="tabpanel"
+        id={`settings-panel-${activeTab}`}
+        aria-labelledby={`settings-tab-${activeTab}`}
+        className="mt-6"
+      >
         {activeTab === 'profile' && (
           <ProfileSettings
             userProfile={userProfile}
@@ -681,21 +707,21 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
           ) : teamMembers && teamMembers.length > 0 ? (
             <div className="divide-y divide-gray-200">
               {teamMembers.map((member) => (
-                <div key={member.id} className="py-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                <div key={member.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="h-10 w-10 flex-shrink-0 rounded-full bg-primary-100 flex items-center justify-center">
                       <span className="text-primary-700 font-medium">
                         {member.firstName[0]}{member.lastName[0]}
                       </span>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
                         {member.firstName} {member.lastName}
                       </p>
-                      <p className="text-sm text-gray-500">{member.email}</p>
+                      <p className="text-sm text-gray-500 truncate">{member.email}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                     <div className="flex flex-wrap gap-1">
                       {member.roles.map((role) => (
                         <span
@@ -747,19 +773,19 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
           <Card.Content>
             <div className="divide-y divide-gray-200">
               {pendingInvitations.map((invitation) => (
-                <div key={invitation.id} className="py-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
+                <div key={invitation.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="h-10 w-10 flex-shrink-0 rounded-full bg-amber-100 flex items-center justify-center">
                       <Mail className="h-5 w-5 text-amber-600" />
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{invitation.email}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{invitation.email}</p>
                       <p className="text-sm text-gray-500">
                         Expires {new Date(invitation.expiresAt).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-1">
                       {getStatusIcon(invitation.status)}
                       <span className="text-sm text-gray-500">{invitation.status}</span>
@@ -774,7 +800,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                         </span>
                       ))}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button
                         variant="outline"
                         size="sm"
