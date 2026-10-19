@@ -462,7 +462,6 @@ export class OrganizationService implements IOrganizationService {
     const invites = await this.userRepo.getOrganizationInvites(organizationId);
     const invite = invites.find((i) => i.id === invitationId);
 
-    // find() returns undefined (never null) when no match exists
     if (invite == null) {
       throw new NotFoundError('Invitation not found', { id: invitationId });
     }
