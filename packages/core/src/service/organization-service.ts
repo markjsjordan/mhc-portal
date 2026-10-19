@@ -213,7 +213,7 @@ export class OrganizationService implements IOrganizationService {
     try {
       // Get the inviter's details to personalize the email
       const inviter = await this.userRepo.getUserById(createdBy);
-      const inviterName = inviter !== null
+      const inviterName = inviter != null
         ? `${inviter.firstName} ${inviter.lastName}`.trim()
         : 'A team member';
 
@@ -463,7 +463,7 @@ export class OrganizationService implements IOrganizationService {
     const invite = invites.find((i) => i.id === invitationId);
 
     // find() returns undefined (never null) when no match exists
-    if (invite === undefined) {
+    if (invite == null) {
       throw new NotFoundError('Invitation not found', { id: invitationId });
     }
 
@@ -480,7 +480,7 @@ export class OrganizationService implements IOrganizationService {
     try {
       const organization = await this.getOrganizationById(organizationId);
       const inviter = await this.userRepo.getUserById(resendBy);
-      const inviterName = inviter !== null
+      const inviterName = inviter != null
         ? `${inviter.firstName} ${inviter.lastName}`.trim()
         : 'A team member';
 
