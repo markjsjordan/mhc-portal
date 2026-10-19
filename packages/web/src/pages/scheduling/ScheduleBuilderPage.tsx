@@ -462,7 +462,7 @@ export default function ScheduleBuilderPage() {
           </button>
           <button
             style={{
-              ...styles.patternButton,
+              ...(isMobile ? styles.patternButtonMobile : styles.patternButton),
               backgroundColor: '#1d4ed8',
               color: '#ffffff',
               border: 'none',
