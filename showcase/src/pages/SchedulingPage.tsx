@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Calendar,
@@ -23,7 +22,6 @@ import type { Visit, VisitSearchFilters } from '../types/showcase-types.js';
 import { getVisitTypeConfig } from '../config/visitTypeConfig.js';
 
 export const SchedulingPage: React.FC = () => {
-  const navigate = useNavigate();
   const visitProvider = useVisitProvider();
 
   // Selected visit ID for side panel
