@@ -457,7 +457,6 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
             variant="primary"
             size="sm"
             disabled={!clockInEnabled || busy}
-            // eslint-disable-next-line @typescript-eslint/no-misused-promises
             onClick={handleClockIn}
             leftIcon={<LogIn className="h-4 w-4" />}
             className="min-h-[44px] w-full sm:w-auto whitespace-nowrap"
@@ -476,7 +475,6 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
             variant="outline"
             size="sm"
             disabled={!clockOutEnabled || busy}
-            // eslint-disable-next-line @typescript-eslint/no-misused-promises
             onClick={handleClockOut}
             leftIcon={<LogOut className="h-4 w-4" />}
             className="min-h-[44px] w-full sm:w-auto whitespace-nowrap"
