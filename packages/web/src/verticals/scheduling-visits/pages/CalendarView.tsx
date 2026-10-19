@@ -432,25 +432,20 @@ export const CalendarView: React.FC = () => {
       // 3. Status filter
       if (selectedStatusFilterIds.length > 0) {
         const status = visit.status || 'SCHEDULED';
-        let matchesStatus = false;
-        if (
+        const isUnassignedMatch =
           selectedStatusFilterIds.includes('UNASSIGNED') &&
-          (status === 'UNASSIGNED' || !visit.assignedCaregiverId)
-        ) {
-          matchesStatus = true;
-        } else if (
+          (status === 'UNASSIGNED' || !visit.assignedCaregiverId);
+
+        const isAssignedMatch =
           selectedStatusFilterIds.includes('ASSIGNED') &&
-          visit.assignedCaregiverId &&
+          Boolean(visit.assignedCaregiverId) &&
           status !== 'CANCELLED' &&
           status !== 'COMPLETED' &&
-          status !== 'IN_PROGRESS'
-        ) {
-          matchesStatus = true;
-        } else if (selectedStatusFilterIds.includes(status)) {
-          matchesStatus = true;
-        }
+          status !== 'IN_PROGRESS';
 
-        if (!matchesStatus) {
+        const isDirectStatusMatch = selectedStatusFilterIds.includes(status);
+
+        if (!isUnassignedMatch && !isAssignedMatch && !isDirectStatusMatch) {
           return false;
         }
       }
