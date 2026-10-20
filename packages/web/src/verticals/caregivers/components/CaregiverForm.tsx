@@ -14,9 +14,11 @@
  * without them the service layer still rejects with a clean 400, but the
  * create flow would never actually succeed for a real user.
  */
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Input, Select, FormField } from '@/core/components';
 import type { SelectOption } from '@/core/components/forms/Select';
+import { useBranches } from '@/verticals/client-demographics/hooks/index.js';
+import { Search, ChevronDown, Check, X } from 'lucide-react';
 
 export interface CaregiverFormValues {
   firstName: string;
@@ -134,9 +136,97 @@ export const CaregiverForm: React.FC<CaregiverFormProps> = ({
   errors = {},
   disabled = false,
 }) => {
+  const { data: fetchedBranches = [] } = useBranches();
+  const [branchSearch, setBranchSearch] = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // If backend returns branches, use them. Otherwise provide a default Main branch fallback
+  const availableBranches = fetchedBranches.length > 0
+    ? fetchedBranches
+    : [{ id: '00000000-0000-0000-0000-000000000002', name: 'Main Branch', code: 'MAIN' }];
+
   const set = <K extends keyof CaregiverFormValues>(key: K, value: CaregiverFormValues[K]) => {
     onChange({ ...values, [key]: value });
   };
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  // Parse currently selected branch IDs from branchIdsRaw
+  const selectedBranchIds = values.branchIdsRaw
+    ? values.branchIdsRaw
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
+    : [];
+
+  // Auto-select "Main" branch on load if no branch is currently selected
+  useEffect(() => {
+    if (availableBranches.length > 0 && selectedBranchIds.length === 0 && !values.primaryBranchId) {
+      const mainBranch =
+        availableBranches.find(
+          (b) => b.name?.toLowerCase().includes('main') || b.code?.toLowerCase().includes('main')
+        ) || availableBranches[0];
+
+      if (mainBranch) {
+        onChange({
+          ...values,
+          branchIdsRaw: mainBranch.id,
+          primaryBranchId: mainBranch.id,
+        });
+      }
+    }
+  }, [availableBranches, selectedBranchIds.length, values, onChange]);
+
+  const toggleBranchSelection = (branchId: string) => {
+    const exists = selectedBranchIds.includes(branchId);
+    let nextBranchIds: string[];
+    let nextPrimary = values.primaryBranchId;
+
+    if (exists) {
+      nextBranchIds = selectedBranchIds.filter((id) => id !== branchId);
+      if (nextPrimary === branchId) {
+        nextPrimary = nextBranchIds[0] || '';
+      }
+    } else {
+      nextBranchIds = [...selectedBranchIds, branchId];
+      if (!nextPrimary) {
+        nextPrimary = branchId;
+      }
+    }
+
+    onChange({
+      ...values,
+      branchIdsRaw: nextBranchIds.join(', '),
+      primaryBranchId: nextPrimary,
+    });
+  };
+
+  const setPrimaryBranch = (branchId: string) => {
+    const nextBranchIds = selectedBranchIds.includes(branchId)
+      ? selectedBranchIds
+      : [...selectedBranchIds, branchId];
+
+    onChange({
+      ...values,
+      branchIdsRaw: nextBranchIds.join(', '),
+      primaryBranchId: branchId,
+    });
+  };
+
+  const filteredBranches = availableBranches.filter((b) => {
+    const q = branchSearch.toLowerCase();
+    return b.name?.toLowerCase().includes(q) || b.code?.toLowerCase().includes(q);
+  });
 
   return (
     <div className="space-y-8">
@@ -337,31 +427,134 @@ export const CaregiverForm: React.FC<CaregiverFormProps> = ({
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-gray-900">Branch Assignment</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Branch Selector Dropdown */}
+          <div className="space-y-1 relative" ref={dropdownRef}>
+            <label className="block text-sm font-medium text-gray-700">
+              Assigned Branches <span className="text-red-500">*</span>
+            </label>
+            <div
+              className={`min-h-[38px] w-full rounded-md border bg-white px-3 py-2 text-sm shadow-sm cursor-pointer flex flex-wrap items-center justify-between gap-1.5 ${
+                errors.branchIdsRaw ? 'border-red-300 ring-1 ring-red-500' : 'border-gray-300 focus-within:border-primary-500'
+              } ${disabled ? 'bg-gray-50 cursor-not-allowed opacity-75' : ''}`}
+              onClick={() => !disabled && setDropdownOpen(!dropdownOpen)}
+              data-testid="branch-dropdown-toggle"
+            >
+              <div className="flex flex-wrap items-center gap-1 flex-1">
+                {selectedBranchIds.length === 0 ? (
+                  <span className="text-gray-400">Select branches...</span>
+                ) : (
+                  selectedBranchIds.map((branchId) => {
+                    const branch = availableBranches.find((b) => b.id === branchId);
+                    const name = branch ? `${branch.name}${branch.code ? ` (${branch.code})` : ''}` : branchId;
+                    const isPrimary = values.primaryBranchId === branchId;
+                    return (
+                      <span
+                        key={branchId}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+                          isPrimary
+                            ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {name} {isPrimary && '(Primary)'}
+                        {!disabled && (
+                          <button
+                            type="button"
+                            className="text-gray-400 hover:text-gray-600 focus:outline-none ml-0.5"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleBranchSelection(branchId);
+                            }}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </span>
+                    );
+                  })
+                )}
+              </div>
+              <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
+            </div>
+
+            {/* Dropdown popup */}
+            {dropdownOpen && (
+              <div className="absolute z-20 mt-1 w-full rounded-md bg-white shadow-lg border border-gray-200 py-1 max-h-60 overflow-hidden flex flex-col">
+                <div className="p-2 border-b border-gray-100">
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-gray-400" />
+                    <input
+                      type="text"
+                      className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500"
+                      placeholder="Search branches..."
+                      value={branchSearch}
+                      onChange={(e) => setBranchSearch(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                </div>
+
+                <div className="overflow-y-auto max-h-44 py-1">
+                  {filteredBranches.length === 0 ? (
+                    <div className="px-3 py-2 text-xs text-gray-500 text-center">No branches found</div>
+                  ) : (
+                    filteredBranches.map((branch) => {
+                      const isSelected = selectedBranchIds.includes(branch.id);
+                      return (
+                        <div
+                          key={branch.id}
+                          className="px-3 py-2 hover:bg-gray-50 cursor-pointer flex items-center justify-between text-sm"
+                          onClick={() => toggleBranchSelection(branch.id)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-4 h-4 rounded border flex items-center justify-center ${
+                                isSelected ? 'bg-primary-600 border-primary-600 text-white' : 'border-gray-300'
+                              }`}
+                            >
+                              {isSelected && <Check className="w-3 h-3" />}
+                            </div>
+                            <span className="font-medium text-gray-900">{branch.name}</span>
+                            {branch.code && <span className="text-xs text-gray-400">({branch.code})</span>}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+            {errors.branchIdsRaw && <p className="text-xs text-red-600 mt-1">{errors.branchIdsRaw}</p>}
+            <p className="text-xs text-gray-500 mt-1">Select one or more branches assigned to this caregiver.</p>
+          </div>
+
+          {/* Primary Branch Dropdown */}
           <FormField
-            label="Branch IDs (comma-separated)"
-            required
-            error={errors.branchIdsRaw}
-            helperText="Enter one or more branch UUIDs this caregiver is assigned to"
-          >
-            <Input
-              value={values.branchIdsRaw}
-              onChange={(e) => set('branchIdsRaw', e.target.value)}
-              disabled={disabled}
-              placeholder="00000000-0000-0000-0000-000000000002"
-            />
-          </FormField>
-          <FormField
-            label="Primary Branch ID"
+            label="Primary Branch"
             required
             error={errors.primaryBranchId}
-            helperText="Must be one of the Branch IDs listed above -- it will be added automatically if missing"
+            helperText="The primary location for this caregiver's employment records and scheduling"
           >
-            <Input
+            <select
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm disabled:bg-gray-50 disabled:text-gray-500"
               value={values.primaryBranchId}
-              onChange={(e) => set('primaryBranchId', e.target.value)}
-              disabled={disabled}
-              placeholder="00000000-0000-0000-0000-000000000002"
-            />
+              onChange={(e) => setPrimaryBranch(e.target.value)}
+              disabled={disabled || selectedBranchIds.length === 0}
+            >
+              {selectedBranchIds.length === 0 ? (
+                <option value="">Select an assigned branch first</option>
+              ) : (
+                selectedBranchIds.map((branchId) => {
+                  const b = availableBranches.find((item) => item.id === branchId);
+                  const name = b ? `${b.name}${b.code ? ` (${b.code})` : ''}` : branchId;
+                  return (
+                    <option key={branchId} value={branchId}>
+                      {name}
+                    </option>
+                  );
+                })
+              )}
+            </select>
           </FormField>
         </div>
       </section>
