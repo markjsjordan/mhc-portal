@@ -630,7 +630,6 @@ export const CalendarView: React.FC = () => {
         const newStart = start instanceof Date ? start : new Date(start);
         const newEnd = end instanceof Date ? end : new Date(end);
 
-<<<<<<< HEAD
         if (resourceId != null && String(resourceId) !== visit.assignedCaregiverId) {
           await checkAndAssignCaregiver(visit.id, String(resourceId));
           return;
@@ -677,13 +676,6 @@ export const CalendarView: React.FC = () => {
     [updateVisitSchedule]
   );
 
-  const handleSelectEvent = useCallback(
-    (event: CalendarEvent) => {
-      navigate(`/visits/${event.resource.id}`);
-    },
-    [navigate]
-  );
-=======
   // Handle event selection - open details in an in-page side panel so the
   // calendar (date range, filters, scroll position) stays mounted.
   const handleSelectEvent = useCallback((event: CalendarEvent) => {
@@ -707,7 +699,6 @@ export const CalendarView: React.FC = () => {
     const next = orderedEvents[selectedIndex + 1];
     if (next) setSelectedVisitId(next.id);
   }, [orderedEvents, selectedIndex]);
->>>>>>> fix/wdvf3abqrn-calendar-side-panel
 
   const handleSelectSlot = useCallback((slotInfo: SlotInfo) => {
     setCreateVisitSlotInfo(slotInfo);
