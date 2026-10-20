@@ -37,6 +37,7 @@ export interface ClientApiService {
   createClient(input: CreateClientInput): Promise<Client>;
   updateClient(id: string, input: UpdateClientInput): Promise<Client>;
   deleteClient(id: string): Promise<void>;
+  getBranches(): Promise<Array<{ id: string; name: string; code?: string; status?: string }>>;
 }
 
 export const createClientApiService = (apiClient: ApiClient): ClientApiService => {
@@ -102,6 +103,13 @@ export const createClientApiService = (apiClient: ApiClient): ClientApiService =
 
     async deleteClient(id: string): Promise<void> {
       return apiClient.delete<void>(`/api/clients/${id}`);
+    },
+
+    async getBranches(): Promise<Array<{ id: string; name: string; code?: string; status?: string }>> {
+      const response = await apiClient.get<{ success?: boolean; data?: Array<{ id: string; name: string; code?: string; status?: string }> } | Array<{ id: string; name: string; code?: string; status?: string }>>('/api/branches');
+      return (response && typeof response === 'object' && 'data' in response && Array.isArray(response.data))
+        ? response.data
+        : (Array.isArray(response) ? response : []);
     },
   };
 };

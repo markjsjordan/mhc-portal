@@ -70,6 +70,7 @@ function buildMockClientService() {
     // Methods invoked by getClientsDashboard's enrichment step, if any extra
     // calls are made; default to safe no-op resolutions.
     getClientSummary: vi.fn().mockResolvedValue({}),
+    listBranches: vi.fn().mockResolvedValue([{ id: 'branch-1', name: 'Main Branch' }]),
   } as any;
 }
 
@@ -132,5 +133,14 @@ describe('createClientRouter - route registration order', () => {
     expect(res.status).toBe(200);
     expect(mockClientService.getClientByNumber).toHaveBeenCalledWith('CL-123', expect.anything(), expect.anything());
     expect(mockClientService.getClientById).not.toHaveBeenCalled();
+  });
+
+  it('GET /branches returns the branches list from service', async () => {
+    const res = await request(app).get('/api/branches');
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toEqual([{ id: 'branch-1', name: 'Main Branch' }]);
+    expect(mockClientService.listBranches).toHaveBeenCalled();
   });
 });

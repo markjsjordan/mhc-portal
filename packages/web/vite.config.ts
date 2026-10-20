@@ -7,10 +7,14 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { visualizer } from 'rollup-plugin-visualizer';
 
 const isAnalyze = process.env.ANALYZE === 'true';
+const appVersion = process.env.GITHUB_SHA || 'dev';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  define: {
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion),
+  },
   plugins: [
     react({
       // Use the new JSX runtime
@@ -47,6 +51,9 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // Service worker immediately activates on deploy (no tab close/reopen)
+        skipWaiting: true,
+        clientsClaim: true,
         // Increase max file size to cache the large JS bundle
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
         // Cache API responses

@@ -12,7 +12,8 @@ export interface PaginatedResult<T> {
 }
 
 export interface ApiError {
-  message: string;
+  message?: string;
+  error?: string;
   code?: string;
   status?: number;
   details?: Record<string, unknown>;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Edit, 
@@ -9,19 +9,36 @@ import {
   Target, 
   AlertTriangle,
   CheckCircle,
-  FileText
+  FileText,
+  Trash2
 } from 'lucide-react';
 import { Button, Card, CardHeader, CardContent, LoadingSpinner, ErrorMessage, StatusBadge } from '@/core/components';
 import { usePermissions } from '@/core/hooks';
 import { formatDate } from '@/core/utils';
-import { useCarePlan, useActivateCarePlan } from '../hooks';
+import { useCarePlan, useActivateCarePlan, useUpdateCarePlan, useDeleteCarePlan } from '../hooks';
+import { useClient } from '@/verticals/client-demographics/hooks';
 
 export const CarePlanDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { can } = usePermissions();
   const { data: carePlan, isLoading, error, refetch } = useCarePlan(id);
+  const { data: client } = useClient(carePlan?.clientId);
   const activateCarePlan = useActivateCarePlan();
+  const updateCarePlan = useUpdateCarePlan();
+  const deleteCarePlan = useDeleteCarePlan();
   const [now] = useState(() => Date.now());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const canManageCarePlans = can('care-plans:delete') || can('care-plans:*') || can('care_plans:write');
+  const canEditCarePlans = can('care-plans:update') || can('care-plans:*') || can('care_plans:write');
+
+  const isDeleteDisabled = carePlan?.status === 'ACTIVE' || carePlan?.status === 'COMPLETED';
+  const deleteDisabledReason = carePlan?.status === 'ACTIVE'
+    ? 'Cannot delete an active care plan. Please discontinue it first.'
+    : carePlan?.status === 'COMPLETED'
+    ? 'Completed care plans are retained for clinical and compliance records and cannot be deleted.'
+    : undefined;
 
   const handleActivate = async () => {
     if (!carePlan) return;
@@ -29,6 +46,31 @@ export const CarePlanDetail: React.FC = () => {
     try {
       await activateCarePlan.mutateAsync(carePlan.id);
       refetch();
+    } catch {
+      // Error is handled by the mutation
+    }
+  };
+
+  const handleDiscontinue = async () => {
+    if (!carePlan) return;
+    
+    try {
+      await updateCarePlan.mutateAsync({
+        id: carePlan.id,
+        input: { status: 'DISCONTINUED' },
+      });
+      refetch();
+    } catch {
+      // Error is handled by the mutation
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!carePlan) return;
+    
+    try {
+      await deleteCarePlan.mutateAsync(carePlan.id);
+      navigate('/care-plans');
     } catch {
       // Error is handled by the mutation
     }
@@ -80,9 +122,9 @@ export const CarePlanDetail: React.FC = () => {
             {carePlan.planType.replace(/_/g, ' ')}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <StatusBadge status={carePlan.status} />
-          {can('care_plans:write') && (
+          {canManageCarePlans && (
             <>
               {carePlan.status === 'DRAFT' && (
                 <Button
@@ -93,11 +135,36 @@ export const CarePlanDetail: React.FC = () => {
                   Activate
                 </Button>
               )}
-              <Link to={`/care-plans/${carePlan.id}/edit`}>
-                <Button variant="outline" leftIcon={<Edit className="h-4 w-4" />}>
-                  Edit
+              {carePlan.status === 'ACTIVE' && (
+                <Button
+                  variant="outline"
+                  onClick={handleDiscontinue}
+                  isLoading={updateCarePlan.isPending}
+                >
+                  Discontinue
                 </Button>
-              </Link>
+              )}
+              {canEditCarePlans && (
+                <Link to={`/care-plans/${carePlan.id}/edit`}>
+                  <Button variant="outline" leftIcon={<Edit className="h-4 w-4" />}>
+                    Edit
+                  </Button>
+                </Link>
+              )}
+              <span
+                title={deleteDisabledReason}
+                className={isDeleteDisabled ? 'inline-block cursor-not-allowed' : undefined}
+              >
+                <Button 
+                  variant="outline" 
+                  leftIcon={<Trash2 className="h-4 w-4" />}
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={isDeleteDisabled}
+                  className={isDeleteDisabled ? 'opacity-50 pointer-events-none' : 'text-red-600 hover:text-red-700 hover:border-red-300'}
+                >
+                  Delete
+                </Button>
+              </span>
             </>
           )}
         </div>
@@ -395,6 +462,41 @@ export const CarePlanDetail: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <div className="flex items-center gap-3 mb-3 text-red-600">
+              <AlertTriangle className="h-6 w-6 flex-shrink-0" />
+              <h3 className="text-lg font-semibold text-gray-900">Delete Care Plan</h3>
+            </div>
+            <p className="text-sm text-gray-700 mb-3">
+              Are you sure you want to delete the <span className="font-semibold">{carePlan.planType.replace(/_/g, ' ')}</span> care plan for <span className="font-semibold">{client ? (client.preferredName || `${client.firstName} ${client.lastName}`) : 'this client'}</span> ({carePlan.planNumber})?
+            </p>
+            <p className="text-xs text-gray-500 mb-5">
+              This action will soft-delete the care plan and remove it from active views while retaining the record for compliance and audit retention requirements.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleteCarePlan.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleDelete}
+                isLoading={deleteCarePlan.isPending}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Delete Plan
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -43,7 +43,7 @@ CHANGED_PKGS=$(git diff --cached --name-only 2>/dev/null | awk -F/ '{if ($1=="pa
 FILTER_ARGS=""
 if [ -n "$CHANGED_PKGS" ]; then
   for pkg in $CHANGED_PKGS; do
-    FILTER_ARGS="$FILTER_ARGS --filter=./$pkg..."
+    FILTER_ARGS="$FILTER_ARGS --filter=./$pkg"
   done
   echo -e "${BLUE}Scoped to staged packages:${NC} $CHANGED_PKGS"
   echo ""

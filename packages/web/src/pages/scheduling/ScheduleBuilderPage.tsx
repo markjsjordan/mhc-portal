@@ -2,37 +2,13 @@ import { useState, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import { useIsMobile } from '@/core/hooks';
 import { useCaregivers } from '@/verticals/caregivers/hooks/useCaregivers';
 import { useCalendarVisits, useVisitApi, useCaregiverAvailability } from '@/verticals/scheduling-visits/hooks/useVisits';
 import type { Visit as ApiVisit } from '@/verticals/scheduling-visits/types';
 import { useClients } from '@/verticals/client-demographics/hooks/useClients';
 import { calculateSupervisoryCadence } from '@/verticals/scheduling-visits/utils/supervisory-cadence';
 import { SupervisionAlertBanner } from '@/verticals/scheduling-visits/components/SupervisionAlertBanner';
-
-// Create-appointment flow is not implemented on this branch. The handlers below
-// were referenced by the UI but never defined (see wdvf3abp42). Failing loudly
-// here is intentional: a silent no-op would look like it works to coordinators.
-class NotImplementedError extends Error {
-  constructor(feature: string) {
-    super(`${feature} is not implemented yet (wdvf3abp42)`);
-    this.name = 'NotImplementedError';
-  }
-}
-const handleTimeSlotClick = (_caregiverId: string, _hour: number): void => {
-  throw new NotImplementedError('Time-slot appointment creation');
-};
-const handleCreateVisit = async (): Promise<void> => {
-  throw new NotImplementedError('Create appointment');
-};
-const [showCreateModal] = [false] as const;
-const [createModalData] = [null as null | { clientId: string; caregiverId?: string; date: string; startTime: string; duration: number }] as const;
-const setShowCreateModal = (_v: boolean): void => {
-  throw new NotImplementedError('Create appointment modal');
-};
-const setCreateModalData = (_v: null | { clientId: string; caregiverId?: string; date: string; startTime: string; duration: number }): void => {
-  throw new NotImplementedError('Create appointment modal');
-};
-
 
 interface Caregiver {
   id: string;
@@ -127,6 +103,7 @@ function getNextWeekDates(): string[] {
 }
 
 export default function ScheduleBuilderPage() {
+  const isMobile = useIsMobile();
   const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]!);
   const [draggedVisit, setDraggedVisit] = useState<Visit | null>(null);
   const [viewMode, setViewMode] = useState<'week' | 'day'>('day');
@@ -139,6 +116,17 @@ export default function ScheduleBuilderPage() {
     () => initialVisitType === 'SUPERVISION'
   );
   const [supervisionClientId] = useState<string>(initialClientId);
+
+  // General visit creation modal state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createModalData, setCreateModalData] = useState<{
+    clientId: string;
+    caregiverId?: string;
+    date: string;
+    startTime: string;
+    duration: number;
+    visitType: string;
+  } | null>(null);
 
   const queryClient = useQueryClient();
   const visitApi = useVisitApi();
@@ -231,6 +219,44 @@ export default function ScheduleBuilderPage() {
     toast.error('Unassigning a visit is not supported by the API yet (no unassign endpoint exists).');
   }, []);
 
+  const handleTimeSlotClick = useCallback((caregiverId: string, hour: number) => {
+    const startHour = String(hour).padStart(2, '0');
+    setCreateModalData({
+      clientId: '',
+      caregiverId,
+      date: selectedDate,
+      startTime: `${startHour}:00`,
+      duration: 1,
+      visitType: 'REGULAR',
+    });
+    setShowCreateModal(true);
+  }, [selectedDate]);
+
+  const handleCreateVisit = useCallback(async () => {
+    if (!createModalData) return;
+    const endHour = String(parseInt(createModalData.startTime.split(':')[0] ?? '9') + createModalData.duration).padStart(2, '0');
+    const endTime = `${endHour}:00`;
+    try {
+      await visitApi.createVisit({
+        clientId: createModalData.clientId,
+        caregiverId: createModalData.caregiverId,
+        serviceTypeId: '00000000-0000-0000-0000-000000000002',
+        visitType: createModalData.visitType as import('@/verticals/scheduling-visits/types').VisitType,
+        scheduledDate: createModalData.date,
+        scheduledStartTime: createModalData.startTime,
+        scheduledEndTime: endTime,
+      });
+      toast.success('Visit created successfully');
+      setShowCreateModal(false);
+      setCreateModalData(null);
+      await queryClient.invalidateQueries({ queryKey: ['visits'] });
+      await refetchVisits();
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Failed to create visit';
+      toast.error(msg);
+    }
+  }, [createModalData, visitApi, queryClient, refetchVisits]);
+
   const getVisitsForCaregiverAtTime = (caregiverId: string, hour: number) => {
     return visits.filter(v => {
       if (v.caregiverId !== caregiverId || v.date !== selectedDate) return false;
@@ -253,59 +279,205 @@ export default function ScheduleBuilderPage() {
   );
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
+    <div
+      className="schedule-builder-container"
+      style={isMobile ? styles.containerMobile : styles.container}
+    >
+      <style>{`
+        @media (max-width: 767px) {
+          .schedule-builder-container {
+            padding: 16px 12px !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+          }
+          .schedule-builder-header {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 16px !important;
+            margin-bottom: 20px !important;
+          }
+          .schedule-builder-controls {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+            width: 100% !important;
+          }
+          .schedule-builder-controls-row {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 8px !important;
+            width: 100% !important;
+          }
+          .schedule-builder-toggle {
+            display: flex !important;
+            flex-shrink: 0 !important;
+          }
+          .schedule-builder-toggle button {
+            min-height: 44px !important;
+            min-width: 44px !important;
+            padding: 10px 14px !important;
+          }
+          .schedule-builder-date-select {
+            min-height: 44px !important;
+            padding: 10px 12px !important;
+            flex: 1 !important;
+            min-width: 0 !important;
+          }
+          .schedule-builder-action-btn {
+            min-height: 44px !important;
+            width: 100% !important;
+            justify-content: center !important;
+          }
+          .schedule-builder-content {
+            flex-direction: column !important;
+            gap: 20px !important;
+            width: 100% !important;
+          }
+          .schedule-builder-sidebar {
+            width: 100% !important;
+          }
+        }
+        @media (max-width: 767px) {
+          .modal-form-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .modal-container {
+            max-height: 85vh !important;
+            border-radius: 8px !important;
+          }
+          .modal-header {
+            padding: 16px !important;
+          }
+          .modal-form {
+            padding: 16px !important;
+          }
+        }
+      `}</style>
+      <div
+        className="schedule-builder-header"
+        style={isMobile ? styles.headerMobile : styles.header}
+      >
         <div>
-          <h1 style={styles.title}>Schedule Builder</h1>
+          <h1 style={isMobile ? styles.titleMobile : styles.title}>Schedule Builder</h1>
           <p style={styles.subtitle}>
             Drag unassigned visits to caregiver time slots
           </p>
         </div>
-        <div style={styles.headerControls}>
-          <div style={styles.viewToggle}>
-            <button
-              style={{
-                ...styles.viewButton,
-                ...(viewMode === 'day' ? styles.viewButtonActive : {}),
-              }}
-              onClick={() => setViewMode('day')}
-            >
-              Day
-            </button>
-            <button
-              style={{
-                ...styles.viewButton,
-                ...(viewMode === 'week' ? styles.viewButtonActive : {}),
-              }}
-              onClick={() => setViewMode('week')}
-            >
-              Week
-            </button>
-          </div>
-          <select
-            value={selectedDate}
-            onChange={e => setSelectedDate(e.target.value)}
-            style={styles.dateSelect}
-          >
-            {weekDates.map(date => (
-              <option key={date} value={date}>
-                {new Date(date).toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </option>
-            ))}
-          </select>
+        <div
+          className="schedule-builder-controls"
+          style={isMobile ? styles.headerControlsMobile : styles.headerControls}
+        >
+          {isMobile ? (
+            <div className="schedule-builder-controls-row" style={styles.controlsRowMobile}>
+              <div className="schedule-builder-toggle" style={styles.viewToggleMobile}>
+                <button
+                  style={{
+                    ...styles.viewButtonMobile,
+                    ...(viewMode === 'day' ? styles.viewButtonActive : {}),
+                  }}
+                  onClick={() => setViewMode('day')}
+                >
+                  Day
+                </button>
+                <button
+                  style={{
+                    ...styles.viewButtonMobile,
+                    ...(viewMode === 'week' ? styles.viewButtonActive : {}),
+                  }}
+                  onClick={() => setViewMode('week')}
+                >
+                  Week
+                </button>
+              </div>
+              <select
+                value={selectedDate}
+                onChange={e => setSelectedDate(e.target.value)}
+                className="schedule-builder-date-select"
+                style={styles.dateSelectMobile}
+              >
+                {weekDates.map(date => (
+                  <option key={date} value={date}>
+                    {new Date(date).toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <>
+              <div style={styles.viewToggle}>
+                <button
+                  style={{
+                    ...styles.viewButton,
+                    ...(viewMode === 'day' ? styles.viewButtonActive : {}),
+                  }}
+                  onClick={() => setViewMode('day')}
+                >
+                  Day
+                </button>
+                <button
+                  style={{
+                    ...styles.viewButton,
+                    ...(viewMode === 'week' ? styles.viewButtonActive : {}),
+                  }}
+                  onClick={() => setViewMode('week')}
+                >
+                  Week
+                </button>
+              </div>
+              <select
+                value={selectedDate}
+                onChange={e => setSelectedDate(e.target.value)}
+                style={styles.dateSelect}
+              >
+                {weekDates.map(date => (
+                  <option key={date} value={date}>
+                    {new Date(date).toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
           <button
-            style={styles.patternButton}
+            className="schedule-builder-action-btn"
+            style={isMobile ? styles.patternButtonMobile : styles.patternButton}
             onClick={() => setShowPatternModal(true)}
           >
             + Recurring Schedule
           </button>
           <button
+            className="schedule-builder-action-btn"
             style={{
-              ...styles.patternButton,
+              ...(isMobile ? styles.patternButtonMobile : styles.patternButton),
+              backgroundColor: '#059669',
+              color: '#ffffff',
+              border: 'none',
+              fontWeight: 600,
+            }}
+            onClick={() => {
+              setCreateModalData({
+                clientId: '',
+                date: selectedDate,
+                startTime: '09:00',
+                duration: 1,
+                visitType: 'REGULAR',
+              });
+              setShowCreateModal(true);
+            }}
+          >
+            + New Visit
+          </button>
+          <button
+            style={{
+              ...(isMobile ? styles.patternButtonMobile : styles.patternButton),
               backgroundColor: '#1d4ed8',
               color: '#ffffff',
               border: 'none',
@@ -319,7 +491,7 @@ export default function ScheduleBuilderPage() {
       </div>
 
       {supervisionCadence && supervisionCadence.showAlert && (
-        <div style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: '20px', maxWidth: '100%' }}>
           <SupervisionAlertBanner
             cadence={supervisionCadence}
             onSchedule={() => setShowSupervisionModal(true)}
@@ -327,9 +499,15 @@ export default function ScheduleBuilderPage() {
         </div>
       )}
 
-      <div style={styles.content}>
+      <div
+        className="schedule-builder-content"
+        style={isMobile ? styles.contentMobile : styles.content}
+      >
         {/* Unassigned visits sidebar */}
-        <div style={styles.sidebar}>
+        <div
+          className="schedule-builder-sidebar"
+          style={isMobile ? styles.sidebarMobile : styles.sidebar}
+        >
           <h3 style={styles.sidebarTitle}>
             Unassigned Visits ({unassignedVisits.length})
           </h3>
@@ -544,6 +722,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: '24px',
     maxWidth: '1600px',
     margin: '0 auto',
+    boxSizing: 'border-box',
+  },
+  containerMobile: {
+    padding: '16px 12px',
+    maxWidth: '100%',
+    margin: '0 auto',
+    boxSizing: 'border-box',
+    overflowX: 'hidden',
   },
   header: {
     display: 'flex',
@@ -551,8 +737,21 @@ const styles: { [key: string]: React.CSSProperties } = {
     alignItems: 'flex-start',
     marginBottom: '24px',
   },
+  headerMobile: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: '16px',
+    marginBottom: '20px',
+    width: '100%',
+  },
   title: {
     fontSize: '28px',
+    fontWeight: 'bold',
+    marginBottom: '4px',
+  },
+  titleMobile: {
+    fontSize: '24px',
     fontWeight: 'bold',
     marginBottom: '4px',
   },
@@ -565,11 +764,31 @@ const styles: { [key: string]: React.CSSProperties } = {
     gap: '12px',
     alignItems: 'center',
   },
+  headerControlsMobile: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: '10px',
+    width: '100%',
+  },
+  controlsRowMobile: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    width: '100%',
+  },
   viewToggle: {
     display: 'flex',
     border: '1px solid #e5e7eb',
     borderRadius: '6px',
     overflow: 'hidden',
+  },
+  viewToggleMobile: {
+    display: 'flex',
+    border: '1px solid #e5e7eb',
+    borderRadius: '6px',
+    overflow: 'hidden',
+    flexShrink: 0,
   },
   viewButton: {
     padding: '8px 16px',
@@ -577,6 +796,19 @@ const styles: { [key: string]: React.CSSProperties } = {
     backgroundColor: 'white',
     cursor: 'pointer',
     fontSize: '14px',
+  },
+  viewButtonMobile: {
+    padding: '10px 14px',
+    minHeight: '44px',
+    minWidth: '44px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: 'none',
+    backgroundColor: 'white',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 500,
   },
   viewButtonActive: {
     backgroundColor: '#3b82f6',
@@ -588,13 +820,34 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '6px',
     fontSize: '14px',
   },
+  dateSelectMobile: {
+    padding: '10px 12px',
+    border: '1px solid #e5e7eb',
+    borderRadius: '6px',
+    fontSize: '14px',
+    minHeight: '44px',
+    flex: 1,
+    minWidth: 0,
+    backgroundColor: 'white',
+  },
   content: {
     display: 'flex',
     gap: '24px',
     marginBottom: '24px',
   },
+  contentMobile: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+    marginBottom: '24px',
+    width: '100%',
+  },
   sidebar: {
     width: '300px',
+    flexShrink: 0,
+  },
+  sidebarMobile: {
+    width: '100%',
     flexShrink: 0,
   },
   sidebarTitle: {
@@ -779,6 +1032,24 @@ const styles: { [key: string]: React.CSSProperties } = {
     gap: '6px',
     boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
   },
+  patternButtonMobile: {
+    padding: '10px 16px',
+    backgroundColor: '#10b981',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: 500,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+    minHeight: '44px',
+    width: '100%',
+    boxSizing: 'border-box',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+  },
   recurringBadge: {
     fontSize: '11px',
     backgroundColor: '#ecfdf5',
@@ -788,6 +1059,93 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: 600,
     border: '1px solid #a7f3d0',
     display: 'inline-block',
+  },
+  modalOverlay: {
+    position: 'fixed' as const,
+    inset: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: '16px',
+  },
+  modal: {
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    padding: '24px',
+    width: '100%',
+    maxWidth: '480px',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+    boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
+    position: 'relative' as const,
+    margin: '0 auto',
+  },
+  modalTitle: {
+    fontSize: '18px',
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: '20px',
+  },
+  closeBtn: {
+    position: 'absolute' as const,
+    top: '16px',
+    right: '16px',
+    background: 'none',
+    border: 'none',
+    fontSize: '18px',
+    color: '#9ca3af',
+    cursor: 'pointer',
+    padding: '4px',
+  },
+  formGroup: {
+    marginBottom: '16px',
+  },
+  label: {
+    display: 'block',
+    fontSize: '13px',
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: '6px',
+  },
+  input: {
+    width: '100%',
+    padding: '8px 12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '14px',
+    color: '#111827',
+    backgroundColor: '#ffffff',
+    outline: 'none',
+    boxSizing: 'border-box' as const,
+  },
+  footer: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '12px',
+    marginTop: '20px',
+    paddingTop: '16px',
+    borderTop: '1px solid #e5e7eb',
+  },
+  cancelBtn: {
+    padding: '8px 16px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    backgroundColor: '#ffffff',
+    color: '#374151',
+    fontSize: '14px',
+    cursor: 'pointer',
+  },
+  submitBtn: {
+    padding: '8px 18px',
+    border: 'none',
+    borderRadius: '6px',
+    backgroundColor: '#059669',
+    color: '#ffffff',
+    fontSize: '14px',
+    fontWeight: '500' as const,
+    cursor: 'pointer',
   },
 };
 
@@ -879,8 +1237,8 @@ function CreateRecurringPatternModal({
 
   return (
     <div style={modalStyles.overlay}>
-      <div style={modalStyles.container}>
-        <div style={modalStyles.header}>
+      <div style={modalStyles.container} className="modal-container">
+        <div style={modalStyles.header} className="modal-header">
           <div>
             <h2 style={modalStyles.title}>Create Recurring Schedule</h2>
             <p style={modalStyles.subtitle}>
@@ -890,8 +1248,8 @@ function CreateRecurringPatternModal({
           <button onClick={onClose} style={modalStyles.closeBtn}>✕</button>
         </div>
 
-        <form onSubmit={handleSubmit} style={modalStyles.form}>
-          <div style={modalStyles.formGrid}>
+        <form onSubmit={handleSubmit} style={modalStyles.form} className="modal-form">
+          <div style={modalStyles.formGrid} className="modal-form-grid">
             <div style={modalStyles.formGroup}>
               <label style={modalStyles.label}>Client *</label>
               {clients.length > 0 ? (
@@ -1274,6 +1632,7 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
+    padding: '16px',
   },
   container: {
     backgroundColor: '#ffffff',
@@ -1283,6 +1642,7 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
     maxHeight: '90vh',
     overflowY: 'auto',
     boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    margin: '0 auto',
   },
   header: {
     padding: '20px 24px',
@@ -1431,6 +1791,7 @@ interface CreateAppointmentModalProps {
     date: string;
     startTime: string;
     duration: number;
+    visitType: string;
   };
   clients: Array<{ id: string; firstName: string; lastName: string }>;
   onClose: () => void;
@@ -1441,6 +1802,7 @@ interface CreateAppointmentModalProps {
     date: string;
     startTime: string;
     duration: number;
+    visitType: string;
   }>) => void;
 }
 
@@ -1454,6 +1816,10 @@ function CreateAppointmentModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
+    if (!data.clientId) {
+      toast.error('Please select a client');
+      return;
+    }
     setIsSubmitting(true);
     try {
       await onSubmit();
@@ -1464,7 +1830,7 @@ function CreateAppointmentModal({
 
   return (
     <div style={styles.modalOverlay}>
-      <div style={styles.modal}>
+      <div style={styles.modal} className="modal-container">
         <button onClick={onClose} style={styles.closeBtn}>✕</button>
         <h2 style={styles.modalTitle}>Create Appointment</h2>
 
@@ -1475,11 +1841,32 @@ function CreateAppointmentModal({
             onChange={(e) => onChange({ clientId: e.target.value })}
             style={styles.input}
           >
+            <option value="">Select a client...</option>
             {clients.map(client => (
               <option key={client.id} value={client.id}>
                 {client.firstName} {client.lastName}
               </option>
             ))}
+          </select>
+        </div>
+
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Visit Type <span style={{ color: '#ef4444' }}>*</span></label>
+          <select
+            value={data.visitType}
+            onChange={(e) => onChange({ visitType: e.target.value })}
+            style={styles.input}
+          >
+            <option value="REGULAR">Regular Visit</option>
+            <option value="INITIAL">Initial Visit</option>
+            <option value="ASSESSMENT">Assessment Visit</option>
+            <option value="RESPITE">Respite Care</option>
+            <option value="SUPERVISION">Supervisory Nurse Visit</option>
+            <option value="EMERGENCY">Emergency Response</option>
+            <option value="DISCHARGE">Discharge Visit</option>
+            <option value="MAKEUP">Make-up Visit</option>
+            <option value="CONCIERGE">Concierge Visit</option>
+            <option value="ONGOING_SUPPORT">Ongoing Support</option>
           </select>
         </div>
 

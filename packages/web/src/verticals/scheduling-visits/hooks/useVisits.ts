@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiClient } from '@/core/hooks';
-import { createVisitApiService } from '../services/visit-api';
+import { createVisitApiService, type UpdateVisitPayload } from '../services/visit-api';
 import type { VisitSearchFilters } from '../types';
 
 export const useVisitApi = () => {
@@ -151,5 +151,23 @@ export const useVisit = (visitId: string | undefined) => {
     queryFn: () => (visitId ? visitApi.getVisitById(visitId) : null),
     enabled: Boolean(visitId),
     staleTime: 60 * 1000,
+  });
+};
+
+/**
+ * Hook to update an existing scheduled visit
+ */
+export const useUpdateVisit = () => {
+  const queryClient = useQueryClient();
+  const visitApi = useVisitApi();
+
+  return useMutation({
+    mutationFn: ({ visitId, data }: { visitId: string; data: UpdateVisitPayload }) =>
+      visitApi.updateVisit(visitId, data),
+    onSuccess: (_, { visitId }) => {
+      queryClient.invalidateQueries({ queryKey: ['visits', 'detail', visitId] });
+      queryClient.invalidateQueries({ queryKey: ['visits'] });
+      queryClient.invalidateQueries({ queryKey: ['visits', 'calendar'] });
+    },
   });
 };

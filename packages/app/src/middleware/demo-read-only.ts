@@ -81,6 +81,11 @@ export function demoReadOnlyMiddleware(
     return next();
   }
 
+  // Allow team member invitation management (URL generation, resend, revoke) for demo admins
+  if (/^\/api\/organizations\/[^/]+\/invitations(?:\/|$)/.test(path)) {
+    return next();
+  }
+
   // Block all other write operations for demo users
   console.warn(`🛡️  Blocked write operation for demo user: ${req.method} ${path} (${user.email})`);
 

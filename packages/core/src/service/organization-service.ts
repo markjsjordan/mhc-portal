@@ -18,7 +18,6 @@ import {
 import { OrganizationRepository } from '../repository/organization-repository';
 import { UserRepository, CreateUserRequest } from '../repository/user-repository';
 import { Database } from '../db/connection';
-import { EmailService, createEmailService } from './email-service';
 
 export interface TeamMember {
   id: UUID;
@@ -55,12 +54,10 @@ export interface IOrganizationService {
 export class OrganizationService implements IOrganizationService {
   private organizationRepo: OrganizationRepository;
   private userRepo: UserRepository;
-  private emailService: EmailService;
 
   constructor(private db: Database) {
     this.organizationRepo = new OrganizationRepository(db);
     this.userRepo = new UserRepository(db);
-    this.emailService = createEmailService();
   }
 
   /**
@@ -184,7 +181,7 @@ export class OrganizationService implements IOrganizationService {
     createdBy: UUID
   ): Promise<InviteToken> {
     // Validate organization exists
-    const organization = await this.getOrganizationById(organizationId);
+    await this.getOrganizationById(organizationId);
 
     // Validate email format
     if (!this.isValidEmail(request.email)) {
@@ -202,35 +199,12 @@ export class OrganizationService implements IOrganizationService {
       });
     }
 
-    // Create invitation token
-    const inviteToken = await this.userRepo.createInviteToken(
+    // Create invitation token (URL generation flow — admin shares link directly, no email sent)
+    return await this.userRepo.createInviteToken(
       organizationId,
       request,
       createdBy
     );
-
-    // Send invitation email notification
-    try {
-      // Get the inviter's details to personalize the email
-      const inviter = await this.userRepo.getUserById(createdBy);
-      const inviterName = inviter !== null
-        ? `${inviter.firstName} ${inviter.lastName}`.trim()
-        : 'A team member';
-
-      await this.emailService.sendInvitation({
-        recipientEmail: request.email,
-        recipientName: request.firstName ?? request.email,
-        inviterName,
-        organizationName: organization.name,
-        invitationToken: inviteToken.token,
-        expiresAt: inviteToken.expiresAt,
-      });
-    } catch (emailError) {
-      // Log email sending error but don't fail the entire invitation
-      console.error('[OrganizationService] Failed to send invitation email:', emailError);
-    }
-
-    return inviteToken;
   }
 
   async getInvitationDetails(token: string): Promise<InviteDetails> {
@@ -294,18 +268,6 @@ export class OrganizationService implements IOrganizationService {
 
       return newUser.id;
     });
-
-    // Send welcome email notification
-    try {
-      await this.emailService.sendWelcome({
-        recipientEmail: inviteDetails.email,
-        recipientName: `${request.firstName} ${request.lastName}`.trim(),
-        organizationName: inviteDetails.organizationName,
-      });
-    } catch (emailError) {
-      // Log email sending error but don't fail the account creation
-      console.error('[OrganizationService] Failed to send welcome email:', emailError);
-    }
 
     return userId;
   }
@@ -462,8 +424,7 @@ export class OrganizationService implements IOrganizationService {
     const invites = await this.userRepo.getOrganizationInvites(organizationId);
     const invite = invites.find((i) => i.id === invitationId);
 
-    // find() returns undefined (never null) when no match exists
-    if (invite === undefined) {
+    if (invite == null) {
       throw new NotFoundError('Invitation not found', { id: invitationId });
     }
 
@@ -473,29 +434,8 @@ export class OrganizationService implements IOrganizationService {
       });
     }
 
-    // Resend the invitation
+    // Extend invitation expiration (URL generation flow — no email sent)
     await this.userRepo.resendInviteToken(invitationId, organizationId, resendBy);
-
-    // Send invitation email notification again
-    try {
-      const organization = await this.getOrganizationById(organizationId);
-      const inviter = await this.userRepo.getUserById(resendBy);
-      const inviterName = inviter !== null
-        ? `${inviter.firstName} ${inviter.lastName}`.trim()
-        : 'A team member';
-
-      await this.emailService.sendInvitation({
-        recipientEmail: invite.email,
-        recipientName: invite.firstName ?? invite.email,
-        inviterName,
-        organizationName: organization.name,
-        invitationToken: invite.token,
-        expiresAt: invite.expiresAt,
-      });
-    } catch (emailError) {
-      // Log email sending error but don't fail the resend operation
-      console.error('[OrganizationService] Failed to send resend invitation email:', emailError);
-    }
   }
 
   async revokeInvitationById(invitationId: UUID, organizationId: UUID, revokedBy: UUID): Promise<void> {

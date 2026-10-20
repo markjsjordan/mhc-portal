@@ -4,7 +4,7 @@
  * Business logic for care plans and tasks management
  */
 
-import { UserContext, PaginationParams, PaginatedResult, UUID, NotFoundError, ValidationError, PermissionError } from '@folkcare/core';
+import { UserContext, PaginationParams, PaginatedResult, UUID, NotFoundError, ValidationError, PermissionError, AuditService, AuditEventType } from '@folkcare/core';
 import { PermissionService } from '@folkcare/core';
 import { addDays, isBefore } from 'date-fns';
 import {
@@ -45,12 +45,14 @@ export class CarePlanService {
   private permissions: PermissionService;
   private userRepository: IUserRepository;
   private versionRepository?: CarePlanVersionRepository;
+  private auditService?: AuditService;
 
   constructor(
     repository: CarePlanRepository,
     permissions: PermissionService,
     userRepository: IUserRepository,
-    versionRepository?: CarePlanVersionRepository
+    versionRepository?: CarePlanVersionRepository,
+    auditService?: AuditService
   ) {
     this.repository = repository;
     this.permissions = permissions;
@@ -61,6 +63,14 @@ export class CarePlanService {
       const db = (repository as any).getDatabase();
       if (db) {
         this.versionRepository = new CarePlanVersionRepository(db);
+      }
+    }
+    if (auditService) {
+      this.auditService = auditService;
+    } else if (repository && typeof (repository as any).getDatabase === 'function') {
+      const db = (repository as any).getDatabase();
+      if (db) {
+        this.auditService = new AuditService(db);
       }
     }
   }
@@ -398,6 +408,25 @@ export class CarePlanService {
     }
 
     await this.repository.deleteCarePlan(id, context.userId);
+
+    // Audit record: who, when, plan ID, client ID
+    if (this.auditService) {
+      await this.auditService.logEvent(context, {
+        eventType: 'DATA_MODIFICATION' as AuditEventType,
+        resource: 'care_plans',
+        resourceId: id,
+        action: 'DELETE',
+        result: 'SUCCESS',
+        metadata: {
+          planId: id,
+          clientId: carePlan.clientId,
+          planType: carePlan.planType,
+          planNumber: carePlan.planNumber,
+          who: context.userId,
+          when: new Date().toISOString(),
+        },
+      });
+    }
   }
 
   /**

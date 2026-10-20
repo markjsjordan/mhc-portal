@@ -810,6 +810,405 @@ export function createVisitRouter(db: Database): Router {
   });
 
   /**
+   * PUT /api/visits/:id
+   * PATCH /api/visits/:id
+   * Edit a scheduled visit
+   *
+   * Body parameters:
+   * - scheduledDate: string (YYYY-MM-DD)
+   * - scheduledStartTime: string (HH:MM or HH:MM:SS)
+   * - scheduledEndTime: string (HH:MM or HH:MM:SS)
+   * - duration / scheduledDuration: number (minutes, 15..1440)
+   * - caregiverId / assignedCaregiverId: UUID or null
+   * - visitType: string (REGULAR, INITIAL, DISCHARGE, RESPITE, EMERGENCY, MAKEUP, SUPERVISION, ASSESSMENT, etc.)
+   * - serviceTypeId: string
+   * - serviceTypeName: string
+   * - notes / internalNotes: string
+   * - clientInstructions: string
+   *
+   * Constraints:
+   * - Only scheduled / unassigned visits can be edited
+   * - Completed and EVV-verified visits are locked (21st Century Cures Act compliance)
+   * - Writes an audit record with before/after state
+   * - Respects permissions: scheduling permission or scheduling roles required
+   */
+  // eslint-disable-next-line sonarjs/cognitive-complexity -- Update visit handler with domain validation and audit
+  const handleUpdateVisit = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const context = getUserContext(req);
+      const { id: visitId } = req.params;
+
+      if (!isValidUUID(visitId)) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid visit ID format',
+        });
+        return;
+      }
+
+      if (!context.organizationId) {
+        res.status(400).json({
+          success: false,
+          error: 'Organization ID is required',
+        });
+        return;
+      }
+
+      // Permissions check: only roles or permissions allowed to schedule may edit
+      const schedulingRoles = [
+        'SUPER_ADMIN',
+        'ORG_ADMIN',
+        'BRANCH_ADMIN',
+        'COORDINATOR',
+        'SCHEDULER',
+        'SUPERVISOR',
+        'ADMINISTRATOR',
+      ];
+      const hasSchedulingRole = (context.roles ?? []).some((role) => schedulingRoles.includes(role));
+      const hasSchedulingPermission = (context.permissions ?? []).some(
+        (perm) =>
+          perm === '*:*' ||
+          perm === 'schedules:*' ||
+          perm === 'visits:*' ||
+          perm === 'schedules:update' ||
+          perm === 'visits:update'
+      );
+
+      if (!hasSchedulingRole && !hasSchedulingPermission) {
+        res.status(403).json({
+          success: false,
+          error: 'Access denied: Scheduling permission required to edit visits',
+          code: 'PERMISSION_DENIED',
+        });
+        return;
+      }
+
+      // Verify visit exists and belongs to user's organization
+      const existingResult = await db.query(
+        'SELECT * FROM visits WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL',
+        [visitId, context.organizationId]
+      );
+
+      if (existingResult.rows.length === 0) {
+        res.status(404).json({
+          success: false,
+          error: 'Visit not found',
+        });
+        return;
+      }
+
+      const existingVisit = existingResult.rows[0] as {
+        id: string;
+        organization_id: string;
+        client_id: string;
+        assigned_caregiver_id: string | null;
+        assignment_method: string | null;
+        service_type_id: string;
+        service_type_name: string;
+        visit_type: string;
+        scheduled_date: string | Date;
+        scheduled_start_time: string;
+        scheduled_end_time: string;
+        scheduled_duration: number;
+        status: string;
+        actual_start_time: Date | string | null;
+        internal_notes: string | null;
+        notes?: string | null;
+        client_instructions: string | null;
+        version?: number;
+      };
+
+      // Compliance lock check: Completed or EVV-verified visits are locked
+      const LOCKED_STATUSES = ['COMPLETED', 'CANCELLED'];
+      if (LOCKED_STATUSES.includes(existingVisit.status)) {
+        res.status(422).json({
+          success: false,
+          error: `Visit is locked and cannot be edited because its status is ${existingVisit.status}. Completed visits are locked for EVV/billing compliance.`,
+          code: 'VISIT_LOCKED',
+          status: existingVisit.status,
+        });
+        return;
+      }
+
+      if (existingVisit.actual_start_time != null) {
+        res.status(422).json({
+          success: false,
+          error: 'Visit is locked and cannot be edited because an EVV clock-in has already been recorded.',
+          code: 'VISIT_LOCKED_EVV',
+          actualStartTime: existingVisit.actual_start_time,
+        });
+        return;
+      }
+
+      const {
+        scheduledDate,
+        scheduledStartTime,
+        scheduledEndTime,
+        duration,
+        scheduledDuration,
+        assignedCaregiverId,
+        caregiverId,
+        visitType,
+        serviceTypeId,
+        serviceTypeName,
+        notes,
+        internalNotes,
+        clientInstructions,
+      } = req.body;
+
+      // Validate date if supplied
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (scheduledDate !== undefined && !dateRegex.test(scheduledDate)) {
+        res.status(400).json({
+          success: false,
+          error: 'scheduledDate must be in YYYY-MM-DD format',
+        });
+        return;
+      }
+
+      const existingDateStr =
+        existingVisit.scheduled_date instanceof Date
+          ? existingVisit.scheduled_date.toISOString().split('T')[0]
+          : String(existingVisit.scheduled_date).split('T')[0];
+      const newDate = scheduledDate !== undefined ? scheduledDate : existingDateStr;
+
+      // Normalize times to HH:MM (24-hour)
+      const normalizeTime = (t: unknown): string | undefined => {
+        if (typeof t !== 'string' || !t.trim()) return undefined;
+        const cleaned = t.trim();
+        const parts = cleaned.split(':');
+        if (parts.length >= 2) {
+          const hh = parts[0]?.padStart(2, '0') ?? '00';
+          const mm = parts[1]?.slice(0, 2).padStart(2, '0') ?? '00';
+          return `${hh}:${mm}`;
+        }
+        return cleaned;
+      };
+
+      const rawStartTime = scheduledStartTime !== undefined ? scheduledStartTime : existingVisit.scheduled_start_time;
+      const newStartTime = normalizeTime(rawStartTime) ?? '08:00';
+
+      let newDuration = duration ?? scheduledDuration ?? existingVisit.scheduled_duration ?? 60;
+      let newEndTime = normalizeTime(scheduledEndTime);
+
+      if (newStartTime && newEndTime && duration === undefined && scheduledDuration === undefined) {
+        const [sh, sm] = newStartTime.split(':').map(Number);
+        const [eh, em] = newEndTime.split(':').map(Number);
+        if (sh !== undefined && sm !== undefined && eh !== undefined && em !== undefined) {
+          let calcMinutes = eh * 60 + em - (sh * 60 + sm);
+          if (calcMinutes <= 0) calcMinutes += 24 * 60;
+          newDuration = calcMinutes;
+        }
+      } else if (newStartTime && newDuration && !scheduledEndTime) {
+        const [sh, sm] = newStartTime.split(':').map(Number);
+        if (sh !== undefined && sm !== undefined) {
+          const totalEndMin = (sh * 60 + sm + Number(newDuration)) % (24 * 60);
+          const eh = Math.floor(totalEndMin / 60);
+          const em = totalEndMin % 60;
+          newEndTime = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+        }
+      }
+
+      if (newDuration < 15 || newDuration > 1440) {
+        res.status(400).json({
+          success: false,
+          error: 'Scheduled duration must be between 15 and 1440 minutes',
+        });
+        return;
+      }
+
+      // Validate visitType if supplied
+      const ALLOWED_VISIT_TYPES = [
+        'REGULAR',
+        'INITIAL',
+        'DISCHARGE',
+        'RESPITE',
+        'EMERGENCY',
+        'MAKEUP',
+        'SUPERVISION',
+        'ASSESSMENT',
+        'CONCIERGE',
+        'ONGOING_SUPPORT',
+      ];
+      const newVisitType = visitType !== undefined ? visitType : existingVisit.visit_type;
+      if (visitType !== undefined && !ALLOWED_VISIT_TYPES.includes(visitType)) {
+        res.status(400).json({
+          success: false,
+          error: `Invalid visitType. Must be one of: ${ALLOWED_VISIT_TYPES.join(', ')}`,
+        });
+        return;
+      }
+
+      // Caregiver assignment handling
+      const targetCaregiverId = assignedCaregiverId !== undefined ? assignedCaregiverId : caregiverId;
+      let newCaregiverId = existingVisit.assigned_caregiver_id;
+      let newAssignmentMethod = existingVisit.assignment_method;
+      let newStatus = existingVisit.status;
+
+      if (targetCaregiverId !== undefined) {
+        if (targetCaregiverId === null || targetCaregiverId === '') {
+          newCaregiverId = null;
+          newAssignmentMethod = null;
+          if (newStatus === 'ASSIGNED') {
+            newStatus = 'UNASSIGNED';
+          }
+        } else {
+          if (!isValidUUID(targetCaregiverId)) {
+            res.status(400).json({
+              success: false,
+              error: 'Invalid caregiverId format',
+            });
+            return;
+          }
+
+          const cgCheck = await db.query(
+            'SELECT id, status FROM caregivers WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL',
+            [targetCaregiverId, context.organizationId]
+          );
+
+          if (cgCheck.rows.length === 0) {
+            res.status(404).json({
+              success: false,
+              error: 'Caregiver not found',
+            });
+            return;
+          }
+
+          const cg = cgCheck.rows[0] as { id: string; status: string };
+          if (cg.status !== 'ACTIVE') {
+            res.status(400).json({
+              success: false,
+              error: 'Caregiver is not active',
+            });
+            return;
+          }
+
+          newCaregiverId = cg.id;
+          newAssignmentMethod = 'MANUAL';
+          if (newStatus === 'UNASSIGNED') {
+            newStatus = 'ASSIGNED';
+          }
+        }
+      }
+
+      let newNotes = existingVisit.internal_notes ?? existingVisit.notes ?? null;
+      if (notes !== undefined) {
+        newNotes = notes;
+      } else if (internalNotes !== undefined) {
+        newNotes = internalNotes;
+      }
+      const newInstructions =
+        clientInstructions !== undefined ? clientInstructions : existingVisit.client_instructions ?? null;
+      const newServiceTypeId =
+        serviceTypeId !== undefined ? serviceTypeId : existingVisit.service_type_id;
+      const newServiceTypeName =
+        serviceTypeName !== undefined ? serviceTypeName : existingVisit.service_type_name;
+
+      // Before snapshot for audit trail
+      const beforeSnapshot = {
+        scheduledDate: existingDateStr,
+        scheduledStartTime: existingVisit.scheduled_start_time,
+        scheduledEndTime: existingVisit.scheduled_end_time,
+        scheduledDuration: existingVisit.scheduled_duration,
+        assignedCaregiverId: existingVisit.assigned_caregiver_id,
+        visitType: existingVisit.visit_type,
+        serviceTypeId: existingVisit.service_type_id,
+        serviceTypeName: existingVisit.service_type_name,
+        notes: existingVisit.internal_notes ?? existingVisit.notes ?? null,
+        clientInstructions: existingVisit.client_instructions,
+        status: existingVisit.status,
+      };
+
+      const updateQuery = `
+        UPDATE visits
+        SET scheduled_date = $1,
+            scheduled_start_time = $2,
+            scheduled_end_time = $3,
+            scheduled_duration = $4,
+            visit_type = $5,
+            assigned_caregiver_id = $6,
+            assignment_method = $7,
+            status = $8,
+            internal_notes = $9,
+            notes = $9,
+            client_instructions = $10,
+            service_type_id = $11,
+            service_type_name = $12,
+            updated_by = $13,
+            updated_at = NOW(),
+            version = COALESCE(version, 1) + 1
+        WHERE id = $14 AND organization_id = $15
+        RETURNING *
+      `;
+
+      const updateResult = await db.query(updateQuery, [
+        newDate,
+        newStartTime,
+        newEndTime ?? '09:00',
+        newDuration,
+        newVisitType,
+        newCaregiverId,
+        newAssignmentMethod,
+        newStatus,
+        newNotes,
+        newInstructions,
+        newServiceTypeId,
+        newServiceTypeName,
+        context.userId,
+        visitId,
+        context.organizationId,
+      ]);
+
+      const updatedRow = updateResult.rows[0];
+
+      const afterSnapshot = {
+        scheduledDate: newDate,
+        scheduledStartTime: newStartTime,
+        scheduledEndTime: newEndTime,
+        scheduledDuration: newDuration,
+        assignedCaregiverId: newCaregiverId,
+        visitType: newVisitType,
+        serviceTypeId: newServiceTypeId,
+        serviceTypeName: newServiceTypeName,
+        notes: newNotes,
+        clientInstructions: newInstructions,
+        status: newStatus,
+      };
+
+      // Write audit trail entry
+      try {
+        const auditService = new AuditService(db);
+        await auditService.logEvent(context, {
+          eventType: 'DATA_MODIFICATION',
+          resource: 'VISIT',
+          resourceId: visitId,
+          action: 'UPDATE',
+          result: 'SUCCESS',
+          metadata: {
+            before: beforeSnapshot,
+            after: afterSnapshot,
+            clientId: existingVisit.client_id,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent'),
+        });
+      } catch (auditError) {
+        console.error('Audit trail logging failed for visit update:', auditError);
+      }
+
+      res.json({
+        success: true,
+        data: updatedRow,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  router.put('/:id', handleUpdateVisit);
+  router.patch('/:id', handleUpdateVisit);
+
+  /**
    * PUT /api/visits/:id/assign
    * Assign a caregiver to a visit
 

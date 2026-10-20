@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { useCreateClient, useClients, useUpdateClient } from '@/verticals/client-demographics/hooks';
+import { useCreateClient, useClients, useUpdateClient, useBranches } from '@/verticals/client-demographics/hooks';
 import type { CreateClientInput, UpdateClientInput } from '@/verticals/client-demographics/types';
 import { useAuth } from '@/core/hooks';
 import type { Client } from '@/verticals/client-demographics/types/client';
@@ -249,83 +249,79 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
   const updateClient = useUpdateClient();
   const navigate = useNavigate();
   const { user } = useAuth();
-  // Only used to discover a real, already-seeded branchId for this organization
-  // (see KNOWN GAP note below) — not used for anything else.
   const { data: existingClients } = useClients({ page: 1, pageSize: 1 });
+  const { data: branches = [] } = useBranches();
+  const [selectedBranchId, setSelectedBranchId] = useState<string>('');
+  const defaultBranchId = user?.branchIds?.[0] || branches[0]?.id || '';
+  const activeBranchId = selectedBranchId || defaultBranchId;
 
   const handleSubmit = async () => {
-    // In edit mode, skip branch ID requirement since we're only updating existing client
-    if (!isEditMode) {
-      if (!user?.organizationId) {
-        toast.error('Unable to submit: no organization context for the signed-in user.');
-        return;
-      }
-
-      // PHASE 1 FIX (wdvf3abhb7): Defensive guard for undefined branchId
-      // KNOWN GAP (documented, not silently papered over — see FC-AUDIT-CLIENTS report):
-      // There is currently no backend endpoint to list/select an organization's
-      // branches (confirmed: no GET /api/branches, no GET /api/organizations/:id/branches).
-      // CreateClientInput requires a real branchId UUID. As a stopgap, we reuse the
-      // branchId off an existing client in this organization (clients already carry a
-      // valid branchId) rather than inventing a hardcoded ID. This is NOT a general
-      // solution for orgs with multiple branches or zero existing clients — a real
-      // branch-selector UI + backend branch-list endpoint is a follow-up, out of scope
-      // for this pass.
-      const fallbackBranchId = existingClients?.items?.[0]?.branchId;
-      if (!fallbackBranchId) {
-        toast.error(
-          'Unable to submit: this organization has no existing clients with branch information. ' +
-            'Please contact your administrator. Branch selection UI is not yet implemented (see FC-AUDIT-CLIENTS follow-up).',
-          { duration: 8000 }
-        );
-        return;
-      }
-
-      // PHASE 1 FIX: Extra guard to ensure branchId is a valid UUID before sending to API
-      if (typeof fallbackBranchId !== 'string' || fallbackBranchId.length === 0) {
-        toast.error(
-          'Unable to submit: invalid branch ID found. This is an internal error. Please contact support.',
-          { duration: 8000 }
-        );
-        return;
-      }
+    // Validate required demographic fields with user-friendly error feedback
+    if (!intakeData.firstName?.trim()) {
+      toast.error('First name is required');
+      setCurrentStep(1);
+      return;
+    }
+    if (!intakeData.lastName?.trim()) {
+      toast.error('Last name is required');
+      setCurrentStep(1);
+      return;
+    }
+    if (!intakeData.dateOfBirth) {
+      toast.error('Date of birth is required');
+      setCurrentStep(1);
+      return;
     }
 
-    // KNOWN GAP — HIPAA/EVV/financial consent + signature are collected in Step 6
-    // (intakeData.consents, intakeData.signature) but CreateClientInput has NO
-    // fields to receive them, and there is no existing consent-storage pattern in
-    // this codebase that fits client intake (the one consent table that exists,
-    // `family_consent`, is scoped to the family-portal domain — different consent
-    // types, requires a family_member_id FK — not a fit without its own schema
-    // change). Persisting consent/signature data needs a backend extension
-    // (new fields on clients, or a dedicated client-consent table/endpoint) that is
-    // too large for this pass. Rather than silently dropping this data (which would
-    // be WORSE than today's honest-fake alert(), since it would look captured when
-    // it wasn't), we keep collecting it in the UI but do NOT claim it is saved.
-    // NOTE: Consent/signature validation removed per requirements to accept all submissions
+    if (!isEditMode && !user?.organizationId) {
+      toast.error('Unable to submit: no organization context for the signed-in user.');
+      return;
+    }
 
-    // Build the common data structure for both create and update
-    const phoneInput = intakeData.phone
-      ? { number: intakeData.phone, type: 'MOBILE' as const, canReceiveSMS: false }
+    // Resolve branch ID gracefully:
+    // 1. User-selected branch
+    // 2. User assigned branch (from JWT / user profile)
+    // 3. Organization branch list
+    // 4. Existing client branch
+    // 5. Undefined (backend automatically auto-resolves or creates default branch)
+    const effectiveBranchId =
+      (activeBranchId && activeBranchId.trim() !== '' ? activeBranchId : undefined) ||
+      (user?.branchIds?.[0] && user.branchIds[0].trim() !== '' ? user.branchIds[0] : undefined) ||
+      (branches.length > 0 && branches[0]?.id ? branches[0].id : undefined) ||
+      (existingClients?.items?.[0]?.branchId && existingClients.items[0].branchId.trim() !== '' ? existingClients.items[0].branchId : undefined) ||
+      undefined;
+
+    // Build address only if all required address fields are provided
+    const hasCompleteAddress = Boolean(
+      intakeData.address?.line1?.trim() &&
+      intakeData.address?.city?.trim() &&
+      intakeData.address?.state?.trim() &&
+      intakeData.address?.postalCode?.trim()
+    );
+
+    const addressInput = hasCompleteAddress
+      ? {
+          type: 'HOME' as const,
+          line1: intakeData.address!.line1.trim(),
+          line2: intakeData.address?.line2?.trim() || undefined,
+          city: intakeData.address!.city.trim(),
+          state: intakeData.address!.state.trim().toUpperCase(),
+          postalCode: intakeData.address!.postalCode.trim(),
+          country: 'US' as const,
+        }
       : undefined;
 
-    const addressInput = {
-      type: 'HOME' as const,
-      line1: intakeData.address?.line1 || '',
-      line2: intakeData.address?.line2 || undefined,
-      city: intakeData.address?.city || '',
-      state: intakeData.address?.state || '',
-      postalCode: intakeData.address?.postalCode || '',
-      country: 'US' as const,
-    };
+    const phoneInput = intakeData.phone?.trim()
+      ? { number: intakeData.phone.trim(), type: 'MOBILE' as const, canReceiveSMS: false }
+      : undefined;
 
     const emergencyContactsInput = (intakeData.emergencyContacts || [])
-      .filter((c) => c.name && c.phone)
+      .filter((c) => c.name?.trim() && c.phone?.trim())
       .map((c) => ({
         id: crypto.randomUUID(),
-        name: c.name,
-        relationship: c.relationship,
-        phone: { number: c.phone, type: 'MOBILE' as const, canReceiveSMS: false },
+        name: c.name.trim(),
+        relationship: c.relationship?.trim() || 'Emergency Contact',
+        phone: { number: c.phone.trim(), type: 'MOBILE' as const, canReceiveSMS: false },
         isPrimary: true,
         canMakeHealthcareDecisions: false,
       }));
@@ -334,10 +330,10 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       if (isEditMode && clientId) {
         // Update mode
         const updateInput: UpdateClientInput = {
-          firstName: intakeData.firstName || '',
-          lastName: intakeData.lastName || '',
-          dateOfBirth: intakeData.dateOfBirth || '',
-          email: intakeData.email || undefined,
+          firstName: intakeData.firstName.trim(),
+          lastName: intakeData.lastName.trim(),
+          dateOfBirth: intakeData.dateOfBirth,
+          email: intakeData.email?.trim() || undefined,
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
           emergencyContacts: emergencyContactsInput,
@@ -355,37 +351,13 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         }
       } else {
         // Create mode
-        if (!user?.organizationId) {
-          toast.error('Unable to submit: no organization context for the signed-in user.');
-          return;
-        }
-
-        const fallbackBranchId = existingClients?.items?.[0]?.branchId;
-        if (!fallbackBranchId) {
-          toast.error(
-            'Unable to submit: this organization has no existing clients with branch information. ' +
-              'Please contact your administrator. Branch selection UI is not yet implemented (see FC-AUDIT-CLIENTS follow-up).',
-            { duration: 8000 }
-          );
-          return;
-        }
-
-        // PHASE 1 FIX: Extra guard to ensure branchId is a valid UUID before sending to API
-        if (typeof fallbackBranchId !== 'string' || fallbackBranchId.length === 0) {
-          toast.error(
-            'Unable to submit: invalid branch ID found. This is an internal error. Please contact support.',
-            { duration: 8000 }
-          );
-          return;
-        }
-
         const createInput: CreateClientInput = {
-          organizationId: user.organizationId,
-          branchId: fallbackBranchId,
-          firstName: intakeData.firstName || '',
-          lastName: intakeData.lastName || '',
-          dateOfBirth: intakeData.dateOfBirth || '',
-          email: intakeData.email || undefined,
+          organizationId: user!.organizationId,
+          branchId: effectiveBranchId,
+          firstName: intakeData.firstName.trim(),
+          lastName: intakeData.lastName.trim(),
+          dateOfBirth: intakeData.dateOfBirth,
+          email: intakeData.email?.trim() || undefined,
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
           emergencyContacts: emergencyContactsInput,
@@ -519,6 +491,23 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   placeholder="client@example.com"
                 />
               </div>
+
+              {branches && branches.length > 0 && (
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Branch / Office</label>
+                  <select
+                    style={styles.input}
+                    value={activeBranchId}
+                    onChange={(e) => setSelectedBranchId(e.target.value)}
+                  >
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name} {b.code ? `(${b.code})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             <div style={styles.formSection}>

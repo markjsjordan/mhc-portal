@@ -13,16 +13,21 @@ import {
   Stethoscope,
   Sparkles,
   PlusCircle,
+  Edit3,
+  Lock,
 } from 'lucide-react';
 import { Button, Card, CardHeader, CardContent, LoadingSpinner, ErrorMessage } from '@/core/components';
 import { formatDate } from '@/core/utils';
 import { useVisit } from '../hooks/useVisits';
 import { useClient } from '@/verticals/client-demographics/hooks';
+import { usePermissions } from '@/core/hooks';
+import { EditVisitModal } from '../components/EditVisitModal';
 import {
   calculateSupervisoryCadence,
   SupervisoryCadenceResult,
 } from '../utils/supervisory-cadence';
 import { SupervisionAlertBanner } from '../components/SupervisionAlertBanner';
+import { VisitClockControl } from '../components/VisitClockControl';
 import {
   convertAssessmentFindingsToDraftTasks,
   DraftCarePlanTask,
@@ -154,9 +159,38 @@ export const VisitDetail: React.FC = () => {
     return DEFAULT_INITIAL_ASSESSMENT_CHECKLIST;
   });
 
+  // EVV clock-in record id — set after a successful clock-in from this page
+  const [evvRecordId, setEvvRecordId] = useState<string | undefined>(undefined);
+
   // Draft care plan tasks state
   const [convertedTasks, setConvertedTasks] = useState<DraftCarePlanTask[] | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const { can, hasAnyRole } = usePermissions();
+  const canEditVisit =
+    can('schedules:update') ||
+    can('schedules:*') ||
+    can('visits:*') ||
+    can('visits:update') ||
+    hasAnyRole([
+      'ADMINISTRATOR',
+      'ORG_ADMIN',
+      'SUPER_ADMIN',
+      'BRANCH_ADMIN',
+      'COORDINATOR',
+      'SCHEDULER',
+      'SUPERVISOR',
+    ]);
+
+  const isLocked = useMemo(() => {
+    if (!visit) return false;
+    return (
+      visit.status === 'COMPLETED' ||
+      visit.status === 'CANCELLED' ||
+      Boolean(visit.actualStartTime)
+    );
+  }, [visit]);
 
   const toggleChecklistItem = (itemId: string) => {
     setChecklist((prev) => {
@@ -286,6 +320,17 @@ export const VisitDetail: React.FC = () => {
           </Button>
         </Link>
         <div className="flex items-center gap-3">
+          {!isLocked && canEditVisit && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setIsEditModalOpen(true)}
+              leftIcon={<Edit3 className="h-4 w-4" />}
+              data-testid="edit-visit-button"
+            >
+              Edit Visit
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -300,6 +345,25 @@ export const VisitDetail: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* Locked Notice if completed or cancelled */}
+      {isLocked && (
+        <div
+          role="status"
+          className="rounded-xl p-4 bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3 shadow-sm"
+          data-testid="locked-visit-banner"
+        >
+          <Lock className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="text-xs space-y-1">
+            <p className="font-bold text-sm">Visit Record Locked ({VISIT_STATUS_LABELS[visit.status]})</p>
+            <p className="text-amber-800 leading-relaxed">
+              {visit.status === 'COMPLETED'
+                ? 'This visit has been verified and completed under 21st Century Cures Act §12006 EVV mandates. Post-visit modifications are locked to preserve audit integrity. Corrections require a supervisor unlock or Visit Maintenance Unlock Request (VMUR).'
+                : 'This visit has been cancelled or has active field execution and cannot be edited. Please schedule a new visit if further care is required.'}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Supervisory Alert Banner if upcoming or overdue */}
       {cadenceResult && cadenceResult.showAlert && (
@@ -337,14 +401,26 @@ export const VisitDetail: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
-            {isInitialVisit && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
-                <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                Comprehensive Nursing Assessment Required
-              </span>
-            )}
-          </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Clock In / Clock Out — primary caregiver action */}
+          <VisitClockControl
+            visit={visit}
+            evvRecordId={evvRecordId}
+            onClockIn={(id) => {
+              setEvvRecordId(id);
+              void refetch();
+            }}
+            onClockOut={() => {
+              void refetch();
+            }}
+          />
+          {isInitialVisit && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+              <ShieldCheck className="h-4 w-4 text-emerald-600" />
+              Comprehensive Nursing Assessment Required
+            </span>
+          )}
+        </div>
         </div>
 
         {/* Visit Metadata Grid */}
@@ -645,6 +721,18 @@ export const VisitDetail: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Edit Visit Modal */}
+      {visit && isEditModalOpen && (
+        <EditVisitModal
+          visit={visit}
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onSaved={() => {
+            void refetch();
+          }}
+        />
       )}
     </div>
   );

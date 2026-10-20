@@ -668,4 +668,330 @@ describe('Visit Routes', () => {
       );
     });
   });
+
+  describe('PUT /:id and PATCH /:id (Edit Scheduled Visit)', () => {
+    const validVisitId = '550e8400-e29b-41d4-a716-446655440001';
+    const validOrgId = '550e8400-e29b-41d4-a716-446655440000';
+    const validCaregiverId = '550e8400-e29b-41d4-a716-446655440002';
+
+    beforeEach(() => {
+      mockRequest = {
+        params: { id: validVisitId },
+        body: {
+          scheduledDate: '2026-10-25',
+          scheduledStartTime: '18:10',
+          scheduledEndTime: '21:10',
+          duration: 180,
+          caregiverId: validCaregiverId,
+          visitType: 'RESPITE',
+          notes: 'Respite care visit - Margaret Thompson',
+        },
+        user: {
+          userId: 'user-coordinator-1',
+          email: 'coordinator@example.com',
+          tokenVersion: 0,
+          organizationId: validOrgId,
+          branchIds: ['branch-123'],
+          roles: ['COORDINATOR'],
+          permissions: ['visits:update'],
+        },
+        ip: '127.0.0.1',
+        get: vi.fn().mockReturnValue('test-user-agent'),
+      };
+    });
+
+    it('should edit a scheduled visit successfully with audit logging', async () => {
+      // Mock existing visit lookup
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [{
+            id: validVisitId,
+            organization_id: validOrgId,
+            client_id: '550e8400-e29b-41d4-a716-446655440099',
+            assigned_caregiver_id: null,
+            assignment_method: null,
+            service_type_id: 'svc-respite',
+            service_type_name: 'Respite Care',
+            visit_type: 'REGULAR',
+            scheduled_date: '2026-10-20',
+            scheduled_start_time: '14:00:00',
+            scheduled_end_time: '16:00:00',
+            scheduled_duration: 120,
+            status: 'UNASSIGNED',
+            actual_start_time: null,
+            internal_notes: null,
+            client_instructions: null,
+          }],
+        } as any)
+        // Mock caregiver lookup
+        .mockResolvedValueOnce({
+          rows: [{ id: validCaregiverId, status: 'ACTIVE' }],
+        } as any)
+        // Mock visit update
+        .mockResolvedValueOnce({
+          rows: [{
+            id: validVisitId,
+            organization_id: validOrgId,
+            client_id: '550e8400-e29b-41d4-a716-446655440099',
+            assigned_caregiver_id: validCaregiverId,
+            assignment_method: 'MANUAL',
+            service_type_id: 'svc-respite',
+            service_type_name: 'Respite Care',
+            visit_type: 'RESPITE',
+            scheduled_date: '2026-10-25',
+            scheduled_start_time: '18:10',
+            scheduled_end_time: '21:10',
+            scheduled_duration: 180,
+            status: 'ASSIGNED',
+            internal_notes: 'Respite care visit - Margaret Thompson',
+          }],
+        } as any)
+        // Mock audit event insert
+        .mockResolvedValueOnce({ rows: [] } as any);
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find(
+        (layer: any) => layer.route?.path === '/:id' && layer.route?.methods?.put
+      )?.route?.stack[0]?.handle;
+
+      if (!handler) {
+        throw new Error('Handler not found');
+      }
+
+      await handler(mockRequest as Request, mockResponse as Response, nextMock);
+
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          data: expect.objectContaining({
+            id: validVisitId,
+            visit_type: 'RESPITE',
+            scheduled_duration: 180,
+            status: 'ASSIGNED',
+          }),
+        })
+      );
+    });
+
+    it('should return 400 for invalid visit ID format', async () => {
+      mockRequest.params = { id: 'invalid-id' };
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find(
+        (layer: any) => layer.route?.path === '/:id' && layer.route?.methods?.put
+      )?.route?.stack[0]?.handle;
+
+      if (!handler) throw new Error('Handler not found');
+
+      await handler(mockRequest as Request, mockResponse as Response, nextMock);
+
+      expect(statusMock).toHaveBeenCalledWith(400);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          error: 'Invalid visit ID format',
+        })
+      );
+    });
+
+    it('should return 403 when user lacks scheduling permissions', async () => {
+      mockRequest.user = {
+        userId: 'user-family-1',
+        email: 'family@example.com',
+        tokenVersion: 0,
+        organizationId: validOrgId,
+        branchIds: [],
+        roles: ['FAMILY'],
+        permissions: ['visits:read'],
+      };
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find(
+        (layer: any) => layer.route?.path === '/:id' && layer.route?.methods?.put
+      )?.route?.stack[0]?.handle;
+
+      if (!handler) throw new Error('Handler not found');
+
+      await handler(mockRequest as Request, mockResponse as Response, nextMock);
+
+      expect(statusMock).toHaveBeenCalledWith(403);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          code: 'PERMISSION_DENIED',
+        })
+      );
+    });
+
+    it('should return 404 for non-existent visit', async () => {
+      vi.mocked(mockDb.query).mockResolvedValueOnce({ rows: [] } as any);
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find(
+        (layer: any) => layer.route?.path === '/:id' && layer.route?.methods?.put
+      )?.route?.stack[0]?.handle;
+
+      if (!handler) throw new Error('Handler not found');
+
+      await handler(mockRequest as Request, mockResponse as Response, nextMock);
+
+      expect(statusMock).toHaveBeenCalledWith(404);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          error: 'Visit not found',
+        })
+      );
+    });
+
+    it('should return 422 when visit is COMPLETED (locked visit)', async () => {
+      vi.mocked(mockDb.query).mockResolvedValueOnce({
+        rows: [{
+          id: validVisitId,
+          organization_id: validOrgId,
+          status: 'COMPLETED',
+          actual_start_time: '2026-10-25T18:10:00Z',
+        }],
+      } as any);
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find(
+        (layer: any) => layer.route?.path === '/:id' && layer.route?.methods?.put
+      )?.route?.stack[0]?.handle;
+
+      if (!handler) throw new Error('Handler not found');
+
+      await handler(mockRequest as Request, mockResponse as Response, nextMock);
+
+      expect(statusMock).toHaveBeenCalledWith(422);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          code: 'VISIT_LOCKED',
+        })
+      );
+    });
+
+    it('should return 422 when visit has recorded actual_start_time (EVV locked)', async () => {
+      vi.mocked(mockDb.query).mockResolvedValueOnce({
+        rows: [{
+          id: validVisitId,
+          organization_id: validOrgId,
+          status: 'IN_PROGRESS',
+          actual_start_time: '2026-10-25T18:10:00Z',
+        }],
+      } as any);
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find(
+        (layer: any) => layer.route?.path === '/:id' && layer.route?.methods?.put
+      )?.route?.stack[0]?.handle;
+
+      if (!handler) throw new Error('Handler not found');
+
+      await handler(mockRequest as Request, mockResponse as Response, nextMock);
+
+      expect(statusMock).toHaveBeenCalledWith(422);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          code: 'VISIT_LOCKED_EVV',
+        })
+      );
+    });
+
+    it('should return 400 for invalid scheduledDate format', async () => {
+      vi.mocked(mockDb.query).mockResolvedValueOnce({
+        rows: [{
+          id: validVisitId,
+          organization_id: validOrgId,
+          status: 'SCHEDULED',
+          actual_start_time: null,
+        }],
+      } as any);
+
+      mockRequest.body = { scheduledDate: '25-10-2026' }; // Invalid format
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find(
+        (layer: any) => layer.route?.path === '/:id' && layer.route?.methods?.put
+      )?.route?.stack[0]?.handle;
+
+      if (!handler) throw new Error('Handler not found');
+
+      await handler(mockRequest as Request, mockResponse as Response, nextMock);
+
+      expect(statusMock).toHaveBeenCalledWith(400);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          error: 'scheduledDate must be in YYYY-MM-DD format',
+        })
+      );
+    });
+
+    it('should return 400 for duration out of bounds', async () => {
+      vi.mocked(mockDb.query).mockResolvedValueOnce({
+        rows: [{
+          id: validVisitId,
+          organization_id: validOrgId,
+          status: 'SCHEDULED',
+          actual_start_time: null,
+          scheduled_date: '2026-10-25',
+          scheduled_start_time: '10:00',
+        }],
+      } as any);
+
+      mockRequest.body = { duration: 5 }; // Minimum is 15 minutes
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find(
+        (layer: any) => layer.route?.path === '/:id' && layer.route?.methods?.put
+      )?.route?.stack[0]?.handle;
+
+      if (!handler) throw new Error('Handler not found');
+
+      await handler(mockRequest as Request, mockResponse as Response, nextMock);
+
+      expect(statusMock).toHaveBeenCalledWith(400);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          error: 'Scheduled duration must be between 15 and 1440 minutes',
+        })
+      );
+    });
+
+    it('should return 400 for invalid visitType', async () => {
+      vi.mocked(mockDb.query).mockResolvedValueOnce({
+        rows: [{
+          id: validVisitId,
+          organization_id: validOrgId,
+          status: 'SCHEDULED',
+          actual_start_time: null,
+          scheduled_date: '2026-10-25',
+          scheduled_start_time: '10:00',
+        }],
+      } as any);
+
+      mockRequest.body = { visitType: 'INVALID_TYPE' };
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find(
+        (layer: any) => layer.route?.path === '/:id' && layer.route?.methods?.put
+      )?.route?.stack[0]?.handle;
+
+      if (!handler) throw new Error('Handler not found');
+
+      await handler(mockRequest as Request, mockResponse as Response, nextMock);
+
+      expect(statusMock).toHaveBeenCalledWith(400);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          error: expect.stringContaining('Invalid visitType'),
+        })
+      );
+    });
+  });
 });

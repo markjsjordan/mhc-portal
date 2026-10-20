@@ -19,10 +19,11 @@ interface InviteDetails {
   organizationId: string;
   organizationName: string;
   roles: string[];
-  firstName?: string;
-  lastName?: string;
+  firstName?: string | null;
+  lastName?: string | null;
   expiresAt: string;
-  status: 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED';
+  isValid?: boolean;
+  status?: 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED';
 }
 
 interface AcceptInviteFormData {
@@ -47,7 +48,8 @@ export function AcceptInvite() {
     queryKey: ['invitation', token],
     queryFn: async () => {
       if (!token) throw new Error('No invitation token provided');
-      return await apiClient.get<InviteDetails>(`/api/invitations/${token}`);
+      const res = await apiClient.get<InviteDetails | { data?: InviteDetails }>(`/api/invitations/${token}`);
+      return 'token' in res ? res : (res.data ?? ({} as InviteDetails));
     },
     enabled: Boolean(token),
     retry: false,
@@ -161,9 +163,12 @@ export function AcceptInvite() {
 
   const getRoleLabel = (role: string): string => {
     const roleLabels: Record<string, string> = {
+      ORG_ADMIN: 'Organization Administrator',
+      BRANCH_ADMIN: 'Branch Administrator',
       ADMIN: 'Administrator',
       COORDINATOR: 'Care Coordinator',
       CAREGIVER: 'Caregiver',
+      BILLING: 'Billing Specialist',
       BILLING_SPECIALIST: 'Billing Specialist',
       SCHEDULER: 'Scheduler',
     };

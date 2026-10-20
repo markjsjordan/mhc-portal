@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useApiClient } from '@/core/hooks';
+import { extractList } from '@/core/utils/list-response';
 import VisitTypeSelector from '@/verticals/scheduling-visits/components/VisitTypeSelector';
 import type { VisitType } from '@/verticals/scheduling-visits/types';
 
@@ -22,6 +23,7 @@ interface VisitFormProps {
   initialDate?: string;
   initialStartTime?: string;
   initialEndTime?: string;
+  initialVisitType?: VisitType;
   onSubmit: (data: VisitFormData) => Promise<void>;
   isSubmitting?: boolean;
 }
@@ -30,19 +32,27 @@ export const VisitForm: React.FC<VisitFormProps> = ({
   initialDate,
   initialStartTime = '09:00',
   initialEndTime = '10:00',
+  initialVisitType = 'REGULAR',
   onSubmit,
   isSubmitting = false,
 }) => {
   const apiClient = useApiClient();
-  const [visitType, setVisitType] = useState<VisitType>('REGULAR');
+  const [visitType, setVisitType] = useState<VisitType>(initialVisitType);
   const [formData, setFormData] = useState<VisitFormData>({
     clientId: '',
     serviceTypeId: '',
-    visitType: 'REGULAR',
+    visitType: initialVisitType,
     scheduledDate: initialDate || new Date().toISOString().split('T')[0]!,
     scheduledStartTime: initialStartTime,
     scheduledEndTime: initialEndTime,
   });
+
+  React.useEffect(() => {
+    if (initialVisitType) {
+      setVisitType(initialVisitType);
+      setFormData((prev) => ({ ...prev, visitType: initialVisitType }));
+    }
+  }, [initialVisitType]);
 
   const [errors, setErrors] = useState<Partial<Record<keyof VisitFormData, string>>>({});
 
@@ -50,8 +60,9 @@ export const VisitForm: React.FC<VisitFormProps> = ({
   const { data: clients = [] } = useQuery({
     queryKey: ['clients', 'active'],
     queryFn: async () => {
-      const response = await apiClient.get<{ success: boolean; data: any[] }>('/api/clients?limit=100');
-      return response.data;
+      const response = await apiClient.get<unknown>('/api/clients?limit=100');
+      // API returns { data: { items } }; showcase returns a bare array.
+      return extractList<any>(response);
     },
   });
 
@@ -59,8 +70,8 @@ export const VisitForm: React.FC<VisitFormProps> = ({
   const { data: serviceTypes = [] } = useQuery({
     queryKey: ['service-types'],
     queryFn: async () => {
-      const response = await apiClient.get<{ success: boolean; data: any[] }>('/api/service-types?limit=100');
-      return response.data;
+      const response = await apiClient.get<unknown>('/api/service-types?limit=100');
+      return extractList<any>(response);
     },
   });
 
@@ -160,7 +171,7 @@ export const VisitForm: React.FC<VisitFormProps> = ({
           <option value="">Select a client</option>
           {clients.map((client: any) => (
             <option key={client.id} value={client.id}>
-              {client.first_name} {client.last_name}
+              {client.firstName ?? client.first_name} {client.lastName ?? client.last_name}
             </option>
           ))}
         </select>
@@ -269,15 +280,6 @@ export const VisitForm: React.FC<VisitFormProps> = ({
           rows={3}
           placeholder="Internal notes"
         />
-      </div>
-
-      {/* Visit Type Selection */}
-      <div>
-        <VisitTypeSelector
-          value={visitType}
-          onChange={(type) => handleChange('visitType', type)}
-        />
-
       </div>
 
       {/* Client Instructions */}

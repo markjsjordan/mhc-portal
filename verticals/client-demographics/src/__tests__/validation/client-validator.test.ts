@@ -36,6 +36,18 @@ describe('ClientValidator', () => {
       expect(result.success).toBe(true);
     });
 
+    it('should validate valid create input successfully even without branchId (optional in validator)', () => {
+      const inputWithoutBranch: CreateClientInput = {
+        organizationId: '123e4567-e89b-12d3-a456-426614174000',
+        firstName: 'Jane',
+        lastName: 'Doe',
+        dateOfBirth: new Date('1985-05-15'),
+      };
+
+      const result = validator.validateCreate(inputWithoutBranch);
+      expect(result.success).toBe(true);
+    });
+
     it('should return errors for invalid create input', () => {
       const invalidInput: CreateClientInput = {
         organizationId: 'invalid-uuid',

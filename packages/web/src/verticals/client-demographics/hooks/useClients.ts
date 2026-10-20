@@ -88,3 +88,12 @@ export const useClientsDashboard = (filters?: ClientSearchFilters & SearchParams
     queryFn: () => clientApi.getClientsDashboard(filters),
   });
 };
+
+export const useBranches = () => {
+  const clientApi = useClientApi();
+
+  return useQuery({
+    queryKey: ['branches'],
+    queryFn: () => clientApi.getBranches(),
+  });
+};

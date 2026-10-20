@@ -159,11 +159,11 @@ function AppRoutes() {
       />
       <Route
         path="/accept-invite/:token"
-        element={
-          <PublicRoute>
-            <AcceptInvite />
-          </PublicRoute>
-        }
+        element={<AcceptInvite />}
+      />
+      <Route
+        path="/join/:token"
+        element={<AcceptInvite />}
       />
       <Route
         path="/logout"

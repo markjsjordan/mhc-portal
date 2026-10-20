@@ -397,6 +397,25 @@ jobs:
         env:
           ENVIRONMENT: production
 
+      - name: Force Re-login on Production Deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "🔐 Bumping tokenVersion for all users to force re-login..."
+          npx tsx -e "
+            import { Pool } from 'pg';
+            const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+            async function bumpTokenVersion() {
+              const result = await pool.query('UPDATE users SET token_version = token_version + 1');
+              console.log(\`✅ Updated \${result.rowCount} users - all sessions invalidated\`);
+              await pool.end();
+            }
+            bumpTokenVersion().catch(err => {
+              console.error('❌ Failed to bump token version:', err);
+              process.exit(1);
+            });
+          "
+
       - name: Post-Deployment Validation (Production)
         if: success()
         run: |

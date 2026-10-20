@@ -1,5 +1,5 @@
 import type { ApiClient } from '@/core/services';
-import type { Visit, VisitSearchFilters } from '../types';
+import type { Visit, VisitSearchFilters, VisitType } from '../types';
 
 export interface VisitApiResponse {
   success: boolean;
@@ -47,6 +47,7 @@ export interface VisitApiService {
   getCaregiverAvailability(date: Date, branchIds?: string[]): Promise<CaregiverAvailability[]>;
   getVisitById(visitId: string): Promise<Visit>;
   createVisit(data: CreateVisitPayload): Promise<Visit>;
+  updateVisit(visitId: string, data: UpdateVisitPayload): Promise<Visit>;
   createPattern(data: CreatePatternPayload): Promise<{ pattern: any; visits: Visit[]; generatedVisitsCount: number; exceptions: any[] }>;
   getPattern(id: string): Promise<PatternDetailsResponse>;
   updatePattern(id: string, data: UpdatePatternPayload): Promise<any>;
@@ -76,6 +77,7 @@ export interface CreateVisitPayload {
   caregiverId?: string;
   serviceTypeId: string;
   serviceTypeName?: string;
+  visitType?: VisitType | string;
   scheduledDate: string;
   scheduledStartTime: string;
   scheduledEndTime: string;
@@ -83,6 +85,22 @@ export interface CreateVisitPayload {
   notes?: string;
   clientInstructions?: string;
   status?: string;
+}
+
+export interface UpdateVisitPayload {
+  scheduledDate?: string;
+  scheduledStartTime?: string;
+  scheduledEndTime?: string;
+  duration?: number;
+  scheduledDuration?: number;
+  caregiverId?: string | null;
+  assignedCaregiverId?: string | null;
+  visitType?: string;
+  serviceTypeId?: string;
+  serviceTypeName?: string;
+  notes?: string;
+  internalNotes?: string;
+  clientInstructions?: string;
 }
 
 export interface UpdatePatternPayload {
@@ -193,6 +211,14 @@ export const createVisitApiService = (apiClient: ApiClient): VisitApiService => 
     async createVisit(data: CreateVisitPayload): Promise<Visit> {
       const response = await apiClient.post<{ success: boolean; data: Visit }>(
         '/api/visits',
+        data
+      );
+      return response.data;
+    },
+
+    async updateVisit(visitId: string, data: UpdateVisitPayload): Promise<Visit> {
+      const response = await apiClient.put<{ success: boolean; data: Visit }>(
+        `/api/visits/${visitId}`,
         data
       );
       return response.data;

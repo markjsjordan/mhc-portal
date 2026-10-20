@@ -7,15 +7,19 @@ import type { Visit } from '../../types';
 
 // Mock react-router-dom
 const mockNavigate = vi.fn();
+const mockSetSearchParams = vi.fn();
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
+  useSearchParams: () => [new URLSearchParams(), mockSetSearchParams],
 }));
 
 // Mock react-query
 const mockInvalidateQueries = vi.fn();
+const mockRemoveQueries = vi.fn();
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({
     invalidateQueries: mockInvalidateQueries,
+    removeQueries: mockRemoveQueries,
   }),
 }));
 
@@ -143,6 +147,11 @@ vi.mock('../../hooks/useVisits', () => ({
     error: null,
     refetch: mockRefetch,
     isRefetching: false,
+  }),
+  useVisit: () => ({
+    data: null,
+    isLoading: false,
+    error: null,
   }),
   useCaregiverAvailability: () => ({
     data: [],

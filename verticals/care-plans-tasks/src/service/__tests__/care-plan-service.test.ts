@@ -1081,6 +1081,65 @@ describe('CarePlanService', () => {
       expect(mockRepository.deleteCarePlan).toHaveBeenCalledWith(carePlanId, mockContext.userId);
     });
 
+    it('should write an audit record when deleting a care plan', async () => {
+      const mockAudit = {
+        logEvent: vi.fn().mockResolvedValue(undefined),
+      };
+      const serviceWithAudit = new CarePlanService(
+        mockRepository,
+        mockPermissions,
+        mockUserRepository,
+        undefined,
+        mockAudit as any
+      );
+
+      const carePlanId = uuid();
+      const draftCarePlan: CarePlan = {
+        id: carePlanId,
+        planNumber: 'CP-001',
+        name: 'Personal Care Plan',
+        clientId: 'client-1',
+        organizationId: mockContext.organizationId!,
+        planType: 'PERSONAL_CARE',
+        status: 'DRAFT',
+        priority: 'MEDIUM',
+        effectiveDate: new Date('2024-01-01'),
+        goals: [],
+        interventions: [],
+        taskTemplates: [],
+        complianceStatus: 'COMPLIANT',
+        createdAt: new Date('2024-01-01'),
+        createdBy: mockContext.userId,
+        updatedAt: new Date('2024-01-01'),
+        updatedBy: mockContext.userId,
+        version: 1,
+        deletedAt: null,
+        deletedBy: null,
+      };
+
+      mockPermissions.hasPermission.mockReturnValue(true);
+      mockRepository.getCarePlanById.mockResolvedValue(draftCarePlan);
+      mockRepository.deleteCarePlan.mockResolvedValue(undefined);
+
+      await serviceWithAudit.deleteCarePlan(carePlanId, mockContext);
+
+      expect(mockAudit.logEvent).toHaveBeenCalledWith(
+        mockContext,
+        expect.objectContaining({
+          eventType: 'DATA_MODIFICATION',
+          resource: 'care_plans',
+          resourceId: carePlanId,
+          action: 'DELETE',
+          result: 'SUCCESS',
+          metadata: expect.objectContaining({
+            planId: carePlanId,
+            clientId: draftCarePlan.clientId,
+            who: mockContext.userId,
+          }),
+        })
+      );
+    });
+
     it('should throw error when trying to delete active care plan', async () => {
       // Arrange
       const carePlanId = uuid();
