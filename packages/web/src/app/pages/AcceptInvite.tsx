@@ -273,7 +273,9 @@ export function AcceptInvite() {
       <div className="max-w-md w-full space-y-6">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Join Folk</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {inviteDetails.organizationName ? `Join ${inviteDetails.organizationName}` : 'Join Marquette Home Care'}
+          </h1>
           <p className="mt-2 text-gray-600">Complete your account setup to get started</p>
         </div>
 
