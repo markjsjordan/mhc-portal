@@ -294,7 +294,13 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
   const carePlanRepository = new CarePlanRepository(db);
   const permissionService = new PermissionService();
   const userRepository = new UserRepository(db);
-  const carePlanService = new CarePlanService(carePlanRepository, permissionService, userRepository);
+  const carePlanService = new CarePlanService(
+    carePlanRepository,
+    permissionService,
+    userRepository,
+    undefined,
+    new CoreAuditService(db)
+  );
   const templateService = new TemplateService(carePlanRepository);
   const carePlanHandlers = createCarePlanHandlers(carePlanService, templateService);
   const carePlanRouter = createCarePlanRouter(carePlanHandlers, db);

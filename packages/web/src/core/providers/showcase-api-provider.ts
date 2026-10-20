@@ -361,6 +361,20 @@ export class ShowcaseApiProvider implements ApiProvider {
       }
     }
 
+    if (method === 'DELETE') {
+      const match = url.match(/\/api\/care-plans\/([^/]+)$/);
+      if (match) {
+        const id = match[1];
+        const index = this.data.carePlans.findIndex(p => p.id === id);
+        if (index === -1) {
+          throw { message: 'Care plan not found', code: 'NOT_FOUND' };
+        }
+        this.data.carePlans.splice(index, 1);
+        this.saveData();
+        return { success: true };
+      }
+    }
+
     return { success: true };
   }
 

@@ -70,6 +70,7 @@ export const useCarePlanProvider = () => {
     createCarePlan: provider.createCarePlan.bind(provider),
     updateCarePlan: provider.updateCarePlan.bind(provider),
     activateCarePlan: provider.activateCarePlan.bind(provider),
+    deleteCarePlan: provider.deleteCarePlan.bind(provider),
     getTasks: provider.getTasks.bind(provider),
     getTaskById: provider.getTaskById.bind(provider),
     completeTask: provider.completeTask.bind(provider),

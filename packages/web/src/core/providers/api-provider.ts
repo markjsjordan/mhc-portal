@@ -45,6 +45,7 @@ export const createApiProvider = (apiClient: ApiClient): DataProvider => {
     createCarePlan: carePlanService.createCarePlan.bind(carePlanService),
     updateCarePlan: carePlanService.updateCarePlan.bind(carePlanService),
     activateCarePlan: carePlanService.activateCarePlan.bind(carePlanService),
+    deleteCarePlan: carePlanService.deleteCarePlan.bind(carePlanService),
     getTasks: carePlanService.getTasks.bind(carePlanService),
     getTaskById: carePlanService.getTaskById.bind(carePlanService),
     completeTask: carePlanService.completeTask.bind(carePlanService),

@@ -77,6 +77,7 @@ export interface CarePlanDataProvider {
   createCarePlan(input: CreateCarePlanInput): Promise<CarePlan>;
   updateCarePlan(id: string, input: UpdateCarePlanInput): Promise<CarePlan>;
   activateCarePlan(id: string): Promise<CarePlan>;
+  deleteCarePlan(id: string): Promise<void>;
   getTasks(filters?: TaskInstanceSearchFilters & SearchParams): Promise<PaginatedResult<TaskInstance>>;
   getTaskById(id: string): Promise<TaskInstance>;
   completeTask(id: string, input: CompleteTaskInput): Promise<TaskInstance>;

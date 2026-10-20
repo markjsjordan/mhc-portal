@@ -97,7 +97,8 @@ class ApiClientImpl implements ApiClient {
                 }));
                 
                 // Attach response data to error for better error handling
-                const enhancedError = new Error(error.message ?? response.statusText) as Error & { response?: { data: ApiError }; status?: number };
+                const errorMessage = error.message || error.error || response.statusText;
+                const enhancedError = new Error(errorMessage) as Error & { response?: { data: ApiError }; status?: number };
                 enhancedError.response = { data: error };
                 enhancedError.status = response.status;
                 throw enhancedError;
