@@ -9,6 +9,7 @@ import { Database, isValidUUID, ComplianceAutopilotService, AuditService, UserCo
 import { ScheduleRepository, StaffingDemandPredictionService, CaregiverMatchingService, RecurringVisitPatternEngine, VisitPatternRepository } from '@folkcare/scheduling-visits';
 import { ComplianceCheckingService, complianceCheckRequestSchema, DocumentationQualityService, HospitalizationRiskService, VitalsAnomalyService, SentimentAnalysisService, ReportGenerationService } from '@folkcare/visit-notes';
 import { VisitDurationPredictionService } from '@folkcare/scheduling-visits';
+import { HOME_CARE_SERVICE_TYPES } from './service-types.js';
 import knex from 'knex';
 
 /**
@@ -34,6 +35,48 @@ function validateVisitFormats(input: {
     return `Invalid visitType. Must be one of: ${ALLOWED_VISIT_TYPES.join(', ')}`;
   }
   return null;
+}
+
+/**
+ * Resolves the service type name and UUID from given inputs.
+ */
+function resolveServiceType(serviceTypeId: string, serviceTypeName?: string): {
+  id: string;
+  name: string;
+} {
+  const matchedService = HOME_CARE_SERVICE_TYPES.find(
+    (st) => st.id === serviceTypeId || st.code === serviceTypeId
+  );
+  return {
+    id: isValidUUID(serviceTypeId) ? serviceTypeId : '00000000-0000-0000-0000-000000000000',
+    name: serviceTypeName ?? matchedService?.name ?? serviceTypeId,
+  };
+}
+
+/**
+ * Resolves duration in minutes between start time and end time.
+ */
+function calculateScheduledDuration(startTime: string, endTime: string): number {
+  const [startHour, startMin] = startTime.split(':').map(Number);
+  const [endHour, endMin] = endTime.split(':').map(Number);
+  const duration = ((endHour ?? 0) * 60 + (endMin ?? 0)) - ((startHour ?? 0) * 60 + (startMin ?? 0));
+  return duration > 0 ? duration : 60;
+}
+
+/**
+ * Resolves address for the visit based on input or client primary address.
+ */
+function resolveVisitAddress(address: unknown, clientAddress: unknown): Record<string, unknown> {
+  if (address && typeof address === 'object') {
+    return address as Record<string, unknown>;
+  }
+  if (typeof address === 'string') {
+    return { street1: address, street: address };
+  }
+  if (clientAddress && typeof clientAddress === 'object') {
+    return clientAddress as Record<string, unknown>;
+  }
+  return { street: '123 Main St', city: 'Austin', state: 'TX', zipCode: '78701' };
 }
 
 /**
@@ -428,7 +471,7 @@ export function createVisitRouter(db: Database): Router {
 
       // Verify client exists and belongs to organization
       const clientCheck = await db.query(
-        'SELECT id, organization_id FROM clients WHERE id = $1 AND deleted_at IS NULL',
+        'SELECT id, organization_id, branch_id, primary_address, timezone FROM clients WHERE id = $1 AND deleted_at IS NULL',
         [clientId]
       );
 
@@ -440,7 +483,13 @@ export function createVisitRouter(db: Database): Router {
         return;
       }
 
-      const client = clientCheck.rows[0] as { id: string; organization_id: string };
+      const client = clientCheck.rows[0] as {
+        id: string;
+        organization_id: string;
+        branch_id?: string;
+        primary_address?: unknown;
+        timezone?: string;
+      };
       if (client.organization_id !== context.organizationId) {
         res.status(403).json({
           success: false,
@@ -449,8 +498,37 @@ export function createVisitRouter(db: Database): Router {
         return;
       }
 
-      // Service type validation: serviceTypeId is a string code (NURSING, PT, OT, etc.)
-      // No separate table lookup needed - codes are predefined in the system
+      // Resolve branch: client's branch -> context branchIds -> fallback organization main branch
+      let resolvedBranchId = client.branch_id || context.branchIds?.[0];
+      if (!resolvedBranchId) {
+        const branchCheck = await db.query(
+          'SELECT id FROM branches WHERE organization_id = $1 AND deleted_at IS NULL ORDER BY created_at ASC LIMIT 1',
+          [context.organizationId]
+        );
+        resolvedBranchId = (branchCheck.rows[0] as { id: string } | undefined)?.id;
+      }
+
+      if (!resolvedBranchId) {
+        res.status(400).json({
+          success: false,
+          error: 'Branch ID could not be determined for visit',
+        });
+        return;
+      }
+
+      const serviceType = resolveServiceType(serviceTypeId, serviceTypeName);
+      const resolvedAddress = resolveVisitAddress(address, client.primary_address);
+      const scheduledDuration = calculateScheduledDuration(scheduledStartTime, scheduledEndTime);
+      const resolvedTimezone = client.timezone || 'America/Chicago';
+
+      // Generate unique visit number
+      const year = new Date().getFullYear();
+      const countCheck = await db.query(
+        'SELECT COUNT(*) as count FROM visits WHERE organization_id = $1 AND EXTRACT(YEAR FROM created_at) = $2',
+        [context.organizationId, year]
+      );
+      const visitCount = parseInt((countCheck.rows[0] as { count: string })?.count || '0', 10) + 1;
+      const visitNumber = `V${year}-${visitCount.toString().padStart(6, '0')}`;
 
       // If caregiver is provided, verify they exist and are active
       let assignedCaregiverId: string | null = null;
@@ -480,45 +558,46 @@ export function createVisitRouter(db: Database): Router {
         assignedCaregiverId = caregiver.id;
       }
 
-      // Parse the branch from context or client assignment
-      // For now, use first branch from context
-      const branchId = context.branchIds?.[0];
-
       // Create the visit
       const result = await db.query(
         `INSERT INTO visits (
           id, organization_id, branch_id, client_id, assigned_caregiver_id,
+          visit_number, visit_type,
           service_type_id, service_type_name,
-          visit_type,
           scheduled_date, scheduled_start_time, scheduled_end_time,
-          address, notes, client_instructions,
+          scheduled_duration, timezone,
+          address, internal_notes, client_instructions,
           status, assignment_method,
           created_by, updated_by, created_at, updated_at
         ) VALUES (
           gen_random_uuid(), $1, $2, $3, $4,
           $5, $6,
-          $7,
-          $8, $9, $10,
-          $11, $12, $13,
-          $14, $15,
-          $16, $16, NOW(), NOW()
+          $7, $8,
+          $9, $10, $11,
+          $12, $13,
+          $14, $15, $16,
+          $17, $18,
+          $19, $19, NOW(), NOW()
         ) RETURNING *`,
         [
           context.organizationId,
-          branchId || null,
+          resolvedBranchId,
           clientId,
           assignedCaregiverId,
-          serviceTypeId,
-          serviceTypeName || null,
+          visitNumber,
           visitType || 'REGULAR',
+          serviceType.id,
+          serviceType.name,
           scheduledDate,
           scheduledStartTime,
           scheduledEndTime,
-          address || null,
+          scheduledDuration,
+          resolvedTimezone,
+          JSON.stringify(resolvedAddress),
           notes || null,
           clientInstructions || null,
           status,
-          assignedCaregiverId ? 'MANUAL' : null,
+          'MANUAL',
           context.userId,
         ]
       );

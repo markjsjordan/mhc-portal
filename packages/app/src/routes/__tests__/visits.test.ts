@@ -994,4 +994,116 @@ describe('Visit Routes', () => {
       );
     });
   });
+
+  describe('POST / (Create Visit)', () => {
+    it('should create visit with valid fields and client address/branch resolution', async () => {
+      const mockReq = {
+        body: {
+          clientId: 'c1234567-0000-0000-0000-000000000001',
+          serviceTypeId: 'personal-care',
+          serviceTypeName: 'Personal Care / Companionship',
+          visitType: 'REGULAR',
+          scheduledDate: '2026-10-25',
+          scheduledStartTime: '09:00',
+          scheduledEndTime: '11:00',
+          notes: 'Test internal notes',
+          clientInstructions: 'Ring doorbell twice',
+        },
+        user: {
+          userId: '00000000-0000-0000-0000-000000000001',
+          organizationId: '00000000-0000-0000-0000-000000000001',
+          branchIds: ['00000000-0000-0000-0000-000000000002'],
+          roles: ['COORDINATOR'],
+          permissions: ['visits:write'],
+        },
+      } as unknown as Request;
+
+      // Mock client check
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'c1234567-0000-0000-0000-000000000001',
+              organization_id: '00000000-0000-0000-0000-000000000001',
+              branch_id: '00000000-0000-0000-0000-000000000002',
+              primary_address: { street: '100 Main St', city: 'Austin', state: 'TX', zipCode: '78701' },
+              timezone: 'America/Chicago',
+            },
+          ],
+        } as any)
+        // Mock visit count check for visit number generation
+        .mockResolvedValueOnce({
+          rows: [{ count: '5' }],
+        } as any)
+        // Mock INSERT visits RETURNING *
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'v1234567-0000-0000-0000-000000000001',
+              organization_id: '00000000-0000-0000-0000-000000000001',
+              branch_id: '00000000-0000-0000-0000-000000000002',
+              client_id: 'c1234567-0000-0000-0000-000000000001',
+              visit_number: 'V2026-000006',
+              scheduled_date: '2026-10-25',
+              scheduled_start_time: '09:00',
+              scheduled_end_time: '11:00',
+              scheduled_duration: 120,
+              timezone: 'America/Chicago',
+              status: 'UNASSIGNED',
+            },
+          ],
+        } as any);
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find(
+        (layer: any) => layer.route?.path === '/' && layer.route?.methods?.post
+      )?.route?.stack[0]?.handle;
+
+      expect(handler).toBeDefined();
+
+      await handler!(mockReq, mockResponse as Response, nextMock);
+
+      expect(statusMock).toHaveBeenCalledWith(201);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          data: expect.objectContaining({
+            visit_number: 'V2026-000006',
+          }),
+        })
+      );
+    });
+
+    it('should return 400 when required fields are missing', async () => {
+      const mockReq = {
+        body: {
+          clientId: 'c123',
+        },
+        user: {
+          userId: 'u1',
+          organizationId: 'o1',
+          branchIds: ['b1'],
+          roles: ['COORDINATOR'],
+          permissions: ['visits:write'],
+        },
+      } as unknown as Request;
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find(
+        (layer: any) => layer.route?.path === '/' && layer.route?.methods?.post
+      )?.route?.stack[0]?.handle;
+
+      expect(handler).toBeDefined();
+
+      await handler!(mockReq, mockResponse as Response, nextMock);
+
+      expect(statusMock).toHaveBeenCalledWith(400);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          error: expect.stringContaining('Missing required fields'),
+        })
+      );
+    });
+  });
 });
