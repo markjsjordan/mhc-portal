@@ -3,14 +3,33 @@ import { Calendar, momentLocalizer, View, SlotInfo, EventProps } from 'react-big
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import moment from 'moment';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { CalendarDays, Plus, List, Layout, Home, Phone, Building2, ZoomIn, ZoomOut, Clock, Zap } from 'lucide-react';
+import {
+  CalendarDays,
+  Home,
+  Phone,
+  Building2,
+  ZoomIn,
+  ZoomOut,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  User,
+  SlidersHorizontal,
+} from 'lucide-react';
 import { useCalendarVisits, useVisitApi, useCaregiverAvailability } from '../hooks/useVisits';
 import { useAuth } from '@/core/hooks';
-import { EmptyState } from '@/core/components/feedback/EmptyState';
 import { CreateVisitModal } from '@/core/components/forms/CreateVisitModal';
-import { MiniCalendar, VisitStatusLegend } from '../components';
+import {
+  MiniCalendar,
+  VisitStatusLegend,
+  CalendarFilterBar,
+  CaregiverAvailabilityRail,
+  MobileAgendaView,
+  MobileFilterDrawer,
+  ReassignVisitModal,
+} from '../components';
 import type { Visit } from '../types';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
@@ -32,7 +51,6 @@ const DENSITY_CONFIG: Record<DensityMode, { step: number; timeslots: number; min
   compact: { step: 15, timeslots: 4, minEventHeight: 35, label: 'Compact' },
   'ultra-compact': { step: 15, timeslots: 4, minEventHeight: 25, label: 'Ultra-Compact' },
 };
-
 
 // Color palette for caregivers (reusable across visits)
 const CAREGIVER_COLORS = [
@@ -62,7 +80,10 @@ interface CustomEventProps extends EventProps<CalendarEvent> {
   densityMode: DensityMode;
 }
 
-const VisitTypeIconRenderer: React.FC<{ serviceTypeName: string; className?: string }> = ({ serviceTypeName, className }) => {
+const VisitTypeIconRenderer: React.FC<{ serviceTypeName: string; className?: string }> = ({
+  serviceTypeName,
+  className,
+}) => {
   const name = serviceTypeName.toLowerCase();
   if (name.includes('home') || name.includes('personal')) return <Home className={className} />;
   if (name.includes('phone') || name.includes('call')) return <Phone className={className} />;
@@ -73,30 +94,26 @@ const VisitTypeIconRenderer: React.FC<{ serviceTypeName: string; className?: str
 // Helper function to normalize time format from backend (handles AM/PM and 24-hour formats)
 const normalizeTimeFormat = (timeStr: string | undefined): string => {
   if (!timeStr) return '00:00';
-  
-  // Already in HH:MM format
+
   if (/^\d{1,2}:\d{2}$/.test(timeStr.trim())) {
     return timeStr.trim();
   }
-  
-  // Handle AM/PM format (e.g., "07:23 AM" or "2:30 PM")
+
   const ampmMatch = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)$/i);
   if (ampmMatch) {
     let hours = parseInt(ampmMatch[1]!, 10);
     const minutes = ampmMatch[2]!;
     const meridiem = ampmMatch[3]!.toUpperCase();
-    
-    // Convert to 24-hour format
+
     if (meridiem === 'PM' && hours !== 12) {
       hours += 12;
     } else if (meridiem === 'AM' && hours === 12) {
       hours = 0;
     }
-    
+
     return `${String(hours).padStart(2, '0')}:${minutes}`;
   }
-  
-  // Fallback: return as-is if already valid
+
   return timeStr.trim();
 };
 
@@ -104,25 +121,34 @@ const CustomEvent: React.FC<CustomEventProps> = ({ event, densityMode }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const isUltraCompact = densityMode === 'ultra-compact';
 
-  const clientName = event.resource.clientFirstName && event.resource.clientLastName
-    ? `${event.resource.clientFirstName} ${event.resource.clientLastName}`
-    : 'Unknown Client';
+  const clientName =
+    event.resource.clientFirstName && event.resource.clientLastName
+      ? `${event.resource.clientFirstName} ${event.resource.clientLastName}`
+      : 'Unknown Client';
 
   const startTime = moment(event.start).format('h:mm A');
   const endTime = moment(event.end).format('h:mm A');
   const duration = moment(event.end).diff(moment(event.start), 'minutes');
-  const durationText = duration >= 60
-    ? `${Math.floor(duration / 60)}h ${duration % 60}m`
-    : `${duration}m`;
+  const durationText =
+    duration >= 60 ? `${Math.floor(duration / 60)}h ${duration % 60}m` : `${duration}m`;
 
   return (
     <div
       className="relative h-full w-full"
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', event.resource.id);
+        e.dataTransfer.setData('application/json', JSON.stringify(event.resource));
+      }}
     >
       {/* Event content */}
-      <div className={`flex items-start gap-1 h-full overflow-hidden ${isUltraCompact ? 'px-1' : 'px-2 py-1'}`}>
+      <div
+        className={`flex items-start gap-1 h-full overflow-hidden ${
+          isUltraCompact ? 'px-1' : 'px-2 py-1'
+        }`}
+      >
         <VisitTypeIconRenderer
           serviceTypeName={event.resource.serviceTypeName}
           className={`flex-shrink-0 ${isUltraCompact ? 'h-3 w-3' : 'h-4 w-4'}`}
@@ -139,7 +165,9 @@ const CustomEvent: React.FC<CustomEventProps> = ({ event, densityMode }) => {
           <div className="text-gray-300 mb-2">{event.resource.serviceTypeName}</div>
           <div className="flex items-center gap-2 text-gray-300">
             <Clock className="h-3 w-3" />
-            <span>{startTime} - {endTime} ({durationText})</span>
+            <span>
+              {startTime} - {endTime} ({durationText})
+            </span>
           </div>
           {event.resource.assignedCaregiverId && (
             <div className="mt-2 pt-2 border-t border-gray-700 text-gray-300">
@@ -166,34 +194,64 @@ export const CalendarView: React.FC = () => {
   const visitApi = useVisitApi();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // State
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<View>('week');
-  const [showAvailability, setShowAvailability] = useState(false);
-  const [showMiniCalendar, setShowMiniCalendar] = useState(true);
-  const [showLegend, setShowLegend] = useState(true);
+  const [showAvailability, setShowAvailability] = useState(true);
+  const [showLeftRail, setShowLeftRail] = useState(true);
+  const [isMobileFilterDrawerOpen, setIsMobileFilterDrawerOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'grid' | 'caregivers'>('grid');
+  const [reassignVisit, setReassignVisit] = useState<Visit | null>(null);
+
+  // Filters state with URL synchronization
+  const [selectedCaregiverFilterIds, setSelectedCaregiverFilterIds] = useState<string[]>(() => {
+    const param = searchParams.get('caregiver');
+    return param ? param.split(',').filter(Boolean) : [];
+  });
+
+  const [selectedClientFilterIds, setSelectedClientFilterIds] = useState<string[]>(() => {
+    const param = searchParams.get('client');
+    return param ? param.split(',').filter(Boolean) : [];
+  });
+
+  const [selectedStatusFilterIds, setSelectedStatusFilterIds] = useState<string[]>(() => {
+    const param = searchParams.get('status');
+    return param ? param.split(',').filter(Boolean) : ['ASSIGNED'];
+  });
+
+  // Sync state to URL search parameters
+  useEffect(() => {
+    const newParams = new URLSearchParams(searchParams);
+
+    if (selectedCaregiverFilterIds.length > 0) {
+      newParams.set('caregiver', selectedCaregiverFilterIds.join(','));
+    } else {
+      newParams.delete('caregiver');
+    }
+
+    if (selectedClientFilterIds.length > 0) {
+      newParams.set('client', selectedClientFilterIds.join(','));
+    } else {
+      newParams.delete('client');
+    }
+
+    if (selectedStatusFilterIds.length > 0) {
+      newParams.set('status', selectedStatusFilterIds.join(','));
+    } else {
+      newParams.delete('status');
+    }
+
+    setSearchParams(newParams, { replace: true });
+  }, [selectedCaregiverFilterIds, selectedClientFilterIds, selectedStatusFilterIds]);
+
   const [selectedBranches] = useState<string[]>([]);
-  const [selectedCaregiverFilter, setSelectedCaregiverFilter] = useState<string | null>(null);
-  const [expandedCaregivers, setExpandedCaregivers] = useState<Set<string>>(new Set());
   const [isCreateVisitModalOpen, setIsCreateVisitModalOpen] = useState(false);
   const [createVisitSlotInfo, setCreateVisitSlotInfo] = useState<SlotInfo | null>(null);
 
-  const toggleExpandedCaregiver = useCallback((caregiverId: string) => {
-    setExpandedCaregivers(prev => {
-      const next = new Set(prev);
-      if (next.has(caregiverId)) {
-        next.delete(caregiverId);
-      } else {
-        next.add(caregiverId);
-      }
-      return next;
-    });
-  }, []);
-
   // Week view UX controls
   const [densityMode, setDensityMode] = useState<DensityMode>(() => {
-    // Load from localStorage or default to comfortable
     const saved = localStorage.getItem('calendar-density');
     return (saved as DensityMode) ?? 'comfortable';
   });
@@ -202,10 +260,8 @@ export const CalendarView: React.FC = () => {
     return (saved as TimeRange) ?? 'full';
   });
 
-  // Ref for calendar container (for auto-scroll)
   const calendarRef = useRef<HTMLDivElement>(null);
 
-  // Save preferences to localStorage
   useEffect(() => {
     localStorage.setItem('calendar-density', densityMode);
   }, [densityMode]);
@@ -220,7 +276,6 @@ export const CalendarView: React.FC = () => {
       return;
     }
 
-    // Wait for calendar to render
     const timer = setTimeout(() => {
       const now = new Date();
       const currentHour = now.getHours();
@@ -249,45 +304,23 @@ export const CalendarView: React.FC = () => {
   const {
     data: visits = [],
     isLoading,
-    error,
     refetch,
-    isRefetching,
-    failureCount,
   } = useCalendarVisits(startDate, endDate, branchIds);
 
-  // Fetch caregiver availability (gracefully handle failures)
+  // Fetch caregiver availability
   const {
     data: caregiverAvailability = [],
     isLoading: isLoadingAvailability,
-    error: availabilityError,
   } = useCaregiverAvailability(currentDate, branchIds);
 
-  // Calculate days with visits for mini calendar
-  const daysWithVisits = useMemo(() => {
-    const days = new Set<string>();
-    for (const visit of visits) {
-      const dateKey = moment(visit.scheduledDate).format('YYYY-MM-DD');
-      days.add(dateKey);
-    }
-    return days;
-  }, [visits]);
-
-  // Calculate weekly visit count
-  const weeklyVisitCount = useMemo(() => {
-    const weekStart = moment(currentDate).startOf('week');
-    const weekEnd = moment(currentDate).endOf('week');
-    
-    return visits.filter(visit => {
-      const visitDate = moment(visit.scheduledDate);
-      return visitDate.isSameOrAfter(weekStart) && visitDate.isSameOrBefore(weekEnd);
-    }).length;
-  }, [visits, currentDate]);
-
-  // Create a color map for caregivers
+  // Color map for caregivers
   const caregiverColorMap = useMemo(() => {
     const map = new Map<string, string>();
     const uniqueCaregiverIds = new Set<string>();
 
+    for (const ca of caregiverAvailability) {
+      uniqueCaregiverIds.add(ca.caregiver_id);
+    }
     for (const visit of visits) {
       if (visit.assignedCaregiverId != null) {
         uniqueCaregiverIds.add(visit.assignedCaregiverId);
@@ -299,16 +332,201 @@ export const CalendarView: React.FC = () => {
     }
 
     return map;
+  }, [visits, caregiverAvailability]);
+
+  // Distinct caregivers list for filter bar and availability rail
+  const allCaregivers = useMemo(() => {
+    const map = new Map<
+      string,
+      { id: string; name: string; color: string; visitCount: number; scheduledHours: number; role?: string }
+    >();
+
+    // Seed from caregiverAvailability
+    for (const ca of caregiverAvailability) {
+      const name = `${ca.first_name} ${ca.last_name}`.trim();
+      const hours = ca.visits.reduce((acc, v) => {
+        const start = moment(v.scheduled_start_time, 'HH:mm');
+        const end = moment(v.scheduled_end_time, 'HH:mm');
+        return acc + Math.max(0, end.diff(start, 'hours', true));
+      }, 0);
+
+      map.set(ca.caregiver_id, {
+        id: ca.caregiver_id,
+        name,
+        color: caregiverColorMap.get(ca.caregiver_id) || '#3B82F6',
+        visitCount: ca.visits.length,
+        scheduledHours: hours,
+      });
+    }
+
+    // Add caregivers from visits if not present
+    for (const v of visits) {
+      if (v.assignedCaregiverId) {
+        const existing = map.get(v.assignedCaregiverId);
+        const name = existing ? existing.name : 'Caregiver';
+        if (!existing) {
+          map.set(v.assignedCaregiverId, {
+            id: v.assignedCaregiverId,
+            name,
+            color: caregiverColorMap.get(v.assignedCaregiverId) || '#3B82F6',
+            visitCount: 0,
+            scheduledHours: 0,
+          });
+        }
+      }
+    }
+
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [visits, caregiverAvailability, caregiverColorMap]);
+
+  // Caregiver name map for display
+  const caregiverNameMap = useMemo(() => {
+    return new Map(allCaregivers.map((c) => [c.id, c.name]));
+  }, [allCaregivers]);
+
+  // Distinct clients list for filter bar
+  const allClients = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; visitCount: number }>();
+    for (const v of visits) {
+      const clientId = v.clientId || `${v.clientFirstName}_${v.clientLastName}`;
+      const name =
+        v.clientFirstName && v.clientLastName
+          ? `${v.clientFirstName} ${v.clientLastName}`
+          : 'Unknown Client';
+      const existing = map.get(clientId);
+      if (existing) {
+        existing.visitCount += 1;
+      } else {
+        map.set(clientId, { id: clientId, name, visitCount: 1 });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [visits]);
 
-  // Convert visits to calendar events
-  const events: CalendarEvent[] = useMemo(() => {
-    return visits.map(visit => {
-      const scheduledDate = typeof visit.scheduledDate === 'string'
-        ? new Date(visit.scheduledDate)
-        : visit.scheduledDate;
+  // Apply filters to visits (Caregiver, Client, and Status)
+  const filteredVisits = useMemo(() => {
+    return visits.filter((visit) => {
+      // 1. Caregiver filter
+      if (selectedCaregiverFilterIds.length > 0) {
+        const isAssigned = visit.assignedCaregiverId
+          ? selectedCaregiverFilterIds.includes(visit.assignedCaregiverId)
+          : false;
 
-      // Parse time strings (HH:MM or AM/PM format) and combine with date
+        const isUnassignedAllowed =
+          selectedStatusFilterIds.includes('UNASSIGNED') &&
+          (!visit.assignedCaregiverId || visit.status === 'UNASSIGNED');
+
+        if (!isAssigned && !isUnassignedAllowed) {
+          return false;
+        }
+      }
+
+      // 2. Client filter
+      if (selectedClientFilterIds.length > 0) {
+        const clientKey = visit.clientId || `${visit.clientFirstName}_${visit.clientLastName}`;
+        if (!selectedClientFilterIds.includes(clientKey)) {
+          return false;
+        }
+      }
+
+      // 3. Status filter
+      if (selectedStatusFilterIds.length > 0) {
+        const status = visit.status || 'SCHEDULED';
+        const isUnassignedMatch =
+          selectedStatusFilterIds.includes('UNASSIGNED') &&
+          (status === 'UNASSIGNED' || !visit.assignedCaregiverId);
+
+        const isAssignedMatch =
+          selectedStatusFilterIds.includes('ASSIGNED') &&
+          Boolean(visit.assignedCaregiverId) &&
+          status !== 'CANCELLED' &&
+          status !== 'COMPLETED' &&
+          status !== 'IN_PROGRESS';
+
+        const isDirectStatusMatch = selectedStatusFilterIds.includes(status);
+
+        if (!isUnassignedMatch && !isAssignedMatch && !isDirectStatusMatch) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [visits, selectedCaregiverFilterIds, selectedClientFilterIds, selectedStatusFilterIds]);
+
+  // Calculate filtered KPI metrics
+  const { filteredVisitCount, filteredTotalHours } = useMemo(() => {
+    let count = 0;
+    let totalMinutes = 0;
+    for (const v of filteredVisits) {
+      count++;
+      const start = moment(normalizeTimeFormat(v.scheduledStartTime), 'HH:mm');
+      const end = moment(normalizeTimeFormat(v.scheduledEndTime), 'HH:mm');
+      const diff = Math.max(0, end.diff(start, 'minutes'));
+      totalMinutes += diff;
+    }
+    return {
+      filteredVisitCount: count,
+      filteredTotalHours: totalMinutes / 60,
+    };
+  }, [filteredVisits]);
+
+  // Calculate days with matching visits for mini calendar
+  const daysWithVisits = useMemo(() => {
+    const days = new Set<string>();
+    for (const visit of filteredVisits) {
+      const dateKey = moment(visit.scheduledDate).format('YYYY-MM-DD');
+      days.add(dateKey);
+    }
+    return days;
+  }, [filteredVisits]);
+
+  // Caregiver Availability cards with workload
+  const caregiverCardItems = useMemo(() => {
+    return allCaregivers.map((cg) => {
+      const cgVisits = filteredVisits.filter((v) => v.assignedCaregiverId === cg.id);
+      const hours = cgVisits.reduce((acc, v) => {
+        const start = moment(normalizeTimeFormat(v.scheduledStartTime), 'HH:mm');
+        const end = moment(normalizeTimeFormat(v.scheduledEndTime), 'HH:mm');
+        return acc + Math.max(0, end.diff(start, 'hours', true));
+      }, 0);
+
+      return {
+        id: cg.id,
+        name: cg.name,
+        color: cg.color,
+        visitCount: cgVisits.length,
+        scheduledHours: hours,
+      };
+    });
+  }, [allCaregivers, filteredVisits]);
+
+  // Toggle caregiver filter from availability rail
+  const handleToggleCaregiverInAvailability = useCallback((caregiverId: string) => {
+    setSelectedCaregiverFilterIds((prev) => {
+      if (prev.includes(caregiverId)) {
+        return prev.filter((id) => id !== caregiverId);
+      } else {
+        return [...prev, caregiverId];
+      }
+    });
+  }, []);
+
+  // Clear all filters
+  const handleClearAllFilters = useCallback(() => {
+    setSelectedCaregiverFilterIds([]);
+    setSelectedClientFilterIds([]);
+    setSelectedStatusFilterIds(['ASSIGNED']);
+  }, []);
+
+  // Convert filtered visits to calendar events
+  const events: CalendarEvent[] = useMemo(() => {
+    return filteredVisits.map((visit) => {
+      const scheduledDate =
+        typeof visit.scheduledDate === 'string'
+          ? new Date(visit.scheduledDate)
+          : visit.scheduledDate;
+
       const normalizedStart = normalizeTimeFormat(visit.scheduledStartTime);
       const normalizedEnd = normalizeTimeFormat(visit.scheduledEndTime);
       const [startHour, startMinute] = normalizedStart.split(':').map(Number);
@@ -320,17 +538,17 @@ export const CalendarView: React.FC = () => {
       const end = new Date(scheduledDate);
       end.setHours(endHour ?? 0, endMinute ?? 0, 0, 0);
 
-      // Determine color based on caregiver or status
-      let color = '#6B7280'; // default gray for unassigned
+      let color = '#6B7280';
       if (visit.assignedCaregiverId != null) {
-        color = caregiverColorMap.get(visit.assignedCaregiverId) ?? '#6B7280';
+        color = caregiverColorMap.get(visit.assignedCaregiverId) ?? '#3B82F6';
       } else if (visit.status === 'UNASSIGNED') {
-        color = '#F59E0B'; // amber for unassigned
+        color = '#F59E0B';
       }
 
-      const clientName = visit.clientFirstName != null && visit.clientLastName != null
-        ? `${visit.clientFirstName} ${visit.clientLastName}`
-        : 'Unknown Client';
+      const clientName =
+        visit.clientFirstName != null && visit.clientLastName != null
+          ? `${visit.clientFirstName} ${visit.clientLastName}`
+          : 'Unknown Client';
 
       return {
         id: visit.id,
@@ -341,132 +559,134 @@ export const CalendarView: React.FC = () => {
         color,
       };
     });
-  }, [visits, caregiverColorMap]);
+  }, [filteredVisits, caregiverColorMap]);
 
-  // Check for conflicts when assigning (used by handleEventDrop for caregiver
-  // reassignment flows; preserves the blocking window.confirm() UX)
-  const checkAndAssignCaregiver = useCallback(async (visitId: string, caregiverId: string) => {
-    try {
-      // Check for conflicts
-      const conflictResult = await visitApi.checkConflicts(visitId, caregiverId);
+  // Check for conflicts and assign caregiver (reassignment workflow)
+  const checkAndAssignCaregiver = useCallback(
+    async (visitId: string, caregiverId: string): Promise<boolean> => {
+      try {
+        const conflictResult = await visitApi.checkConflicts(visitId, caregiverId);
 
-      if (conflictResult.hasConflicts) {
-        const conflictMessages = conflictResult.conflicts.map(c =>
-          `${c.scheduled_start_time} - ${c.scheduled_end_time}: ${c.client_first_name} ${c.client_last_name}`
-        ).join('\n');
+        if (conflictResult.hasConflicts) {
+          const conflictMessages = conflictResult.conflicts
+            .map(
+              (c) =>
+                `${c.scheduled_start_time} - ${c.scheduled_end_time}: ${c.client_first_name} ${c.client_last_name}`
+            )
+            .join('\n');
 
-        const proceed = window.confirm(
-          `Scheduling conflicts detected:\n\n${conflictMessages}\n\nDo you want to assign anyway?`
-        );
+          const proceed = window.confirm(
+            `Scheduling conflicts detected:\n\n${conflictMessages}\n\nDo you want to assign anyway?`
+          );
 
-        if (!proceed) {
-          return false;
+          if (!proceed) {
+            return false;
+          }
         }
+
+        await visitApi.assignCaregiver(visitId, caregiverId, false);
+        toast.success('Caregiver assigned successfully');
+        await queryClient.invalidateQueries({ queryKey: ['visits'] });
+        return true;
+      } catch (err) {
+        console.error('Error assigning caregiver:', err);
+        toast.error('Failed to assign caregiver');
+        return false;
       }
+    },
+    [visitApi, queryClient]
+  );
 
-      // Assign caregiver
-      await visitApi.assignCaregiver(visitId, caregiverId, false);
-      toast.success('Caregiver assigned successfully');
-
-      // Invalidate queries to refresh data
-      await queryClient.invalidateQueries({ queryKey: ['visits'] });
-
-      return true;
-    } catch (error) {
-      console.error('Error assigning caregiver:', error);
-      toast.error('Failed to assign caregiver');
-      return false;
-    }
-  }, [visitApi, queryClient]);
-
-  /**
-   * Shared helper for date/time schedule changes (drag-move and resize).
-   *
-   * GAP (flagged, not fabricated): packages/app/src/routes/visits.ts exposes
-   * only PUT /:id/assign, POST /:id/check-conflicts, POST /:id/check-assignment,
-   * POST /:id/notes - there is no PATCH/PUT endpoint to update a visit's
-   * scheduled date/time or duration. Adding that endpoint is backend work
-   * outside this ticket's router-wiring scope. Rather than calling a
-   * nonexistent API or silently dropping the drag, this helper surfaces the
-   * gap and snaps the event back to its persisted position via refetch().
-   */
-  const updateVisitSchedule = useCallback(async (_visitId: string, _start: Date, _end: Date) => {
-    toast('Rescheduling a visit requires a backend endpoint that does not exist yet (no PATCH/PUT for date/time on /api/visits). Change not saved.', {
-      duration: 4000,
-      icon: '⚠️',
-    });
-    await refetch();
-    return false;
-  }, [refetch]);
-
-  // Handle event drop (drag-move). This calendar renders a single timeline
-  // (no `resources` prop passed to DragAndDropCalendar), so react-big-calendar
-  // never supplies a resourceId here - a drag can only change date/time, never
-  // which caregiver a visit is assigned to. The caregiver-reassignment branch
-  // below is therefore unreachable in the current UI and is kept only as a
-  // defensive no-op in case a future resource-grouped view adds that capability.
-  const handleEventDrop = useCallback(async ({ event, start, end, resourceId }: { event: CalendarEvent; start: Date | string; end: Date | string; resourceId?: string | number }) => {
-    try {
-      const visit = event.resource;
-      const newStart = start instanceof Date ? start : new Date(start);
-      const newEnd = end instanceof Date ? end : new Date(end);
-
-      // Caregiver reassignment path - only reachable if resourceId is present
-      // and differs from the visit's current caregiver (not possible today,
-      // see comment above; guarded defensively rather than assumed impossible).
-      if (resourceId != null && String(resourceId) !== visit.assignedCaregiverId) {
-        await checkAndAssignCaregiver(visit.id, String(resourceId));
-        return;
-      }
-
-      const originalStart = event.start;
-      const dateTimeChanged =
-        newStart.getTime() !== originalStart.getTime() || newEnd.getTime() !== event.end.getTime();
-
-      if (dateTimeChanged) {
-        await updateVisitSchedule(visit.id, newStart, newEnd);
-        return;
-      }
-
+  const updateVisitSchedule = useCallback(
+    async (_visitId: string, _start: Date, _end: Date) => {
+      toast(
+        'Rescheduling a visit requires a backend endpoint that does not exist yet (no PATCH/PUT for date/time on /api/visits). Change not saved.',
+        {
+          duration: 4000,
+          icon: '⚠️',
+        }
+      );
       await refetch();
-    } catch (error) {
-      console.error('Error updating visit:', error);
-      toast.error('Failed to update visit');
-    }
-  }, [refetch, checkAndAssignCaregiver, updateVisitSchedule]);
+      return false;
+    },
+    [refetch]
+  );
 
-  // Handle event resize (duration change)
-  const handleEventResize = useCallback(async ({ event, start, end }: { event: CalendarEvent; start: Date | string; end: Date | string }) => {
-    try {
-      const newStart = start instanceof Date ? start : new Date(start);
-      const newEnd = end instanceof Date ? end : new Date(end);
-      await updateVisitSchedule(event.resource.id, newStart, newEnd);
-    } catch (error) {
-      console.error('Error resizing event:', error);
-      toast.error('Failed to resize event');
-    }
-  }, [updateVisitSchedule]);
+  const handleEventDrop = useCallback(
+    async ({
+      event,
+      start,
+      end,
+      resourceId,
+    }: {
+      event: CalendarEvent;
+      start: Date | string;
+      end: Date | string;
+      resourceId?: string | number;
+    }) => {
+      try {
+        const visit = event.resource;
+        const newStart = start instanceof Date ? start : new Date(start);
+        const newEnd = end instanceof Date ? end : new Date(end);
 
-  // Handle event selection - navigate to dedicated visit detail page.
-  const handleSelectEvent = useCallback((event: CalendarEvent) => {
-    navigate(`/visits/${event.resource.id}`);
-  }, [navigate]);
+        if (resourceId != null && String(resourceId) !== visit.assignedCaregiverId) {
+          await checkAndAssignCaregiver(visit.id, String(resourceId));
+          return;
+        }
 
-  // Handle slot selection (creating new visit).
-  // GAP: ScheduleService.createVisit() already exists at
-  // verticals/scheduling-visits/src/service/schedule-service.ts:179, but no
-  // HTTP route exposes it (packages/app/src/routes/visits.ts has no POST /).
-  // No VisitForm/CreateVisitModal component exists anywhere in the web
-  // package either (verified via search). Wiring a full create-visit route +
-  // modal is backend+frontend work beyond this ticket's thin-wiring scope for
-  // the scheduling-visits vertical; surfacing the gap clearly instead of a
-  // silent no-op or a fabricated call to a nonexistent endpoint.
+        const originalStart = event.start;
+        const dateTimeChanged =
+          newStart.getTime() !== originalStart.getTime() ||
+          newEnd.getTime() !== event.end.getTime();
+
+        if (dateTimeChanged) {
+          await updateVisitSchedule(visit.id, newStart, newEnd);
+          return;
+        }
+
+        await refetch();
+      } catch (err) {
+        console.error('Error updating visit:', err);
+        toast.error('Failed to update visit');
+      }
+    },
+    [refetch, checkAndAssignCaregiver, updateVisitSchedule]
+  );
+
+  const handleEventResize = useCallback(
+    async ({
+      event,
+      start,
+      end,
+    }: {
+      event: CalendarEvent;
+      start: Date | string;
+      end: Date | string;
+    }) => {
+      try {
+        const newStart = start instanceof Date ? start : new Date(start);
+        const newEnd = end instanceof Date ? end : new Date(end);
+        await updateVisitSchedule(event.resource.id, newStart, newEnd);
+      } catch (err) {
+        console.error('Error resizing event:', err);
+        toast.error('Failed to resize event');
+      }
+    },
+    [updateVisitSchedule]
+  );
+
+  const handleSelectEvent = useCallback(
+    (event: CalendarEvent) => {
+      navigate(`/visits/${event.resource.id}`);
+    },
+    [navigate]
+  );
+
   const handleSelectSlot = useCallback((slotInfo: SlotInfo) => {
     setCreateVisitSlotInfo(slotInfo);
     setIsCreateVisitModalOpen(true);
   }, []);
 
-  // Custom event style getter (for color-coding)
   const eventStyleGetter = useCallback((event: CalendarEvent) => {
     return {
       style: {
@@ -480,581 +700,441 @@ export const CalendarView: React.FC = () => {
     };
   }, []);
 
-  // Enhanced error handling with differentiated error types and better UX
-  if (error != null && !isLoading && visits.length === 0) {
-    // Detect error types
-    const isRateLimitError =
-      typeof error === 'object' &&
-      error != null &&
-      ('status' in error
-        ? error.status === 429
-        : 'code' in error && (error.code === '429' || error.code === 429));
-
-    const isAuthError =
-      typeof error === 'object' &&
-      error != null &&
-      'status' in error &&
-      (error.status === 401 || error.status === 403);
-
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    const isNetworkError = errorMessage.toLowerCase().includes('network') ||
-                           errorMessage.toLowerCase().includes('fetch');
-
-    // Determine error title and message based on type
-    let errorTitle = 'Error Loading Calendar';
-    let errorDescription = 'Failed to load calendar data. This might be a temporary issue.';
-
-    if (isRateLimitError) {
-      errorTitle = 'Rate Limit Exceeded';
-      errorDescription = 'Too many requests. Please wait a moment and try again. The system is automatically retrying...';
-    } else if (isAuthError) {
-      errorTitle = 'Authentication Error';
-      errorDescription = 'You are not authorized to view this calendar. Please check your permissions or log in again.';
-    } else if (isNetworkError) {
-      errorTitle = 'Network Connection Issue';
-      errorDescription = 'Unable to connect to the server. Please check your internet connection.';
-    }
-
-    // Color scheme based on error type
-    const errorBgClass = isRateLimitError ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200';
-    const errorTextClass = isRateLimitError ? 'text-yellow-800' : 'text-red-800';
-    const errorDescClass = isRateLimitError ? 'text-yellow-700' : 'text-red-700';
-    const iconColorClass = isRateLimitError ? 'text-yellow-400' : 'text-red-400';
-    const buttonClass = isRateLimitError ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-red-600 hover:bg-red-700';
-    const borderClass = isRateLimitError ? 'border-yellow-300 text-yellow-700 hover:bg-yellow-50' : 'border-red-300 text-red-700 hover:bg-red-50';
-
-    return (
-      <div className="p-6">
-        <div className={`border rounded-lg p-6 ${errorBgClass}`}>
-          <div className="flex items-start">
-            <div className="flex-shrink-0">
-              <svg
-                className={`h-6 w-6 ${iconColorClass}`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
-            </div>
-            <div className="ml-3 flex-1">
-              <h3 className={`text-lg font-semibold mb-2 ${errorTextClass}`}>
-                {errorTitle}
-              </h3>
-              <div className={`text-sm mb-4 ${errorDescClass}`}>
-                <p className="mb-2">{errorDescription}</p>
-                {failureCount > 0 && (
-                  <p className={`text-xs ${errorTextClass}`}>
-                    Attempted {failureCount} time{failureCount > 1 ? 's' : ''} to reconnect.
-                  </p>
-                )}
-                {errorMessage && (
-                  <details className="mt-2">
-                    <summary className={`cursor-pointer text-xs ${errorTextClass} hover:opacity-80`}>
-                      Technical details
-                    </summary>
-                    <pre className={`mt-1 text-xs ${isRateLimitError ? 'bg-yellow-100' : 'bg-red-100'} p-2 rounded overflow-auto`}>
-                      {errorMessage}
-                    </pre>
-                  </details>
-                )}
-              </div>
-              <div className="flex gap-3">
-                {!isAuthError && (
-                  <button
-                    onClick={() => refetch()}
-                    disabled={isRefetching}
-                    className={`px-4 py-2 text-white rounded-md ${buttonClass} disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium`}
-                  >
-                    {isRefetching ? 'Retrying...' : 'Retry Now'}
-                  </button>
-                )}
-                <button
-                  onClick={() => window.location.reload()}
-                  className={`px-4 py-2 bg-white border rounded-md text-sm font-medium ${borderClass}`}
-                >
-                  Reload Page
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Loading skeleton for initial load
-  if (isLoading && visits.length === 0) {
-    return (
-      <div className="h-full flex flex-col">
-        {/* Header Skeleton */}
-        <div className="bg-white border-b px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="h-8 w-64 bg-gray-200 rounded animate-pulse mb-2"></div>
-              <div className="h-4 w-96 bg-gray-100 rounded animate-pulse"></div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="h-10 w-40 bg-gray-200 rounded animate-pulse"></div>
-              <div className="h-10 w-40 bg-gray-200 rounded animate-pulse"></div>
-            </div>
-          </div>
-        </div>
-
-        {/* Calendar Skeleton */}
-        <div className="flex-1 p-6 bg-gray-50">
-          <div className="bg-white rounded-lg shadow-sm h-full p-4">
-            <div className="h-full flex flex-col gap-4">
-              <div className="h-12 bg-gray-200 rounded animate-pulse"></div>
-              <div className="flex-1 grid grid-cols-7 gap-2">
-                {Array.from({ length: 35 }).map((_, i) => (
-                  <div key={i} className="bg-gray-100 rounded animate-pulse"></div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const activeFilterCount =
+    selectedCaregiverFilterIds.length +
+    selectedClientFilterIds.length +
+    selectedStatusFilterIds.length;
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
-        {/* Loading indicator */}
-        {(isLoading || isRefetching) && (
-          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-3">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-            <span className="text-sm text-blue-800">
-              {isLoading ? 'Loading calendar data...' : 'Refreshing calendar...'}
+    <div className="h-full flex flex-col bg-gray-50 overflow-hidden">
+      {/* Top Navbar / Breadcrumb Header */}
+      <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-gray-900 text-base md:text-lg">
+              MHC Family Portal
+            </span>
+            <span className="text-gray-300">|</span>
+            <span className="text-xs md:text-sm font-medium text-gray-600">
+              Scheduling &gt; Calendar
             </span>
           </div>
-        )}
+        </div>
 
-        {/* Partial data warning */}
-        {error != null && visits.length > 0 && (
-          <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-            <div className="flex items-start gap-2">
-              <svg
-                className="h-5 w-5 text-yellow-600 mt-0.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
-              <div className="flex-1">
-                <p className="text-sm text-yellow-800">
-                  Some calendar data may be incomplete. Showing cached data.
-                </p>
-              </div>
+        <div className="flex items-center gap-3">
+          {/* Filtered KPI Badge */}
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200 shadow-2xs">
+            <span>
+              {filteredVisitCount} Visits | {filteredTotalHours.toFixed(1)} hrs (Filtered)
+            </span>
+          </span>
+
+          {/* User profile icon */}
+          <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-600">
+            <User className="w-4 h-4" />
+          </div>
+
+          {/* Availability Panel Toggle Button (Desktop) */}
+          <button
+            type="button"
+            onClick={() => setShowAvailability((prev) => !prev)}
+            className="hidden md:inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 transition-colors shadow-2xs"
+          >
+            <span>[Availability Panel | {showAvailability ? '&gt;' : '&lt;'}]</span>
+          </button>
+        </div>
+      </header>
+
+      {/* Subheader Toolbar: Mobile Tabs / Desktop View Switcher & Date Navigation */}
+      <div className="bg-white border-b border-gray-200 px-4 py-2.5 flex-shrink-0">
+        {/* Mobile Tab bar (< 768px) */}
+        <div className="flex md:hidden items-center border-b border-gray-200 mb-2">
+          <button
+            type="button"
+            onClick={() => setMobileTab('grid')}
+            className={`flex-1 py-2 text-center text-xs font-bold border-b-2 transition-colors ${
+              mobileTab === 'grid'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Schedule Grid*
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab('caregivers')}
+            className={`flex-1 py-2 text-center text-xs font-bold border-b-2 transition-colors ${
+              mobileTab === 'caregivers'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Caregivers ({allCaregivers.length})
+          </button>
+        </div>
+
+        {/* Date navigation and View switches */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            {/* Prev / Next / Title */}
+            <div className="flex items-center bg-white border border-gray-300 rounded-lg shadow-2xs overflow-hidden">
               <button
-                onClick={() => refetch()}
-                disabled={isRefetching}
-                className="text-xs text-yellow-700 hover:text-yellow-900 underline"
+                type="button"
+                onClick={() => {
+                  const unit = view === 'month' ? 'month' : view === 'day' ? 'day' : 'week';
+                  setCurrentDate(moment(currentDate).subtract(1, unit).toDate());
+                }}
+                className="p-1.5 hover:bg-gray-100 text-gray-600 transition-colors"
+                aria-label="Previous date"
               >
-                {isRefetching ? 'Retrying...' : 'Retry'}
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="px-3 py-1 text-xs md:text-sm font-semibold text-gray-800 select-none">
+                {view === 'month'
+                  ? moment(currentDate).format('MMMM YYYY')
+                  : view === 'day'
+                  ? moment(currentDate).format('ddd, MMM D, YYYY')
+                  : `${moment(currentDate).startOf('week').format('MMM D')} - ${moment(
+                      currentDate
+                    )
+                      .endOf('week')
+                      .format('MMM D, YYYY')}`}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const unit = view === 'month' ? 'month' : view === 'day' ? 'day' : 'week';
+                  setCurrentDate(moment(currentDate).add(1, unit).toDate());
+                }}
+                className="p-1.5 hover:bg-gray-100 text-gray-600 transition-colors"
+                aria-label="Next date"
+              >
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
-          </div>
-        )}
 
-        {/* Availability error notice */}
-        {availabilityError != null && showAvailability && (
-          <div className="mb-4 bg-orange-50 border border-orange-200 rounded-lg p-3">
-            <p className="text-sm text-orange-800">
-              Unable to load caregiver availability. Calendar view is still functional.
-            </p>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-gray-900">Scheduling Calendar</h1>
-              {visits.length >= 500 && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
-                  <Zap className="h-3 w-3" />
-                  500+ Visits (Optimized)
-                </span>
-              )}
-              {view === 'week' && (
-                <span className="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                  {weeklyVisitCount} {weeklyVisitCount === 1 ? 'visit' : 'visits'} this week
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-gray-600 mt-1">
-              {visits.length === 0 ? 'No visits scheduled' : 'Drag and drop visits to reassign caregivers'}
-            </p>
+            <button
+              type="button"
+              onClick={() => setCurrentDate(new Date())}
+              className="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg text-xs font-semibold text-gray-700 shadow-2xs transition-colors"
+            >
+              Today
+            </button>
           </div>
 
-          <div className="flex items-center gap-4">
-            {/* Toggle Controls */}
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showMiniCalendar}
-                  onChange={(e) => setShowMiniCalendar(e.target.checked)}
-                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                />
-                <CalendarDays className="h-4 w-4 text-gray-600" />
-                <span className="text-sm text-gray-700">Mini Calendar</span>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showLegend}
-                  onChange={(e) => setShowLegend(e.target.checked)}
-                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                />
-                <Layout className="h-4 w-4 text-gray-600" />
-                <span className="text-sm text-gray-700">Legend</span>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showAvailability}
-                  onChange={(e) => setShowAvailability(e.target.checked)}
-                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                />
-                <List className="h-4 w-4 text-gray-600" />
-                <span className="text-sm text-gray-700">Availability</span>
-              </label>
-            </div>
-
-            {/* View Selector */}
-            <div className="flex gap-2">
+          {/* Desktop View Switcher */}
+          <div className="hidden md:flex items-center gap-3">
+            <div className="flex items-center bg-gray-100 p-0.5 rounded-lg border border-gray-200">
               <button
-                onClick={() => setView('week')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md ${
-                  view === 'week'
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Week
-              </button>
-              <button
+                type="button"
                 onClick={() => setView('day')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md ${
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
                   view === 'day'
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-blue-600 text-white shadow-2xs'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 Day
               </button>
               <button
+                type="button"
+                onClick={() => setView('week')}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                  view === 'week'
+                    ? 'bg-blue-600 text-white shadow-2xs'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Week
+              </button>
+              <button
+                type="button"
                 onClick={() => setView('month')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md ${
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
                   view === 'month'
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-blue-600 text-white shadow-2xs'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 Month
               </button>
             </div>
 
-            {/* Week View Controls (only show in week/day view) */}
+            {/* Density & Time range controls */}
             {(view === 'week' || view === 'day') && (
-              <div className="flex items-center gap-3 border-l pl-4">
-                {/* Density Control */}
-                <div className="flex items-center gap-2">
-                  <ZoomOut className="h-4 w-4 text-gray-400" />
+              <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
+                <div className="flex items-center gap-1 text-xs text-gray-500">
+                  <ZoomOut className="w-3.5 h-3.5" />
                   <select
                     value={densityMode}
                     onChange={(e) => setDensityMode(e.target.value as DensityMode)}
-                    className="text-sm border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
-                    title="Display density"
+                    className="text-xs border-gray-300 rounded focus:ring-blue-500 py-0.5"
+                    title="Density Mode"
                   >
                     <option value="comfortable">Comfortable</option>
                     <option value="compact">Compact</option>
                     <option value="ultra-compact">Ultra-Compact</option>
                   </select>
-                  <ZoomIn className="h-4 w-4 text-gray-400" />
+                  <ZoomIn className="w-3.5 h-3.5" />
                 </div>
-
-                {/* Time Range Control */}
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-gray-400" />
+                <div className="flex items-center gap-1 text-xs text-gray-500">
+                  <Clock className="w-3.5 h-3.5" />
                   <select
                     value={timeRange}
                     onChange={(e) => setTimeRange(e.target.value as TimeRange)}
-                    className="text-sm border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
-                    title="Time range"
+                    className="text-xs border-gray-300 rounded focus:ring-blue-500 py-0.5"
+                    title="Time Range"
                   >
-                    <option value="business">Business Hours (8 AM - 6 PM)</option>
-                    <option value="full">Full Day (6 AM - 10 PM)</option>
-                    <option value="extended">Extended (5 AM - 11 PM)</option>
+                    <option value="business">Business (8am-6pm)</option>
+                    <option value="full">Full Day (6am-10pm)</option>
+                    <option value="extended">Extended (5am-11pm)</option>
                   </select>
                 </div>
               </div>
             )}
+          </div>
 
-            {/* Refresh Button */}
+          {/* Mobile Filter Button (< 768px) */}
+          <div className="flex md:hidden items-center gap-2">
             <button
-              onClick={() => refetch()}
-              disabled={isLoading || isRefetching}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              type="button"
+              onClick={() => setIsMobileFilterDrawerOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-xs font-bold text-blue-700 shadow-2xs"
             >
-              {(isLoading || isRefetching) && (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700"></div>
-              )}
-              {isLoading || isRefetching ? 'Loading...' : 'Refresh'}
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span>Filters ({activeFilterCount} Active)</span>
             </button>
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={handleClearAllFilters}
+                className="text-xs font-semibold text-gray-600 underline"
+              >
+                [Clear all]
+              </button>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Compact Legend */}
-        {showLegend && (
-          <div className="mt-4 flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-amber-500 border-2 border-dashed border-amber-600"></div>
-              <span className="text-xs text-gray-600">Unassigned</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-blue-500"></div>
-              <span className="text-xs text-gray-600">Assigned (Color per caregiver)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-gray-400 opacity-50"></div>
-              <span className="text-xs text-gray-600">Cancelled</span>
-            </div>
-          </div>
-        )}
+      {/* Main Desktop Filter Bar */}
+      <div className="hidden md:block px-4 pt-3 flex-shrink-0">
+        <CalendarFilterBar
+          allCaregivers={allCaregivers}
+          allClients={allClients}
+          selectedCaregivers={selectedCaregiverFilterIds}
+          onCaregiversChange={setSelectedCaregiverFilterIds}
+          selectedClients={selectedClientFilterIds}
+          onClientsChange={setSelectedClientFilterIds}
+          selectedStatuses={selectedStatusFilterIds}
+          onStatusesChange={setSelectedStatusFilterIds}
+          onClearAll={handleClearAllFilters}
+        />
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar with Mini Calendar and Legend */}
-        {(showMiniCalendar || showLegend) && (
-          <div className="w-80 bg-gray-50 border-r p-4 overflow-y-auto space-y-4">
-            {showMiniCalendar && (
-              <MiniCalendar
-                currentDate={currentDate}
-                daysWithVisits={daysWithVisits}
-                onDateSelect={(date) => {
-                  setCurrentDate(date);
-                  setView('day');
-                }}
-                onMonthChange={setCurrentDate}
-              />
-            )}
-            {showLegend && <VisitStatusLegend />}
-          </div>
-        )}
-
-        {/* Calendar */}
-        <div className="flex-1 p-6 bg-gray-50 overflow-auto">
-          {!isLoading && visits.length === 0 ? (
-            <EmptyState
-              icon={<CalendarDays className="h-16 w-16" />}
-              title="No visits scheduled for this period"
-              description={
-                view === 'day'
-                  ? `No visits are scheduled for ${moment(currentDate).format('MMMM D, YYYY')}. Add a new visit or select a different date.`
-                  : view === 'week'
-                  ? `No visits are scheduled for the week of ${moment(currentDate).startOf('week').format('MMMM D')} - ${moment(currentDate).endOf('week').format('MMMM D, YYYY')}.`
-                  : `No visits are scheduled for ${moment(currentDate).format('MMMM YYYY')}.`
-              }
-              metadata={
-                weeklyVisitCount > 0 && view !== 'week' ? (
-                  <div className="text-sm text-gray-500">
-                    You have <span className="font-semibold text-gray-700">{weeklyVisitCount}</span> {weeklyVisitCount === 1 ? 'visit' : 'visits'} scheduled this week
-                  </div>
-                ) : undefined
-              }
-              action={
-                <button
-                  onClick={() => toast('Creating a visit from the calendar needs a new POST /api/visits route and a visit form - neither exists yet.', { duration: 4000 })}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors font-medium"
-                >
-                  <Plus className="h-5 w-5" />
-                  Add Visit
-                </button>
-              }
-              secondaryAction={
-                <button
-                  onClick={() => setCurrentDate(new Date())}
-                  className="px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors font-medium"
-                >
-                  Go to Today
-                </button>
-              }
-              size="lg"
+      <div className="flex-1 flex overflow-hidden min-h-0 w-full relative">
+        {/* Mobile View Content */}
+        <div className="md:hidden flex-1 flex flex-col overflow-y-auto p-4">
+          {mobileTab === 'grid' ? (
+            <MobileAgendaView
+              currentDate={currentDate}
+              visits={filteredVisits}
+              onSelectVisit={(v) => navigate(`/visits/${v.id}`)}
+              onReassignVisit={(v) => setReassignVisit(v)}
+              caregiverColorMap={caregiverColorMap}
+              caregiverNameMap={caregiverNameMap}
             />
           ) : (
-            <div
-              ref={calendarRef}
-              className={`bg-white rounded-lg shadow-sm h-full p-4 calendar-${densityMode}`}
-              style={{
-                ['--event-min-height' as string]: `${DENSITY_CONFIG[densityMode].minEventHeight}px`,
-              }}
-            >
-              <DragAndDropCalendar
-                localizer={localizer}
-                events={events}
-                view={view}
-                onView={setView}
-                date={currentDate}
-                onNavigate={setCurrentDate}
-                onEventDrop={handleEventDrop}
-                onEventResize={handleEventResize}
-                onSelectEvent={handleSelectEvent}
-                onSelectSlot={handleSelectSlot}
-                eventPropGetter={eventStyleGetter}
-                selectable
-                resizable
-                draggableAccessor={(_event) => {
-                  // Only allow dragging for coordinators and admins
-                  return user?.roles.some(role => ['COORDINATOR', 'ORG_ADMIN', 'SUPER_ADMIN'].includes(role)) ?? false;
-                }}
-                style={{ height: '100%' }}
-                step={DENSITY_CONFIG[densityMode].step}
-                timeslots={DENSITY_CONFIG[densityMode].timeslots}
-                defaultView="week"
-                views={['month', 'week', 'day']}
-                min={new Date(2025, 0, 1, TIME_RANGES[timeRange].min, 0)}
-                max={new Date(2025, 0, 1, TIME_RANGES[timeRange].max, 0)}
-                messages={{
-                  next: 'Next',
-                  previous: 'Previous',
-                  today: 'Today',
-                  month: 'Month',
-                  week: 'Week',
-                  day: 'Day',
-                }}
-                components={{
-                  event: (props) => <CustomEvent {...props} densityMode={densityMode} />,
-                }}
-              />
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+                Caregivers Availability
+              </h3>
+              {allCaregivers.map((cg) => (
+                <div
+                  key={cg.id}
+                  onClick={() => handleToggleCaregiverInAvailability(cg.id)}
+                  className={`p-3 rounded-xl border bg-white flex items-center justify-between ${
+                    selectedCaregiverFilterIds.includes(cg.id)
+                      ? 'border-teal-500 ring-2 ring-teal-500'
+                      : 'border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: cg.color }}
+                    />
+                    <div>
+                      <div className="font-bold text-sm text-gray-900">{cg.name}</div>
+                      <div className="text-xs text-gray-500">
+                        {cg.visitCount} visits | {cg.scheduledHours.toFixed(1)} hrs
+                      </div>
+                    </div>
+                  </div>
+                  {selectedCaregiverFilterIds.includes(cg.id) && (
+                    <span className="text-[10px] font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded">
+                      FILTERED
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
+
+        {/* Desktop 3-Zone Layout */}
+        <div className="hidden md:flex flex-1 min-h-0 w-full overflow-hidden">
+          {/* Left Zone: Mini Calendar & Legend (~240px, Collapsible) */}
+          {showLeftRail ? (
+            <aside className="w-60 flex-shrink-0 bg-white border-r border-gray-200 p-3 overflow-y-auto flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                    Navigation
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowLeftRail(false)}
+                    className="text-xs text-gray-500 hover:text-gray-800 px-1 py-0.5 rounded hover:bg-gray-100 transition-colors"
+                  >
+                    &lt; Collapse
+                  </button>
+                </div>
+                <MiniCalendar
+                  currentDate={currentDate}
+                  daysWithVisits={daysWithVisits}
+                  onDateSelect={(date) => {
+                    setCurrentDate(date);
+                    setView('day');
+                  }}
+                  onMonthChange={setCurrentDate}
+                />
+              </div>
+              <div className="pt-3 border-t border-gray-100">
+                <VisitStatusLegend compact={false} />
+              </div>
+            </aside>
+          ) : (
+            <div className="flex flex-col items-center py-2 px-1 border-r border-gray-200 bg-gray-50">
+              <button
+                type="button"
+                onClick={() => setShowLeftRail(true)}
+                className="p-1 text-xs text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded"
+                title="Expand Left Rail"
+              >
+                &gt;
+              </button>
+            </div>
+          )}
+
+          {/* Center Zone: Schedule Grid (Flex Auto, NEVER overlaid) */}
+          <main className="flex-1 min-w-0 h-full p-4 overflow-auto bg-gray-50 flex flex-col">
+            {!isLoading && filteredVisits.length === 0 ? (
+              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center my-auto max-w-lg mx-auto shadow-sm">
+                <CalendarDays className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                <h3 className="text-base font-bold text-gray-900 mb-1">
+                  No visits match these filters
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  No visits found for the selected caregiver, client, or status combination.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleClearAllFilters}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors"
+                >
+                  Clear all filters
+                </button>
+              </div>
+            ) : (
+              <div
+                ref={calendarRef}
+                className={`bg-white rounded-xl border border-gray-200 shadow-xs h-full p-3.5 calendar-${densityMode}`}
+                style={{
+                  ['--event-min-height' as string]: `${DENSITY_CONFIG[densityMode].minEventHeight}px`,
+                }}
+              >
+                <DragAndDropCalendar
+                  localizer={localizer}
+                  events={events}
+                  view={view}
+                  onView={setView}
+                  date={currentDate}
+                  onNavigate={setCurrentDate}
+                  onEventDrop={handleEventDrop}
+                  onEventResize={handleEventResize}
+                  onSelectEvent={handleSelectEvent}
+                  onSelectSlot={handleSelectSlot}
+                  eventPropGetter={eventStyleGetter}
+                  selectable
+                  resizable
+                  draggableAccessor={(_event) => {
+                    return (
+                      user?.roles.some((role) =>
+                        ['COORDINATOR', 'ORG_ADMIN', 'SUPER_ADMIN'].includes(role)
+                      ) ?? false
+                    );
+                  }}
+                  style={{ height: '100%' }}
+                  step={DENSITY_CONFIG[densityMode].step}
+                  timeslots={DENSITY_CONFIG[densityMode].timeslots}
+                  defaultView="week"
+                  views={['month', 'week', 'day']}
+                  min={new Date(2025, 0, 1, TIME_RANGES[timeRange].min, 0)}
+                  max={new Date(2025, 0, 1, TIME_RANGES[timeRange].max, 0)}
+                  messages={{
+                    next: 'Next',
+                    previous: 'Previous',
+                    today: 'Today',
+                    month: 'Month',
+                    week: 'Week',
+                    day: 'Day',
+                  }}
+                  components={{
+                    event: (props) => <CustomEvent {...props} densityMode={densityMode} />,
+                  }}
+                />
+              </div>
+            )}
+          </main>
+
+          {/* Right Zone: Caregiver Availability Rail (Pushes grid, NEVER overlaying) */}
+          <CaregiverAvailabilityRail
+            isOpen={showAvailability}
+            onClose={() => setShowAvailability(false)}
+            caregivers={caregiverCardItems}
+            selectedCaregiverIds={selectedCaregiverFilterIds}
+            onToggleCaregiver={handleToggleCaregiverInAvailability}
+            onAssignVisitToCaregiver={checkAndAssignCaregiver}
+            isLoading={isLoadingAvailability}
+          />
+        </div>
       </div>
 
-      {/* Availability Sidebar */}
-      {showAvailability && (
-        <div className="fixed right-0 top-16 bottom-0 w-80 bg-white border-l shadow-lg overflow-y-auto z-10">
-          <div className="p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Caregiver Availability
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              {moment(currentDate).format('MMMM D, YYYY')}
-            </p>
+      {/* Mobile Bottom-sheet Filter Drawer */}
+      <MobileFilterDrawer
+        isOpen={isMobileFilterDrawerOpen}
+        onClose={() => setIsMobileFilterDrawerOpen(false)}
+        allCaregivers={allCaregivers}
+        allClients={allClients}
+        selectedCaregivers={selectedCaregiverFilterIds}
+        onCaregiversChange={setSelectedCaregiverFilterIds}
+        selectedClients={selectedClientFilterIds}
+        onClientsChange={setSelectedClientFilterIds}
+        selectedStatuses={selectedStatusFilterIds}
+        onStatusesChange={setSelectedStatusFilterIds}
+        onReset={handleClearAllFilters}
+      />
 
-            {isLoadingAvailability && (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            )}
-
-            {availabilityError != null && !isLoadingAvailability && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-sm text-red-800">Failed to load availability data</p>
-              </div>
-            )}
-
-            {!isLoadingAvailability && availabilityError == null && caregiverAvailability.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-sm text-gray-500">No caregivers available</p>
-              </div>
-            )}
-
-            {!isLoadingAvailability && availabilityError == null && caregiverAvailability.length > 0 && (
-              <div className="space-y-3">
-                {caregiverAvailability.map(caregiver => {
-                const color = caregiverColorMap.get(caregiver.caregiver_id) ?? '#6B7280';
-                const totalHours = caregiver.visits.reduce((acc, visit) => {
-                  const start = moment(visit.scheduled_start_time, 'HH:mm');
-                  const end = moment(visit.scheduled_end_time, 'HH:mm');
-                  return acc + end.diff(start, 'hours', true);
-                }, 0);
-                const isSelected = selectedCaregiverFilter === caregiver.caregiver_id;
-
-                return (
-                  <div
-                    key={caregiver.caregiver_id}
-                    onClick={() => setSelectedCaregiverFilter(isSelected ? null : caregiver.caregiver_id)}
-                    className={`border rounded-lg p-3 cursor-pointer transition-all ${
-                      isSelected
-                        ? 'ring-2 ring-offset-2 ring-blue-500 shadow-md'
-                        : 'hover:shadow-md hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: color }}
-                      ></div>
-                      <span className="font-medium text-gray-900">
-                        {caregiver.first_name} {caregiver.last_name}
-                      </span>
-                      {isSelected && <span className="ml-auto text-xs font-semibold text-blue-600">FILTERED</span>}
-                    </div>
-
-                    <div className="text-xs text-gray-600 mb-2">
-                      {caregiver.visits.length} visits • {totalHours.toFixed(1)}h scheduled
-                    </div>
-
-                    {caregiver.visits.length > 0 && (
-                      <div className="space-y-1">
-                        {(expandedCaregivers.has(caregiver.caregiver_id)
-                          ? caregiver.visits
-                          : caregiver.visits.slice(0, 4)
-                        ).map(visit => (
-                          <div key={visit.id} className="text-xs bg-gray-50 rounded p-1.5">
-                            <div className="font-medium text-gray-700">
-                              {visit.scheduled_start_time} - {visit.scheduled_end_time}
-                            </div>
-                            <div className="text-gray-500">{visit.client_name}</div>
-                          </div>
-                        ))}
-                        {caregiver.visits.length > 4 && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleExpandedCaregiver(caregiver.caregiver_id);
-                            }}
-                            className="text-xs text-blue-600 hover:text-blue-800 font-medium pt-1 block"
-                          >
-                            {expandedCaregivers.has(caregiver.caregiver_id)
-                              ? 'Show less'
-                              : `+${caregiver.visits.length - 4} more visits`}
-                          </button>
-                        )}
-                      </div>
-                    )}
-
-                    {caregiver.visits.length === 0 && (
-                      <div className="text-xs text-gray-500 italic">No visits scheduled</div>
-                    )}
-                  </div>
-                );
-              })}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Mobile Tap-to-reassign modal */}
+      <ReassignVisitModal
+        isOpen={reassignVisit !== null}
+        onClose={() => setReassignVisit(null)}
+        visit={reassignVisit}
+        caregivers={allCaregivers}
+        onAssignCaregiver={checkAndAssignCaregiver}
+      />
 
       {/* Create Visit Modal */}
       <CreateVisitModal
@@ -1066,9 +1146,15 @@ export const CalendarView: React.FC = () => {
         onSuccess={() => {
           refetch();
         }}
-        preSelectedDate={createVisitSlotInfo ? moment(createVisitSlotInfo.start).format('YYYY-MM-DD') : undefined}
-        preSelectedStartTime={createVisitSlotInfo ? moment(createVisitSlotInfo.start).format('HH:mm') : undefined}
-        preSelectedEndTime={createVisitSlotInfo ? moment(createVisitSlotInfo.end).format('HH:mm') : undefined}
+        preSelectedDate={
+          createVisitSlotInfo ? moment(createVisitSlotInfo.start).format('YYYY-MM-DD') : undefined
+        }
+        preSelectedStartTime={
+          createVisitSlotInfo ? moment(createVisitSlotInfo.start).format('HH:mm') : undefined
+        }
+        preSelectedEndTime={
+          createVisitSlotInfo ? moment(createVisitSlotInfo.end).format('HH:mm') : undefined
+        }
       />
     </div>
   );
