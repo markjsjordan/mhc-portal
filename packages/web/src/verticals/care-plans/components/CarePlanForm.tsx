@@ -14,6 +14,9 @@ import {
 } from '@/core/components';
 import { formatDate } from '@/core/utils';
 import { useAuth } from '@/core/hooks/auth';
+import { useApiClient } from '@/core/hooks';
+import { useQuery } from '@tanstack/react-query';
+import { useClients, useBranches } from '@/verticals/client-demographics/hooks/index.js';
 import type { CreateCarePlanInput, CarePlanGoal } from '../types';
 import { Plus, Trash2 } from 'lucide-react';
 
@@ -98,11 +101,32 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const { user } = useAuth();
+  const apiClient = useApiClient();
+
+  // Queries for dropdown options
+  const { data: clientsResult } = useClients({ page: 1, pageSize: 100 });
+  const clients = clientsResult?.items ?? [];
+
+  const { data: branches = [] } = useBranches();
+
+  const organizationId = initialData?.organizationId || user?.organizationId || '00000000-0000-0000-0000-000000000001';
+
+  // Fetch organization team members for coordinator selection
+  const { data: teamMembers = [] } = useQuery({
+    queryKey: ['organization-users', organizationId],
+    queryFn: async () => {
+      if (!organizationId) return [];
+      const res = await apiClient.get<Array<{ id: string; firstName: string; lastName: string; email: string; roles: string[] }> | { data?: Array<{ id: string; firstName: string; lastName: string; email: string; roles: string[] }> }>(`/api/organizations/${organizationId}/users`);
+      return Array.isArray(res) ? res : (res.data ?? []);
+    },
+    enabled: !!organizationId,
+  });
 
   const {
     register,
     handleSubmit,
     setValue,
+    watch,
     getValues,
     control,
     formState: { errors },
@@ -110,7 +134,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
     resolver: zodResolver(carePlanSchema as any),
     defaultValues: {
       clientId: initialData?.clientId ?? '',
-      organizationId: initialData?.organizationId ?? user?.organizationId ?? '',
+      organizationId: initialData?.organizationId ?? user?.organizationId ?? '00000000-0000-0000-0000-000000000001',
       branchId: initialData?.branchId ?? user?.branchIds?.[0] ?? '',
       name: initialData?.name ?? '',
       planType: initialData?.planType ?? 'PERSONAL_CARE',
@@ -121,6 +145,11 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
       goals: initialData?.goals ?? [],
     },
   });
+
+  const selectedClientId = watch('clientId');
+  const selectedOrgId = watch('organizationId');
+  const selectedBranchId = watch('branchId');
+  const selectedCoordinatorId = watch('coordinatorId');
 
   // Update org and branch when user context is available
   useEffect(() => {
@@ -171,62 +200,125 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
     });
   };
 
-  const renderBasicInfo = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+  const renderBasicInfo = () => {
+    // Client select options
+    const clientOptions = [
+      { value: '', label: 'Select client...' },
+      ...clients.map((c) => ({
+        value: c.id,
+        label: `${c.firstName} ${c.lastName}${c.clientNumber ? ` (${c.clientNumber})` : ''}`,
+      })),
+    ];
+
+    // Branch select options
+    const branchOptions = [
+      { value: '', label: 'Select branch (optional)...' },
+      ...branches.map((b) => ({
+        value: b.id,
+        label: `${b.name}${b.code ? ` (${b.code})` : ''}`,
+      })),
+    ];
+
+    // Organization select options
+    const orgOptions = [
+      { value: organizationId, label: 'Current Organization (Marquette Home Care)' },
+    ];
+
+    // Coordinator select options
+    const coordinatorOptions = [
+      { value: '', label: 'Select coordinator (optional)...' },
+      ...teamMembers
+        .filter((m) => m.roles.some((r) => ['COORDINATOR', 'ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'SUPER_ADMIN'].includes(r)))
+        .map((m) => ({
+          value: m.id,
+          label: `${m.firstName} ${m.lastName} (${m.email})`,
+        })),
+    ];
+
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            label="Client"
+            error={errors.clientId?.message}
+            required
+          >
+            <select
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              value={selectedClientId}
+              onChange={(e) => setValue('clientId', e.target.value, { shouldValidate: true })}
+            >
+              {clientOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </FormField>
+
+          <FormField
+            label="Organization"
+            error={errors.organizationId?.message}
+            required
+          >
+            <select
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm bg-gray-50"
+              value={selectedOrgId || organizationId}
+              onChange={(e) => setValue('organizationId', e.target.value, { shouldValidate: true })}
+            >
+              {orgOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </FormField>
+
+          <FormField
+            label="Branch (Optional)"
+            error={errors.branchId?.message}
+          >
+            <select
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              value={selectedBranchId || ''}
+              onChange={(e) => setValue('branchId', e.target.value, { shouldValidate: true })}
+            >
+              {branchOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </FormField>
+
+          <FormField
+            label="Coordinator (Optional)"
+            error={errors.coordinatorId?.message}
+          >
+            <select
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              value={selectedCoordinatorId || ''}
+              onChange={(e) => setValue('coordinatorId', e.target.value, { shouldValidate: true })}
+            >
+              {coordinatorOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </FormField>
+        </div>
+
         <FormField
-          label="Client ID"
-          error={errors.clientId?.message}
+          label="Care Plan Name"
+          error={errors.name?.message}
           required
         >
           <Input
-            {...register('clientId')}
-            placeholder="Enter client ID"
+            {...register('name')}
+            placeholder="Enter care plan name"
           />
         </FormField>
-
-        <FormField
-          label="Organization ID"
-          error={errors.organizationId?.message}
-          required
-        >
-          <Input
-            {...register('organizationId')}
-            placeholder="Enter organization ID"
-          />
-        </FormField>
-
-        <FormField
-          label="Branch ID (Optional)"
-          error={errors.branchId?.message}
-        >
-          <Input
-            {...register('branchId')}
-            placeholder="Enter branch ID"
-          />
-        </FormField>
-
-        <FormField
-          label="Coordinator ID (Optional)"
-          error={errors.coordinatorId?.message}
-        >
-          <Input
-            {...register('coordinatorId')}
-            placeholder="Enter coordinator ID"
-          />
-        </FormField>
-      </div>
-
-      <FormField
-        label="Care Plan Name"
-        error={errors.name?.message}
-        required
-      >
-        <Input
-          {...register('name')}
-          placeholder="Enter care plan name"
-        />
-      </FormField>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField
@@ -276,6 +368,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
       </FormField>
     </div>
   );
+};
 
   const renderGoals = () => (
     <div className="space-y-6">
