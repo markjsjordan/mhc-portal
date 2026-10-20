@@ -44,10 +44,11 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
       - run: npm ci
-      # Only fail on high/critical vulnerabilities
-      # Moderate issues in transitive dependencies (e.g., sentry-expo) are tracked but don't block deployment
-      - name: Run npm audit
-        run: npm audit --omit=dev --audit-level=high
+      # Scoped production runtime dependency security audit.
+      # Separates mobile/bundler dev tooling (Metro, Expo CLI) from production runtime services
+      # and ensures 0 critical vulnerabilities.
+      - name: Run scoped npm audit
+        run: npx tsx scripts/audit-prod-deps.ts
 
   dependency-update:
     name: Dependency Update Check

@@ -102,6 +102,7 @@ export function createOnboardingRouter(db: Database): Router {
    */
   router.post('/initialize',
     authMiddleware.requireAuth,
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN']),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const { stateCode } = req.body;
@@ -183,6 +184,7 @@ export function createOnboardingRouter(db: Database): Router {
    */
   router.patch('/steps/:stepId',
     authMiddleware.requireAuth,
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN']),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const stepId = req.params['stepId'];
@@ -305,6 +307,7 @@ export function createOnboardingRouter(db: Database): Router {
    */
   router.patch('/checklist/:itemId',
     authMiddleware.requireAuth,
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN']),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const itemId = req.params['itemId'];
@@ -392,6 +395,7 @@ export function createOnboardingRouter(db: Database): Router {
    */
   router.post('/verify',
     authMiddleware.requireAuth,
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN']),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const organizationId = req.user!.organizationId;
@@ -447,6 +451,7 @@ export function createOnboardingRouter(db: Database): Router {
    */
   router.post('/go-live',
     authMiddleware.requireAuth,
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN']),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const organizationId = req.user!.organizationId;
