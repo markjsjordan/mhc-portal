@@ -54,7 +54,8 @@ export function Settings() {
   const { data: userProfile, isLoading: isLoadingProfile } = useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
-      return await apiClient.get<UserProfile>('/api/users/profile');
+      const res = await apiClient.get<UserProfile | { data?: UserProfile }>('/api/users/profile');
+      return 'id' in res ? res : (res.data ?? ({} as UserProfile));
     },
   });
 
@@ -519,7 +520,8 @@ interface Invitation {
   status: 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED';
   expiresAt: string;
   createdAt: string;
-  invitationToken: string;
+  token?: string;
+  invitationToken?: string;
 }
 
 interface TeamSettingsProps {
@@ -532,7 +534,7 @@ const inviteSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  role: z.enum(['ADMIN', 'COORDINATOR', 'CAREGIVER', 'BILLING_SPECIALIST', 'SCHEDULER']),
+  role: z.enum(['ORG_ADMIN', 'BRANCH_ADMIN', 'COORDINATOR', 'CAREGIVER', 'BILLING', 'SCHEDULER']),
 });
 
 type InviteFormData = z.infer<typeof inviteSchema>;
@@ -541,6 +543,8 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
   const apiClient = useApiClient();
   const queryClient = useQueryClient();
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [generatedInviteUrl, setGeneratedInviteUrl] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
 
   // Fetch team members
   const { data: teamMembers, isLoading: isLoadingTeam } = useQuery({
@@ -575,19 +579,28 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
     },
   });
 
-  // Create invitation mutation
+  // Create invitation mutation — returns token, builds shareable URL for manual sharing
   const createInvitationMutation = useMutation({
     mutationFn: async (data: InviteFormData) => {
-      return await apiClient.post(`/api/organizations/${organizationId}/invitations`, {
-        email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        roles: [data.role],
-      });
+      return await apiClient.post<{ token?: string; invitationToken?: string; data?: { token?: string; invitationToken?: string } }>(
+        `/api/organizations/${organizationId}/invitations`,
+        {
+          email: data.email,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          roles: [data.role],
+        }
+      );
     },
-    onSuccess: () => {
-      onSuccess('Invitation sent successfully');
-      setShowInviteModal(false);
+    onSuccess: (response) => {
+      const token = response.token ?? response.invitationToken ?? response.data?.token ?? response.data?.invitationToken;
+      if (token !== undefined && token !== '') {
+        const url = `${window.location.origin}/accept-invite/${token}`;
+        setGeneratedInviteUrl(url);
+        onSuccess('Invite link generated');
+      } else {
+        onSuccess('Invitation created');
+      }
       reset();
       void queryClient.invalidateQueries({ queryKey: ['invitations', organizationId] });
     },
@@ -616,7 +629,8 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
       return await apiClient.post(`/api/organizations/${organizationId}/invitations/${invitationId}/resend`, {});
     },
     onSuccess: () => {
-      onSuccess('Invitation resent');
+      onSuccess('Invitation expiration extended by 7 days');
+      void queryClient.invalidateQueries({ queryKey: ['invitations', organizationId] });
     },
     onError: (error: Error) => {
       onError(error.message);
@@ -624,14 +638,37 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
   });
 
   const onSubmitInvite = (data: InviteFormData) => {
+    setGeneratedInviteUrl(null);
+    setIsCopied(false);
     createInvitationMutation.mutate(data);
+  };
+
+  const handleCloseModal = () => {
+    setShowInviteModal(false);
+    setGeneratedInviteUrl(null);
+    setIsCopied(false);
+    reset();
+  };
+
+  const handleCopyInviteUrl = () => {
+    if (generatedInviteUrl !== null && generatedInviteUrl !== '') {
+      void navigator.clipboard.writeText(generatedInviteUrl).then(() => {
+        setIsCopied(true);
+        onSuccess('Invite link copied to clipboard');
+        setTimeout(() => setIsCopied(false), 3000);
+        return true;
+      });
+    }
   };
 
   const getRoleLabel = (role: string): string => {
     const roleLabels: Record<string, string> = {
+      ORG_ADMIN: 'Organization Administrator',
+      BRANCH_ADMIN: 'Branch Administrator',
       ADMIN: 'Administrator',
       COORDINATOR: 'Care Coordinator',
       CAREGIVER: 'Caregiver',
+      BILLING: 'Billing Specialist',
       BILLING_SPECIALIST: 'Billing Specialist',
       SCHEDULER: 'Scheduler',
     };
@@ -779,8 +816,9 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          const url = `${window.location.origin}/join/${invitation.invitationToken}`;
-                          navigator.clipboard.writeText(url);
+                          const tokenVal = invitation.token ?? invitation.invitationToken ?? '';
+                          const url = `${window.location.origin}/accept-invite/${tokenVal}`;
+                          void navigator.clipboard.writeText(url);
                           onSuccess('Invitation link copied to clipboard');
                         }}
                       >
@@ -793,7 +831,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                         onClick={() => resendInvitationMutation.mutate(invitation.id)}
                         disabled={resendInvitationMutation.isPending}
                       >
-                        Resend
+                        Extend Expiry
                       </Button>
                       <Button
                         variant="outline"
@@ -817,73 +855,118 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
       {showInviteModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex min-h-screen items-center justify-center p-4">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowInviteModal(false)} />
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={handleCloseModal} />
             <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Invite Team Member</h3>
-              <form onSubmit={(e) => { void handleSubmit(onSubmitInvite)(e); }} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+
+              {/* Generated URL display — shown after successful generation */}
+              {generatedInviteUrl !== null ? (
+                <div className="space-y-4">
+                  <div className="rounded-md bg-green-50 border border-green-200 p-4">
+                    <p className="text-sm font-medium text-green-800 mb-2">✓ Invite link generated</p>
+                    <p className="text-xs text-green-700 mb-3">
+                      Copy this link and send it directly to the new team member. The link is valid for 7 days.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={generatedInviteUrl}
+                        className="flex-1 text-xs font-mono bg-white border border-green-300 rounded px-2 py-1.5 text-gray-700 truncate"
+                        onFocus={(e) => e.target.select()}
+                        aria-label="Generated invite URL"
+                      />
+                      <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        onClick={handleCopyInviteUrl}
+                      >
+                        <Copy className="h-4 w-4 mr-1" />
+                        {isCopied ? 'Copied!' : 'Copy Link'}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3">
+                    <Button type="button" variant="outline" onClick={handleCloseModal}>
+                      Done
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        setGeneratedInviteUrl(null);
+                        setIsCopied(false);
+                      }}
+                    >
+                      Invite Another
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={(e) => { void handleSubmit(onSubmitInvite)(e); }} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      name="firstName"
+                      label="First Name"
+                      type="text"
+                      register={register}
+                      errors={errors}
+                      required
+                    />
+                    <FormField
+                      name="lastName"
+                      label="Last Name"
+                      type="text"
+                      register={register}
+                      errors={errors}
+                      required
+                    />
+                  </div>
                   <FormField
-                    name="firstName"
-                    label="First Name"
-                    type="text"
+                    name="email"
+                    label="Email Address"
+                    type="email"
                     register={register}
                     errors={errors}
                     required
+                    helperText="Generate a unique invitation link to share with this team member"
                   />
                   <FormField
-                    name="lastName"
-                    label="Last Name"
-                    type="text"
+                    name="role"
+                    label="Role"
+                    type="select"
                     register={register}
                     errors={errors}
+                    options={[
+                      { value: 'CAREGIVER', label: 'Caregiver' },
+                      { value: 'COORDINATOR', label: 'Care Coordinator' },
+                      { value: 'SCHEDULER', label: 'Scheduler' },
+                      { value: 'BILLING', label: 'Billing Specialist' },
+                      { value: 'BRANCH_ADMIN', label: 'Branch Administrator' },
+                      { value: 'ORG_ADMIN', label: 'Organization Administrator' },
+                    ]}
                     required
                   />
-                </div>
-                <FormField
-                  name="email"
-                  label="Email Address"
-                  type="email"
-                  register={register}
-                  errors={errors}
-                  required
-                  helperText="An invitation email will be sent to this address"
-                />
-                <FormField
-                  name="role"
-                  label="Role"
-                  type="select"
-                  register={register}
-                  errors={errors}
-                  options={[
-                    { value: 'CAREGIVER', label: 'Caregiver' },
-                    { value: 'COORDINATOR', label: 'Care Coordinator' },
-                    { value: 'SCHEDULER', label: 'Scheduler' },
-                    { value: 'BILLING_SPECIALIST', label: 'Billing Specialist' },
-                    { value: 'ADMIN', label: 'Administrator' },
-                  ]}
-                  required
-                />
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setShowInviteModal(false);
-                      reset();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    isLoading={createInvitationMutation.isPending}
-                  >
-                    <Mail className="h-4 w-4 mr-2" />
-                    Send Invitation
-                  </Button>
-                </div>
-              </form>
+                  <div className="flex justify-end gap-3 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleCloseModal}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      isLoading={createInvitationMutation.isPending}
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Generate Invite URL
+                    </Button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>

@@ -487,7 +487,12 @@ export function createOrganizationRouter(db: Database): Router {
         
         // Check user has permission to invite members
         const userRoles = req.user?.roles ?? [];
-        if (!userRoles.includes('ORG_ADMIN') && !userRoles.includes('BRANCH_ADMIN')) {
+        if (
+          !userRoles.includes('ORG_ADMIN') &&
+          !userRoles.includes('BRANCH_ADMIN') &&
+          !userRoles.includes('SUPER_ADMIN') &&
+          !userRoles.includes('ADMIN')
+        ) {
           res.status(403).json({
             success: false,
             error: 'You do not have permission to invite team members',

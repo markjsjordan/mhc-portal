@@ -243,6 +243,71 @@ export class ShowcaseApiProvider implements ApiProvider {
       return [];
     }
 
+    if (url.includes('/api/users/profile')) {
+      const user = this.currentUser ?? this.data.users[0];
+      return {
+        success: true,
+        data: {
+          id: user?.id ?? 'demo-user-1',
+          firstName: user?.name?.split(' ')[0] ?? 'Demo',
+          lastName: user?.name?.split(' ').slice(1).join(' ') ?? 'Admin',
+          email: user?.email ?? 'admin@folkcare.example',
+          organizationId: user?.organizationId ?? 'demo-org-1',
+          roles: user?.roles ?? ['ORG_ADMIN'],
+        },
+      };
+    }
+
+    if (url.includes('/api/organizations/') && url.includes('/invitations')) {
+      if (method === 'POST' && !url.endsWith('/resend')) {
+        const body = (data as Record<string, unknown>) ?? {};
+        const token = `demo-invite-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        const invite = {
+          id: `inv-${Date.now()}`,
+          token,
+          email: body.email ?? 'invited@example.com',
+          firstName: body.firstName ?? null,
+          lastName: body.lastName ?? null,
+          roles: body.roles ?? ['CAREGIVER'],
+          status: 'PENDING',
+          expiresAt,
+          createdAt: new Date().toISOString(),
+        };
+        if (!Array.isArray((this.data as any).invitations)) {
+          (this.data as any).invitations = [];
+        }
+        (this.data as any).invitations.unshift(invite);
+        this.saveData();
+        return {
+          success: true,
+          data: invite,
+        };
+      }
+      if (method === 'GET') {
+        return {
+          success: true,
+          data: (this.data as any).invitations ?? [],
+        };
+      }
+      return { success: true };
+    }
+
+    if (url.includes('/api/organizations/') && url.includes('/users')) {
+      return {
+        success: true,
+        data: (this.data.users ?? []).map((u: any) => ({
+          id: u.id,
+          firstName: u.name?.split(' ')[0] ?? 'Team',
+          lastName: u.name?.split(' ').slice(1).join(' ') ?? 'Member',
+          email: u.email,
+          roles: u.roles,
+          status: 'ACTIVE',
+          createdAt: new Date().toISOString(),
+        })),
+      };
+    }
+
     // Default: return empty success
     return { success: true };
   }
