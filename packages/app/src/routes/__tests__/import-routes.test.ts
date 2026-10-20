@@ -52,6 +52,19 @@ vi.mock('@folkcare/caregiver-staff', () => ({
   }),
 }));
 
+// Helper to mock requireRole middleware
+function mockRequireRole(roles: string[]) {
+  return (_req: any, res: any, next: any) => {
+    const userRoles = _req.user?.roles ?? [];
+    const hasRole = roles.some((r) => userRoles.includes(r));
+    if (!hasRole) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+    next();
+  };
+}
+
 // Mock core module
 vi.mock('@folkcare/core', async () => {
   const actual = await vi.importActual('@folkcare/core');
@@ -70,6 +83,7 @@ vi.mock('@folkcare/core', async () => {
           };
           next();
         },
+        requireRole: mockRequireRole,
       };
     }),
   };

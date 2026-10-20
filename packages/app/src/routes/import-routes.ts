@@ -90,6 +90,7 @@ export function createImportRoutes(db: Database): Router {
   router.post(
     '/clients/csv',
     authMiddleware.requireAuth,
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']),
     upload.single('file'),
     asyncHandler(async (req: Request, res: Response) => {
       const user = req.user!;
@@ -255,6 +256,7 @@ export function createImportRoutes(db: Database): Router {
   router.post(
     '/caregivers/csv',
     authMiddleware.requireAuth,
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']),
     upload.single('file'),
     asyncHandler(async (req: Request, res: Response) => {
       const user = req.user!;
@@ -418,6 +420,7 @@ export function createImportRoutes(db: Database): Router {
   router.post(
     '/clients',
     authMiddleware.requireAuth,
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']),
     upload.single('file'),
     asyncHandler(async (req: Request, res: Response) => {
       const file = req.file;

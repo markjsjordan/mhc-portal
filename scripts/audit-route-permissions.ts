@@ -58,6 +58,12 @@ const PATTERNS = {
   // Logout endpoints (don't need permission checks beyond authentication)
   logoutEndpoint: /\/logout$/,
 
+  // Self-service user endpoints (authenticated users managing their own credentials/preferences/tokens)
+  selfServiceEndpoint: /(\/users\/(profile|password|preferences)|\/resend-verification|\/push\/(register|unregister)|\/register$)/,
+
+  // Validation endpoints (stateless inputs checked against regex/dictionaries, no DB state change or PHI)
+  validationEndpoint: /\/validation(\/|$)/,
+
   // State-changing methods
   stateChanging: ['post', 'put', 'patch', 'delete']
 };
@@ -143,6 +149,11 @@ function analyzeRouteFile(filePath: string): SecurityIssue[] {
       continue;
     }
 
+    // Skip stateless validation endpoints (stateless inputs checked against regex/dictionaries)
+    if (PATTERNS.validationEndpoint.test(routePath) || filePath.includes('/validation.ts')) {
+      continue;
+    }
+
     // Check if it's a public endpoint
     const isPublicEndpoint = PATTERNS.publicEndpoints.test(routePath);
 
@@ -175,9 +186,12 @@ function analyzeRouteFile(filePath: string): SecurityIssue[] {
     }
 
     // Check for permission/role checks on authenticated routes
-    // Skip logout endpoints as they don't need additional permission checks
+    // Skip logout endpoints and self-service user endpoints (e.g. /profile, /password, /preferences, /resend-verification, /register)
     const isLogoutEndpoint = PATTERNS.logoutEndpoint.test(routePath);
-    if (method !== undefined && hasAuthInContext && !hasPermissionInContext && !hasRequirePermission && !hasRequireRole && !isLogoutEndpoint) {
+    const isSelfService =
+      PATTERNS.selfServiceEndpoint.test(routePath) ||
+      (filePath.includes('/users.ts') && /^\/(profile|password|preferences)/.test(routePath));
+    if (method !== undefined && hasAuthInContext && !hasPermissionInContext && !hasRequirePermission && !hasRequireRole && !isLogoutEndpoint && !isSelfService) {
       // Only warn on state-changing methods
       if (PATTERNS.stateChanging.includes(method.toLowerCase())) {
         issues.push({
@@ -193,6 +207,10 @@ function analyzeRouteFile(filePath: string): SecurityIssue[] {
   }
 
   // If file has no auth middleware at all, warn about it
+  // Skip stateless validation endpoints
+  if (filePath.includes('/validation.ts')) {
+    return issues;
+  }
   if (!hasRequireAuth && !hasOptionalAuth && !hasRequirePermission && !hasRequireRole) {
     const hasStateChangingRoutes = content.match(/\.(post|put|patch|delete)\s*\(/);
     if (hasStateChangingRoutes !== null) {

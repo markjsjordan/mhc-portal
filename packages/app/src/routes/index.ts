@@ -166,8 +166,18 @@ function createIncidentRouter(handlers: ReturnType<typeof createIncidentHandlers
   // Incident endpoints (require authentication)
   router.get('/incidents', authMiddleware.requireAuth, handlers.searchIncidents);
   router.get('/incidents/:incidentId', authMiddleware.requireAuth, handlers.getIncident);
-  router.post('/incidents', authMiddleware.requireAuth, handlers.createIncident);
-  router.patch('/incidents/:incidentId', authMiddleware.requireAuth, handlers.updateIncident);
+  router.post(
+    '/incidents',
+    authMiddleware.requireAuth,
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'COORDINATOR', 'CAREGIVER']),
+    handlers.createIncident
+  );
+  router.patch(
+    '/incidents/:incidentId',
+    authMiddleware.requireAuth,
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'COORDINATOR']),
+    handlers.updateIncident
+  );
 
   return router;
 }

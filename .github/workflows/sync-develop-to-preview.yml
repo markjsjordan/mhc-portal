@@ -28,23 +28,27 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Notify Slack (optional)
+      - name: Notify Discord (optional)
         if: success()
-        uses: slackapi/slack-github-action@v1
-        with:
-          payload: |
-            {
-              "text": "✅ develop synced to preview branch",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "🔄 *Develop synced to preview*\n\nThe preview branch is now ready for RC review at your Vercel staging environment.\n\n<https://github.com/${{ github.repository }}/compare/preview...develop|View diff>"
-                  }
-                }
-              ]
-            }
+        continue-on-error: true
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "Discord webhook not configured - skipping notification"
+            exit 0
+          fi
+
+          curl -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "embeds": [{
+                "title": "Develop synced to preview",
+                "description": "The preview branch is now ready for RC review at your staging environment.\n\n[View diff](https://github.com/'"${{ github.repository }}"'/compare/preview...develop)",
+                "color": 3187820,
+                "footer": {
+                  "text": "Sync develop → preview"
+                }
+              }]
+            }'
+

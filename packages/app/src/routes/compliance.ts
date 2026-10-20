@@ -75,6 +75,7 @@ export function createComplianceRouter(db: Database): Router {
    */
   router.post('/scan',
     authMiddleware.requireAuth,
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN']),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const organizationId = req.user!.organizationId;
@@ -208,6 +209,7 @@ export function createComplianceRouter(db: Database): Router {
    */
   router.post('/deadlines/:deadlineId/resolve',
     authMiddleware.requireAuth,
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN']),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const deadlineId = req.params['deadlineId'];

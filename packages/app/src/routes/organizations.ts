@@ -409,6 +409,7 @@ export function createOrganizationRouter(db: Database): Router {
   router.put('/organizations/:id',
     authMiddleware.requireAuth,
     authMiddleware.requireSameOrganization('id'),
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN']),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const id = req.params['id'];
@@ -474,6 +475,7 @@ export function createOrganizationRouter(db: Database): Router {
   router.post('/organizations/:id/invitations', 
     authMiddleware.requireAuth,
     authMiddleware.requireSameOrganization('id'),
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const organizationId = req.params['id'];
@@ -638,6 +640,7 @@ export function createOrganizationRouter(db: Database): Router {
   router.post('/organizations/:id/invitations/:invitationId/resend',
     authMiddleware.requireAuth,
     authMiddleware.requireSameOrganization('id'),
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const organizationId = req.params['id'];
@@ -673,6 +676,7 @@ export function createOrganizationRouter(db: Database): Router {
   router.delete('/organizations/:id/invitations/:invitationId',
     authMiddleware.requireAuth,
     authMiddleware.requireSameOrganization('id'),
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const organizationId = req.params['id'];
@@ -797,7 +801,10 @@ export function createOrganizationRouter(db: Database): Router {
    * DELETE /api/invitations/:token
    * Revoke an invitation
    */
-  router.delete('/invitations/:token', authMiddleware.requireAuth, async (req: Request, res: Response): Promise<void> => {
+  router.delete('/invitations/:token',
+    authMiddleware.requireAuth,
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']),
+    async (req: Request, res: Response): Promise<void> => {
     try {
       const token = req.params['token'];
       if (token === undefined || token.length === 0) {
@@ -916,6 +923,7 @@ export function createOrganizationRouter(db: Database): Router {
   router.post('/organizations/:id/seed-demo',
     authMiddleware.requireAuth,
     authMiddleware.requireSameOrganization('id'),
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN']),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const organizationId = req.params['id'];
@@ -995,6 +1003,7 @@ export function createOrganizationRouter(db: Database): Router {
   router.delete('/organizations/:id/demo-data',
     authMiddleware.requireAuth,
     authMiddleware.requireSameOrganization('id'),
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN']),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const organizationId = req.params['id'];

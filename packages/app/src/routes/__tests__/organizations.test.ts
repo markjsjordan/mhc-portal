@@ -20,6 +20,18 @@ import type { Router } from 'express';
 // Type for Express Router stack layer (Express internals aren't fully typed)
 type RouterLayer = any;
 
+function mockOrgRequireRole(roles: string[]) {
+  return (_req: any, res: any, next: any) => {
+    const userRoles = (_req.user?.roles ?? []).map((r: string) => r.toUpperCase());
+    const hasRole = roles.some((r) => userRoles.includes(r.toUpperCase()));
+    if (!hasRole) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+    next();
+  };
+}
+
 // Mock all external dependencies before importing the router
 vi.mock('@folkcare/core', async () => {
   const actual = await vi.importActual('@folkcare/core');
@@ -56,6 +68,7 @@ vi.mock('@folkcare/core', async () => {
         requireSameOrganization: () => (_req: any, _res: any, next: any) => {
           next();
         },
+        requireRole: mockOrgRequireRole,
       };
     }),
     ValidationError: class ValidationError extends Error {
