@@ -342,6 +342,15 @@ export const createMockProvider = (seedData: MockDataStore): DataProvider => {
       return store.carePlans[index];
     },
 
+    async deleteCarePlan(id: string): Promise<void> {
+      await delay(SIMULATE_DELAY);
+      const index = store.carePlans.findIndex(cp => cp.id === id);
+      if (index === -1) throw new Error(`Care plan ${id} not found`);
+
+      store.carePlans.splice(index, 1);
+      saveToStorage();
+    },
+
     // Task operations
     async getTasks(filters?: TaskInstanceSearchFilters & SearchParams): Promise<PaginatedResult<TaskInstance>> {
       await delay(SIMULATE_DELAY);
