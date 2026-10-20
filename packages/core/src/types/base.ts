@@ -89,7 +89,11 @@ export type Role =
   | 'BILLING'
   | 'HR'
   | 'AUDITOR'
-  | 'READ_ONLY';
+  | 'READ_ONLY'
+  | 'NURSE'
+  | 'CLINICAL'
+  | 'NURSE_RN'
+  | 'NURSE_LPN';
 
 /**
  * Fine-grained permissions

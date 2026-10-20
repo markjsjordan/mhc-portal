@@ -195,4 +195,21 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
     // Ensure modal stays open so the user can correct the email
     expect(screen.getByRole('heading', { name: 'Invite Team Member' })).toBeDefined();
   });
+
+  it('includes Registered Nurse (RN) as a selectable role in invite form', async () => {
+    renderSettings();
+
+    // Switch to Team tab
+    const teamTab = await screen.findByRole('button', { name: /Team/i });
+    fireEvent.click(teamTab);
+
+    // Open Invite Member modal
+    const inviteBtn = await screen.findByRole('button', { name: /Invite Member/i });
+    fireEvent.click(inviteBtn);
+
+    // Verify Registered Nurse (RN) option exists in the Role select
+    const roleSelect = screen.getByLabelText(/Role/i);
+    expect(roleSelect).toContainHTML('Registered Nurse (RN)');
+    expect(screen.getByRole('option', { name: 'Registered Nurse (RN)' })).toHaveValue('NURSE_RN');
+  });
 });

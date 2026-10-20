@@ -534,7 +534,7 @@ const inviteSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  role: z.enum(['ORG_ADMIN', 'BRANCH_ADMIN', 'COORDINATOR', 'CAREGIVER', 'BILLING', 'SCHEDULER']),
+  role: z.enum(['ORG_ADMIN', 'BRANCH_ADMIN', 'COORDINATOR', 'CAREGIVER', 'BILLING', 'SCHEDULER', 'NURSE_RN']),
 });
 
 type InviteFormData = z.infer<typeof inviteSchema>;
@@ -951,6 +951,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                     errors={errors}
                     options={[
                       { value: 'CAREGIVER', label: 'Caregiver' },
+                      { value: 'NURSE_RN', label: 'Registered Nurse (RN)' },
                       { value: 'COORDINATOR', label: 'Care Coordinator' },
                       { value: 'SCHEDULER', label: 'Scheduler' },
                       { value: 'BILLING', label: 'Billing Specialist' },
