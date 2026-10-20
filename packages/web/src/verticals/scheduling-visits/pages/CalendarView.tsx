@@ -3,14 +3,13 @@ import { Calendar, momentLocalizer, View, SlotInfo, EventProps } from 'react-big
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import moment from 'moment';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, Plus, List, Layout, Home, Phone, Building2, ZoomIn, ZoomOut, Clock, Zap } from 'lucide-react';
 import { useCalendarVisits, useVisitApi, useCaregiverAvailability } from '../hooks/useVisits';
 import { useAuth } from '@/core/hooks';
 import { EmptyState } from '@/core/components/feedback/EmptyState';
 import { CreateVisitModal } from '@/core/components/forms/CreateVisitModal';
-import { MiniCalendar, VisitStatusLegend } from '../components';
+import { MiniCalendar, VisitStatusLegend, VisitDetailsPanel } from '../components';
 import type { Visit } from '../types';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
@@ -165,9 +164,9 @@ export const CalendarView: React.FC = () => {
   const { user } = useAuth();
   const visitApi = useVisitApi();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   // State
+  const [selectedVisitId, setSelectedVisitId] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<View>('week');
   const [showAvailability, setShowAvailability] = useState(false);
@@ -447,10 +446,29 @@ export const CalendarView: React.FC = () => {
     }
   }, [updateVisitSchedule]);
 
-  // Handle event selection - navigate to dedicated visit detail page.
+  // Handle event selection - open details in an in-page side panel so the
+  // calendar (date range, filters, scroll position) stays mounted.
   const handleSelectEvent = useCallback((event: CalendarEvent) => {
-    navigate(`/visits/${event.resource.id}`);
-  }, [navigate]);
+    setSelectedVisitId(event.resource.id);
+  }, []);
+
+  // Visits in chronological order for prev/next navigation inside the panel.
+  const orderedEvents = useMemo(
+    () => [...events].sort((a, b) => a.start.getTime() - b.start.getTime()),
+    [events],
+  );
+  const selectedIndex = selectedVisitId != null
+    ? orderedEvents.findIndex(e => e.id === selectedVisitId)
+    : -1;
+  const closePanel = useCallback(() => setSelectedVisitId(null), []);
+  const goPrevious = useCallback(() => {
+    const prev = orderedEvents[selectedIndex - 1];
+    if (prev) setSelectedVisitId(prev.id);
+  }, [orderedEvents, selectedIndex]);
+  const goNext = useCallback(() => {
+    const next = orderedEvents[selectedIndex + 1];
+    if (next) setSelectedVisitId(next.id);
+  }, [orderedEvents, selectedIndex]);
 
   // Handle slot selection (creating new visit).
   // GAP: ScheduleService.createVisit() already exists at
@@ -1054,6 +1072,17 @@ export const CalendarView: React.FC = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* Visit details side panel (lazy-loads full record on open) */}
+      {selectedVisitId != null && (
+        <VisitDetailsPanel
+          visitId={selectedVisitId}
+          onClose={closePanel}
+          onPrevious={selectedIndex > 0 ? goPrevious : undefined}
+          onNext={selectedIndex >= 0 && selectedIndex < orderedEvents.length - 1 ? goNext : undefined}
+          positionLabel={selectedIndex >= 0 ? `${selectedIndex + 1} of ${orderedEvents.length}` : undefined}
+        />
       )}
 
       {/* Create Visit Modal */}
