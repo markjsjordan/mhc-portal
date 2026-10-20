@@ -7,3 +7,4 @@ export { VisitFilters } from './VisitFilters';
 export { EditVisitModal } from './EditVisitModal';
 export { VisitClockControl } from './VisitClockControl';
 export * from './calendar';
+export { VisitDetailsPanel } from './VisitDetailsPanel';

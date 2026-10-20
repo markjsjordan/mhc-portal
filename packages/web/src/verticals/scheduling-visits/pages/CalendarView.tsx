@@ -3,7 +3,7 @@ import { Calendar, momentLocalizer, View, SlotInfo, EventProps } from 'react-big
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import moment from 'moment';
 import toast from 'react-hot-toast';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   CalendarDays,
@@ -29,6 +29,7 @@ import {
   MobileAgendaView,
   MobileFilterDrawer,
   ReassignVisitModal,
+  VisitDetailsPanel,
 } from '../components';
 import type { Visit } from '../types';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -193,10 +194,10 @@ export const CalendarView: React.FC = () => {
   const { user } = useAuth();
   const visitApi = useVisitApi();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // State
+  const [selectedVisitId, setSelectedVisitId] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<View>('week');
   const [showAvailability, setShowAvailability] = useState(true);
@@ -629,6 +630,7 @@ export const CalendarView: React.FC = () => {
         const newStart = start instanceof Date ? start : new Date(start);
         const newEnd = end instanceof Date ? end : new Date(end);
 
+<<<<<<< HEAD
         if (resourceId != null && String(resourceId) !== visit.assignedCaregiverId) {
           await checkAndAssignCaregiver(visit.id, String(resourceId));
           return;
@@ -681,6 +683,31 @@ export const CalendarView: React.FC = () => {
     },
     [navigate]
   );
+=======
+  // Handle event selection - open details in an in-page side panel so the
+  // calendar (date range, filters, scroll position) stays mounted.
+  const handleSelectEvent = useCallback((event: CalendarEvent) => {
+    setSelectedVisitId(event.resource.id);
+  }, []);
+
+  // Visits in chronological order for prev/next navigation inside the panel.
+  const orderedEvents = useMemo(
+    () => [...events].sort((a, b) => a.start.getTime() - b.start.getTime()),
+    [events],
+  );
+  const selectedIndex = selectedVisitId != null
+    ? orderedEvents.findIndex(e => e.id === selectedVisitId)
+    : -1;
+  const closePanel = useCallback(() => setSelectedVisitId(null), []);
+  const goPrevious = useCallback(() => {
+    const prev = orderedEvents[selectedIndex - 1];
+    if (prev) setSelectedVisitId(prev.id);
+  }, [orderedEvents, selectedIndex]);
+  const goNext = useCallback(() => {
+    const next = orderedEvents[selectedIndex + 1];
+    if (next) setSelectedVisitId(next.id);
+  }, [orderedEvents, selectedIndex]);
+>>>>>>> fix/wdvf3abqrn-calendar-side-panel
 
   const handleSelectSlot = useCallback((slotInfo: SlotInfo) => {
     setCreateVisitSlotInfo(slotInfo);
@@ -1135,6 +1162,17 @@ export const CalendarView: React.FC = () => {
         caregivers={allCaregivers}
         onAssignCaregiver={checkAndAssignCaregiver}
       />
+
+      {/* Visit details side panel (lazy-loads full record on open) */}
+      {selectedVisitId != null && (
+        <VisitDetailsPanel
+          visitId={selectedVisitId}
+          onClose={closePanel}
+          onPrevious={selectedIndex > 0 ? goPrevious : undefined}
+          onNext={selectedIndex >= 0 && selectedIndex < orderedEvents.length - 1 ? goNext : undefined}
+          positionLabel={selectedIndex >= 0 ? `${selectedIndex + 1} of ${orderedEvents.length}` : undefined}
+        />
+      )}
 
       {/* Create Visit Modal */}
       <CreateVisitModal
