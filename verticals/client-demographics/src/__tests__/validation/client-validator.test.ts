@@ -48,6 +48,19 @@ describe('ClientValidator', () => {
       expect(result.success).toBe(true);
     });
 
+    it('should validate demo / sequential UUIDs (like 00000000-0000-0000-0000-000000000001) successfully', () => {
+      const demoInput: CreateClientInput = {
+        organizationId: '00000000-0000-0000-0000-000000000001',
+        branchId: '00000000-0000-0000-0000-000000000002',
+        firstName: 'Demo',
+        lastName: 'Client',
+        dateOfBirth: new Date('1990-01-01'),
+      };
+
+      const result = validator.validateCreate(demoInput);
+      expect(result.success).toBe(true);
+    });
+
     it('should return errors for invalid create input', () => {
       const invalidInput: CreateClientInput = {
         organizationId: 'invalid-uuid',

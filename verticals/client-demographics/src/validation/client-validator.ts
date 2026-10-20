@@ -5,6 +5,9 @@
 import { z } from 'zod';
 import { CreateClientInput, UpdateClientInput } from '../types/client';
 
+const uuidRegex = /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i;
+const uuidSchema = z.string().regex(uuidRegex, 'Invalid UUID');
+
 const phoneSchema = z.object({
   number: z.string().regex(/^\+?[\d\s\-()]+$/, 'Invalid phone number'),
   type: z.enum(['MOBILE', 'HOME', 'WORK']),
@@ -38,8 +41,8 @@ const emergencyContactSchema = z.object({
 });
 
 const createClientSchema = z.object({
-  organizationId: z.string().uuid(),
-  branchId: z.string().uuid().optional(),
+  organizationId: uuidSchema,
+  branchId: uuidSchema.optional(),
   firstName: z.string().min(1, 'First name required').max(100),
   middleName: z.string().max(100).optional(),
   lastName: z.string().min(1, 'Last name required').max(100),
@@ -111,16 +114,16 @@ export class ClientValidator {
         const messages = error.issues.map((e) => {
           const fieldPath = e.path.join('.');
           
-          // Special handling for undefined branchId (the root cause of wdvf3abhb7)
-          if (fieldPath === 'branchId' && e.code === 'invalid_type') {
+          // Special handling for branchId
+          if (fieldPath === 'branchId') {
             return {
               path: fieldPath,
-              message: 'Branch ID is required. Organization must have at least one existing client or branch.',
+              message: 'Branch ID must be a valid UUID. Organization must have at least one existing client or branch.',
             };
           }
           
           // Provide specific guidance for other critical fields
-          if (fieldPath === 'organizationId' && e.code === 'invalid_type') {
+          if (fieldPath === 'organizationId') {
             return {
               path: fieldPath,
               message: 'Organization ID is required and must be a valid UUID.',

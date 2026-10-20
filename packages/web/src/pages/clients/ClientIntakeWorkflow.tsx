@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useCreateClient, useClients, useUpdateClient, useBranches } from '@/verticals/client-demographics/hooks';
 import type { CreateClientInput, UpdateClientInput } from '@/verticals/client-demographics/types';
 import { useAuth } from '@/core/hooks';
+import { US_STATES } from '@/core/constants/us-states';
 import type { Client } from '@/verticals/client-demographics/types/client';
 
 /**
@@ -234,6 +235,20 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
   };
 
   const handleNext = () => {
+    if (currentStep === 1) {
+      if (!intakeData.firstName?.trim()) {
+        toast.error('First name is required');
+        return;
+      }
+      if (!intakeData.lastName?.trim()) {
+        toast.error('Last name is required');
+        return;
+      }
+      if (!intakeData.dateOfBirth) {
+        toast.error('Date of birth is required');
+        return;
+      }
+    }
     if (currentStep < 7) {
       setCurrentStep(currentStep + 1);
     }
@@ -438,7 +453,9 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               <h3 style={styles.sectionHeading}>Basic Information</h3>
               <div style={styles.formRow}>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>First Name</label>
+                  <label style={styles.label}>
+                    First Name <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
                   <input
                     type="text"
                     style={styles.input}
@@ -448,7 +465,9 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   />
                 </div>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Last Name</label>
+                  <label style={styles.label}>
+                    Last Name <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
                   <input
                     type="text"
                     style={styles.input}
@@ -461,10 +480,13 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
 
               <div style={styles.formRow}>
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Date of Birth</label>
+                  <label style={styles.label}>
+                    Date of Birth <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
                   <input
                     type="date"
                     style={styles.input}
+                    max={new Date().toISOString().split('T')[0]}
                     value={intakeData.dateOfBirth || ''}
                     onChange={(e) => updateData('dateOfBirth', e.target.value)}
                   />
@@ -550,10 +572,12 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                     value={intakeData.address?.state || ''}
                     onChange={(e) => updateNestedData('address', 'state', e.target.value)}
                   >
-                    <option value="">Select</option>
-                    <option value="TX">Texas</option>
-                    <option value="CA">California</option>
-                    <option value="NY">New York</option>
+                    <option value="">Select State</option>
+                    {US_STATES.map((s) => (
+                      <option key={s.code} value={s.code}>
+                        {s.name} ({s.code})
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div style={styles.formGroup}>

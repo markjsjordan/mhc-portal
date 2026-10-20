@@ -349,7 +349,7 @@ export const CalendarView: React.FC = () => {
   } = useCaregiverAvailability(currentDate, branchIds);
 
   // Fetch caregivers list for reassignment options
-  const { data: caregiversData } = useCaregivers({ limit: 100 });
+  const { data: caregiversData } = useCaregivers();
   const caregiversList = useMemo(() => {
     if (!caregiversData?.items) return [];
     return caregiversData.items;
@@ -397,7 +397,7 @@ export const CalendarView: React.FC = () => {
         color: caregiverColorMap.get(ca.caregiver_id) ?? '#3B82F6',
         visitCount: ca.visits.length,
         scheduledHours: hours,
-        role: ca.role,
+        role: (ca as { role?: string }).role,
       });
     }
 
@@ -736,7 +736,15 @@ export const CalendarView: React.FC = () => {
   // 7-day strip days for mobile view
   const weekStripDays = useMemo(() => {
     const startOfWeek = moment(currentDate).startOf('week');
-    const days = [];
+    const days: Array<{
+      date: moment.Moment;
+      key: string;
+      dayName: string;
+      dayNum: string;
+      isSelected: boolean;
+      isToday: boolean;
+      hasVisits: boolean;
+    }> = [];
 
     for (let i = 0; i < 7; i++) {
       const day = moment(startOfWeek).add(i, 'days');
@@ -761,22 +769,15 @@ export const CalendarView: React.FC = () => {
 
   // Caregiver card items for CaregiverAvailabilityRail
   const caregiverCardItems = useMemo(() => {
-    return allCaregivers.map((cg) => {
-      const availabilityRecord = caregiverAvailability.find(
-        (ca) => ca.caregiver_id === cg.id
-      );
-      return {
-        id: cg.id,
-        name: cg.name,
-        color: cg.color,
-        scheduledHours: cg.scheduledHours,
-        visitCount: cg.visitCount,
-        maxDailyHours: 8,
-        status: availabilityRecord?.status ?? 'AVAILABLE',
-        role: cg.role ?? 'Caregiver',
-      };
-    });
-  }, [allCaregivers, caregiverAvailability]);
+    return allCaregivers.map((cg) => ({
+      id: cg.id,
+      name: cg.name,
+      color: cg.color,
+      scheduledHours: cg.scheduledHours,
+      visitCount: cg.visitCount,
+      role: cg.role ?? 'Caregiver',
+    }));
+  }, [allCaregivers]);
 
   const handleToggleCaregiverInAvailability = (caregiverId: string) => {
     if (selectedCaregiverFilterIds.includes(caregiverId)) {
@@ -1262,7 +1263,6 @@ export const CalendarView: React.FC = () => {
                 setReassignCaregiverId(visit.assignedCaregiverId ?? '');
               }}
               onReassignVisit={(visit) => setReassignVisit(visit)}
-              onQuickCreate={() => setIsCreateVisitModalOpen(true)}
             />
           ) : (
             <div className="space-y-3">

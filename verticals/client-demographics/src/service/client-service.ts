@@ -59,7 +59,8 @@ export class ClientService {
     // Validate input
     const validation = this.validator.validateCreate(input);
     if (!validation.success) {
-      throw new ValidationError('Invalid client data', {
+      const errorDetails = validation.errors?.map((e) => e.message).join('; ');
+      throw new ValidationError(errorDetails ? `Invalid client data: ${errorDetails}` : 'Invalid client data', {
         errors: validation.errors,
       });
     }
@@ -236,7 +237,8 @@ export class ClientService {
     // Validate updates
     const validation = this.validator.validateUpdate(updates);
     if (!validation.success) {
-      throw new ValidationError('Invalid update data', {
+      const errorDetails = validation.errors?.map((e) => e.message).join('; ');
+      throw new ValidationError(errorDetails ? `Invalid update data: ${errorDetails}` : 'Invalid update data', {
         errors: validation.errors,
       });
     }
