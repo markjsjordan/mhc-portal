@@ -162,4 +162,37 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
       });
     });
   }, 30000);
+
+  it('displays inline error in modal when inviting an existing email (409 Conflict)', async () => {
+    mockApiClient.post.mockRejectedValue(
+      new Error('User with this email already exists in the organization')
+    );
+
+    renderSettings();
+
+    // Switch to Team tab
+    const teamTab = await screen.findByRole('button', { name: /Team/i });
+    fireEvent.click(teamTab);
+
+    // Open Invite Member modal
+    const inviteBtn = await screen.findByRole('button', { name: /Invite Member/i });
+    fireEvent.click(inviteBtn);
+
+    // Fill out form with existing user email
+    fireEvent.change(screen.getByLabelText(/First Name/i), { target: { value: 'Mark' } });
+    fireEvent.change(screen.getByLabelText(/Last Name/i), { target: { value: 'Jordan' } });
+    fireEvent.change(screen.getByLabelText(/Email Address/i), { target: { value: 'markjsjordan@gmail.com' } });
+    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'CAREGIVER' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /Generate Invite URL/i }));
+
+    // Verify inline modal error message is displayed
+    const errorElements = await screen.findAllByText(
+      'User with this email already exists in the organization'
+    );
+    expect(errorElements.length).toBeGreaterThanOrEqual(1);
+
+    // Ensure modal stays open so the user can correct the email
+    expect(screen.getByRole('heading', { name: 'Invite Team Member' })).toBeDefined();
+  });
 });

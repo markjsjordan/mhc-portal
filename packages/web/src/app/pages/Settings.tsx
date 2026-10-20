@@ -545,6 +545,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [generatedInviteUrl, setGeneratedInviteUrl] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
 
   // Fetch team members
   const { data: teamMembers, isLoading: isLoadingTeam } = useQuery({
@@ -593,6 +594,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
       );
     },
     onSuccess: (response) => {
+      setInviteError(null);
       const token = response.token ?? response.invitationToken ?? response.data?.token ?? response.data?.invitationToken;
       if (token !== undefined && token !== '') {
         const url = `${window.location.origin}/accept-invite/${token}`;
@@ -605,6 +607,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
       void queryClient.invalidateQueries({ queryKey: ['invitations', organizationId] });
     },
     onError: (error: Error) => {
+      setInviteError(error.message);
       onError(error.message);
     },
   });
@@ -640,6 +643,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
   const onSubmitInvite = (data: InviteFormData) => {
     setGeneratedInviteUrl(null);
     setIsCopied(false);
+    setInviteError(null);
     createInvitationMutation.mutate(data);
   };
 
@@ -647,6 +651,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
     setShowInviteModal(false);
     setGeneratedInviteUrl(null);
     setIsCopied(false);
+    setInviteError(null);
     reset();
   };
 
@@ -858,6 +863,12 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
             <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={handleCloseModal} />
             <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Invite Team Member</h3>
+
+              {inviteError !== null && (
+                <div className="mb-4 rounded-md bg-red-50 border border-red-200 p-3">
+                  <p className="text-sm font-medium text-red-800">{inviteError}</p>
+                </div>
+              )}
 
               {/* Generated URL display — shown after successful generation */}
               {generatedInviteUrl !== null ? (
