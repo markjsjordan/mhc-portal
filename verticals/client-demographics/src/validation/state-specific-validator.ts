@@ -12,9 +12,13 @@ import {
   FloridaClientData,
 } from '../types/client';
 
+// UUID validation pattern matching standard 32-hex-digit UUIDs
+const uuidRegex = /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i;
+const uuidSchema = z.string().regex(uuidRegex, 'Invalid UUID');
+
 // Texas validation schemas
 const texasAuthorizedServiceSchema = z.object({
-  id: z.string().uuid(),
+  id: uuidSchema,
   serviceCode: z.string().min(1, 'Service code required'),
   serviceName: z.string().min(1, 'Service name required'),
   authorizedUnits: z.number().nonnegative('Authorized units must be non-negative'),
@@ -63,7 +67,7 @@ const texasClientDataSchema = z.object({
 
 // Florida validation schemas
 const floridaAuthorizedServiceSchema = z.object({
-  id: z.string().uuid(),
+  id: uuidSchema,
   serviceCode: z.string().min(1, 'Service code required'),
   serviceName: z.string().min(1, 'Service name required'),
   authorizedUnits: z.number().nonnegative('Authorized units must be non-negative'),
