@@ -265,7 +265,7 @@ describe('Organization Routes', () => {
           methods: Object.keys(layer.route.methods),
         }));
 
-      // 15 endpoints total:
+      // 16 endpoints total:
       // POST /signup
       // POST /organizations/register
       // GET /organizations/:id
@@ -273,6 +273,7 @@ describe('Organization Routes', () => {
       // POST /organizations/:id/invitations
       // GET /organizations/:id/invitations
       // GET /organizations/:id/users
+      // PUT /organizations/:id/users/:userId
       // POST /organizations/:id/invitations/:invitationId/resend
       // DELETE /organizations/:id/invitations/:invitationId
       // GET /invitations/:token
@@ -281,7 +282,7 @@ describe('Organization Routes', () => {
       // POST /organizations/:id/seed-demo
       // DELETE /organizations/:id/demo-data
       // GET /organizations/:id/demo-data/status
-      expect(routes.length).toBe(15);
+      expect(routes.length).toBe(16);
     });
   });
 

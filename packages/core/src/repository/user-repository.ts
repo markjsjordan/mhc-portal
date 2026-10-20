@@ -52,6 +52,12 @@ export interface IUserRepository {
   getOrganizationInvites(organizationId: UUID): Promise<InviteToken[]>;
   getUsersByOrganization(organizationId: UUID): Promise<User[]>;
   updateUserRoles(id: UUID, organizationId: UUID, roles: Role[], updatedBy: UUID): Promise<User>;
+  updateUser(
+    id: UUID,
+    organizationId: UUID,
+    updates: { firstName?: string; lastName?: string; email?: string; roles?: Role[] },
+    updatedBy: UUID
+  ): Promise<User>;
   resendInviteToken(invitationId: UUID, organizationId: UUID, resendBy: UUID): Promise<void>;
   revokeInviteById(invitationId: UUID, organizationId: UUID, revokedBy: UUID): Promise<void>;
 }
@@ -554,6 +560,70 @@ export class UserRepository implements IUserRepository {
     const row = result.rows[0];
     if (row === undefined) {
       throw new Error('User not found or role update failed');
+    }
+
+    return {
+      id: row.id,
+      organizationId: row.organization_id,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      email: row.email,
+      username: row.username,
+      roles: row.roles as Role[],
+      branchIds: row.branch_ids,
+      status: row.status,
+    };
+  }
+
+  async updateUser(
+    id: UUID,
+    organizationId: UUID,
+    updates: { firstName?: string; lastName?: string; email?: string; roles?: Role[] },
+    updatedBy: UUID
+  ): Promise<User> {
+    const setClauses: string[] = ['updated_at = NOW()', 'version = version + 1', 'updated_by = $3'];
+    const values: unknown[] = [id, organizationId, updatedBy];
+    let paramIndex = 4;
+
+    if (updates.firstName !== undefined) {
+      setClauses.push(`first_name = $${paramIndex++}`);
+      values.push(updates.firstName);
+    }
+    if (updates.lastName !== undefined) {
+      setClauses.push(`last_name = $${paramIndex++}`);
+      values.push(updates.lastName);
+    }
+    if (updates.email !== undefined) {
+      setClauses.push(`email = $${paramIndex++}`);
+      values.push(updates.email);
+    }
+    if (updates.roles !== undefined) {
+      setClauses.push(`roles = $${paramIndex++}`);
+      values.push(updates.roles);
+    }
+
+    const query = `
+      UPDATE users
+      SET ${setClauses.join(', ')}
+      WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL
+      RETURNING id, organization_id, first_name, last_name, email, username, roles, branch_ids, status
+    `;
+
+    const result = await this.db.query<{
+      id: string;
+      organization_id: string;
+      first_name: string;
+      last_name: string;
+      email: string;
+      username: string;
+      roles: string[];
+      branch_ids: string[];
+      status: string;
+    }>(query, values);
+
+    const row = result.rows[0];
+    if (row === undefined) {
+      throw new Error('User not found or update failed');
     }
 
     return {

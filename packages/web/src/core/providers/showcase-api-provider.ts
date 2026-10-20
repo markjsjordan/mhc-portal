@@ -294,6 +294,39 @@ export class ShowcaseApiProvider implements ApiProvider {
     }
 
     if (url.includes('/api/organizations/') && url.includes('/users')) {
+      if (method === 'PUT') {
+        const userIdMatch = url.match(/\/users\/([^/]+)$/);
+        const userId = userIdMatch ? userIdMatch[1] : undefined;
+        const updatePayload = data as any;
+        const user = (this.data.users ?? []).find((u: any) => u.id === userId);
+        if (user) {
+          if (updatePayload.firstName !== undefined && updatePayload.lastName !== undefined) {
+            user.name = `${updatePayload.firstName} ${updatePayload.lastName}`;
+          } else if (updatePayload.firstName !== undefined) {
+            user.name = `${updatePayload.firstName} ${user.name?.split(' ').slice(1).join(' ') ?? ''}`;
+          }
+          if (updatePayload.email !== undefined) {
+            user.email = updatePayload.email;
+          }
+          if (updatePayload.roles !== undefined) {
+            user.roles = updatePayload.roles;
+          }
+          this.saveShowcaseData();
+        }
+        return {
+          success: true,
+          data: user ? {
+            id: user.id,
+            firstName: user.name?.split(' ')[0] ?? 'Team',
+            lastName: user.name?.split(' ').slice(1).join(' ') ?? 'Member',
+            email: user.email,
+            roles: user.roles,
+            status: 'ACTIVE',
+            createdAt: new Date().toISOString(),
+          } : undefined,
+        };
+      }
+
       return {
         success: true,
         data: (this.data.users ?? []).map((u: any) => ({
