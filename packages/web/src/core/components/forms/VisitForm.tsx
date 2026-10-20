@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useApiClient } from '@/core/hooks';
+import { extractList } from '@/core/utils/list-response';
 import VisitTypeSelector from '@/verticals/scheduling-visits/components/VisitTypeSelector';
 import type { VisitType } from '@/verticals/scheduling-visits/types';
 
@@ -59,8 +60,9 @@ export const VisitForm: React.FC<VisitFormProps> = ({
   const { data: clients = [] } = useQuery({
     queryKey: ['clients', 'active'],
     queryFn: async () => {
-      const response = await apiClient.get<{ success: boolean; data: any[] }>('/api/clients?limit=100');
-      return response.data;
+      const response = await apiClient.get<unknown>('/api/clients?limit=100');
+      // API returns { data: { items } }; showcase returns a bare array.
+      return extractList<any>(response);
     },
   });
 
@@ -68,8 +70,8 @@ export const VisitForm: React.FC<VisitFormProps> = ({
   const { data: serviceTypes = [] } = useQuery({
     queryKey: ['service-types'],
     queryFn: async () => {
-      const response = await apiClient.get<{ success: boolean; data: any[] }>('/api/service-types?limit=100');
-      return response.data;
+      const response = await apiClient.get<unknown>('/api/service-types?limit=100');
+      return extractList<any>(response);
     },
   });
 
@@ -169,7 +171,7 @@ export const VisitForm: React.FC<VisitFormProps> = ({
           <option value="">Select a client</option>
           {clients.map((client: any) => (
             <option key={client.id} value={client.id}>
-              {client.first_name} {client.last_name}
+              {client.firstName ?? client.first_name} {client.lastName ?? client.last_name}
             </option>
           ))}
         </select>
