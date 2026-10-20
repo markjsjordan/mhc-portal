@@ -390,6 +390,7 @@ export class CarePlanService {
 
   /**
    * Delete care plan (soft delete)
+   * Idempotent: If already soft-deleted, gracefully succeeds without error.
    */
   async deleteCarePlan(
     id: UUID,
@@ -400,7 +401,20 @@ export class CarePlanService {
       throw new PermissionError('Insufficient permissions to delete care plans');
     }
 
-    const carePlan = await this.getCarePlanById(id, context);
+    const carePlan = await this.repository.getCarePlanById(id, true);
+    if (!carePlan) {
+      throw new NotFoundError('Care plan not found', { id });
+    }
+
+    // Check organization access
+    if (carePlan.organizationId !== context.organizationId) {
+      throw new PermissionError('Cannot access care plan from another organization');
+    }
+
+    // If already deleted, operation is idempotent and complete
+    if (carePlan.deletedAt) {
+      return;
+    }
 
     // Prevent deletion of active plans
     if (carePlan.status === 'ACTIVE') {

@@ -204,13 +204,12 @@ export class CarePlanRepository extends Repository<CarePlan> {
   }
 
   /**
-   * Get care plan by ID
+   * Get care plan by ID (optionally including soft-deleted plans)
    */
-  async getCarePlanById(id: UUID): Promise<CarePlan | null> {
-    const query = `
-      SELECT * FROM care_plans
-      WHERE id = $1 AND deleted_at IS NULL
-    `;
+  async getCarePlanById(id: UUID, includeDeleted = false): Promise<CarePlan | null> {
+    const query = includeDeleted
+      ? `SELECT * FROM care_plans WHERE id = $1`
+      : `SELECT * FROM care_plans WHERE id = $1 AND deleted_at IS NULL`;
 
     const result = await this.database.query(query, [id]);
     return result.rows[0] ? this.mapRowToCarePlan(result.rows[0]) : null;

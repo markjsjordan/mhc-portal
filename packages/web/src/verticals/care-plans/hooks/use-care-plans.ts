@@ -93,7 +93,17 @@ export const useDeleteCarePlan = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => carePlanApi.deleteCarePlan(id),
+    mutationFn: async (id: string) => {
+      try {
+        await carePlanApi.deleteCarePlan(id);
+      } catch (error: any) {
+        // If 404, the plan was already deleted on the server — treat as success
+        if (error?.status === 404 || error?.response?.data?.status === 404) {
+          return;
+        }
+        throw error;
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['care-plans'] });
       toast.success('Care plan deleted successfully');
