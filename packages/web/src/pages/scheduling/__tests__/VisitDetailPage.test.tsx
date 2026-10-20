@@ -43,6 +43,7 @@ vi.mock('../../../verticals/scheduling-visits', () => ({
         <button onClick={onClose}>Close</button>
       </div>
     ) : null,
+  VisitClockControl: () => <div data-testid="mock-visit-clock-control">Clock Control</div>,
 }));
 
 describe('VisitDetailPage', () => {
@@ -185,5 +186,34 @@ describe('VisitDetailPage', () => {
     renderPage();
 
     expect(screen.queryByTestId('edit-visit-button')).not.toBeInTheDocument();
+  });
+
+  it('renders VisitClockControl and correct client demographics for non-hardcoded clients', () => {
+    mockVisitData = {
+      id: 'vis-mark-1',
+      visitNumber: 'V2026-000001',
+      clientId: 'client-mark-jordan',
+      clientFirstName: 'Mark',
+      clientLastName: 'Jordan',
+      scheduledDate: '2026-10-25',
+      scheduledStartTime: '09:00',
+      scheduledEndTime: '11:00',
+      scheduledDuration: 120,
+      visitType: 'REGULAR',
+      status: 'SCHEDULED',
+      assignedCaregiverId: 'cg-1',
+      address: {
+        line1: '121 East Case Street',
+        city: 'Negaunee',
+        state: 'MI',
+        postalCode: '49866',
+      },
+    };
+
+    renderPage('vis-mark-1');
+
+    expect(screen.getByTestId('mock-visit-clock-control')).toBeInTheDocument();
+    expect(screen.getByText('Mark Jordan')).toBeInTheDocument();
+    expect(screen.queryByText('Margaret Thompson')).not.toBeInTheDocument();
   });
 });

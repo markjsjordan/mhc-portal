@@ -19,7 +19,9 @@ import {
   Edit3,
   Lock,
 } from 'lucide-react';
-import { useVisit, EditVisitModal } from '../../verticals/scheduling-visits';
+import { useVisit, EditVisitModal, VisitClockControl } from '../../verticals/scheduling-visits';
+import { useClient } from '../../verticals/client-demographics';
+import { useCaregiver } from '../../verticals/caregivers';
 import { usePermissions } from '@/core/hooks';
 import { getVisitTypeConfig } from './visitTypeConfig';
 import type { Visit } from '../../verticals/scheduling-visits/types';
@@ -41,7 +43,8 @@ export const VisitDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const { data: apiVisit, isLoading } = useVisit(id);
+  const { data: apiVisit, isLoading, refetch } = useVisit(id);
+  const [evvRecordId, setEvvRecordId] = useState<string | undefined>(undefined);
 
   // Fallback visit for demo/offline resilience when backend does not have the ID
   const fallbackVisit = useMemo<Visit | null>(() => {
@@ -111,6 +114,8 @@ export const VisitDetailPage: React.FC = () => {
     ]);
 
   const visit: Visit | null = modifiedVisit || apiVisit || fallbackVisit;
+  const { data: client } = useClient(visit?.clientId);
+  const { data: caregiver } = useCaregiver(visit?.assignedCaregiverId ?? undefined);
 
   const isLocked = useMemo(() => {
     if (!visit) return false;
@@ -188,10 +193,16 @@ export const VisitDetailPage: React.FC = () => {
   const clientFullName =
     visit.clientFirstName && visit.clientLastName
       ? `${visit.clientFirstName} ${visit.clientLastName}`
-      : 'Margaret Thompson';
+      : client
+      ? `${client.firstName} ${client.lastName}`
+      : 'Client';
 
-  const caregiverName = visit.assignedCaregiverId ? 'Sarah Williams' : null;
-  const caregiverPhone = '555-1001';
+  const caregiverName = caregiver
+    ? `${caregiver.firstName} ${caregiver.lastName}`
+    : visit.assignedCaregiverId
+    ? 'Caregiver Assigned'
+    : null;
+  const caregiverPhone = caregiver?.primaryPhone?.number || (visit.assignedCaregiverId ? '555-1001' : null);
 
   const completedCount = tasks.filter((t) => t.completed).length;
   const totalCount = tasks.length;
@@ -328,14 +339,16 @@ export const VisitDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Status indicator on banner */}
-          <div className="flex flex-col md:items-end gap-1.5 self-start md:self-center">
-            <span
-              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${statusStyle.badge}`}
-            >
-              <span className={`w-2 h-2 rounded-full ${statusStyle.dot}`} />
-              {statusStyle.label}
-            </span>
+          {/* Status indicator on banner & Clock In/Out Control */}
+          <div className="flex flex-col md:items-end gap-2 self-start md:self-center">
+            <div className="flex items-center gap-2">
+              <span
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${statusStyle.badge}`}
+              >
+                <span className={`w-2 h-2 rounded-full ${statusStyle.dot}`} />
+                {statusStyle.label}
+              </span>
+            </div>
             <span className="text-xs text-gray-500 font-medium">
               {visit.status === 'COMPLETED'
                 ? 'EVV Verified & Completed'
@@ -345,6 +358,21 @@ export const VisitDetailPage: React.FC = () => {
                 ? 'Caregiver Staffing Needed'
                 : 'Scheduled for Care Delivery'}
             </span>
+
+            {/* Primary Clock In / Clock Out Action */}
+            <div className="pt-1">
+              <VisitClockControl
+                visit={visit}
+                evvRecordId={evvRecordId}
+                onClockIn={(recordId) => {
+                  setEvvRecordId(recordId);
+                  void refetch();
+                }}
+                onClockOut={() => {
+                  void refetch();
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -432,16 +460,41 @@ export const VisitDetailPage: React.FC = () => {
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
                 Emergency Contact
               </p>
-              <div className="text-xs text-gray-700 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
-                <p className="font-bold text-gray-900">Sarah Thompson (Daughter)</p>
-                <a
-                  href="tel:555-0102"
-                  className="text-blue-600 hover:underline flex items-center gap-1 mt-1 font-medium"
-                >
-                  <Phone className="w-3 h-3" />
-                  (555) 0102
-                </a>
-              </div>
+              {client?.emergencyContacts && client.emergencyContacts.length > 0 ? (
+                <div className="space-y-2">
+                  {client.emergencyContacts.map((contact) => (
+                    <div
+                      key={contact.id || contact.name}
+                      className="text-xs text-gray-700 bg-gray-50 p-2.5 rounded-lg border border-gray-200"
+                    >
+                      <div className="flex justify-between items-start">
+                        <p className="font-bold text-gray-900">
+                          {contact.name} {contact.relationship ? `(${contact.relationship})` : ''}
+                        </p>
+                        {contact.isPrimary && (
+                          <span className="text-[10px] font-semibold bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
+                            Primary
+                          </span>
+                        )}
+                      </div>
+                      {contact.phone?.number && (
+                        <a
+                          href={`tel:${contact.phone.number}`}
+                          className="text-blue-600 hover:underline flex items-center gap-1 mt-1 font-medium"
+                        >
+                          <Phone className="w-3 h-3" />
+                          {contact.phone.number}
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-xs text-gray-700 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+                  <p className="font-bold text-gray-900">No Emergency Contact Listed</p>
+                  <p className="text-gray-400 mt-0.5">Please update client file with emergency contacts.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

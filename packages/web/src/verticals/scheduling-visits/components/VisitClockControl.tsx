@@ -68,6 +68,20 @@ function getCurrentPosition(): Promise<EVVLocationInput> {
   });
 }
 
+/** Returns whether the logged-in user is an administrator or coordinator with clocking authority */
+function isUserAdminOrCoordinator(hasAnyRole: (roles: string[]) => boolean): boolean {
+  return hasAnyRole([
+    'SUPER_ADMIN',
+    'ORG_ADMIN',
+    'BRANCH_ADMIN',
+    'ADMIN',
+    'ADMINISTRATOR',
+    'COORDINATOR',
+    'SCHEDULER',
+    'SUPERVISOR',
+  ]);
+}
+
 /** Returns whether the logged-in user is allowed to clock in/out this visit */
 function canUserClockInOut(
   userId: string | undefined,
@@ -75,7 +89,7 @@ function canUserClockInOut(
   hasAnyRole: (roles: string[]) => boolean
 ): boolean {
   // Admins / coordinators can always clock
-  if (hasAnyRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN', 'COORDINATOR'])) {
+  if (isUserAdminOrCoordinator(hasAnyRole)) {
     return true;
   }
   // Assigned caregiver
@@ -191,6 +205,7 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
   const { data: evvRecord, refetch: refetchEvvRecord } = useEVVRecord(evvRecordId);
 
   // ---- Permission / state checks ----
+  const isAdmin = isUserAdminOrCoordinator(hasAnyRole);
   const canClock = canUserClockInOut(user?.id, visit, hasAnyRole);
 
   const state = visit.address?.state;
@@ -211,12 +226,13 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
   const isComplete =
     evvRecord?.recordStatus === 'COMPLETE' || isCompleted;
 
+  // Admins can clock in/out regardless of the strict grace-period window
   const clockInEnabled =
     canClock &&
     !isClockedIn &&
     !isComplete &&
     isClockableStatus &&
-    withinWindow;
+    (withinWindow || isAdmin);
 
   const clockOutEnabled = canClock && isClockedIn && !isComplete;
 
@@ -226,19 +242,26 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
   // ---- Clock In execution ----
   const executeClockIn = (location: EVVLocationInput, overrideReason?: string) => {
     if (!user?.id) {
-      toast.error('Unable to determine caregiver identity — please sign in again');
+      toast.error('Unable to determine user identity — please sign in again');
       return;
     }
 
-    const notes = overrideReason ? `MANUAL_OVERRIDE: ${overrideReason}` : undefined;
+    // When admin clocks in on behalf of caregiver, pass assignedCaregiverId so EVV/visit matches
+    const effectiveCaregiverId = visit.assignedCaregiverId || user.id;
+    const adminNote = isAdmin && visit.assignedCaregiverId && visit.assignedCaregiverId !== user.id
+      ? ` [Admin Clock-In by user ${user.id}]`
+      : '';
+    const combinedOverride = overrideReason
+      ? `MANUAL_OVERRIDE: ${overrideReason}${adminNote}`
+      : adminNote ? `ADMIN_ENTRY: Clock-in recorded by Admin${adminNote}` : undefined;
 
     clockIn.mutate(
       {
         visitId: visit.id,
-        caregiverId: user.id,
+        caregiverId: effectiveCaregiverId,
         location,
         deviceInfo: getBrowserDeviceInfo(),
-        notes,
+        notes: combinedOverride,
       },
       {
         onSuccess: (result) => {
@@ -298,18 +321,22 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
       return;
     }
 
-    const completionNotes = overrideReason
-      ? `MANUAL_OVERRIDE: ${overrideReason}`
-      : undefined;
+    const effectiveCaregiverId = visit.assignedCaregiverId || user.id;
+    const adminNote = isAdmin && visit.assignedCaregiverId && visit.assignedCaregiverId !== user.id
+      ? ` [Admin Clock-Out by user ${user.id}]`
+      : '';
+    const combinedOverride = overrideReason
+      ? `MANUAL_OVERRIDE: ${overrideReason}${adminNote}`
+      : adminNote ? `ADMIN_ENTRY: Clock-out recorded by Admin${adminNote}` : undefined;
 
     clockOut.mutate(
       {
         id: evvRecordId,
         visitId: visit.id,
-        caregiverId: user.id,
+        caregiverId: effectiveCaregiverId,
         location,
         deviceInfo: getBrowserDeviceInfo(),
-        completionNotes,
+        completionNotes: combinedOverride,
         tasksCompleted: visit.tasksCompleted,
         tasksTotal: visit.tasksTotal,
       },
@@ -417,11 +444,20 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
           </div>
         )}
 
-        {!withinWindow && isClockableStatus && !isClockedIn && (
+        {!withinWindow && !isAdmin && isClockableStatus && !isClockedIn && (
           <div className="flex items-start gap-1.5 rounded-md bg-amber-50 border border-amber-200 px-2.5 py-1.5 text-xs text-amber-800">
             <Clock className="h-3.5 w-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
             <span>
               Outside clock-in window ({gracePeriodMinutes} min grace — {state ?? 'Default'})
+            </span>
+          </div>
+        )}
+
+        {!withinWindow && isAdmin && isClockableStatus && !isClockedIn && (
+          <div className="flex items-start gap-1.5 rounded-md bg-blue-50 border border-blue-200 px-2.5 py-1.5 text-xs text-blue-800">
+            <Clock className="h-3.5 w-3.5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <span>
+              Admin Override Active ({gracePeriodMinutes} min grace window bypassed)
             </span>
           </div>
         )}
@@ -461,12 +497,12 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
             leftIcon={<LogIn className="h-4 w-4" />}
             className="min-h-[44px] w-full sm:w-auto whitespace-nowrap"
             title={
-              !withinWindow
+              !withinWindow && !isAdmin
                 ? `Clock-in opens ${gracePeriodMinutes} min before scheduled start`
                 : undefined
             }
           >
-            {busy ? 'Locating…' : 'Clock In'}
+            {busy ? 'Locating…' : isAdmin ? 'Clock In (Admin)' : 'Clock In'}
           </Button>
         )}
 
@@ -479,7 +515,7 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
             leftIcon={<LogOut className="h-4 w-4" />}
             className="min-h-[44px] w-full sm:w-auto whitespace-nowrap"
           >
-            {busy ? 'Locating…' : 'Clock Out'}
+            {busy ? 'Locating…' : isAdmin ? 'Clock Out (Admin)' : 'Clock Out'}
           </Button>
         )}
       </div>

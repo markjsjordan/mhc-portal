@@ -6,7 +6,7 @@
 export { VisitList, CalendarView } from './pages';
 
 // Components
-export { VisitCard, EditVisitModal } from './components';
+export { VisitCard, EditVisitModal, VisitClockControl } from './components';
 
 // Hooks
 export { useVisits, useVisit, useUpdateVisit, useMyVisits, useVisitApi, useCalendarVisits, useCaregiverAvailability } from './hooks/useVisits';
