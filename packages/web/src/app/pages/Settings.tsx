@@ -7,7 +7,7 @@ import { Button } from '@folkcare/shared-components';
 import { FormField } from '@/components/forms/FormField';
 import { useApiClient } from '@/core/hooks';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { User, Lock, Bell, Users, UserPlus, Mail, Clock, CheckCircle, XCircle, Trash2, Copy } from 'lucide-react';
+import { User, Lock, Bell, Users, UserPlus, Mail, Clock, CheckCircle, XCircle, Trash2, Copy, Pencil } from 'lucide-react';
 
 type SettingsTab = 'profile' | 'account' | 'preferences' | 'team';
 
@@ -539,13 +539,157 @@ const inviteSchema = z.object({
 
 type InviteFormData = z.infer<typeof inviteSchema>;
 
+const editMemberSchema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Please enter a valid email address'),
+  role: z.enum(['ORG_ADMIN', 'BRANCH_ADMIN', 'COORDINATOR', 'CAREGIVER', 'BILLING', 'SCHEDULER', 'NURSE_RN']),
+});
+
+type EditMemberFormData = z.infer<typeof editMemberSchema>;
+
+interface EditMemberModalProps {
+  readonly member: TeamMember;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
+  readonly onSave: (id: string, data: EditMemberFormData) => Promise<void>;
+  readonly isLoading: boolean;
+  readonly error: string | null;
+}
+
+function EditMemberModal({
+  member,
+  isOpen,
+  onClose,
+  onSave,
+  isLoading,
+  error,
+}: EditMemberModalProps) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<EditMemberFormData>({
+    resolver: zodResolver(editMemberSchema as any),
+    defaultValues: {
+      firstName: member.firstName,
+      lastName: member.lastName,
+      email: member.email,
+      role: (member.roles[0] as EditMemberFormData['role']) ?? 'CAREGIVER',
+    },
+  });
+
+  if (!isOpen) return null;
+
+  const onSubmit = async (data: EditMemberFormData) => {
+    await onSave(member.id, data);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="edit-member-modal-title">
+      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={onClose} />
+        <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        <div className="inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+          <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+            <h3 id="edit-member-modal-title" className="text-lg font-medium text-gray-900">
+              Edit Team Member
+            </h3>
+            <button
+              type="button"
+              className="text-gray-400 hover:text-gray-500"
+              onClick={onClose}
+              aria-label="Close modal"
+            >
+              <span className="sr-only">Close</span>
+              &times;
+            </button>
+          </div>
+
+          <div className="mt-4">
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-600">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={(e) => { void handleSubmit(onSubmit)(e); }} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  name="firstName"
+                  label="First Name"
+                  type="text"
+                  register={register}
+                  errors={errors}
+                  required
+                />
+                <FormField
+                  name="lastName"
+                  label="Last Name"
+                  type="text"
+                  register={register}
+                  errors={errors}
+                  required
+                />
+              </div>
+              <FormField
+                name="email"
+                label="Email Address"
+                type="email"
+                register={register}
+                errors={errors}
+                required
+              />
+              <FormField
+                name="role"
+                label="Role"
+                type="select"
+                register={register}
+                errors={errors}
+                options={[
+                  { value: 'CAREGIVER', label: 'Caregiver' },
+                  { value: 'NURSE_RN', label: 'Registered Nurse (RN)' },
+                  { value: 'COORDINATOR', label: 'Care Coordinator' },
+                  { value: 'SCHEDULER', label: 'Scheduler' },
+                  { value: 'BILLING', label: 'Billing Specialist' },
+                  { value: 'BRANCH_ADMIN', label: 'Branch Administrator' },
+                  { value: 'ORG_ADMIN', label: 'Organization Administrator' },
+                ]}
+                required
+              />
+              <div className="flex justify-end gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  isLoading={isLoading}
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps) {
   const apiClient = useApiClient();
   const queryClient = useQueryClient();
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [generatedInviteUrl, setGeneratedInviteUrl] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [editMemberError, setEditMemberError] = useState<string | null>(null);
 
   // Fetch team members
   const { data: teamMembers, isLoading: isLoadingTeam } = useQuery({
@@ -636,6 +780,28 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
       void queryClient.invalidateQueries({ queryKey: ['invitations', organizationId] });
     },
     onError: (error: Error) => {
+      onError(error.message);
+    },
+  });
+
+  // Update team member mutation
+  const updateMemberMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: EditMemberFormData }) => {
+      return await apiClient.put(`/api/organizations/${organizationId}/users/${id}`, {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        roles: [data.role],
+      });
+    },
+    onSuccess: () => {
+      setEditMemberError(null);
+      setEditingMember(null);
+      onSuccess('Team member updated successfully');
+      void queryClient.invalidateQueries({ queryKey: ['teamMembers', organizationId] });
+    },
+    onError: (error: Error) => {
+      setEditMemberError(error.message);
       onError(error.message);
     },
   });
@@ -757,6 +923,18 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                     >
                       {member.status}
                     </span>
+                    <button
+                      type="button"
+                      className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      onClick={() => {
+                        setEditMemberError(null);
+                        setEditingMember(member);
+                      }}
+                      title="Edit member"
+                      aria-label={`Edit ${member.firstName} ${member.lastName}`}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -982,6 +1160,23 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
             </div>
           </div>
         </div>
+      )}
+      {/* Edit Team Member Modal */}
+      {editingMember && (
+        <EditMemberModal
+          key={editingMember.id}
+          member={editingMember}
+          isOpen={true}
+          onClose={() => {
+            setEditingMember(null);
+            setEditMemberError(null);
+          }}
+          onSave={async (id, data) => {
+            await updateMemberMutation.mutateAsync({ id, data });
+          }}
+          isLoading={updateMemberMutation.isPending}
+          error={editMemberError}
+        />
       )}
     </div>
   );

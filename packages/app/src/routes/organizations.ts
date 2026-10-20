@@ -634,6 +634,67 @@ export function createOrganizationRouter(db: Database): Router {
   );
 
   /**
+   * PUT /api/organizations/:id/users/:userId
+   * Update a team member's information and roles
+   */
+  router.put('/organizations/:id/users/:userId',
+    authMiddleware.requireAuth,
+    authMiddleware.requireSameOrganization('id'),
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']),
+    async (req: Request, res: Response): Promise<void> => {
+      try {
+        const organizationId = req.params['id'];
+        const userId = req.params['userId'];
+        if (organizationId === undefined || organizationId.length === 0 || userId === undefined || userId.length === 0) {
+          res.status(400).json({
+            success: false,
+            error: 'Organization ID and User ID are required',
+          });
+          return;
+        }
+
+        const { firstName, lastName, email, roles } = req.body;
+        const currentUserId = req.user?.userId ?? '00000000-0000-0000-0000-000000000000';
+
+        const updatedUser = await organizationService.updateOrganizationUser(
+          organizationId,
+          userId,
+          { firstName, lastName, email, roles },
+          currentUserId
+        );
+
+        res.json({
+          success: true,
+          data: updatedUser,
+        });
+      } catch (error) {
+        if (error instanceof ValidationError) {
+          res.status(400).json({
+            success: false,
+            error: error.message,
+            code: error.code,
+          });
+          return;
+        }
+
+        if (error instanceof NotFoundError) {
+          res.status(404).json({
+            success: false,
+            error: error.message,
+          });
+          return;
+        }
+
+        console.error('Update organization user error:', error);
+        res.status(500).json({
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to update team member',
+        });
+      }
+    }
+  );
+
+  /**
    * POST /api/organizations/:id/invitations/:invitationId/resend
    * Resend an invitation
    */

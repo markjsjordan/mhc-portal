@@ -5,7 +5,7 @@
  */
 
 import { randomBytes, pbkdf2Sync } from '../utils/crypto';
-import { UUID, ValidationError, ConflictError, NotFoundError } from '../types/base';
+import { UUID, ValidationError, ConflictError, NotFoundError, Role } from '../types/base';
 import {
   Organization,
   CreateOrganizationRequest,
@@ -29,6 +29,13 @@ export interface TeamMember {
   createdAt: Date;
 }
 
+export interface UpdateTeamMemberRequest {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  roles?: Role[];
+}
+
 export interface IOrganizationService {
   registerOrganization(request: CreateOrganizationRequest): Promise<{
     organization: Organization;
@@ -36,6 +43,12 @@ export interface IOrganizationService {
   }>;
   getOrganizationById(id: UUID): Promise<Organization>;
   getOrganizationUsers(organizationId: UUID): Promise<TeamMember[]>;
+  updateOrganizationUser(
+    organizationId: UUID,
+    userId: UUID,
+    updates: UpdateTeamMemberRequest,
+    updatedBy: UUID
+  ): Promise<TeamMember>;
   
   // Invitation management
   createInvitation(
@@ -417,6 +430,40 @@ export class OrganizationService implements IOrganizationService {
       status: u.status,
       createdAt: new Date(),
     }));
+  }
+
+  async updateOrganizationUser(
+    organizationId: UUID,
+    userId: UUID,
+    updates: UpdateTeamMemberRequest,
+    updatedBy: UUID
+  ): Promise<TeamMember> {
+    if (updates.email !== undefined && !this.isValidEmail(updates.email)) {
+      throw new ValidationError('Invalid email address', { email: updates.email });
+    }
+
+    if (updates.firstName?.trim().length === 0) {
+      throw new ValidationError('First name cannot be empty');
+    }
+
+    if (updates.lastName?.trim().length === 0) {
+      throw new ValidationError('Last name cannot be empty');
+    }
+
+    if (updates.roles?.length === 0) {
+      throw new ValidationError('At least one role must be assigned');
+    }
+
+    const updatedUser = await this.userRepo.updateUser(userId, organizationId, updates, updatedBy);
+    return {
+      id: updatedUser.id,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      email: updatedUser.email,
+      roles: updatedUser.roles,
+      status: updatedUser.status,
+      createdAt: new Date(),
+    };
   }
 
   async resendInvitation(invitationId: UUID, organizationId: UUID, resendBy: UUID): Promise<void> {

@@ -212,4 +212,65 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
     expect(roleSelect).toContainHTML('Registered Nurse (RN)');
     expect(screen.getByRole('option', { name: 'Registered Nurse (RN)' })).toHaveValue('NURSE_RN');
   });
+
+  it('allows an admin to open edit modal, change team member info and role, and submit update', async () => {
+    mockApiClient.put.mockResolvedValueOnce({
+      success: true,
+      data: {
+        id: 'user-admin-1',
+        firstName: 'Jane',
+        lastName: 'Doe',
+        email: 'jane.doe@folkcare.example',
+        roles: ['COORDINATOR'],
+        status: 'ACTIVE',
+      },
+    });
+
+    renderSettings();
+
+    // Switch to Team tab
+    const teamTab = await screen.findByRole('button', { name: /Team/i });
+    fireEvent.click(teamTab);
+
+    // Verify member is listed
+    await screen.findByText('Admin User');
+
+    // Click Edit button for Admin User
+    const editBtn = screen.getByRole('button', { name: /Edit Admin User/i });
+    fireEvent.click(editBtn);
+
+    // Verify Edit Team Member modal appears
+    expect(screen.getByRole('heading', { name: 'Edit Team Member' })).toBeInTheDocument();
+
+    // Verify pre-filled values
+    const firstNameInput = screen.getByLabelText(/First Name/i);
+    const lastNameInput = screen.getByLabelText(/Last Name/i);
+    const emailInput = screen.getByLabelText(/Email Address/i);
+    const roleSelect = screen.getByLabelText(/Role/i);
+
+    expect(firstNameInput).toHaveValue('Admin');
+    expect(lastNameInput).toHaveValue('User');
+    expect(emailInput).toHaveValue('admin@folkcare.example');
+
+    // Change fields
+    fireEvent.change(firstNameInput, { target: { value: 'Jane' } });
+    fireEvent.change(lastNameInput, { target: { value: 'Doe' } });
+    fireEvent.change(emailInput, { target: { value: 'jane.doe@folkcare.example' } });
+    fireEvent.change(roleSelect, { target: { value: 'COORDINATOR' } });
+
+    // Submit form
+    fireEvent.click(screen.getByRole('button', { name: /Save Changes/i }));
+
+    await waitFor(() => {
+      expect(mockApiClient.put).toHaveBeenCalledWith(
+        '/api/organizations/org-123/users/user-admin-1',
+        {
+          firstName: 'Jane',
+          lastName: 'Doe',
+          email: 'jane.doe@folkcare.example',
+          roles: ['COORDINATOR'],
+        }
+      );
+    });
+  });
 });
