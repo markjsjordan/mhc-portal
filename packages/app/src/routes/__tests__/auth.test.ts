@@ -109,7 +109,8 @@ describe('Authentication Routes', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data.user).toEqual(mockUser);
-      expect(response.body.data.tokens).toEqual(mockTokens);
+      expect(response.body.data.tokens.accessToken).toBe(mockTokens.accessToken);
+      expect(response.body.data.tokens.refreshToken).toBeUndefined();
       expect(mockAuthService.authenticateWithGoogle).toHaveBeenCalledWith(
         'valid-google-id-token',
         undefined
@@ -240,7 +241,8 @@ describe('Authentication Routes', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data.user).toEqual(mockUser);
-      expect(response.body.data.tokens).toEqual(mockTokens);
+      expect(response.body.data.tokens.accessToken).toBe(mockTokens.accessToken);
+      expect(response.body.data.tokens.refreshToken).toBeUndefined();
 
       // Verify audit logging parameters
       // eslint-disable-next-line sonarjs/no-hardcoded-passwords

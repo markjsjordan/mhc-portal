@@ -21,6 +21,31 @@ import {
   AuthenticationError 
 } from '@folkcare/core';
 
+function setRefreshTokenCookie(res: Response, refreshToken: string): void {
+  const envExpiry = process.env.JWT_REFRESH_EXPIRATION;
+  const expiryStr = envExpiry ? String(envExpiry) : '7d';
+  const match = /^(\d+)([smhd])$/.exec(expiryStr);
+  let maxAge = 7 * 24 * 60 * 60 * 1000; // Default 7 days
+  if (match) {
+    const value = parseInt(match[1], 10);
+    const unit = match[2] as string;
+    const multipliers: Record<string, number> = {
+      s: 1000,
+      m: 60 * 1000,
+      h: 60 * 60 * 1000,
+      d: 24 * 60 * 60 * 1000,
+    };
+    maxAge = value * (multipliers[unit] || 1000);
+  }
+  res.cookie('mhc_rt', refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/api/auth',
+    maxAge,
+  });
+}
+
 export function createAuthRouter(db: Database): Router {
   const router = Router();
   const authService = new AuthService(db);
@@ -113,9 +138,18 @@ export function createAuthRouter(db: Database): Router {
         organizationId as string
       );
 
+      // Set HttpOnly refresh token cookie
+      setRefreshTokenCookie(res, result.tokens.refreshToken);
+
       return res.json({
         success: true,
-        data: result
+        data: {
+          user: result.user,
+          tokens: {
+            accessToken: result.tokens.accessToken,
+            refreshToken: result.tokens.refreshToken, // Keep for mobile compatibility
+          },
+        },
       });
     } catch (error) {
       if (error instanceof ValidationError) {
@@ -240,9 +274,18 @@ export function createAuthRouter(db: Database): Router {
         userAgent
       );
 
+      // Set HttpOnly refresh token cookie
+      setRefreshTokenCookie(res, result.tokens.refreshToken);
+
       return res.json({
         success: true,
-        data: result
+        data: {
+          user: result.user,
+          tokens: {
+            accessToken: result.tokens.accessToken,
+            refreshToken: result.tokens.refreshToken, // Keep for mobile compatibility
+          },
+        },
       });
     } catch (error) {
       if (error instanceof AuthenticationError) {
@@ -311,10 +354,17 @@ export function createAuthRouter(db: Database): Router {
    */
   router.post('/refresh', async (req: Request, res: Response) => {
     try {
-      const { refreshToken } = req.body;
+      // Read refresh token from cookie first, fall back to body for mobile
+      const cookieToken = req.cookies?.['mhc_rt'] as string | undefined;
+      const bodyToken = req.body?.refreshToken as string | undefined;
+      const refreshToken = cookieToken ?? bodyToken;
 
        
       if (!refreshToken || typeof refreshToken !== 'string') {
+        // Clear cookie if present but invalid
+        if (cookieToken !== undefined) {
+          res.clearCookie('mhc_rt', { path: '/api/auth' });
+        }
         return res.status(400).json({
           success: false,
           error: 'Refresh token is required',
@@ -324,12 +374,22 @@ export function createAuthRouter(db: Database): Router {
 
       const result = await authService.refreshToken(refreshToken);
 
+      // Re-set the cookie with new token (rotation)
+      setRefreshTokenCookie(res, result.refreshToken);
+
       return res.json({
         success: true,
-        data: result
+        data: {
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken, // Keep for mobile compatibility
+        },
       });
     } catch (error) {
       const err = error as { message?: string; code?: string; statusCode?: number; name?: string };
+      
+      // Clear cookie on auth failure
+      res.clearCookie('mhc_rt', { path: '/api/auth' });
+      
       if (error instanceof AuthenticationError || err.statusCode === 401 || err.name === 'AuthenticationError') {
         return res.status(401).json({
           success: false,
@@ -376,18 +436,16 @@ export function createAuthRouter(db: Database): Router {
    *       500:
    *         description: Server error
    */
-   router.post('/logout', authMiddleware.requireAuth, async (req: Request, res: Response) => {
+   router.post('/logout', async (req: Request, res: Response) => {
     try {
-       
-      if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          error: 'Not authenticated',
-          code: 'NOT_AUTHENTICATED'
-        });
-      }
+      // Clear the refresh token cookie
+      res.clearCookie('mhc_rt', { path: '/api/auth' });
 
-      await authService.logout(req.user.userId);
+      // If authenticated, invalidate server-side tokens
+       
+      if (req.user) {
+        await authService.logout(req.user.userId);
+      }
 
       return res.json({
         success: true,

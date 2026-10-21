@@ -8,6 +8,11 @@ export interface UserContextHeaders {
   permissions?: string[];
 }
 
+export interface ApiClientOptions {
+  onRefresh?: () => Promise<{ token: string }>;
+  onAuthFailure?: () => void;
+}
+
 export interface ApiClient {
   get<T>(url: string, config?: RequestConfig): Promise<T>;
   post<T>(url: string, data?: unknown, config?: RequestConfig): Promise<T>;
@@ -20,20 +25,27 @@ class ApiClientImpl implements ApiClient {
   private baseUrl: string;
   private getAuthToken: () => string | null;
   private getUserContext: () => UserContextHeaders | null;
+  private onRefresh?: () => Promise<{ token: string }>;
+  private onAuthFailure?: () => void;
+  private refreshPromise: Promise<{ token: string }> | null = null;
 
   constructor(
     baseUrl: string, 
     getAuthToken: () => string | null,
-    getUserContext: () => UserContextHeaders | null
+    getUserContext: () => UserContextHeaders | null,
+    options?: ApiClientOptions
   ) {
     this.baseUrl = baseUrl;
     this.getAuthToken = getAuthToken;
     this.getUserContext = getUserContext;
+    this.onRefresh = options?.onRefresh;
+    this.onAuthFailure = options?.onAuthFailure;
   }
 
   private async request<T>(
     url: string,
-    options: RequestInit & { config?: RequestConfig } = {}
+    options: RequestInit & { config?: RequestConfig } = {},
+    isRetry = false
   ): Promise<T> {
     const { config, ...fetchOptions } = options;
     const method = fetchOptions.method ?? 'GET';
@@ -86,10 +98,38 @@ class ApiClientImpl implements ApiClient {
               const response = await fetch(`${this.baseUrl}${url}`, {
                 ...fetchOptions,
                 headers,
+                credentials: config?.credentials ?? 'same-origin',
                 ...(config?.signal !== undefined && { signal: config.signal }),
               });
 
               if (!response.ok) {
+                // Handle 401 with refresh/retry (but not for /api/auth/* endpoints)
+                if (
+                  response.status === 401 &&
+                  !isRetry &&
+                  !url.startsWith('/api/auth/') &&
+                  this.onRefresh
+                ) {
+                  try {
+                    // Single-flight refresh: reuse existing promise if one is in flight
+                    if (!this.refreshPromise) {
+                      this.refreshPromise = this.onRefresh();
+                    }
+                    await this.refreshPromise;
+                    this.refreshPromise = null;
+
+                    // Retry the original request exactly once with new token
+                    return this.request<T>(url, options, true);
+                  } catch (refreshError) {
+                    // Refresh failed - clear auth and redirect
+                    this.refreshPromise = null;
+                    if (this.onAuthFailure) {
+                      this.onAuthFailure();
+                    }
+                    throw refreshError;
+                  }
+                }
+
                 const error: ApiError = await response.json().catch(() => ({
                   message: response.statusText,
                   code: response.status.toString(),
@@ -113,7 +153,7 @@ class ApiClientImpl implements ApiClient {
               initialDelayMs: 1000,
               maxDelayMs: 10000,
               maxJitterMs: 1000,
-              // Don't retry 429 for auth endpoints - user should see immediate feedback
+              // Don't retry 401 or 429 for auth endpoints - user should see immediate feedback
               retryableStatuses: url.includes('/auth/') ? [500, 502, 503, 504] : [429, 500, 502, 503, 504],
               onRetry: (attempt, delayMs, error) => {
                 console.warn(
@@ -181,7 +221,8 @@ class ApiClientImpl implements ApiClient {
 export const createApiClient = (
   baseUrl: string,
   getAuthToken: () => string | null,
-  getUserContext?: () => UserContextHeaders | null
+  getUserContext?: () => UserContextHeaders | null,
+  options?: ApiClientOptions
 ): ApiClient => {
-  return new ApiClientImpl(baseUrl, getAuthToken, getUserContext || (() => null));
+  return new ApiClientImpl(baseUrl, getAuthToken, getUserContext || (() => null), options);
 };

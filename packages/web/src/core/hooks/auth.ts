@@ -65,6 +65,7 @@ export const useAuthStore = create<AuthStore>()(
     {
       name: 'auth-storage',
       storage: safeStorage,
+      partialize: (state) => ({ user: state.user }), // Only persist user, keep token in memory
     }
   )
 );

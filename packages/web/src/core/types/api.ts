@@ -24,6 +24,8 @@ export interface RequestConfig {
   signal?: AbortSignal;
   /** Parse the body as text (e.g. EDI or CSV downloads) or a Blob (e.g. PDFs) instead of JSON. */
   responseType?: 'json' | 'text' | 'blob';
+  /** Include credentials (cookies) in cross-origin requests. Default: 'same-origin' */
+  credentials?: RequestCredentials;
 }
 
 export type SortDirection = 'asc' | 'desc';

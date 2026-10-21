@@ -105,17 +105,10 @@ export async function getSyncStatus(): Promise<{
  * Get auth token from storage
  */
 function getAuthToken(): string {
-  // Try localStorage first (web)
-  if (typeof window !== 'undefined' && window.localStorage) {
-    const token = window.localStorage.getItem('authToken');
-    if (token) return token;
-  }
-
-  // Try sessionStorage as fallback
-  if (typeof window !== 'undefined' && window.sessionStorage) {
-    const sessionToken = window.sessionStorage.getItem('authToken');
-    if (sessionToken) return sessionToken;
-  }
+  // Use zustand auth store
+  const { useAuthStore } = require('../hooks/auth');
+  const token = useAuthStore.getState().token;
+  if (token) return token;
 
   throw new Error('No auth token found');
 }
