@@ -240,7 +240,7 @@ export class CaregiverService {
    */
   async searchCaregivers(
     filters: CaregiverSearchFilters,
-    pagination: { page: number; limit: number },
+    pagination: { page: number; limit: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
     context: UserContext
   ): Promise<PaginatedResult<Caregiver>> {
     this.checkPermission(context, 'caregivers:read');

@@ -1,13 +1,13 @@
 /**
  * Login As Caregiver Modal
- * Allows admin users to search for and impersonate caregivers
+ * Allows admin users to view and select caregivers to impersonate
  */
 
-import React, { useState, useCallback } from 'react';
-import { Search, X, AlertCircle, Loader } from 'lucide-react';
-import { useApiClient } from '@/core/hooks/api';
-import { useAuth } from '@/core/hooks/auth';
-import type { Caregiver } from '@folkcare/caregiver-staff';
+import React, { useState, useCallback, useEffect } from 'react';
+import { X, AlertCircle, Loader, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useApiClient } from '@/core/hooks/api.js';
+import { useAuth } from '@/core/hooks/auth.js';
+import type { CaregiverListItem, PaginatedCaregivers } from '@/verticals/caregivers/types/index.js';
 
 interface LoginAsModalProps {
   isOpen: boolean;
@@ -15,81 +15,86 @@ interface LoginAsModalProps {
   onImpersonateStart: (accessToken: string, caregiver: { id: string; email: string; name: string }) => void;
 }
 
-interface SearchResultCaregiver extends Caregiver {
-  displayName?: string;
-}
+type SortColumn = 'first_name' | 'last_name' | 'email';
+type SortOrder = 'asc' | 'desc';
 
 export const LoginAsModal: React.FC<LoginAsModalProps> = ({
   isOpen,
   onClose,
   onImpersonateStart,
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [results, setResults] = useState<SearchResultCaregiver[]>([]);
+  const [caregivers, setCaregivers] = useState<CaregiverListItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCaregiverId, setSelectedCaregiverId] = useState<string | null>(null);
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [impersonationError, setImpersonationError] = useState<string | null>(null);
 
+  // Pagination & Sorting state
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [sortBy, setSortBy] = useState<SortColumn>('last_name');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+
   const apiClient = useApiClient();
   const { user } = useAuth();
 
-  // Debounce search
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const fetchCaregivers = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const queryString = new URLSearchParams({
+        page: page.toString(),
+        limit: '20',
+        sortBy,
+        sortOrder,
+      }).toString();
 
-  const handleSearch = useCallback(
-    async (query: string) => {
-      if (searchTimeout) clearTimeout(searchTimeout);
-      setSearchQuery(query);
-      setError(null);
-      setResults([]);
+      const response = await apiClient.get<PaginatedCaregivers>(`/api/caregivers?${queryString}`);
 
-      if (!query.trim()) {
-        return;
+      if (response && Array.isArray(response.items)) {
+        setCaregivers(response.items);
+        setTotal(response.total ?? 0);
+        setTotalPages(response.totalPages ?? 1);
+      } else {
+        setCaregivers([]);
+        setTotal(0);
+        setTotalPages(1);
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch caregivers');
+      setCaregivers([]);
+      setTotal(0);
+      setTotalPages(1);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiClient, page, sortBy, sortOrder]);
 
-      // Debounce the search request
-      const timeout = setTimeout(() => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        (async () => {
-        setIsLoading(true);
-        try {
-          const queryString = new URLSearchParams({
-            query: query.trim(),
-            limit: '20',
-          }).toString();
-          const response = await apiClient.get<{
-            items: SearchResultCaregiver[];
-            pagination?: { page: number; limit: number; total: number };
-          }>(`/api/caregivers?${queryString}`);
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedCaregiverId(null);
+      setError(null);
+      setImpersonationError(null);
+      return;
+    }
 
-          if (response && Array.isArray(response.items)) {
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-            const caregivers = response.items ?? [];
-            // Add display name for easier selection
-            const enriched = caregivers.map((c: SearchResultCaregiver) => ({
-              ...c,
-              displayName: `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() || c.email,
-            }));
-            setResults(enriched);
-          }
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Failed to search caregivers');
-          setResults([]);
-        } finally {
-          setIsLoading(false);
-        }
-        })();
-      }, 300);
+    void fetchCaregivers();
+  }, [isOpen, fetchCaregivers]);
 
-      setSearchTimeout(timeout);
-    },
-    [apiClient, searchTimeout]
-  );
+  const handleSort = useCallback((column: SortColumn) => {
+    if (sortBy === column) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+    setPage(1);
+  }, [sortBy]);
 
   const handleSelectCaregiver = useCallback(
-    async (caregiver: SearchResultCaregiver) => {
+    async (caregiver: CaregiverListItem) => {
       if (!user) return;
 
       setSelectedCaregiverId(caregiver.id);
@@ -131,120 +136,184 @@ export const LoginAsModal: React.FC<LoginAsModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Login As Caregiver</h2>
             <p className="text-sm text-gray-600 mt-1">
-              Search and select a caregiver to impersonate their session
+              Select a caregiver to impersonate their session
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            disabled={isImpersonating}
+            className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
             aria-label="Close modal"
           >
             <X className="h-6 w-6" />
           </button>
         </div>
 
-        {/* Search Bar */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by name, email, or employee number..."
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              disabled={isLoading || isImpersonating}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50"
-            />
-            {isLoading && (
-              <div className="absolute right-3 top-3">
-                <Loader className="h-5 w-5 text-blue-500 animate-spin" />
-              </div>
-            )}
+        {/* Error Message */}
+        {error && (
+          <div className="mx-6 mt-4 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg flex-shrink-0">
+            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-red-700">{error}</p>
           </div>
+        )}
 
-          {/* Error Message */}
-          {error && (
-            <div className="mt-3 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700">{error}</p>
+        {/* Impersonation Error */}
+        {impersonationError && (
+          <div className="mx-6 mt-4 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg flex-shrink-0">
+            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-red-700">{impersonationError}</p>
+          </div>
+        )}
+
+        {/* Table Container - Scrollable body with sticky header */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {isLoading ? (
+            <div className="flex justify-center items-center py-16">
+              <Loader className="h-8 w-8 text-blue-500 animate-spin" />
             </div>
-          )}
-        </div>
-
-        {/* Results List */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {results.length === 0 && !isLoading && searchQuery === '' && (
-            <div className="text-center py-12">
-              <p className="text-gray-500">Start typing to search for a caregiver</p>
-            </div>
-          )}
-
-          {results.length === 0 && !isLoading && searchQuery !== '' && (
-            <div className="text-center py-12">
-              <p className="text-gray-500">No caregivers found matching your search</p>
-            </div>
-          )}
-
-          {isLoading && (
-            <div className="flex justify-center py-12">
-              <Loader className="h-6 w-6 text-blue-500 animate-spin" />
-            </div>
-          )}
-
-          {results.length > 0 && (
-            <div className="space-y-2">
-              {results.map((caregiver) => (
-                <button
-                  key={caregiver.id}
-                  onClick={() => handleSelectCaregiver(caregiver)}
-                  disabled={isImpersonating || selectedCaregiverId === caregiver.id}
-                  className="w-full text-left p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">
-                        {caregiver.displayName}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">{caregiver.email}</p>
-                      {caregiver.employeeNumber && (
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          Employee #{caregiver.employeeNumber}
-                        </p>
+          ) : (
+            <table className="w-full text-left border-collapse">
+              <thead className="sticky top-0 bg-gray-50 z-10 border-b border-gray-200 shadow-sm">
+                <tr>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('first_name')}
+                    aria-sort={sortBy === 'first_name' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>First Name</span>
+                      {sortBy === 'first_name' && (
+                        sortOrder === 'asc' ? (
+                          <ChevronUp className="h-4 w-4 text-blue-600" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-blue-600" />
+                        )
                       )}
                     </div>
-                    {selectedCaregiverId === caregiver.id && isImpersonating && (
-                      <Loader className="h-5 w-5 text-blue-500 animate-spin ml-4" />
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Impersonation Error */}
-          {impersonationError && (
-            <div className="mt-4 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700">{impersonationError}</p>
-            </div>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('last_name')}
+                    aria-sort={sortBy === 'last_name' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Last Name</span>
+                      {sortBy === 'last_name' && (
+                        sortOrder === 'asc' ? (
+                          <ChevronUp className="h-4 w-4 text-blue-600" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-blue-600" />
+                        )
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('email')}
+                    aria-sort={sortBy === 'email' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Email</span>
+                      {sortBy === 'email' && (
+                        sortOrder === 'asc' ? (
+                          <ChevronUp className="h-4 w-4 text-blue-600" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-blue-600" />
+                        )
+                      )}
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {caregivers.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-12 text-center text-sm text-gray-500">
+                      No caregivers found
+                    </td>
+                  </tr>
+                ) : (
+                  caregivers.map((caregiver) => {
+                    const isThisCaregiverImpersonating =
+                      selectedCaregiverId === caregiver.id && isImpersonating;
+                    return (
+                      <tr
+                        key={caregiver.id}
+                        onClick={() => !isImpersonating && handleSelectCaregiver(caregiver)}
+                        className={`transition-colors ${
+                          isImpersonating
+                            ? 'cursor-not-allowed opacity-50'
+                            : 'cursor-pointer hover:bg-blue-50'
+                        }`}
+                      >
+                        <td className="px-6 py-3.5 text-sm text-gray-900 font-medium whitespace-nowrap">
+                          {caregiver.firstName || '—'}
+                        </td>
+                        <td className="px-6 py-3.5 text-sm text-gray-900 font-medium whitespace-nowrap">
+                          {caregiver.lastName || '—'}
+                        </td>
+                        <td className="px-6 py-3.5 text-sm text-gray-600 whitespace-nowrap">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate">{caregiver.email || '—'}</span>
+                            {isThisCaregiverImpersonating && (
+                              <Loader className="h-4 w-4 text-blue-500 animate-spin flex-shrink-0" />
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           )}
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            disabled={isImpersonating}
-            className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Cancel
-          </button>
+        <div className="p-4 sm:p-6 border-t border-gray-200 flex items-center justify-between flex-shrink-0 bg-white">
+          <div className="text-sm text-gray-600">
+            Page {page} of {totalPages || 1}
+            {total > 0 && ` (${total} total)`}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1 || isLoading || isImpersonating}
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Previous page"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span>Prev</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages || isLoading || isImpersonating}
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Next page"
+            >
+              <span>Next</span>
+              <ChevronRight className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isImpersonating}
+              className="ml-2 px-4 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
     </div>
