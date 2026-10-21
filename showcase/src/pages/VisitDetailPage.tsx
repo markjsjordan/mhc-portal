@@ -23,6 +23,7 @@ import { ShowcaseLayout } from '../components/ShowcaseLayout';
 import { useVisitProvider } from '@/core/providers/context';
 import { getVisitTypeConfig } from '../config/visitTypeConfig.js';
 import type { Visit, VisitTask } from '../types/showcase-types.js';
+import { deriveShowcaseTasks } from '../utils/visitTaskUtils.js';
 
 export const VisitDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -40,8 +41,10 @@ export const VisitDetailPage: React.FC = () => {
   const [tasks, setTasks] = useState<VisitTask[]>([]);
 
   React.useEffect(() => {
-    if (visit?.tasks) {
+    if (visit?.tasks && visit.tasks.length > 0) {
       setTasks(visit.tasks);
+    } else if (visit) {
+      setTasks(deriveShowcaseTasks(visit));
     }
   }, [visit]);
 
@@ -471,12 +474,30 @@ export const VisitDetailPage: React.FC = () => {
                   </span>
                   <span
                     className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                      visit.evv?.geofenceStatus === 'VERIFIED'
+                      visit.status === 'COMPLETED' || visit.evv?.geofenceStatus === 'VERIFIED'
                         ? 'bg-emerald-600 text-white'
-                        : 'bg-amber-100 text-amber-800'
+                        : visit.evv?.geofenceStatus === 'OUT_OF_BOUNDS'
+                        ? 'bg-red-100 text-red-800 border border-red-200'
+                        : visit.status === 'IN_PROGRESS'
+                        ? 'bg-indigo-600 text-white'
+                        : visit.status === 'CANCELLED'
+                        ? 'bg-red-100 text-red-800 border border-red-200'
+                        : visit.status === 'UNASSIGNED'
+                        ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                        : 'bg-amber-100 text-amber-800 border border-amber-200'
                     }`}
                   >
-                    {visit.evv?.geofenceStatus || 'PENDING'}
+                    {visit.status === 'COMPLETED'
+                      ? 'VERIFIED'
+                      : visit.evv?.geofenceStatus === 'OUT_OF_BOUNDS'
+                      ? 'OUT OF BOUNDS'
+                      : visit.status === 'IN_PROGRESS'
+                      ? 'IN PROGRESS'
+                      : visit.status === 'CANCELLED'
+                      ? 'CANCELLED'
+                      : visit.status === 'UNASSIGNED'
+                      ? 'UNASSIGNED'
+                      : visit.evv?.geofenceStatus || 'PENDING'}
                   </span>
                 </div>
 
@@ -484,27 +505,43 @@ export const VisitDetailPage: React.FC = () => {
                   <div>
                     <span className="text-gray-500 block text-[11px]">Method</span>
                     <span className="font-semibold text-gray-800">
-                      {visit.evv?.verificationMethod || 'GPS Mobile App'}
+                      {visit.evv?.verificationMethod === 'GPS'
+                        ? 'GPS Mobile App'
+                        : visit.evv?.verificationMethod === 'TELEPHONY'
+                        ? 'Telephony (IVR)'
+                        : visit.evv?.verificationMethod === 'MANUAL'
+                        ? 'Manual Override'
+                        : visit.evv?.verificationMethod || (visit.status === 'SCHEDULED' || visit.status === 'UNASSIGNED' ? 'GPS Mobile App (Planned)' : 'GPS Mobile App')}
                     </span>
                   </div>
                   <div>
                     <span className="text-gray-500 block text-[11px]">Geofence Accuracy</span>
-                    <span className="font-semibold text-gray-800">
+                    <span
+                      className={`font-semibold ${
+                        visit.evv?.distanceMeters !== undefined && visit.evv.distanceMeters > 100
+                          ? 'text-amber-700'
+                          : 'text-gray-800'
+                      }`}
+                    >
                       {visit.evv?.distanceMeters !== undefined
-                        ? `${visit.evv.distanceMeters}m from client`
-                        : 'Pending arrival'}
+                        ? `${visit.evv.distanceMeters}m from client (${visit.evv.distanceMeters <= 100 ? 'Within 100m' : 'Out of bounds'})`
+                        : visit.evv?.geofenceStatus === 'VERIFIED' || visit.status === 'COMPLETED'
+                        ? 'Verified within 100m'
+                        : visit.status === 'SCHEDULED' || visit.status === 'UNASSIGNED'
+                        ? 'Pending arrival'
+                        : 'Within 100m'}
                     </span>
                   </div>
                   <div>
                     <span className="text-gray-500 block text-[11px]">Actual Clock-In</span>
-                    <span className="font-semibold text-emerald-700">
-                      {visit.actualStartTime || visit.evv?.clockInTime || 'Not started'}
+                    <span className={`font-semibold ${visit.actualStartTime || visit.evv?.clockInTime ? 'text-emerald-700' : 'text-gray-500'}`}>
+                      {visit.actualStartTime || visit.evv?.clockInTime || (visit.status === 'SCHEDULED' || visit.status === 'UNASSIGNED' ? 'Pending' : 'Not started')}
                     </span>
                   </div>
                   <div>
                     <span className="text-gray-500 block text-[11px]">Actual Clock-Out</span>
                     <span className="font-semibold text-gray-800">
-                      {visit.actualEndTime || visit.evv?.clockOutTime || 'In progress / Pending'}
+                      {visit.actualEndTime || visit.evv?.clockOutTime || (visit.status === 'IN_PROGRESS' ? 'In progress' : visit.status === 'SCHEDULED' || visit.status === 'UNASSIGNED' ? 'Pending' : 'Not completed')}
                     </span>
                   </div>
                 </div>

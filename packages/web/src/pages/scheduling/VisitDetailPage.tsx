@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -25,16 +25,13 @@ import { useCaregiver } from '../../verticals/caregivers';
 import { usePermissions } from '@/core/hooks';
 import { getVisitTypeConfig } from './visitTypeConfig';
 import type { Visit } from '../../verticals/scheduling-visits/types';
-
-interface VisitTaskItem {
-  id: string;
-  title: string;
-  category?: string;
-  completed: boolean;
-  required?: boolean;
-  completedAt?: string;
-  notes?: string;
-}
+import { useEVVRecord } from '../../verticals/time-tracking-evv/hooks/useEVVRecords';
+import { useTasks } from '../../verticals/care-plans/hooks/use-care-plans';
+import {
+  deriveVisitTasks,
+  formatTimeString,
+  type VisitTaskItem,
+} from './visitTaskUtils';
 
 const FALLBACK_SCHEDULED_DATE = new Date('2026-10-08T08:30:00.000Z');
 const FALLBACK_ACTUAL_START_TIME = new Date('2026-10-08T08:35:00.000Z');
@@ -44,7 +41,7 @@ export const VisitDetailPage: React.FC = () => {
   const navigate = useNavigate();
 
   const { data: apiVisit, isLoading, refetch } = useVisit(id);
-  const [evvRecordId, setEvvRecordId] = useState<string | undefined>(undefined);
+  const [evvRecordId, setEvvRecordId] = useState<string | undefined>();
 
   // Fallback visit for demo/offline resilience when backend does not have the ID
   const fallbackVisit = useMemo<Visit | null>(() => {
@@ -126,36 +123,158 @@ export const VisitDetailPage: React.FC = () => {
     );
   }, [visit]);
 
-  // Initial task checklist
-  const initialTasks = useMemo<VisitTaskItem[]>(() => {
-    return [
-      { id: 'task-1', title: 'Assist with morning shower and dressing', category: 'Personal Care', completed: true, required: true, completedAt: '08:45 AM' },
-      { id: 'task-2', title: 'Prepare low-sodium breakfast & hydration', category: 'Nutrition', completed: true, required: true, completedAt: '09:10 AM' },
-      { id: 'task-3', title: 'Prompt morning blood pressure medication', category: 'Medication', completed: false, required: true },
-      { id: 'task-4', title: 'Assist with light ambulatory exercises in hallway', category: 'Mobility', completed: false, required: false },
-    ];
-  }, []);
+  const effectiveEvvRecordId = evvRecordId || (visit as any)?.evvRecordId;
+  const { data: evvRecord } = useEVVRecord(effectiveEvvRecordId);
+  const evvData = (visit as any)?.evv;
 
-  const [tasks, setTasks] = useState<VisitTaskItem[]>(initialTasks);
+  const { data: carePlanTasksResult } = useTasks(
+    visit?.id && visit?.clientId
+      ? { visitId: visit.id, clientId: visit.clientId }
+      : undefined
+  );
 
-  useEffect(() => {
-    if (apiVisit && apiVisit.tasksTotal) {
-      // If visit came with specific task count, keep existing initialized list
+  // Dynamic task checklist derived from visit care plan / service type / visit tasks
+  const derivedTasks = useMemo<VisitTaskItem[]>(() => {
+    return deriveVisitTasks(visit, carePlanTasksResult?.items);
+  }, [visit, carePlanTasksResult]);
+
+  const [taskOverrides, setTaskOverrides] = useState<
+    Record<string, { completed: boolean; completedAt?: string }>
+  >({});
+
+  const tasks = useMemo<VisitTaskItem[]>(() => {
+    return derivedTasks.map((t) => {
+      const overrideKey = `${visit?.id ?? ''}:${t.id}`;
+      const override = taskOverrides[overrideKey] ?? taskOverrides[t.id];
+      if (override) {
+        return {
+          ...t,
+          completed: override.completed,
+          completedAt: override.completedAt,
+        };
+      }
+      return t;
+    });
+  }, [derivedTasks, taskOverrides, visit?.id]);
+
+  const clockInDisplay = useMemo(() => {
+    if (evvRecord?.clockInTime) return formatTimeString(evvRecord.clockInTime);
+    if (evvData?.clockInTime) return formatTimeString(evvData.clockInTime);
+    if (visit?.actualStartTime) return formatTimeString(visit.actualStartTime);
+    if (visit?.status === 'SCHEDULED' || visit?.status === 'UNASSIGNED') return 'Pending';
+    return 'Not started';
+  }, [evvRecord, evvData, visit]);
+
+  const clockOutDisplay = useMemo(() => {
+    if (evvRecord?.clockOutTime) return formatTimeString(evvRecord.clockOutTime);
+    if (evvData?.clockOutTime) return formatTimeString(evvData.clockOutTime);
+    if (visit?.actualEndTime) return formatTimeString(visit.actualEndTime);
+    if (visit?.status === 'IN_PROGRESS') return 'In progress';
+    if (visit?.status === 'SCHEDULED' || visit?.status === 'UNASSIGNED') return 'Pending';
+    return 'Not completed';
+  }, [evvRecord, evvData, visit]);
+
+  const evvMethodDisplay = useMemo(() => {
+    const method =
+      (evvRecord?.clockInVerification as any)?.method ||
+      (evvRecord as any)?.verificationMethod ||
+      evvData?.verificationMethod ||
+      (evvRecord?.verificationLevel === 'FULL' ? 'GPS' : evvRecord?.verificationLevel);
+    if (method === 'GPS' || method === 'FULL') return 'GPS Mobile App';
+    if (method === 'PHONE' || method === 'TELEPHONY') return 'Telephony (IVR)';
+    if (method === 'MANUAL') return 'Manual Override';
+    if (method === 'BIOMETRIC') return 'Biometric Verification';
+    if (visit?.status === 'SCHEDULED' || visit?.status === 'UNASSIGNED') return 'GPS Mobile App (Planned)';
+    return 'GPS Mobile App';
+  }, [evvRecord, evvData, visit]);
+
+  const geofenceDisplay = useMemo(() => {
+    const distance =
+      evvRecord?.clockInVerification?.distanceFromAddress ??
+      evvData?.distanceMeters;
+
+    if (distance !== undefined && distance !== null) {
+      const isWithin =
+        evvRecord?.clockInVerification?.isWithinGeofence ??
+        (distance <= 100);
+      return {
+        text: isWithin
+          ? `Within 100m (${Math.round(distance)}m dist)`
+          : `Outside 100m (${Math.round(distance)}m dist)`,
+        isCompliant: isWithin,
+      };
     }
-  }, [apiVisit]);
+
+    if (evvRecord?.clockInVerification?.isWithinGeofence !== undefined) {
+      return {
+        text: evvRecord.clockInVerification.isWithinGeofence ? 'Within 100m (Verified)' : 'Geofence Exception',
+        isCompliant: evvRecord.clockInVerification.isWithinGeofence,
+      };
+    }
+
+    if (evvData?.geofenceStatus === 'VERIFIED') {
+      return { text: 'Within 100m (Verified)', isCompliant: true };
+    }
+    if (evvData?.geofenceStatus === 'OUT_OF_BOUNDS') {
+      return { text: 'Outside Geofence (Exception)', isCompliant: false };
+    }
+
+    if (visit?.status === 'COMPLETED') {
+      return { text: 'Within 100m (Verified)', isCompliant: true };
+    }
+
+    if (visit?.status === 'SCHEDULED' || visit?.status === 'UNASSIGNED') {
+      return { text: 'Pending arrival', isCompliant: true };
+    }
+
+    return { text: 'Within 100m', isCompliant: true };
+  }, [evvRecord, evvData, visit]);
+
+  const evvBadge = useMemo(() => {
+    if (visit?.status === 'COMPLETED') {
+      return {
+        label: 'VERIFIED',
+        className: 'bg-emerald-600 text-white',
+      };
+    }
+    if (visit?.status === 'IN_PROGRESS') {
+      return {
+        label: 'IN PROGRESS',
+        className: 'bg-indigo-600 text-white',
+      };
+    }
+    if (visit?.status === 'CANCELLED') {
+      return {
+        label: 'CANCELLED',
+        className: 'bg-red-100 text-red-800 border border-red-200',
+      };
+    }
+    if (visit?.status === 'UNASSIGNED') {
+      return {
+        label: 'UNASSIGNED',
+        className: 'bg-amber-100 text-amber-800 border border-amber-200',
+      };
+    }
+    return {
+      label: 'PENDING',
+      className: 'bg-amber-100 text-amber-800 border border-amber-200',
+    };
+  }, [visit]);
 
   const handleToggleTask = (taskId: string) => {
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId
-          ? {
-              ...t,
-              completed: !t.completed,
-              completedAt: !t.completed ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined,
-            }
-          : t
-      )
-    );
+    const currentTask = tasks.find((t) => t.id === taskId);
+    if (!currentTask) return;
+    const nextCompleted = !currentTask.completed;
+    const overrideKey = `${visit?.id ?? ''}:${taskId}`;
+    setTaskOverrides((prev) => ({
+      ...prev,
+      [overrideKey]: {
+        completed: nextCompleted,
+        completedAt: nextCompleted
+          ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : undefined,
+      },
+    }));
   };
 
   if (isLoading && !visit) {
@@ -630,19 +749,21 @@ export const VisitDetailPage: React.FC = () => {
                   <Compass className="w-4 h-4 text-emerald-700" />
                   EVV Verification Status
                 </span>
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white">
-                  VERIFIED
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${evvBadge.className}`}>
+                  {evvBadge.label}
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs pt-1">
                 <div>
                   <span className="text-gray-500 block text-[11px]">Method</span>
-                  <span className="font-semibold text-gray-800">GPS Mobile App</span>
+                  <span className="font-semibold text-gray-800">{evvMethodDisplay}</span>
                 </div>
                 <div>
                   <span className="text-gray-500 block text-[11px]">Geofence Status</span>
-                  <span className="font-semibold text-emerald-700">Within 100m (18m dist)</span>
+                  <span className={`font-semibold ${geofenceDisplay.isCompliant ? 'text-emerald-700' : 'text-amber-700'}`}>
+                    {geofenceDisplay.text}
+                  </span>
                 </div>
                 <div>
                   <span className="text-gray-500 block text-[11px]">Scheduled Start</span>
@@ -650,13 +771,21 @@ export const VisitDetailPage: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-gray-500 block text-[11px]">Actual Clock-In</span>
-                  <span className="font-semibold text-emerald-700">08:28 AM</span>
+                  <span className={`font-semibold ${clockInDisplay !== 'Not started' && clockInDisplay !== 'Pending' ? 'text-emerald-700' : 'text-gray-500'}`}>
+                    {clockInDisplay}
+                  </span>
                 </div>
+                {clockOutDisplay && clockOutDisplay !== 'Not completed' && clockOutDisplay !== 'Pending' && (
+                  <div>
+                    <span className="text-gray-500 block text-[11px]">Actual Clock-Out</span>
+                    <span className="font-semibold text-gray-800">{clockOutDisplay}</span>
+                  </div>
+                )}
               </div>
 
-              {visit.actualDuration && (
+              {(visit.actualDuration || evvRecord?.totalDuration) && (
                 <p className="text-[11px] text-emerald-800 pt-1 border-t border-emerald-200/60">
-                  Logged Duration: <strong>{visit.actualDuration} minutes</strong> (Scheduled:{' '}
+                  Logged Duration: <strong>{visit.actualDuration || evvRecord?.totalDuration} minutes</strong> (Scheduled:{' '}
                   {visit.scheduledDuration} min)
                 </p>
               )}

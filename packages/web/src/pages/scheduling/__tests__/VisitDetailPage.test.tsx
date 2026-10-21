@@ -216,4 +216,141 @@ describe('VisitDetailPage', () => {
     expect(screen.getByText('Mark Jordan')).toBeInTheDocument();
     expect(screen.queryByText('Margaret Thompson')).not.toBeInTheDocument();
   });
+
+  it('dynamically derives care tasks and shows 0% progress for a scheduled skilled nursing visit', () => {
+    mockVisitData = {
+      id: 'vis-nursing-1',
+      visitNumber: 'VST-NURS-01',
+      clientId: 'client-nursing',
+      clientFirstName: 'Eleanor',
+      clientLastName: 'Vance',
+      scheduledDate: '2026-10-25',
+      scheduledStartTime: '08:00 AM',
+      scheduledEndTime: '10:00 AM',
+      scheduledDuration: 120,
+      serviceTypeId: 'svc-nursing',
+      serviceTypeName: 'Skilled Nursing & Wound Care',
+      visitType: 'SUPERVISION',
+      status: 'SCHEDULED',
+      assignedCaregiverId: 'cg-1',
+      address: {
+        line1: '100 Nursing Way',
+        city: 'Portland',
+        state: 'OR',
+        postalCode: '97201',
+      },
+    };
+
+    renderPage('vis-nursing-1');
+
+    // Tasks should reflect Skilled Nursing, NOT the hardcoded morning shower
+    expect(screen.getByText(/Clinical assessment of vital signs/i)).toBeInTheDocument();
+    expect(screen.getByText(/Medication administration & reconciliation/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Assist with morning shower and dressing/i)).not.toBeInTheDocument();
+
+    // Progress bar for scheduled visit starts at 0%
+    expect(screen.getByText(/0 of 4 completed \(0%\)/i)).toBeInTheDocument();
+
+    // EVV verification reflects SCHEDULED status with planned method
+    expect(screen.getByText('PENDING')).toBeInTheDocument();
+    expect(screen.getByText('GPS Mobile App (Planned)')).toBeInTheDocument();
+    expect(screen.getByText('Pending arrival')).toBeInTheDocument();
+    expect(screen.getByText('Pending')).toBeInTheDocument(); // actual clock-in
+  });
+
+  it('dynamically renders EVV records, verified status, and completed progress for COMPLETED visits', () => {
+    mockVisitData = {
+      id: 'vis-completed-1',
+      visitNumber: 'VST-COMP-01',
+      clientId: 'client-comp',
+      clientFirstName: 'Robert',
+      clientLastName: 'Chen',
+      scheduledDate: '2026-10-25',
+      scheduledStartTime: '08:30 AM',
+      scheduledEndTime: '11:30 AM',
+      scheduledDuration: 180,
+      actualStartTime: '08:24 AM',
+      actualEndTime: '11:30 AM',
+      actualDuration: 186,
+      serviceTypeId: 'svc-personal-care',
+      serviceTypeName: 'Personal Care & Assistance',
+      visitType: 'REGULAR',
+      status: 'COMPLETED',
+      assignedCaregiverId: 'cg-1',
+      address: {
+        line1: '456 Maple St',
+        city: 'Eugene',
+        state: 'OR',
+        postalCode: '97401',
+      },
+      evv: {
+        verified: true,
+        verificationMethod: 'GPS',
+        geofenceStatus: 'VERIFIED',
+        distanceMeters: 14,
+        clockInTime: '08:24 AM',
+      },
+    } as any;
+
+    renderPage('vis-completed-1');
+
+    // EVV status is VERIFIED
+    expect(screen.getByText('VERIFIED')).toBeInTheDocument();
+    expect(screen.getByText('GPS Mobile App')).toBeInTheDocument();
+    expect(screen.getByText(/Within 100m \(14m dist\)/i)).toBeInTheDocument();
+    expect(screen.getByText('08:24 AM')).toBeInTheDocument();
+
+    // All tasks completed for COMPLETED visit
+    expect(screen.getByText(/4 of 4 completed \(100%\)/i)).toBeInTheDocument();
+  });
+
+  it('interactively toggles tasks and accurately recalculates progress bar', () => {
+    mockVisitData = {
+      id: 'vis-toggle-1',
+      visitNumber: 'VST-TOGGLE-01',
+      clientId: 'client-toggle',
+      clientFirstName: 'Jane',
+      clientLastName: 'Doe',
+      scheduledDate: '2026-10-25',
+      scheduledStartTime: '09:00 AM',
+      scheduledEndTime: '11:00 AM',
+      scheduledDuration: 120,
+      serviceTypeId: 'svc-personal-care',
+      serviceTypeName: 'Personal Care & Assistance',
+      visitType: 'REGULAR',
+      status: 'SCHEDULED',
+      assignedCaregiverId: 'cg-1',
+      address: {
+        line1: '789 Oak Ave',
+        city: 'Portland',
+        state: 'OR',
+        postalCode: '97201',
+      },
+    };
+
+    renderPage('vis-toggle-1');
+
+    // Initially 0 of 4
+    expect(screen.getByText(/0 of 4 completed \(0%\)/i)).toBeInTheDocument();
+
+    // Click first task to complete it
+    const firstTask = screen.getByText(/Assist with morning shower/i);
+    fireEvent.click(firstTask);
+
+    // Progress updates to 1 of 4 (25%)
+    expect(screen.getByText(/1 of 4 completed \(25%\)/i)).toBeInTheDocument();
+
+    // Click second task to complete it
+    const secondTask = screen.getByText(/Prepare low-sodium breakfast/i);
+    fireEvent.click(secondTask);
+
+    // Progress updates to 2 of 4 (50%)
+    expect(screen.getByText(/2 of 4 completed \(50%\)/i)).toBeInTheDocument();
+
+    // Click first task again to uncheck it
+    fireEvent.click(firstTask);
+
+    // Progress updates back to 1 of 4 (25%)
+    expect(screen.getByText(/1 of 4 completed \(25%\)/i)).toBeInTheDocument();
+  });
 });
