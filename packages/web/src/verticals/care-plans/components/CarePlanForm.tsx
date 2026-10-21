@@ -17,7 +17,8 @@ import { useAuth } from '@/core/hooks/auth';
 import { useApiClient } from '@/core/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { useClients, useBranches } from '@/verticals/client-demographics/hooks/index.js';
-import type { CreateCarePlanInput, CarePlanGoal } from '../types';
+import type { CreateCarePlanInput } from '../types';
+import { buildCreateCarePlanPayload } from '../utils/build-create-care-plan-payload.js';
 import { Plus, Trash2 } from 'lucide-react';
 
 const goalSchema = z.object({
@@ -186,18 +187,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
   };
 
   const onFormSubmit = (data: CarePlanFormData) => {
-    onSubmit({
-      ...data,
-      goals: (data.goals ?? []).map((g) => ({
-        name: g.name,
-        description: g.description ?? '',
-        category: g.category ?? '',
-        targetDate: g.targetDate ?? '',
-        status: g.status ?? '',
-        priority: g.priority ?? '',
-      })) as Omit<CarePlanGoal, 'id'>[],
-      interventions: [],
-    });
+    onSubmit(buildCreateCarePlanPayload(data));
   };
 
   const renderBasicInfo = () => {
