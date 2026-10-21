@@ -79,10 +79,16 @@ export interface IVisitProvider {
   /**
    * Validate that a visit exists and is in a valid state for clock-in
    * 
+   * @param options.supervisorOverride When true (admin/coordinator clocking in on
+   *   behalf of the caregiver), the scheduled-date window check is bypassed.
    * @returns true if visit can be clocked into
    * @throws ValidationError with reason if visit cannot be clocked into
    */
-  canClockIn(visitId: UUID, caregiverId: UUID): Promise<boolean>;
+  canClockIn(
+    visitId: UUID,
+    caregiverId: UUID,
+    options?: { supervisorOverride?: boolean }
+  ): Promise<boolean>;
   
   /**
    * Validate that a visit is in progress and can be clocked out

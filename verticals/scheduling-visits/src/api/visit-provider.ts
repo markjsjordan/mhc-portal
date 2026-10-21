@@ -136,12 +136,16 @@ export class VisitProvider implements IVisitProvider {
    * - Visit exists and is not deleted
    * - Visit is assigned to the caregiver
    * - Visit status allows clock-in
-   * - Visit is scheduled for today or within allowed grace period
+   * - Visit is scheduled for today or within allowed grace period (bypassed for supervisor override)
    * 
    * @returns true if visit can be clocked into
    * @throws ValidationError with reason if visit cannot be clocked into
    */
-  async canClockIn(visitId: UUID, caregiverId: UUID): Promise<boolean> {
+  async canClockIn(
+    visitId: UUID,
+    caregiverId: UUID,
+    options: { supervisorOverride?: boolean } = {}
+  ): Promise<boolean> {
     const visit = await this.repository.getVisitById(visitId);
     
     if (visit === null) {
@@ -160,8 +164,9 @@ export class VisitProvider implements IVisitProvider {
       );
     }
 
-    // Check visit status - can only clock in if ASSIGNED, CONFIRMED, or EN_ROUTE
-    const validStatuses: VisitStatus[] = ['ASSIGNED', 'CONFIRMED', 'EN_ROUTE'];
+    // Check visit status - clock-in is allowed from any pre-start status that has an
+    // assigned caregiver (kept in sync with the web VisitClockControl clockable statuses).
+    const validStatuses: VisitStatus[] = ['SCHEDULED', 'ASSIGNED', 'CONFIRMED', 'EN_ROUTE', 'ARRIVED'];
     if (!validStatuses.includes(visit.status)) {
       throw new ValidationError(
         `Cannot clock in - visit status is ${visit.status}`,
@@ -178,7 +183,7 @@ export class VisitProvider implements IVisitProvider {
 
     // Allow clock-in for visits scheduled today or in the past (late clock-in)
     // Future validation can add state-specific grace period rules
-    if (visitDate > today) {
+    if (visitDate > today && options.supervisorOverride !== true) {
       throw new ValidationError(
         'Cannot clock in - visit is scheduled for a future date',
         { visitId, scheduledDate: visit.scheduledDate, today }
