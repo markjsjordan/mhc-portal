@@ -180,8 +180,12 @@ vi.mock('@/verticals/caregivers/hooks/useCaregivers', () => ({
 // Mock react-big-calendar to render a controllable mock calendar
 vi.mock('react-big-calendar', () => {
   return {
-    Calendar: ({ events, onSelectEvent, view }: any) => (
-      <div data-testid="big-calendar" data-view={view}>
+    Calendar: ({ events, onSelectEvent, view, toolbar }: any) => (
+      <div
+        data-testid="big-calendar"
+        data-view={view}
+        data-toolbar={toolbar !== undefined ? String(toolbar) : undefined}
+      >
         {events.map((evt: any) => (
           <div
             key={evt.id}
@@ -223,7 +227,7 @@ describe('CalendarView', () => {
     expect(screen.getByText(/1 Completed/)).toBeInTheDocument();
   });
 
-  it('renders unified segmented control for Day, Week, and Month views', async () => {
+  it('renders unified segmented control for Day, Week, and Month views and disables duplicate calendar toolbar', async () => {
     const user = userEvent.setup();
     render(<CalendarView />);
 
@@ -234,6 +238,9 @@ describe('CalendarView', () => {
     expect(dayBtn).toBeInTheDocument();
     expect(weekBtn).toBeInTheDocument();
     expect(monthBtn).toBeInTheDocument();
+
+    // Verify calendar component has toolbar disabled to prevent duplicate Day/Week/Month selectors in the grid
+    expect(screen.getByTestId('big-calendar')).toHaveAttribute('data-toolbar', 'false');
 
     // Switch to Day view
     await user.click(dayBtn);
