@@ -3,6 +3,10 @@ name: Disable Deployment Protection
 on:
   workflow_dispatch:
 
+# Restrict default permissions to read-only
+permissions:
+  contents: read
+
 jobs:
   disable-protection:
     name: Disable Preview Deployment Protection

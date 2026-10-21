@@ -46,15 +46,17 @@ fi
 
 # Encrypt backup if encryption key provided
 if [ -n "${ENCRYPTION_KEY}" ]; then
-  echo "[$(date)] Encrypting backup..."
-  openssl enc -aes-256-cbc -salt \
+  echo "[$(date)] Encrypting backup with AES-256-GCM..."
+  openssl enc -aes-256-gcm -salt \
     -in "${BACKUP_PATH}.tmp" \
     -out "${BACKUP_PATH}.enc" \
-    -pass pass:"${ENCRYPTION_KEY}"
+    -pass pass:"${ENCRYPTION_KEY}" \
+    -pbkdf2 -iter 100000
 
   rm "${BACKUP_PATH}.tmp"
   mv "${BACKUP_PATH}.enc" "${BACKUP_PATH}"
 else
+  echo "[$(date)] WARNING: No encryption key provided, backup is unencrypted"
   mv "${BACKUP_PATH}.tmp" "${BACKUP_PATH}"
 fi
 

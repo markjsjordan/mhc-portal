@@ -1,0 +1,125 @@
+# Folk Care Pod Security Policy
+# Enforces security best practices for all pods in the folkcare namespace
+#
+# Note: PodSecurityPolicy is deprecated in K8s 1.21+ and removed in 1.25+
+# For K8s 1.23+, use Pod Security Standards (PSS) instead
+# This file provides both PSP (legacy) and PSS configurations
+
+---
+# Legacy PodSecurityPolicy (K8s < 1.25)
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: folkcare-restricted
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'runtime/default'
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: 'runtime/default'
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: 'runtime/default'
+    apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
+spec:
+  # Privilege and access controls
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  # Allow specific capabilities for PostgreSQL
+  allowedCapabilities:
+    - CHOWN
+    - DAC_OVERRIDE
+    - SETGID
+    - SETUID
+    - NET_BIND_SERVICE
+  
+  # Host namespaces
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  
+  # Volume types
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+  
+  # User and group controls
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  runAsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1
+        max: 65535
+  supplementalGroups:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1
+        max: 65535
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1
+        max: 65535
+  
+  # Read-only root filesystem (recommended but not enforced for database)
+  readOnlyRootFilesystem: false
+  
+  # SELinux
+  seLinux:
+    rule: 'RunAsAny'
+  
+  # Allowed host paths (none)
+  allowedHostPaths: []
+
+---
+# ClusterRole for PSP
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: folkcare-psp-user
+rules:
+  - apiGroups:
+      - policy
+    resources:
+      - podsecuritypolicies
+    verbs:
+      - use
+    resourceNames:
+      - folkcare-restricted
+
+---
+# ClusterRoleBinding for PSP
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: folkcare-psp-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: folkcare-psp-user
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: folkcare
+  - kind: ServiceAccount
+    name: folkcare-app
+    namespace: folkcare
+
+---
+# Pod Security Standards (K8s 1.23+)
+# Apply to namespace with labels:
+#   kubectl label namespace folkcare \
+#     pod-security.kubernetes.io/enforce=restricted \
+#     pod-security.kubernetes.io/audit=restricted \
+#     pod-security.kubernetes.io/warn=restricted
+#
+# The restricted Pod Security Standard is equivalent to the PSP above
+# and enforces:
+# - No privileged containers
+# - No privilege escalation
+# - No host namespaces
+# - Non-root user required
+# - Restricted capabilities
+# - Seccomp profile required

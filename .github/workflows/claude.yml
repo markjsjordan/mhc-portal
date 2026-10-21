@@ -10,6 +10,10 @@ on:
   pull_request_review:
     types: [submitted]
 
+# Restrict default permissions to read-only
+permissions:
+  contents: read
+
 jobs:
   claude:
     if: |
@@ -26,13 +30,13 @@ jobs:
       actions: read # Required for Claude to read CI results on PRs
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           fetch-depth: 1
 
       - name: Run Claude Code
         id: claude
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@a69151fa94788dce3e979086340279f3bd33af32 # anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 

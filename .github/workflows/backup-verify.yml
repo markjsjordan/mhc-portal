@@ -12,6 +12,10 @@ env:
   NODE_VERSION: '22'
   NPM_VERSION: '10.9.4'
 
+# Restrict default permissions to read-only
+permissions:
+  contents: read
+
 jobs:
   verify-restoration:
     name: Verify Backup Restoration
@@ -22,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
 
       - name: Check verification configuration
         id: check-config
@@ -40,7 +44,7 @@ jobs:
 
       - name: Setup Node.js
         if: steps.check-config.outputs.configured == 'true'
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -84,9 +88,7 @@ jobs:
       - name: Install Neon CLI
         if: steps.check-config.outputs.configured == 'true'
         run: |
-          curl -fsSL https://neon.tech/install.sh | bash
-          echo "$HOME/.neon/bin" >> $GITHUB_PATH
-
+          npm install -g neon@latest
           # Verify Neon CLI installation
           neon --version
 
@@ -137,7 +139,7 @@ jobs:
 
       - name: Create issue on failure
         if: failure() && steps.check-config.outputs.configured == 'true'
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # actions/github-script@v8
         with:
           script: |
             const issue = await github.rest.issues.create({

@@ -59,6 +59,9 @@ FROM node:22-alpine AS runner
 
 WORKDIR /app
 
+# Install wget for healthcheck
+RUN apk add --no-cache wget
+
 # Create non-root user for security
 RUN addgroup --system --gid 1001 folkcare \
     && adduser --system --uid 1001 folkcare
@@ -68,23 +71,24 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 # Copy built application
-COPY --from=builder /app/packages/app/dist ./packages/app/dist
-COPY --from=builder /app/packages/core/dist ./packages/core/dist
-COPY --from=builder /app/packages/web/dist ./public
-COPY --from=builder /app/verticals/*/dist ./verticals/
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/packages/app/package*.json ./packages/app/
-COPY --from=builder /app/packages/core/package*.json ./packages/core/
+COPY --from=builder --chown=folkcare:folkcare /app/packages/app/dist ./packages/app/dist
+COPY --from=builder --chown=folkcare:folkcare /app/packages/core/dist ./packages/core/dist
+COPY --from=builder --chown=folkcare:folkcare /app/packages/web/dist ./public
+COPY --from=builder --chown=folkcare:folkcare /app/verticals/*/dist ./verticals/
+COPY --from=builder --chown=folkcare:folkcare /app/package*.json ./
+COPY --from=builder --chown=folkcare:folkcare /app/packages/app/package*.json ./packages/app/
+COPY --from=builder --chown=folkcare:folkcare /app/packages/core/package*.json ./packages/core/
 
 # Copy migrations for database setup
-COPY --from=builder /app/packages/core/migrations ./packages/core/migrations
-COPY --from=builder /app/packages/core/scripts ./packages/core/scripts
+COPY --from=builder --chown=folkcare:folkcare /app/packages/core/migrations ./packages/core/migrations
+COPY --from=builder --chown=folkcare:folkcare /app/packages/core/scripts ./packages/core/scripts
 
 # Install production dependencies only
 RUN npm ci --omit=dev --ignore-scripts
 
-# Set ownership
-RUN chown -R folkcare:folkcare /app
+# Remove npm to reduce attack surface (keep node only)
+RUN npm cache clean --force && \
+    rm -rf /usr/local/lib/node_modules/npm
 
 # Switch to non-root user
 USER folkcare
@@ -95,6 +99,13 @@ EXPOSE 3000
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+
+# Security labels
+LABEL org.opencontainers.image.vendor="Folk Care" \
+      org.opencontainers.image.title="Folk Care Application" \
+      org.opencontainers.image.description="HIPAA-compliant home healthcare platform" \
+      security.non-root="true" \
+      security.read-only-root="recommended"
 
 # Start the application
 CMD ["node", "packages/app/dist/server.js"]
