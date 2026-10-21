@@ -1411,6 +1411,7 @@ export const CalendarView: React.FC = () => {
                   timeslots={DENSITY_CONFIG[densityMode].timeslots}
                   defaultView="week"
                   views={['month', 'week', 'day']}
+                  toolbar={false}
                   min={new Date(2025, 0, 1, TIME_RANGES[timeRange].min, 0)}
                   max={new Date(2025, 0, 1, TIME_RANGES[timeRange].max, 0)}
                   messages={{
