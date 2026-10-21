@@ -889,43 +889,48 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
           ) : teamMembers && teamMembers.length > 0 ? (
             <div className="divide-y divide-gray-200">
               {teamMembers.map((member) => (
-                <div key={member.id} className="py-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                <div
+                  key={member.id}
+                  className="py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4"
+                >
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="h-10 w-10 shrink-0 rounded-full bg-primary-100 flex items-center justify-center">
                       <span className="text-primary-700 font-medium">
                         {member.firstName[0]}{member.lastName[0]}
                       </span>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
                         {member.firstName} {member.lastName}
                       </p>
-                      <p className="text-sm text-gray-500">{member.email}</p>
+                      <p className="text-sm text-gray-500 truncate">{member.email}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex flex-wrap gap-1">
-                      {member.roles.map((role) => (
-                        <span
-                          key={role}
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800"
-                        >
-                          {getRoleLabel(role)}
-                        </span>
-                      ))}
+                  <div className="flex items-center justify-between md:justify-end gap-3 md:gap-4 w-full md:w-auto">
+                    <div className="flex flex-wrap items-center gap-2 md:gap-4">
+                      <div className="flex flex-wrap gap-1">
+                        {member.roles.map((role) => (
+                          <span
+                            key={role}
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800"
+                          >
+                            {getRoleLabel(role)}
+                          </span>
+                        ))}
+                      </div>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          member.status === 'ACTIVE'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {member.status}
+                      </span>
                     </div>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        member.status === 'ACTIVE'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {member.status}
-                    </span>
                     <button
                       type="button"
-                      className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 shrink-0"
                       onClick={() => {
                         setEditMemberError(null);
                         setEditingMember(member);
@@ -967,19 +972,22 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
           <Card.Content>
             <div className="divide-y divide-gray-200">
               {pendingInvitations.map((invitation) => (
-                <div key={invitation.id} className="py-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
+                <div
+                  key={invitation.id}
+                  className="py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4"
+                >
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="h-10 w-10 shrink-0 rounded-full bg-amber-100 flex items-center justify-center">
                       <Mail className="h-5 w-5 text-amber-600" />
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{invitation.email}</p>
-                      <p className="text-sm text-gray-500">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{invitation.email}</p>
+                      <p className="text-sm text-gray-500 truncate">
                         Expires {new Date(invitation.expiresAt).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center justify-between md:justify-end gap-3 w-full md:w-auto">
                     <div className="flex items-center gap-1">
                       {getStatusIcon(invitation.status)}
                       <span className="text-sm text-gray-500">{invitation.status}</span>
@@ -994,7 +1002,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                         </span>
                       ))}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button
                         variant="outline"
                         size="sm"
