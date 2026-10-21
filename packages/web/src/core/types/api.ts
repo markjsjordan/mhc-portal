@@ -13,7 +13,8 @@ export interface PaginatedResult<T> {
 
 export interface ApiError {
   message?: string;
-  error?: string;
+  /** Either a plain string or the structured `{ message, code, details }` object returned by the API. */
+  error?: string | { message?: string; code?: string; details?: Record<string, unknown> };
   code?: string;
   status?: number;
   details?: Record<string, unknown>;

@@ -77,12 +77,15 @@ export class EVVService {
     }
 
     // Verify caregiver matches user context (or supervisor override)
-    if (input.caregiverId !== userContext.userId && !this.isSupervisor(userContext)) {
+    const isSupervisorOverride = this.isSupervisor(userContext);
+    if (input.caregiverId !== userContext.userId && !isSupervisorOverride) {
       throw new PermissionError('Cannot clock in for another caregiver');
     }
 
     // Validate caregiver can clock in for this visit
-    const canClockIn = await this.visitProvider.canClockIn(input.visitId, input.caregiverId);
+    const canClockIn = await this.visitProvider.canClockIn(input.visitId, input.caregiverId, {
+      supervisorOverride: isSupervisorOverride,
+    });
     if (!canClockIn) {
       throw new ValidationError('Cannot clock in for this visit', {
         visitId: input.visitId,
