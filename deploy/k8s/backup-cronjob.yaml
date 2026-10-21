@@ -26,23 +26,62 @@ spec:
                 - -c
                 - |
                   set -e
+                  apk add --no-cache openssl
                   BACKUP_FILE="/backups/folkcare-$(date +%Y%m%d-%H%M%S).dump"
                   echo "Starting backup to $BACKUP_FILE..."
-                  pg_dump -Fc -h folkcare-postgres -U postgres -d folkcare > "$BACKUP_FILE"
+                  pg_dump -Fc -h folkcare-postgres -U postgres -d folkcare > "${BACKUP_FILE}.tmp"
+                  
+                  # Encrypt with AES-256-GCM
+                  if [ -n "${BACKUP_ENCRYPTION_KEY}" ]; then
+                    echo "Encrypting backup with AES-256-GCM..."
+                    openssl enc -aes-256-gcm -salt \
+                      -in "${BACKUP_FILE}.tmp" \
+                      -out "${BACKUP_FILE}.enc" \
+                      -pass pass:"${BACKUP_ENCRYPTION_KEY}" \
+                      -pbkdf2 -iter 100000
+                    rm "${BACKUP_FILE}.tmp"
+                    mv "${BACKUP_FILE}.enc" "${BACKUP_FILE}"
+                    echo "Backup encrypted successfully!"
+                  else
+                    echo "WARNING: No encryption key provided!"
+                    mv "${BACKUP_FILE}.tmp" "${BACKUP_FILE}"
+                  fi
+                  
                   echo "Backup completed successfully!"
                   # Cleanup old backups (keep last 7 days)
                   find /backups -name "*.dump" -mtime +7 -delete
                   echo "Cleanup completed. Current backups:"
-                  ls -la /backups/
+                  ls -lah /backups/
               env:
                 - name: PGPASSWORD
                   valueFrom:
                     secretKeyRef:
                       name: folkcare-postgres-secrets
                       key: POSTGRES_PASSWORD
+                - name: BACKUP_ENCRYPTION_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: folkcare-secrets
+                      key: BACKUP_ENCRYPTION_KEY
+                      optional: false
               volumeMounts:
                 - name: backup-storage
                   mountPath: /backups
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 70
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
           volumes:
             - name: backup-storage
               persistentVolumeClaim:

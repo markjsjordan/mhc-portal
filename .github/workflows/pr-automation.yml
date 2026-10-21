@@ -11,13 +11,17 @@ permissions:
   contents: read
   issues: write
 
+# Restrict default permissions to read-only
+permissions:
+  contents: read
+
 jobs:
   label-pr-size:
     name: Label PR by Size
     runs-on: ubuntu-latest
     steps:
       - name: Label based on size
-        uses: codelytv/pr-size-labeler@v1
+        uses: codelytv/pr-size-labeler@5b0747c95a6291730db70b5137b9512ea2110d26 # codelytv/pr-size-labeler@v1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           xs_label: 'size/xs'
@@ -35,7 +39,7 @@ jobs:
     name: Auto-label by Content
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/labeler@v6
+      - uses: actions/labeler@b8dd2d9be0f68b860e7dae5dae7d772984eacd6d # actions/labeler@v6
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           configuration-path: .github/labeler.yml
@@ -47,7 +51,7 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Assign reviewers
-        uses: kentaro-m/auto-assign-action@v2.0.0
+        uses: kentaro-m/auto-assign-action@f4648c0a9fdb753479e9e75fc251f507ce17bb7e # kentaro-m/auto-assign-action@v2.0.0
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           configuration-path: .github/auto-assign.yml
@@ -58,11 +62,11 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
 
       - name: Get CI status
         id: ci_status
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # actions/github-script@v8
         with:
           script: |
             const { data: checkRuns } = await github.rest.checks.listForRef({
@@ -101,7 +105,7 @@ jobs:
             return summary;
 
       - name: Comment PR
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # actions/github-script@v8
         with:
           script: |
             const summary = ${{ toJSON(steps.ci_status.outputs.result) }};
@@ -143,7 +147,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
-      - uses: amannn/action-semantic-pull-request@v6
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # amannn/action-semantic-pull-request@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

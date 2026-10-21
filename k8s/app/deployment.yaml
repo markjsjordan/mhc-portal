@@ -32,6 +32,14 @@ spec:
                       values:
                         - folkcare-app
                 topologyKey: kubernetes.io/hostname
+      # Security context for pod
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: folkcare
           image: folkcare:latest
@@ -110,6 +118,11 @@ spec:
             failureThreshold: 3
           securityContext:
             runAsNonRoot: true
-            runAsUser: 1000
+            runAsUser: 1001
             readOnlyRootFilesystem: false
             allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - NET_BIND_SERVICE

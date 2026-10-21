@@ -8,6 +8,10 @@ permissions:
   pull-requests: write
   contents: write
 
+# Restrict default permissions to read-only
+permissions:
+  contents: read
+
 jobs:
   dependabot-auto-merge:
     name: Auto-merge Dependabot PRs
@@ -16,12 +20,12 @@ jobs:
     steps:
       - name: Dependabot metadata
         id: metadata
-        uses: dependabot/fetch-metadata@v2
+        uses: dependabot/fetch-metadata@21025c705c08248db411dc16f3619e6b5f9ea21a # dependabot/fetch-metadata@v2
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
       - name: Wait for CI checks
-        uses: lewagon/wait-on-check-action@v1.4.1
+        uses: lewagon/wait-on-check-action@e1f1b01f985ee71d799beca42d089f840ec4551a # lewagon/wait-on-check-action@v1.4.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           check-name: 'Build'
@@ -53,7 +57,7 @@ jobs:
 
       - name: Comment on major updates
         if: steps.metadata.outputs.update-type == 'version-update:semver-major'
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # actions/github-script@v8
         with:
           script: |
             github.rest.issues.createComment({
@@ -71,7 +75,7 @@ jobs:
             })
 
       - name: Label PR by update type
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # actions/github-script@v8
         with:
           script: |
             const updateType = '${{ steps.metadata.outputs.update-type }}';

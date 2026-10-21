@@ -20,6 +20,14 @@ spec:
         app.kubernetes.io/name: folkcare
         app.kubernetes.io/component: postgres
     spec:
+      # Security context for pod
+      securityContext:
+        runAsNonRoot: false  # PostgreSQL requires root for initialization
+        runAsUser: 70        # postgres user UID
+        runAsGroup: 70       # postgres group GID
+        fsGroup: 70
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: postgres
           image: postgres:16-alpine
@@ -93,6 +101,16 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - CHOWN
+                - DAC_OVERRIDE
+                - SETGID
+                - SETUID
   volumeClaimTemplates:
     - metadata:
         name: postgres-data

@@ -14,6 +14,10 @@ concurrency:
   group: notifications-${{ github.event.workflow_run.id }}
   cancel-in-progress: false
 
+# Restrict default permissions to read-only
+permissions:
+  contents: read
+
 jobs:
   notify-discord:
     name: Send Discord Notification
@@ -24,7 +28,7 @@ jobs:
     steps:
       - name: Check previous run status
         id: check_previous
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # actions/github-script@v8
         with:
           script: |
             const runs = await github.rest.actions.listWorkflowRuns({

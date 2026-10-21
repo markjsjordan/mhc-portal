@@ -26,6 +26,10 @@ on:
 env:
   NODE_VERSION: '22'
 
+# Restrict default permissions to read-only
+permissions:
+  contents: read
+
 jobs:
   database-operation:
     name: Database ${{ github.event.inputs.operation }}
@@ -36,10 +40,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'

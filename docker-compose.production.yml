@@ -55,6 +55,25 @@ services:
       - folkcare
     labels:
       - "com.folkcare.description=Folk Care Application Server"
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=docker/seccomp/default.json
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: false
+    tmpfs:
+      - /tmp
+      - /app/.npm
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
 
   # ============================================
   # PostgreSQL Database
@@ -98,6 +117,27 @@ services:
       - "effective_io_concurrency=200"
     labels:
       - "com.folkcare.description=Folk Care PostgreSQL Database"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+    read_only: false
+    tmpfs:
+      - /tmp
+      - /run
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
   # ============================================
   # Redis Cache
@@ -118,6 +158,21 @@ services:
       - folkcare
     labels:
       - "com.folkcare.description=Folk Care Redis Cache"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: false
+    tmpfs:
+      - /tmp
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
   # ============================================
   # Optional: Nginx Reverse Proxy

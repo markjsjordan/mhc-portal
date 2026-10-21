@@ -16,6 +16,10 @@ env:
   # Disable Turbo remote caching for comprehensive validation
   TURBO_FORCE: 'true'
 
+# Restrict default permissions to read-only
+permissions:
+  contents: read
+
 jobs:
   comprehensive-validation:
     name: Comprehensive Validation (No Cache)
@@ -37,12 +41,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # actions/checkout@v4
         with:
           fetch-depth: 0  # Full history for comprehensive analysis
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -83,7 +87,7 @@ jobs:
 
       - name: Upload comprehensive coverage reports
         if: always()
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@04b047e8bb82a0c002c8312c1c880fbc6a999d45 # codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./packages/*/coverage/lcov.info,./verticals/*/coverage/lcov.info
@@ -110,7 +114,7 @@ jobs:
 
       - name: Upload build artifacts
         if: success()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # actions/upload-artifact@v5
         with:
           name: comprehensive-build-artifacts
           path: |
