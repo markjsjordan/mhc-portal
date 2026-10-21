@@ -127,6 +127,8 @@ export interface CaregiverSearchFilters {
   credentialExpiring?: boolean;
   hireDateFrom?: string;
   hireDateTo?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface PaginatedCaregivers {

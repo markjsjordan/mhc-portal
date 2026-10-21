@@ -31,6 +31,8 @@ export const createCaregiverApiService = (apiClient: ApiClient): CaregiverApiSer
       if (filters.employmentType?.length) params.append('employmentType', filters.employmentType.join(','));
       if (filters.complianceStatus?.length) params.append('complianceStatus', filters.complianceStatus.join(','));
       if (filters.credentialExpiring) params.append('credentialExpiring', 'true');
+      if (filters.sortBy) params.append('sortBy', filters.sortBy);
+      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
       return apiClient.get<PaginatedCaregivers>(`/api/caregivers?${params}`);
     },

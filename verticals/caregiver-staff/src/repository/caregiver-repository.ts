@@ -338,7 +338,7 @@ export class CaregiverRepository extends Repository<Caregiver> {
    */
   async search(
     filters: CaregiverSearchFilters,
-    pagination: { page: number; limit: number }
+    pagination: { page: number; limit: number; sortBy?: string; sortOrder?: 'asc' | 'desc' }
   ): Promise<PaginatedResult<Caregiver>> {
     const whereClauses: string[] = ['deleted_at IS NULL'];
     const params: unknown[] = [];
@@ -515,12 +515,34 @@ export class CaregiverRepository extends Repository<Caregiver> {
     const countResult = await this.database.query(countQuery, params);
     const total = parseInt(String(countResult.rows[0]!['count']));
 
+    // Whitelist allowed sort columns to prevent SQL injection
+    const ALLOWED_SORT_COLUMNS = new Set(['first_name', 'last_name', 'email']);
+    const ALLOWED_SORT_ORDERS = new Set(['asc', 'desc']);
+    const SORT_COLUMN_MAP: Record<string, string> = {
+      first_name: 'first_name',
+      firstName: 'first_name',
+      last_name: 'last_name',
+      lastName: 'last_name',
+      email: 'email',
+    };
+
+    const requestedSortBy = pagination.sortBy ? (SORT_COLUMN_MAP[pagination.sortBy] || pagination.sortBy) : undefined;
+    const requestedSortOrder = (pagination.sortOrder || 'asc').toLowerCase();
+
+    // Validate sort column and order against whitelist
+    const sortBy = requestedSortBy && ALLOWED_SORT_COLUMNS.has(requestedSortBy) ? requestedSortBy : undefined;
+    const sortOrder = ALLOWED_SORT_ORDERS.has(requestedSortOrder) ? requestedSortOrder : 'asc';
+
+    const orderByClause = sortBy
+      ? `ORDER BY ${sortBy} ${sortOrder}`
+      : 'ORDER BY last_name asc, first_name asc';
+
     // Get paginated results
     const offset = (pagination.page - 1) * pagination.limit;
     const query = `
       SELECT * FROM ${this.tableName}
       WHERE ${whereClause}
-      ORDER BY last_name, first_name
+      ${orderByClause}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
 

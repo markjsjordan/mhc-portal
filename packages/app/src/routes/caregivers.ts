@@ -149,9 +149,15 @@ export function createCaregiverRouter(db: Database): Router {
         credentialExpiring: req.query['credentialExpiring'] === 'true',
       };
 
+      const sortBy = typeof req.query['sortBy'] === 'string' ? req.query['sortBy'] : undefined;
+      const rawSortOrder = typeof req.query['sortOrder'] === 'string' ? req.query['sortOrder'].toLowerCase() : undefined;
+      const sortOrder = rawSortOrder === 'asc' || rawSortOrder === 'desc' ? (rawSortOrder as 'asc' | 'desc') : undefined;
+
       const pagination = {
         page: parseInt((req.query['page'] as string | undefined) ?? '1', 10),
         limit: parseInt((req.query['limit'] as string | undefined) ?? '20', 10),
+        ...(sortBy ? { sortBy } : {}),
+        ...(sortOrder ? { sortOrder } : {}),
       };
 
       const result = await service.searchCaregivers(filters, pagination, context);

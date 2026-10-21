@@ -14,31 +14,43 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Database } from '@folkcare/core';
-import type { Router } from 'express';
+import express, { type Router } from 'express';
+import request from 'supertest';
 
 // Type for Express Router stack layer (Express internals aren't fully typed)
 type RouterLayer = any;
 
+const mockSearchCaregivers = vi.fn().mockResolvedValue({
+  items: [],
+  total: 0,
+  page: 1,
+  limit: 20,
+  totalPages: 0,
+});
+
 // Mock all external dependencies before importing the router
 vi.mock('@folkcare/caregiver-staff', () => ({
-  CaregiverService: vi.fn().mockImplementation(() => ({
-    getCurrentCaregiverProfile: vi.fn(),
-    getCaregiversWithExpiringCredentials: vi.fn(),
-    getCaregiverByEmployeeNumber: vi.fn(),
-    getCaregiversByBranch: vi.fn(),
-    listCaregivers: vi.fn(),
-    getCaregiverById: vi.fn(),
-    createCaregiver: vi.fn(),
-    updateCaregiver: vi.fn(),
-    deleteCaregiver: vi.fn(),
-    getCaregiverServiceAuthorizations: vi.fn(),
-    addServiceAuthorization: vi.fn(),
-    validateCaregiverClientAssignment: vi.fn(),
-    getCaregiverStateScreenings: vi.fn(),
-    createStateScreening: vi.fn(),
-    updateStateScreening: vi.fn(),
-    getComplianceStatus: vi.fn(),
-  })),
+  CaregiverService: vi.fn().mockImplementation(function() {
+    return {
+      searchCaregivers: mockSearchCaregivers,
+      getCurrentCaregiverProfile: vi.fn(),
+      getCaregiversWithExpiringCredentials: vi.fn(),
+      getCaregiverByEmployeeNumber: vi.fn(),
+      getCaregiversByBranch: vi.fn(),
+      listCaregivers: vi.fn(),
+      getCaregiverById: vi.fn(),
+      createCaregiver: vi.fn(),
+      updateCaregiver: vi.fn(),
+      deleteCaregiver: vi.fn(),
+      getCaregiverServiceAuthorizations: vi.fn(),
+      addServiceAuthorization: vi.fn(),
+      validateCaregiverClientAssignment: vi.fn(),
+      getCaregiverStateScreenings: vi.fn(),
+      createStateScreening: vi.fn(),
+      updateStateScreening: vi.fn(),
+      getComplianceStatus: vi.fn(),
+    };
+  }),
   CredentialExpirationService: vi.fn().mockImplementation(() => ({
     getStatusSummary: vi.fn(),
     getExpiringItems: vi.fn(),
@@ -64,6 +76,7 @@ vi.mock('@folkcare/core', async () => {
             userId: '123e4567-e89b-12d3-a456-426614174000',
             email: 'admin@example.com',
             organizationId: '223e4567-e89b-12d3-a456-426614174000',
+            branchIds: ['branch-1'],
             roles: ['admin'],
             permissions: ['caregivers:read', 'caregivers:write', 'caregivers:delete'],
           };
@@ -291,6 +304,61 @@ describe('Caregiver Routes', () => {
           expect(typeof handler.handle).toBe('function');
         }
       }
+    });
+  });
+
+  describe('GET / (searchCaregivers with sorting)', () => {
+    let app: express.Express;
+
+    beforeEach(() => {
+      mockSearchCaregivers.mockClear();
+      app = express();
+      app.use(express.json());
+      app.use('/api/caregivers', router);
+    });
+
+    it('should parse page and limit without sort parameters', async () => {
+      const response = await request(app).get('/api/caregivers?page=2&limit=10');
+
+      expect(response.status).toBe(200);
+      expect(mockSearchCaregivers).toHaveBeenCalledWith(
+        expect.objectContaining({ organizationId: '223e4567-e89b-12d3-a456-426614174000' }),
+        { page: 2, limit: 10 },
+        expect.anything()
+      );
+    });
+
+    it('should parse sortBy and sortOrder from query string', async () => {
+      const response = await request(app).get('/api/caregivers?sortBy=first_name&sortOrder=desc');
+
+      expect(response.status).toBe(200);
+      expect(mockSearchCaregivers).toHaveBeenCalledWith(
+        expect.anything(),
+        { page: 1, limit: 20, sortBy: 'first_name', sortOrder: 'desc' },
+        expect.anything()
+      );
+    });
+
+    it('should normalize uppercase sortOrder to lowercase', async () => {
+      const response = await request(app).get('/api/caregivers?sortBy=email&sortOrder=ASC');
+
+      expect(response.status).toBe(200);
+      expect(mockSearchCaregivers).toHaveBeenCalledWith(
+        expect.anything(),
+        { page: 1, limit: 20, sortBy: 'email', sortOrder: 'asc' },
+        expect.anything()
+      );
+    });
+
+    it('should ignore invalid sortOrder values', async () => {
+      const response = await request(app).get('/api/caregivers?sortBy=last_name&sortOrder=invalid');
+
+      expect(response.status).toBe(200);
+      expect(mockSearchCaregivers).toHaveBeenCalledWith(
+        expect.anything(),
+        { page: 1, limit: 20, sortBy: 'last_name' },
+        expect.anything()
+      );
     });
   });
 });
