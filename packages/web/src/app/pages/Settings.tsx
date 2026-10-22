@@ -103,8 +103,8 @@ export function Settings() {
       )}
 
       {/* Tab Navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+      <div className="border-b border-gray-200 overflow-x-auto">
+        <nav className="-mb-px flex space-x-8 min-w-max">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
