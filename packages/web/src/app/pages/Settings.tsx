@@ -906,8 +906,8 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                       <p className="text-sm text-gray-500 truncate">{member.email}</p>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between md:justify-end gap-3 md:gap-4 w-full md:w-auto">
-                    <div className="flex flex-wrap items-center gap-2 md:gap-4">
+                  <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 w-full md:w-auto">
+                    <div className="flex flex-wrap items-center gap-2">
                       <div className="flex flex-wrap gap-1">
                         {member.roles.map((role) => (
                           <span
@@ -930,7 +930,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                     </div>
                     <button
                       type="button"
-                      className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 shrink-0"
+                      className="p-2 md:p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 shrink-0 self-start md:self-auto min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center"
                       onClick={() => {
                         setEditMemberError(null);
                         setEditingMember(member);
@@ -987,7 +987,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                       </p>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center justify-between md:justify-end gap-3 w-full md:w-auto">
+                  <div className="flex flex-col md:flex-row md:flex-wrap md:items-center gap-3 w-full md:w-auto">
                     <div className="flex items-center gap-1">
                       {getStatusIcon(invitation.status)}
                       <span className="text-sm text-gray-500">{invitation.status}</span>

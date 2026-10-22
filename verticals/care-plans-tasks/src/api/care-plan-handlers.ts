@@ -98,13 +98,21 @@ export function createCarePlanHandlers(service: CarePlanService, templateService
      *             type: object
      *             required:
      *               - clientId
-     *               - title
+     *               - name
      *               - planType
+     *               - organizationId
+     *               - effectiveDate
      *             properties:
      *               clientId:
      *                 type: string
      *                 format: uuid
-     *               title:
+     *               organizationId:
+     *                 type: string
+     *                 format: uuid
+     *               branchId:
+     *                 type: string
+     *                 format: uuid
+     *               name:
      *                 type: string
      *                 example: Personal Care Plan
      *               description:
