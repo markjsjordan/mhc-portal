@@ -45,6 +45,15 @@ export interface CreateFromTemplateOptions {
   notes?: string;
 }
 
+/**
+ * Convert blank strings to undefined so the backend CreateCarePlanInputSchema
+ * validation succeeds (it rejects empty strings for UUID/enum/date fields).
+ */
+function blankToUndefined(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
 export class TemplateService {
   private repository: CarePlanRepository;
   private templateFamilyRepository?: TemplateFamilyRepository;
@@ -114,7 +123,7 @@ export class TemplateService {
     // Create goal from template
     const goal = {
       name: customizations?.name || template.name,
-      description: customizations?.goals || template.goals,
+      description: blankToUndefined(customizations?.goals) || template.goals,
       category: 'ADL' as const,
       status: 'NOT_STARTED' as GoalStatus,
       priority: 'MEDIUM' as Priority,
@@ -160,7 +169,7 @@ export class TemplateService {
     const carePlanInput: CreateCarePlanInput = {
       clientId,
       organizationId,
-      branchId: customizations?.branchId,
+      branchId: blankToUndefined(customizations?.branchId),
       name: customizations?.name || template.name,
       planType,
       effectiveDate: startDate,
@@ -168,8 +177,8 @@ export class TemplateService {
       goals: [goal],
       interventions,
       taskTemplates,
-      coordinatorId: customizations?.coordinatorId,
-      notes: customizations?.notes,
+      coordinatorId: blankToUndefined(customizations?.coordinatorId),
+      notes: blankToUndefined(customizations?.notes),
     };
 
     // Create the care plan using repository
