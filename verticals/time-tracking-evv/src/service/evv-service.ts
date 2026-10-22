@@ -31,6 +31,7 @@ import {
   EVVRecordSearchFilters,
   ComplianceFlag,
   VerificationLevel,
+  GeofenceCheckResult,
 } from '../types/evv';
 import {
   IVisitProvider,
@@ -122,56 +123,88 @@ export class EVVService {
     }
 
     // Validate address has coordinates for geofencing
-    if (!visitData.serviceAddress.latitude || !visitData.serviceAddress.longitude) {
-      throw new ValidationError(
-        'Visit address must have valid geocoded coordinates for EVV compliance',
-        { visitId: input.visitId, address: visitData.serviceAddress }
-      );
+    // Skip geocoding validation for demo users and admin users
+    const isDemoUser = caregiver.isDemoData === true;
+    const isAdminUser = userContext.roles.some(role => 
+      role === 'SUPER_ADMIN' || 
+      role === 'ORG_ADMIN' || 
+      role === 'BRANCH_ADMIN'
+    );
+    
+    if (!isDemoUser && !isAdminUser) {
+      // Production user: enforce geocoding validation
+      if (!visitData.serviceAddress.latitude || !visitData.serviceAddress.longitude) {
+        throw new ValidationError(
+          'Visit address must have valid geocoded coordinates for EVV compliance',
+          { visitId: input.visitId, address: visitData.serviceAddress }
+        );
+      }
     }
 
-    // Get state-specific geofence radius using StateComplianceService
+    // Get state for compliance validation
     const state = visitData.serviceAddress.state as StateCode;
-    const stateGeofenceRadius = this.stateComplianceService.getGeofenceRadius(
-      state,
-      input.location.accuracy
-    );
-    
-    // Use state-specific radius or fallback to configured/default
-    const geofenceRadius = visitData.serviceAddress.geofenceRadius || stateGeofenceRadius;
-    
-    const addressId = visitData.serviceAddress.addressId || this.generateFallbackAddressId(visitData.serviceAddress);
-    const geofence = await this.getOrCreateGeofence(
-      visitData.serviceAddress.latitude,
-      visitData.serviceAddress.longitude,
-      geofenceRadius,
-      visitData.organizationId,
-      visitData.clientId,
-      addressId,
-      userContext
-    );
 
-    // Verify location
-    const geofenceCheck = this.validator.checkGeofence(
-      input.location.latitude,
-      input.location.longitude,
-      input.location.accuracy,
-      geofence.centerLatitude,
-      geofence.centerLongitude,
-      geofence.radiusMeters,
-      geofence.allowedVariance || 0
-    );
+    // Only perform geofence validation if coordinates are available
+    // (demo/admin users may not have geocoded addresses)
+    let geofenceCheck: GeofenceCheckResult;
+    let geofence: { id: UUID; centerLatitude: number; centerLongitude: number; radiusMeters: number; allowedVariance?: number } | null = null;
+    let geofenceRadius = 100; // Default radius for demo/admin users
 
-    // Update geofence statistics
-    await this.repository.updateGeofenceStats(
-      geofence.id,
-      geofenceCheck.isWithinGeofence,
-      input.location.accuracy
-    );
+    if (visitData.serviceAddress.latitude && visitData.serviceAddress.longitude) {
+      // Get state-specific geofence radius using StateComplianceService
+      const stateGeofenceRadius = this.stateComplianceService.getGeofenceRadius(
+        state,
+        input.location.accuracy
+      );
+      
+      // Use state-specific radius or fallback to configured/default
+      geofenceRadius = visitData.serviceAddress.geofenceRadius || stateGeofenceRadius;
+      
+      const addressId = visitData.serviceAddress.addressId || this.generateFallbackAddressId(visitData.serviceAddress);
+      geofence = await this.getOrCreateGeofence(
+        visitData.serviceAddress.latitude,
+        visitData.serviceAddress.longitude,
+        geofenceRadius,
+        visitData.organizationId,
+        visitData.clientId,
+        addressId,
+        userContext
+      );
+
+      // Verify location
+      geofenceCheck = this.validator.checkGeofence(
+        input.location.latitude,
+        input.location.longitude,
+        input.location.accuracy,
+        geofence.centerLatitude,
+        geofence.centerLongitude,
+        geofence.radiusMeters,
+        geofence.allowedVariance || 0
+      );
+
+      // Update geofence statistics
+      await this.repository.updateGeofenceStats(
+        geofence.id,
+        geofenceCheck.isWithinGeofence,
+        input.location.accuracy
+      );
+    } else {
+      // Demo/admin user without geocoding: create a passing geofence check
+      geofenceCheck = {
+        isWithinGeofence: true,
+        distanceFromCenter: 0,
+        distanceFromAddress: 0,
+        accuracy: input.location.accuracy,
+        requiresManualReview: false,
+        reason: 'Geocoding validation bypassed for demo/admin user',
+      };
+    }
 
     // Perform state-specific EVV validation
+    // For demo/admin users without geocoding, use placeholder coordinates
     const evvValidation = this.stateComplianceService.validateEVVForState(state, {
-      clientLatitude: visitData.serviceAddress.latitude,
-      clientLongitude: visitData.serviceAddress.longitude,
+      clientLatitude: visitData.serviceAddress.latitude ?? 0,
+      clientLongitude: visitData.serviceAddress.longitude ?? 0,
       clockInLatitude: input.location.latitude,
       clockInLongitude: input.location.longitude,
       clockInTime: new Date(),
@@ -285,8 +318,8 @@ export class EVVService {
           state: visitData.serviceAddress.state,
           postalCode: visitData.serviceAddress.postalCode,
           country: visitData.serviceAddress.country,
-          latitude: visitData.serviceAddress.latitude,
-          longitude: visitData.serviceAddress.longitude,
+          latitude: visitData.serviceAddress.latitude ?? 0,
+          longitude: visitData.serviceAddress.longitude ?? 0,
           geofenceRadius: geofenceRadius,
           addressVerified: visitData.serviceAddress.addressVerified,
         };
@@ -440,40 +473,72 @@ export class EVVService {
       throw new ValidationError('Visit has already been clocked out');
     }
 
+    // Get caregiver details to check for demo data
+    const caregiver = await this.caregiverProvider.getCaregiverForEVV(input.caregiverId);
+
+    // Skip geocoding validation for demo users and admin users
+    const isDemoUser = caregiver.isDemoData === true;
+    const isAdminUser = userContext.roles.some(role => 
+      role === 'SUPER_ADMIN' || 
+      role === 'ORG_ADMIN' || 
+      role === 'BRANCH_ADMIN'
+    );
+
     // Get geofence — re-derive the same address/geofence used at clock-in by
     // re-fetching the visit (EVV records don't persist addressId directly;
     // clockIn computes it from the visit's service address each time, so
     // clockOut must do the same lookup rather than a hardcoded placeholder).
     const visitData = await this.visitProvider.getVisitForEVV(evvRecord.visitId);
-    if (!visitData.serviceAddress.latitude || !visitData.serviceAddress.longitude) {
-      throw new ValidationError(
-        'Visit address must have valid geocoded coordinates for EVV compliance',
-        { visitId: evvRecord.visitId, address: visitData.serviceAddress }
+    
+    // Only enforce geocoding validation for production users
+    if (!isDemoUser && !isAdminUser) {
+      if (!visitData.serviceAddress.latitude || !visitData.serviceAddress.longitude) {
+        throw new ValidationError(
+          'Visit address must have valid geocoded coordinates for EVV compliance',
+          { visitId: evvRecord.visitId, address: visitData.serviceAddress }
+        );
+      }
+    }
+
+    // Only perform geofence validation if coordinates are available
+    let geofenceCheck: GeofenceCheckResult;
+    let geofence: Geofence | null = null;
+
+    if (visitData.serviceAddress.latitude && visitData.serviceAddress.longitude) {
+      const addressId = visitData.serviceAddress.addressId || this.generateFallbackAddressId(visitData.serviceAddress);
+      geofence = await this.repository.getGeofenceByAddress(addressId);
+      if (!geofence) {
+        throw new NotFoundError('Geofence not found for visit location');
+      }
+
+      // Verify location
+      geofenceCheck = this.validator.checkGeofence(
+        input.location.latitude,
+        input.location.longitude,
+        input.location.accuracy,
+        geofence.centerLatitude,
+        geofence.centerLongitude,
+        geofence.radiusMeters,
+        geofence.allowedVariance || 0
       );
-    }
-    const addressId = visitData.serviceAddress.addressId || this.generateFallbackAddressId(visitData.serviceAddress);
-    const geofence = await this.repository.getGeofenceByAddress(addressId);
-    if (!geofence) {
-      throw new NotFoundError('Geofence not found for visit location');
-    }
 
-    // Verify location
-    const geofenceCheck = this.validator.checkGeofence(
-      input.location.latitude,
-      input.location.longitude,
-      input.location.accuracy,
-      geofence.centerLatitude,
-      geofence.centerLongitude,
-      geofence.radiusMeters,
-      geofence.allowedVariance || 0
-    );
-
-    // Update geofence statistics
-    await this.repository.updateGeofenceStats(
-      geofence.id,
-      geofenceCheck.isWithinGeofence,
-      input.location.accuracy
-    );
+      // Update geofence statistics
+      await this.repository.updateGeofenceStats(
+        geofence.id,
+        geofenceCheck.isWithinGeofence,
+        input.location.accuracy
+      );
+    } else {
+      // Demo/admin user without geocoding: create a passing geofence check
+      geofenceCheck = {
+        isWithinGeofence: true,
+        distanceFromCenter: 0,
+        distanceFromAddress: 0,
+        accuracy: input.location.accuracy,
+        requiresManualReview: false,
+        reason: 'Geocoding validation bypassed for demo/admin user',
+      };
+    }
 
     // Perform state-specific EVV validation for clock-out
     const state = evvRecord.serviceAddress.state as StateCode;

@@ -59,13 +59,9 @@ export class VisitProvider implements IVisitProvider {
       throw new ValidationError('Visit does not have a service address', { visitId });
     }
 
-    // Validate address has required geolocation data
-    if (visit.address.latitude == null || visit.address.longitude == null) {
-      throw new ValidationError(
-        'Visit address must be geocoded before EVV operations',
-        { visitId, address: visit.address }
-      );
-    }
+    // Note: Geocoding validation is handled in EVV service clockIn/clockOut
+    // where we can check for demo users and admin users who are exempt
+    // from geocoding requirements
 
     // Fetch client details for EVV using the real ClientProvider
     const client = await this.clientProvider.getClientForEVV(visit.clientId);
