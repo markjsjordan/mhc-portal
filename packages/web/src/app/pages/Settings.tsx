@@ -617,14 +617,14 @@ function EditMemberModal({
             </button>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-4 text-gray-900">
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-600">
                 {error}
               </div>
             )}
 
-            <form onSubmit={(e) => { void handleSubmit(onSubmit)(e); }} className="space-y-4">
+            <form onSubmit={(e) => { void handleSubmit(onSubmit)(e); }} className="space-y-4 text-gray-900">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   name="firstName"
