@@ -4,7 +4,7 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Folk API',
+      title: 'MHC Portal API',
       version: '1.0.0',
       description: 'Self-hostable home healthcare platform API',
       contact: {

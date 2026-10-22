@@ -1,6 +1,6 @@
 /**
  * US States and Territories Constants
- * Single source of truth for state selection across Folk Care
+ * Single source of truth for state selection across MHC Portal
  *
  * Includes:
  * - All 50 US states

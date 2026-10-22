@@ -557,7 +557,7 @@ export const BulkDataHub: React.FC = () => {
 
                 {/* Templates & Guidance */}
                 <div className="border-t pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-600">
-                  <span>Need an example template formatted for FolkCare?</span>
+                  <span>Need an example template formatted for MHC Portal?</span>
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
@@ -578,7 +578,7 @@ export const BulkDataHub: React.FC = () => {
             <Card>
               <CardHeader
                 title="Column Mapping & Legacy Preset"
-                subtitle={`Map CSV columns from "${selectedFile?.name}" to FolkCare ${entityType} fields.`}
+                subtitle={`Map CSV columns from "${selectedFile?.name}" to MHC Portal ${entityType} fields.`}
               />
               <CardContent className="space-y-6">
                 {/* Preset Banner */}
@@ -600,7 +600,7 @@ export const BulkDataHub: React.FC = () => {
                       <tr>
                         <th className="px-4 py-3 text-left font-semibold text-gray-700">CSV Header</th>
                         <th className="px-4 py-3 text-left font-semibold text-gray-700">Sample Header Name</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Target FolkCare Field</th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Target MHC Portal Field</th>
                         <th className="px-4 py-3 text-left font-semibold text-gray-700">Status</th>
                       </tr>
                     </thead>
@@ -715,7 +715,7 @@ export const BulkDataHub: React.FC = () => {
                   <div>
                     <div className="font-semibold text-gray-900 text-sm">Duplicate Record Policy</div>
                     <div className="text-xs text-gray-500 mt-0.5">
-                      Choose how FolkCare handles existing matching clients / caregivers during commit.
+                      Choose how MHC Portal handles existing matching clients / caregivers during commit.
                     </div>
                   </div>
                   <div className="flex gap-4">

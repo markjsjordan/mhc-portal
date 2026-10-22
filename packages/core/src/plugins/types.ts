@@ -1,7 +1,7 @@
 /**
  * Plugin Architecture Types
  *
- * Defines the interfaces and types for the Folk Care plugin system.
+ * Defines the interfaces and types for the MHC Portal plugin system.
  * Plugins can extend functionality through middleware, routes, services,
  * and providers without modifying core application code.
  */
@@ -84,7 +84,7 @@ export interface PluginMetadata {
   category: PluginCategory;
   /** Plugin capabilities */
   capabilities: PluginCapabilities;
-  /** Required Folk Care version (semver range) */
+  /** Required MHC Portal version (semver range) */
   folkCareVersion?: string;
   /** Plugin dependencies (other plugin IDs) */
   dependencies?: string[];
@@ -201,7 +201,7 @@ export interface PluginContext {
   config: PluginConfig;
   /** Environment (development, test, production) */
   environment: 'development' | 'test' | 'production';
-  /** Folk Care version */
+  /** MHC Portal version */
   folkCareVersion: string;
 }
 

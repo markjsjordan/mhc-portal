@@ -2,10 +2,10 @@ export const swaggerOptions = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Folk API',
+      title: 'MHC Portal API',
       version: '1.0.0',
       description: `
-# Folk API Documentation
+# MHC Portal API Documentation
 
 Comprehensive REST API for home healthcare management platform.
 
@@ -92,9 +92,9 @@ The API uses semantic versioning. Breaking changes will be introduced in new maj
 Current version: **v1.0.0**
       `,
       contact: {
-        name: 'Folk Team',
-        url: 'https://github.com/neighborhood-lab/folkcare',
-        email: 'support@folkcare.example'
+        name: 'MHC Portal Team',
+        url: 'https://github.com/markjsjordan/mhc-portal',
+        email: 'support@mhc-family-portal.vercel.app'
       },
       license: {
         name: 'AGPL-3.0',

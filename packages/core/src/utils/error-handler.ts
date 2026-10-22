@@ -1,5 +1,5 @@
 /**
- * Error handling utilities for Folk Care API
+ * Error handling utilities for MHC Portal API
  * Provides standardized error responses and logging
  */
 

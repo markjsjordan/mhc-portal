@@ -1,5 +1,5 @@
 /**
- * Invite handlers for Folk Care
+ * Invite handlers for MHC Portal
  * Manages invitation creation, validation, and acceptance
  */
 

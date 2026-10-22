@@ -21,7 +21,7 @@ import type {
 import type { Express } from 'express';
 import type { Knex } from 'knex';
 
-// Folk Care version for compatibility
+// MHC Portal version for compatibility
 const FOLK_CARE_VERSION = '0.1.0';
 
 /**
@@ -145,7 +145,7 @@ async function processPluginEntry(
     const packageJsonContent = await fs.readFile(packageJsonPath, 'utf-8');
     const packageJson = JSON.parse(packageJsonContent) as Record<string, unknown>;
 
-    // Check if this is a Folk Care plugin
+    // Check if this is a MHC Portal plugin
     const folkcare = packageJson['folkcare'] as Record<string, unknown> | undefined;
     if (folkcare?.['plugin'] !== true) {
       return null;
