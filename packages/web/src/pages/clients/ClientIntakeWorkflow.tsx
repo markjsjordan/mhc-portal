@@ -142,7 +142,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
   const { initialData, isEditMode = false, clientId, onSuccess } = props;
   const [currentStep, setCurrentStep] = useState(1);
   const [intakeData, setIntakeData] = useState<Partial<IntakeData>>(
-    initialData || {
+    initialData ?? {
       emergencyContacts: [{ name: '', relationship: '', phone: '' }],
       medications: [],
       allergies: [],
@@ -178,7 +178,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
   const updateNestedData = (parent: string, field: string, value: any) => {
     setIntakeData((prev) => ({
       ...prev,
-      [parent]: { ...((prev as any)[parent] || {}), [field]: value },
+      [parent]: { ...((prev as any)[parent] ?? {}), [field]: value },
     }));
   };
 
@@ -186,7 +186,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
     setIntakeData((prev) => ({
       ...prev,
       emergencyContacts: [
-        ...(prev.emergencyContacts || []),
+        ...(prev.emergencyContacts ?? []),
         { name: '', relationship: '', phone: '' },
       ],
     }));
@@ -195,13 +195,13 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
   const addMedication = () => {
     setIntakeData((prev) => ({
       ...prev,
-      medications: [...(prev.medications || []), { name: '', dosage: '', frequency: '' }],
+      medications: [...(prev.medications ?? []), { name: '', dosage: '', frequency: '' }],
     }));
   };
 
   const toggleTask = (task: string) => {
     setIntakeData((prev) => {
-      const tasks = prev.tasks || [];
+      const tasks = prev.tasks ?? [];
       return {
         ...prev,
         tasks: tasks.includes(task)
@@ -213,7 +213,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
 
   const toggleServiceType = (type: string) => {
     setIntakeData((prev) => {
-      const types = prev.serviceTypes || [];
+      const types = prev.serviceTypes ?? [];
       return {
         ...prev,
         serviceTypes: types.includes(type)
@@ -225,7 +225,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
 
   const toggleBackupCaregiver = (id: string) => {
     setIntakeData((prev) => {
-      const backups = prev.backupCaregivers || [];
+      const backups = prev.backupCaregivers ?? [];
       return {
         ...prev,
         backupCaregivers: backups.includes(id)
@@ -270,7 +270,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
   const { data: existingClients } = useClients({ page: 1, pageSize: 1 });
   const { data: branches = [] } = useBranches();
   const [selectedBranchId, setSelectedBranchId] = useState<string>('');
-  const defaultBranchId = user?.branchIds?.[0] || branches[0]?.id || '';
+  const defaultBranchId = user?.branchIds?.[0] ?? branches[0]?.id ?? '';
   const activeBranchId = selectedBranchId || defaultBranchId;
 
   const handleSubmit = async () => {
@@ -303,10 +303,10 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
     // 4. Existing client branch
     // 5. Undefined (backend automatically auto-resolves or creates default branch)
     const effectiveBranchId =
-      (activeBranchId && activeBranchId.trim() !== '' ? activeBranchId : undefined) ||
-      (user?.branchIds?.[0] && user.branchIds[0].trim() !== '' ? user.branchIds[0] : undefined) ||
-      (branches.length > 0 && branches[0]?.id ? branches[0].id : undefined) ||
-      (existingClients?.items?.[0]?.branchId && existingClients.items[0].branchId.trim() !== '' ? existingClients.items[0].branchId : undefined) ||
+      (activeBranchId && activeBranchId.trim() !== '' ? activeBranchId : undefined) ??
+      (user?.branchIds?.[0] && user.branchIds[0].trim() !== '' ? user.branchIds[0] : undefined) ??
+      (branches.length > 0 && branches[0]?.id ? branches[0].id : undefined) ??
+      (existingClients?.items?.[0]?.branchId && existingClients.items[0].branchId.trim() !== '' ? existingClients.items[0].branchId : undefined) ??
       undefined;
 
     // Build address only if all required address fields are provided
@@ -321,7 +321,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       ? {
           type: 'HOME' as const,
           line1: intakeData.address!.line1.trim(),
-          line2: intakeData.address?.line2?.trim() || undefined,
+          line2: intakeData.address?.line2?.trim() ?? undefined,
           city: intakeData.address!.city.trim(),
           state: intakeData.address!.state.trim().toUpperCase(),
           postalCode: intakeData.address!.postalCode.trim(),
@@ -333,7 +333,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       ? { number: intakeData.phone.trim(), type: 'MOBILE' as const, canReceiveSMS: false }
       : undefined;
 
-    const emergencyContactsInput = (intakeData.emergencyContacts || [])
+    const emergencyContactsInput = (intakeData.emergencyContacts ?? [])
       .filter((c) => c.name?.trim() && c.phone?.trim())
       .map((c) => ({
         id: crypto.randomUUID(),
@@ -351,7 +351,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           firstName: intakeData.firstName.trim(),
           lastName: intakeData.lastName.trim(),
           dateOfBirth: intakeData.dateOfBirth,
-          email: intakeData.email?.trim() || undefined,
+          email: intakeData.email?.trim() ?? undefined,
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
           emergencyContacts: emergencyContactsInput,
@@ -375,7 +375,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           firstName: intakeData.firstName.trim(),
           lastName: intakeData.lastName.trim(),
           dateOfBirth: intakeData.dateOfBirth,
-          email: intakeData.email?.trim() || undefined,
+          email: intakeData.email?.trim() ?? undefined,
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
           emergencyContacts: emergencyContactsInput,
@@ -500,7 +500,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   <input
                     type="text"
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
-                    value={intakeData.firstName || ''}
+                    value={intakeData.firstName ?? ''}
                     onChange={(e) => updateData('firstName', e.target.value)}
                     placeholder="Enter first name"
                   />
@@ -512,7 +512,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   <input
                     type="text"
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
-                    value={intakeData.lastName || ''}
+                    value={intakeData.lastName ?? ''}
                     onChange={(e) => updateData('lastName', e.target.value)}
                     placeholder="Enter last name"
                   />
@@ -528,7 +528,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                     type="date"
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
                     max={new Date().toISOString().split('T')[0]}
-                    value={intakeData.dateOfBirth || ''}
+                    value={intakeData.dateOfBirth ?? ''}
                     onChange={(e) => updateData('dateOfBirth', e.target.value)}
                   />
                 </div>
@@ -537,7 +537,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   <input
                     type="tel"
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
-                    value={intakeData.phone || ''}
+                    value={intakeData.phone ?? ''}
                     onChange={(e) => updateData('phone', e.target.value)}
                     placeholder="(555) 123-4567"
                   />
@@ -549,7 +549,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 <input
                   type="email"
                   className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
-                  value={intakeData.email || ''}
+                  value={intakeData.email ?? ''}
                   onChange={(e) => updateData('email', e.target.value)}
                   placeholder="client@example.com"
                 />
@@ -582,7 +582,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 <input
                   type="text"
                   className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
-                  value={intakeData.address?.line1 || ''}
+                  value={intakeData.address?.line1 ?? ''}
                   onChange={(e) => updateNestedData('address', 'line1', e.target.value)}
                   placeholder="123 Main St"
                 />
@@ -592,7 +592,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 <input
                   type="text"
                   className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
-                  value={intakeData.address?.line2 || ''}
+                  value={intakeData.address?.line2 ?? ''}
                   onChange={(e) => updateNestedData('address', 'line2', e.target.value)}
                   placeholder="Apt 4B"
                 />
@@ -603,7 +603,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   <input
                     type="text"
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
-                    value={intakeData.address?.city || ''}
+                    value={intakeData.address?.city ?? ''}
                     onChange={(e) => updateNestedData('address', 'city', e.target.value)}
                     placeholder="Austin"
                   />
@@ -612,7 +612,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">State</label>
                   <select
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
-                    value={intakeData.address?.state || ''}
+                    value={intakeData.address?.state ?? ''}
                     onChange={(e) => updateNestedData('address', 'state', e.target.value)}
                   >
                     <option value="">Select State</option>
@@ -628,7 +628,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   <input
                     type="text"
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
-                    value={intakeData.address?.postalCode || ''}
+                    value={intakeData.address?.postalCode ?? ''}
                     onChange={(e) => updateNestedData('address', 'postalCode', e.target.value)}
                     placeholder="78701"
                   />
@@ -650,7 +650,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                         className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
                         value={contact.name}
                         onChange={(e) => {
-                          const contacts = [...(intakeData.emergencyContacts || [])];
+                          const contacts = [...(intakeData.emergencyContacts ?? [])];
                           if (contacts[index]) contacts[index].name = e.target.value;
                           updateData('emergencyContacts', contacts);
                         }}
@@ -664,7 +664,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                         className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
                         value={contact.relationship}
                         onChange={(e) => {
-                          const contacts = [...(intakeData.emergencyContacts || [])];
+                          const contacts = [...(intakeData.emergencyContacts ?? [])];
                           if (contacts[index]) contacts[index].relationship = e.target.value;
                           updateData('emergencyContacts', contacts);
                         }}
@@ -678,7 +678,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                         className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
                         value={contact.phone}
                         onChange={(e) => {
-                          const contacts = [...(intakeData.emergencyContacts || [])];
+                          const contacts = [...(intakeData.emergencyContacts ?? [])];
                           if (contacts[index]) contacts[index].phone = e.target.value;
                           updateData('emergencyContacts', contacts);
                         }}
@@ -706,7 +706,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Insurance Type</label>
                   <select
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
-                    value={intakeData.insurance?.type || ''}
+                    value={intakeData.insurance?.type ?? ''}
                     onChange={(e) => updateNestedData('insurance', 'type', e.target.value)}
                   >
                     <option value="">Select</option>
@@ -721,7 +721,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   <input
                     type="text"
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
-                    value={intakeData.insurance?.memberId || ''}
+                    value={intakeData.insurance?.memberId ?? ''}
                     onChange={(e) => updateNestedData('insurance', 'memberId', e.target.value)}
                     placeholder="Member ID"
                   />
@@ -814,7 +814,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Mobility</label>
                   <select
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
-                    value={intakeData.mobility || ''}
+                    value={intakeData.mobility ?? ''}
                     onChange={(e) => updateData('mobility', e.target.value)}
                   >
                     <option value="">Select</option>
@@ -828,7 +828,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Cognitive Status</label>
                   <select
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
-                    value={intakeData.cognitive || ''}
+                    value={intakeData.cognitive ?? ''}
                     onChange={(e) => updateData('cognitive', e.target.value)}
                   >
                     <option value="">Select</option>
@@ -857,7 +857,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                       className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
                       value={med.name}
                       onChange={(e) => {
-                        const meds = [...(intakeData.medications || [])];
+                        const meds = [...(intakeData.medications ?? [])];
                         if (meds[index]) meds[index].name = e.target.value;
                         updateData('medications', meds);
                       }}
@@ -871,7 +871,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                       className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
                       value={med.dosage}
                       onChange={(e) => {
-                        const meds = [...(intakeData.medications || [])];
+                        const meds = [...(intakeData.medications ?? [])];
                         if (meds[index]) meds[index].dosage = e.target.value;
                         updateData('medications', meds);
                       }}
@@ -885,7 +885,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                       className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
                       value={med.frequency}
                       onChange={(e) => {
-                        const meds = [...(intakeData.medications || [])];
+                        const meds = [...(intakeData.medications ?? [])];
                         if (meds[index]) meds[index].frequency = e.target.value;
                         updateData('medications', meds);
                       }}
@@ -942,7 +942,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Visit Frequency</label>
                   <select
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
-                    value={intakeData.visitFrequency || ''}
+                    value={intakeData.visitFrequency ?? ''}
                     onChange={(e) => updateData('visitFrequency', e.target.value)}
                   >
                     <option value="">Select</option>
@@ -956,7 +956,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Visit Duration (minutes)</label>
                   <select
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
-                    value={intakeData.visitDuration || ''}
+                    value={intakeData.visitDuration ?? ''}
                     onChange={(e) => updateData('visitDuration', parseInt(e.target.value))}
                   >
                     <option value="">Select</option>
@@ -1012,7 +1012,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </h3>
               <textarea
                 className="w-full p-3.5 text-base md:text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-sans resize-y box-border"
-                value={intakeData.goals || ''}
+                value={intakeData.goals ?? ''}
                 onChange={(e) => updateData('goals', e.target.value)}
                 placeholder="Describe the client's care goals (e.g., maintain independence, prevent falls, improve nutrition, social engagement)"
                 rows={4}
@@ -1036,7 +1036,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Gender Preference</label>
                   <select
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
-                    value={intakeData.preferences?.gender || 'no-preference'}
+                    value={intakeData.preferences?.gender ?? 'no-preference'}
                     onChange={(e) => updateNestedData('preferences', 'gender', e.target.value)}
                   >
                     <option value="no-preference">No Preference</option>
@@ -1127,7 +1127,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 <input
                   type="date"
                   className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
-                  value={intakeData.scheduleStartDate || ''}
+                  value={intakeData.scheduleStartDate ?? ''}
                   onChange={(e) => updateData('scheduleStartDate', e.target.value)}
                 />
               </div>
@@ -1138,8 +1138,8 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 Visit Pattern
               </h3>
               <p className="text-sm text-gray-500 mb-4">
-                Based on {intakeData.visitFrequency || 'selected'} frequency -{' '}
-                {intakeData.visitDuration || 0} minutes per visit
+                Based on {intakeData.visitFrequency ?? 'selected'} frequency -{' '}
+                {intakeData.visitDuration ?? 0} minutes per visit
               </p>
               <div className="p-4 md:p-6 bg-gray-50 rounded-xl border border-gray-200">
                 <p className="font-semibold text-gray-800 mb-2">Example Schedule:</p>
@@ -1270,14 +1270,14 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 <input
                   type="text"
                   className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
-                  value={intakeData.signature || ''}
+                  value={intakeData.signature ?? ''}
                   onChange={(e) => updateData('signature', e.target.value)}
                   placeholder="Type full name to sign"
                 />
               </div>
               <div className="p-6 md:p-8 border-2 border-dashed border-gray-300 rounded-xl text-center bg-gray-50/50 w-full box-border">
                 <p className="text-2xl font-serif italic text-gray-900 mb-5 min-h-[36px] flex items-center justify-center break-words">
-                  {intakeData.signature || 'Signature will appear here'}
+                  {intakeData.signature ?? 'Signature will appear here'}
                 </p>
                 <div className="w-full h-0.5 bg-gray-400 my-4" />
                 <p className="text-xs text-gray-500 font-medium">
@@ -1305,7 +1305,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 </span>
                 <span className="text-sm md:text-base font-medium sm:font-normal text-gray-900 break-words flex-1 min-w-0">
                   {intakeData.firstName || intakeData.lastName ? (
-                    `${intakeData.firstName || ''} ${intakeData.lastName || ''}`.trim()
+                    `${intakeData.firstName ?? ''} ${intakeData.lastName ?? ''}`.trim()
                   ) : (
                     <span className="text-gray-400 italic">Not provided</span>
                   )}
@@ -1316,7 +1316,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   DOB:
                 </span>
                 <span className="text-sm md:text-base font-medium sm:font-normal text-gray-900 break-words flex-1 min-w-0">
-                  {intakeData.dateOfBirth || <span className="text-gray-400 italic">Not provided</span>}
+                  {intakeData.dateOfBirth ?? <span className="text-gray-400 italic">Not provided</span>}
                 </span>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-baseline py-2.5 md:py-3 border-b border-gray-200/80 gap-1 sm:gap-4 w-full">
@@ -1324,7 +1324,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   Phone:
                 </span>
                 <span className="text-sm md:text-base font-medium sm:font-normal text-gray-900 break-words flex-1 min-w-0">
-                  {intakeData.phone || <span className="text-gray-400 italic">Not provided</span>}
+                  {intakeData.phone ?? <span className="text-gray-400 italic">Not provided</span>}
                 </span>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-baseline py-2.5 md:py-3 gap-1 sm:gap-4 w-full">
@@ -1378,7 +1378,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   Frequency:
                 </span>
                 <span className="text-sm md:text-base font-medium sm:font-normal text-gray-900 break-words flex-1 min-w-0 capitalize">
-                  {intakeData.visitFrequency || <span className="text-gray-400 italic">Not set</span>}
+                  {intakeData.visitFrequency ?? <span className="text-gray-400 italic">Not set</span>}
                 </span>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-baseline py-2.5 md:py-3 border-b border-gray-200/80 gap-1 sm:gap-4 w-full">
@@ -1422,7 +1422,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   Primary:
                 </span>
                 <span className="text-sm md:text-base font-medium sm:font-normal text-gray-900 break-words flex-1 min-w-0">
-                  {DEMO_CAREGIVERS.find((cg) => cg.id === intakeData.primaryCaregiver)?.name || (
+                  {DEMO_CAREGIVERS.find((cg) => cg.id === intakeData.primaryCaregiver)?.name ?? (
                     <span className="text-gray-400 italic">None selected</span>
                   )}
                 </span>
@@ -1463,8 +1463,8 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   All Consents:
                 </span>
                 <span className="text-sm md:text-base font-medium sm:font-normal text-gray-900 break-words flex-1 min-w-0">
-                  {Object.values(intakeData.consents || {}).length > 0 &&
-                  Object.values(intakeData.consents || {}).every((v) => v) ? (
+                  {Object.values(intakeData.consents ?? {}).length > 0 &&
+                  Object.values(intakeData.consents ?? {}).every((v) => v) ? (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
                       ✓ All Signed
                     </span>
@@ -1480,7 +1480,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   Signature:
                 </span>
                 <span className="text-sm md:text-base font-medium sm:font-normal text-gray-900 break-words flex-1 min-w-0">
-                  {intakeData.signature || <span className="text-gray-400 italic">No signature captured</span>}
+                  {intakeData.signature ?? <span className="text-gray-400 italic">No signature captured</span>}
                 </span>
               </div>
             </div>
