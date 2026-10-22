@@ -40,8 +40,8 @@ export interface EVVVisitData {
     state: string;
     postalCode: string;
     country: string;
-    latitude: number;
-    longitude: number;
+    latitude?: number; // Optional - required for production users, optional for demo/admin
+    longitude?: number; // Optional - required for production users, optional for demo/admin
     geofenceRadius?: number; // Custom radius if set, otherwise use state default
     addressVerified: boolean;
   };
@@ -159,6 +159,9 @@ export interface ICaregiverProvider {
     
     // State-specific
     stateRegistryStatus?: Record<string, 'CLEARED' | 'FLAGGED' | 'UNKNOWN'>;
+    
+    // Demo/testing flag
+    isDemoData?: boolean;
   }>;
   
   /**
