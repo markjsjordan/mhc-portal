@@ -233,6 +233,317 @@ Items ranked by their effect on client safety and data protection. **High** item
 
 ---
 
+## Your Day in the Portal (By Role)
+
+This section describes what each role sees, touches, and does on a typical day. Use it to understand what the portal looks like from each person's perspective.
+
+---
+
+### 🩺 As a Caregiver
+
+**Login:** `caregiver@tx.folkcare.example` → lands on **Tasks** page
+
+**What you see when you log in:**
+- Your **Caregiver Dashboard** — today's schedule, pending tasks, timesheet status, and credential/training reminders
+- Connection status indicator (online/offline) and data freshness timestamps
+
+**What you can access:**
+
+| Section | What You Do There |
+|---------|------------------|
+| **Tasks** (home page) | See today's task checklist by client — morning medications, blood pressure checks, PT exercises |
+| **Caregiver Dashboard** | Your personal hub: today's visits with map/directions, clock-in/out buttons, timesheet status |
+| **Scheduling** | View your assigned visits (read-only — you can't change the schedule) |
+| **Calendar View** | See your visits on a calendar |
+| **Visits** | View visit details for your assigned clients |
+| **Care Plans** | Read care plans for your clients (read-only) |
+| **Time Tracking (EVV)** | View your EVV records — clock-in/out history, GPS verification status |
+| **Messages** | Send and receive messages in threads assigned to you |
+| **Incidents** | File incident reports when something goes wrong during a visit |
+| **Settings** | Update your profile and preferences |
+
+**A typical day:**
+1. **Start of day:** Open the dashboard → review today's schedule and task list
+2. **Arrive at client's home:** Tap **Clock In** → GPS captures your location, visit timer starts
+3. **During the visit:** Complete tasks on the checklist (medications, vitals, personal care) → write visit notes
+4. **Leaving the client's home:** Tap **Clock Out** → GPS captures departure, EVV record created
+5. **Between visits:** Check next visit details, get directions, review the next client's care plan
+6. **End of day:** Review timesheet status, check for any credential renewal reminders
+
+**What you can't do:** Change schedules, view other caregivers' records, access billing/payroll, modify care plans, or access admin settings.
+
+---
+
+### 👩‍⚕️ As a Registered Nurse (RN Clinical)
+
+**Login:** `nurse@tx.folkcare.example` → lands on **Clients** page
+
+**What you see when you log in:**
+- The **Nurse Dashboard** — supervision visits due this month, care plans needing review, medication changes requiring approval, and clinical quality metrics
+
+**What you can access:**
+
+| Section | What You Do There |
+|---------|------------------|
+| **Nurse Dashboard** | Clinical oversight hub: overdue supervision visits, care plan reviews due (60-day cycle), medication approval queue |
+| **Clients** | Full client list — review health records, demographics, medications, clinical history |
+| **Medications** | Review and approve medication changes for your assigned clients |
+| **Care Plans** | Review, create, and edit care plans; track goals and interventions; write progress notes |
+| **Scheduling** | View all visits, check caregiver assignments |
+| **Calendar View** | Calendar overview of visits and supervision schedule |
+| **Visits** | Review visit records, verify EVV documentation, review visit notes |
+| **Tasks** | View and manage clinical tasks |
+| **Time Tracking (EVV)** | Review EVV records for compliance verification |
+| **Incidents** | Review and follow up on incident reports |
+| **Messages** | Communicate with caregivers, coordinators, and families |
+| **Settings** | Update your profile |
+
+**A typical day:**
+1. **Morning:** Check the Nurse Dashboard → identify overdue supervision visits and care plans due for review
+2. **Supervision visits:** Travel to client homes for required RN supervision (Texas: as needed per care plan; Florida: every 60 days for skilled nursing)
+3. **Care plan reviews:** Open care plans due for review → assess goals, update interventions, write progress notes
+4. **Medication management:** Review medication change requests → approve or flag concerns
+5. **Clinical documentation:** Review caregiver visit notes for clinical accuracy, verify EVV records
+6. **Incident follow-up:** Review any new incident reports → add clinical assessment notes
+7. **End of day:** Check quality metrics dashboard, flag any compliance concerns
+
+**What you can't do:** Modify schedules, access billing/payroll, change system settings, or access admin tools.
+
+---
+
+### 📋 As a Care Coordinator
+
+**Login:** `coordinator@tx.folkcare.example` → lands on **Coordinator Dashboard** (analytics)
+
+**What you see when you log in:**
+- The **Coordinator Dashboard** — real-time KPIs (visits today, active clients, EVV compliance rate), compliance alerts, EVV exceptions, and operational metrics. Refreshes every 60 seconds.
+
+**What you can access:**
+
+| Section | What You Do There |
+|---------|------------------|
+| **Coordinator Dashboard** | Real-time operational hub: today's visit count, compliance alerts, EVV exceptions, active client metrics |
+| **Clients** | Full client management — view, edit, and delete client records; run new client intake |
+| **Client Intake** | Walk new clients through the intake workflow (role-restricted: admins + coordinators only) |
+| **Caregivers** | View caregiver profiles, certifications, availability (read-only) |
+| **Scheduling** | Full control: create, edit, and manage visit schedules |
+| **Calendar View** | Visual calendar with drag-and-drop scheduling |
+| **Schedule Builder** | Build and optimize weekly/monthly schedules |
+| **Shift Matching** | Review automated caregiver-to-client matching suggestions |
+| **Care Plans** | Create, edit, and manage care plans; assign tasks; write progress notes |
+| **Visits** | Full visit management — view details, track status, review documentation |
+| **Tasks** | Create and manage task lists for caregivers |
+| **Time Tracking (EVV)** | Monitor EVV records across all caregivers |
+| **Aggregator Submissions** | Track state EVV submission status (role-restricted: admins + coordinators) |
+| **Compliance** | View compliance dashboard and metrics (role-restricted) |
+| **Coordinator Notifications** | Send bulk notifications to caregivers and families |
+| **Messages** | Full messaging — create threads, communicate with all staff |
+| **Incidents** | Review and manage incident reports |
+| **Analytics Reports** | View operational reports |
+| **Settings** | Update profile and team preferences |
+
+**A typical day:**
+1. **Morning:** Check Coordinator Dashboard → review today's scheduled visits, note any EVV exceptions or missed visits from yesterday
+2. **Scheduling:** Open Schedule Builder → assign caregivers to visits, resolve any open shifts, handle call-outs
+3. **Client management:** Process new client intakes, update existing client records, review care plan renewals
+4. **Caregiver oversight:** Monitor real-time EVV compliance, follow up on missed clock-ins, send notifications
+5. **Care planning:** Create or update care plans, assign tasks to caregivers
+6. **EVV monitoring:** Review aggregator submission status, address any failed state submissions
+7. **Compliance:** Check the compliance dashboard for any flags or upcoming deadlines
+8. **Communications:** Send bulk notifications, respond to messages from caregivers and families
+9. **End of day:** Review KPIs, flag issues for tomorrow, document any incidents
+
+**What you can't do:** Access billing/payroll, modify system admin settings, or manage other staff accounts.
+
+---
+
+### 📅 As a Scheduler
+
+**Login:** (scheduler account) → lands on **Scheduling** page
+
+**What you see when you log in:**
+- The **Scheduling** page — the visit list with today's and upcoming visits, assignment status
+
+**What you can access:**
+
+| Section | What You Do There |
+|---------|------------------|
+| **Scheduling** (home page) | View and manage all visits — create, edit, reassign |
+| **Calendar View** | Visual calendar for scheduling — day, week, month views |
+| **Schedule Builder** | Build optimized schedules, batch-assign caregivers |
+| **Shift Matching** | Review ML-based matching suggestions, fill open shifts |
+| **Visits** | View visit details and status (read-only for documentation) |
+| **Clients** | Look up client addresses, preferences, and scheduling requirements (read-only) |
+| **Caregivers** | Check caregiver availability, certifications, and location (read-only) |
+| **Settings** | Update your profile |
+
+**A typical day:**
+1. **Morning:** Review today's schedule → confirm all visits are assigned, check for call-outs
+2. **Fill gaps:** Use Shift Matching to find available caregivers for open shifts
+3. **Schedule builder:** Build next week's schedule → balance caregiver workloads, minimize travel time
+4. **Handle changes:** Reassign visits when caregivers call out, adjust for client cancellations
+5. **Calendar management:** Review calendar for conflicts, double-bookings, or gaps
+6. **End of day:** Confirm next day's schedule is complete, note any unresolved open shifts
+
+**What you can't do:** Edit client records, modify care plans, access billing/payroll, send bulk notifications, or access admin tools.
+
+---
+
+### 🏢 As an Org Admin / Super Admin
+
+**Login:** `admin@folkcare.example` (Super Admin) or `admin@tx.folkcare.example` (Org Admin) → lands on **Admin Dashboard**
+
+**What you see when you log in:**
+- The **Administrator Dashboard** — organization-wide metrics, staff counts, compliance overview, system health
+
+**What you can access:**
+Everything. Full control of the entire system including:
+
+| Section | What You Do There |
+|---------|------------------|
+| **Admin Dashboard** | Organization overview: active clients, caregivers, visit stats, compliance metrics |
+| **Analytics (Admin)** | Deep analytics: KPIs, trends, operational reports |
+| **All Client features** | Full CRUD + intake workflows |
+| **All Caregiver features** | Full management including creating new caregivers |
+| **All Scheduling features** | Full scheduling control |
+| **All Care Plan features** | Full care plan management |
+| **Time Tracking + Submissions** | Full EVV oversight including aggregator submission tracking |
+| **Billing** | Create, edit, and manage invoices |
+| **Payroll** | View pay runs, pay stubs, pay periods, reports |
+| **Compliance** | Full compliance dashboard and state configuration |
+| **Quality Assurance** | Manage audits and corrective actions |
+| **Incidents** | Full incident management |
+| **Messages** | Full messaging system |
+| **Admin & Settings** | Team management, invite users, change roles, system settings |
+| **Import / Export** | Bulk data import and export tools |
+| **Coordinator Notifications** | Send bulk notifications |
+
+**A typical day:**
+1. **Morning:** Review Admin Dashboard → check overnight incidents, compliance alerts, system health
+2. **Team management:** Invite new team members, update roles, review access permissions
+3. **Compliance review:** Check compliance dashboard, review audit findings, track corrective actions
+4. **Operational oversight:** Review scheduling efficiency, EVV compliance rates, billing status
+5. **Reporting:** Pull operational reports, review analytics dashboards
+6. **System admin:** Manage settings, configure state-specific rules, review import/export needs
+7. **Escalation handling:** Resolve issues escalated by coordinators or nurses
+
+---
+
+### 🏥 As a Branch Admin
+
+**Login:** (branch admin account) → lands on **Admin Dashboard**
+
+**What you can access:** Same as Org Admin but scoped to your branch only. You can manage clients, caregivers, and schedules within your branch, but cannot see other branches' data or modify organization-wide settings.
+
+**A typical day:** Similar to Org Admin, focused on your branch's operations — staff oversight, scheduling, compliance monitoring, and issue resolution for your location.
+
+---
+
+### 👨‍👩‍👧 As a Family Member
+
+**Login:** `family@tx.folkcare.example` → lands on **Family Portal**
+
+**What you see when you log in:**
+- The **Family Dashboard** — a dedicated, simplified portal separate from the staff interface
+
+**What you can access:**
+
+| Section | What You Do There |
+|---------|------------------|
+| **Family Dashboard** | Overview of your loved one's recent care activity |
+| **Activity Feed** | Real-time updates: "Sarah M. clocked in 2 min ago", "Blood pressure: 128/82" |
+| **Schedule** | View upcoming visits and caregiver assignments |
+| **Care Plan** | Read the current care plan, goals, and progress |
+| **Health Updates** | View health metrics and clinical notes shared with family |
+| **Messages** | Send and receive messages with caregivers and coordinators |
+| **Notifications** | View care notifications and alerts |
+| **Settings** | Update your profile and notification preferences |
+
+**A typical day:**
+1. **Morning:** Check the activity feed → see if the caregiver arrived on time
+2. **During the day:** Review any health updates or visit notes
+3. **Communication:** Message the caregiver or coordinator with questions or concerns
+4. **Schedule check:** Confirm upcoming visit times and caregiver assignments
+5. **Care plan review:** Periodically review the care plan for any changes
+
+**What you can't do:** Access any staff pages, modify records, view other clients' data, or access admin tools. Family members are restricted to the family portal only.
+
+---
+
+### 🧾 As a Client
+
+**Login:** (client account) → lands on **Family Portal**
+
+**What you can access:** The same Family Portal as family members, but only sees information specifically granted to you. Default permissions are minimal — an administrator must grant specific access.
+
+---
+
+### 💰 As a Billing Specialist
+
+**Login:** (billing account) → lands on **Billing** page
+
+**What you can access:**
+
+| Section | What You Do There |
+|---------|------------------|
+| **Billing** (home page) | Manage invoices — create, edit, send, track payment status |
+| **Invoice Detail** | Review line items, hourly breakdowns, payer information |
+| **Clients** | Look up client records for billing reference (read-only) |
+| **Visits** | Review completed visits for invoice generation (read-only) |
+| **Analytics Reports** | Pull billing and financial reports |
+
+**A typical day:**
+1. **Morning:** Review pending invoices and overdue payments
+2. **Invoice creation:** Generate invoices from completed visits, verify line items
+3. **Payment tracking:** Update payment status, follow up on overdue accounts
+4. **Reporting:** Pull financial reports for management review
+
+---
+
+### 👔 As HR
+
+**Login:** (HR account) → lands on **Caregivers** page
+
+**What you can access:**
+
+| Section | What You Do There |
+|---------|------------------|
+| **Caregivers** (home page) | Full staff management — create, edit, update caregiver records |
+| **Training Dashboard** | Track caregiver training completion and certifications |
+| **Payroll** | Manage pay runs, pay periods, pay stubs, payroll reports |
+
+**A typical day:**
+1. **Staff management:** Process new hires, update credentials, track license expirations
+2. **Training oversight:** Monitor required training completion (HIPAA, abuse/neglect, CPR)
+3. **Payroll processing:** Run pay periods, review timesheets, generate pay stubs
+4. **Compliance:** Ensure all caregivers have current background checks and certifications
+
+---
+
+### 🔍 As an Auditor
+
+**Login:** (auditor account) → lands on **Quality Assurance** page
+
+**What you can access:** Read-only access to all records, compliance reports, audit logs, and analytics. You can view everything but change nothing.
+
+| Section | What You Do There |
+|---------|------------------|
+| **Quality Assurance** (home page) | Review audits, corrective actions, quality metrics |
+| **Compliance** | View compliance dashboard and status |
+| **Clients / Caregivers / Visits** | Review records for audit purposes (read-only) |
+| **Analytics Reports** | Pull compliance and operational reports |
+| **Audit Logs** | Review system activity and data access history |
+
+---
+
+### 👁️ As a Read-Only User
+
+**Login:** (read-only account) → lands on **Analytics Reports** page
+
+**What you can access:** View clients and reports only. No ability to create, edit, or delete anything.
+
+---
+
 ## Compliance & Security
 
 ### Regulatory Framework
