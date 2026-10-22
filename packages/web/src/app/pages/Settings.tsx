@@ -569,6 +569,7 @@ function EditMemberModal({
     register,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm<EditMemberFormData>({
     resolver: zodResolver(editMemberSchema as any),
     defaultValues: {
@@ -578,6 +579,16 @@ function EditMemberModal({
       role: (member.roles[0] as EditMemberFormData['role']) ?? 'CAREGIVER',
     },
   });
+
+  // Reset form when member changes (e.g., when opening modal for a different team member)
+  React.useEffect(() => {
+    reset({
+      firstName: member.firstName,
+      lastName: member.lastName,
+      email: member.email,
+      role: (member.roles[0] as EditMemberFormData['role']) ?? 'CAREGIVER',
+    });
+  }, [member.id, reset]);
 
   if (!isOpen) return null;
 
