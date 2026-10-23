@@ -97,18 +97,14 @@ export function IncidentListPage() {
   }
 
   if (error) {
-    const status = (error as Error & { status?: number }).status;
-    const isSessionExpired = status === 401;
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div
           className="bg-red-50 border border-red-200 rounded-lg p-4"
-          data-testid={isSessionExpired ? 'session-expired-error' : 'incidents-error'}
+          data-testid="incidents-error"
         >
           <p className="text-red-800">
-            {isSessionExpired
-              ? 'Session expired, please log in again.'
-              : 'Failed to load incidents. Please try again.'}
+            Failed to load incidents. Please try again.
           </p>
         </div>
       </div>
