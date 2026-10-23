@@ -131,7 +131,7 @@ class TrainingService {
       {
         id: 'tr-1',
         title: 'New Caregiver Orientation',
-        description: 'Welcome to Folk Care! This module covers our mission, values, and basic procedures.',
+        description: 'Welcome to MHC Portal! This module covers our mission, values, and basic procedures.',
         category: 'ORIENTATION',
         format: 'VIDEO',
         durationMinutes: 45,

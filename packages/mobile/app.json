@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Folk Care",
+    "name": "MHC Portal",
     "slug": "folkcare-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -15,10 +15,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.folkcare.mobile",
       "infoPlist": {
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Folk needs your location for accurate visit verification and EVV compliance.",
-        "NSLocationWhenInUseUsageDescription": "Folk needs your location to verify you are at the client's address during clock-in and clock-out.",
-        "NSLocationAlwaysUsageDescription": "Folk needs background location access during active visits for EVV compliance and continuous verification.",
-        "NSCameraUsageDescription": "Folk needs camera access to capture photos for visit verification and documentation.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "MHC Portal needs your location for accurate visit verification and EVV compliance.",
+        "NSLocationWhenInUseUsageDescription": "MHC Portal needs your location to verify you are at the client's address during clock-in and clock-out.",
+        "NSLocationAlwaysUsageDescription": "MHC Portal needs background location access during active visits for EVV compliance and continuous verification.",
+        "NSCameraUsageDescription": "MHC Portal needs camera access to capture photos for visit verification and documentation.",
         "UIBackgroundModes": [
           "location",
           "fetch"
