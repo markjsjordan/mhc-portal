@@ -115,7 +115,7 @@ export function DemoModeProvider({
       };
       
       setState(newState);
-      onActivate?.(persona || null, stateCode || null);
+      onActivate?.(persona ?? null, stateCode ?? null);
     },
     [state, onActivate]
   );

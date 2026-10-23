@@ -23,4 +23,20 @@ describe('caregiverApi (wdvf3abxat)', () => {
       '/api/caregivers?page=2&limit=10&sortBy=first_name&sortOrder=desc'
     );
   });
+
+  it('getMyCaregiverProfile calls GET /api/caregivers/me', async () => {
+    const mockApiClient: ApiClient = {
+      get: vi.fn().mockResolvedValue({ id: 'cg-1' }),
+      post: vi.fn(),
+      put: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn(),
+    };
+
+    const service = createCaregiverApiService(mockApiClient);
+    const profile = await service.getMyCaregiverProfile();
+
+    expect(mockApiClient.get).toHaveBeenCalledWith('/api/caregivers/me');
+    expect(profile).toEqual({ id: 'cg-1' });
+  });
 });

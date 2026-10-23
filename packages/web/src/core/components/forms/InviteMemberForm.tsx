@@ -83,8 +83,8 @@ export function InviteMemberForm({
     try {
       await onSubmit({
         email: formData.email!,
-        firstName: formData.firstName || undefined,
-        lastName: formData.lastName || undefined,
+        firstName: formData.firstName ?? undefined,
+        lastName: formData.lastName ?? undefined,
         roles: formData.roles!,
         expiresInDays: formData.expiresInDays,
       });
