@@ -110,7 +110,7 @@ export const VisitDetailPage: React.FC = () => {
       'SUPERVISOR',
     ]);
 
-  const visit: Visit | null = modifiedVisit || apiVisit || fallbackVisit;
+  const visit: Visit | null = modifiedVisit ?? apiVisit ?? fallbackVisit;
   const { data: client } = useClient(visit?.clientId);
   const { data: caregiver } = useCaregiver(visit?.assignedCaregiverId ?? undefined);
 
@@ -123,7 +123,7 @@ export const VisitDetailPage: React.FC = () => {
     );
   }, [visit]);
 
-  const effectiveEvvRecordId = evvRecordId || (visit as any)?.evvRecordId;
+  const effectiveEvvRecordId = evvRecordId ?? (visit as any)?.evvRecordId;
   const { data: evvRecord } = useEVVRecord(effectiveEvvRecordId);
   const evvData = (visit as any)?.evv;
 
@@ -176,9 +176,9 @@ export const VisitDetailPage: React.FC = () => {
 
   const evvMethodDisplay = useMemo(() => {
     const method =
-      (evvRecord?.clockInVerification as any)?.method ||
-      (evvRecord as any)?.verificationMethod ||
-      evvData?.verificationMethod ||
+      (evvRecord?.clockInVerification as any)?.method ??
+      (evvRecord as any)?.verificationMethod ??
+      evvData?.verificationMethod ??
       (evvRecord?.verificationLevel === 'FULL' ? 'GPS' : evvRecord?.verificationLevel);
     if (method === 'GPS' || method === 'FULL') return 'GPS Mobile App';
     if (method === 'PHONE' || method === 'TELEPHONY') return 'Telephony (IVR)';
@@ -321,7 +321,7 @@ export const VisitDetailPage: React.FC = () => {
     : visit.assignedCaregiverId
     ? 'Caregiver Assigned'
     : null;
-  const caregiverPhone = caregiver?.primaryPhone?.number || (visit.assignedCaregiverId ? '555-1001' : null);
+  const caregiverPhone = caregiver?.primaryPhone?.number ?? (visit.assignedCaregiverId ? '555-1001' : null);
 
   const completedCount = tasks.filter((t) => t.completed).length;
   const totalCount = tasks.length;
@@ -345,7 +345,7 @@ export const VisitDetailPage: React.FC = () => {
     CANCELLED: { badge: 'bg-red-100 text-red-800 border-red-200', dot: 'bg-red-600', label: 'Cancelled' },
   };
 
-  const statusStyle = statusBadges[visit.status] || {
+  const statusStyle = statusBadges[visit.status] ?? {
     badge: 'bg-gray-100 text-gray-800 border-gray-200',
     dot: 'bg-gray-600',
     label: visit.status,
@@ -568,7 +568,7 @@ export const VisitDetailPage: React.FC = () => {
                   Access & Entry Instructions
                 </div>
                 <p className="text-amber-800 leading-relaxed">
-                  {visit.address.accessInstructions ||
+                  {visit.address.accessInstructions ??
                     'Standard residential entrance. Please ring front doorbell and verify client identification upon entry.'}
                 </p>
               </div>
@@ -661,7 +661,7 @@ export const VisitDetailPage: React.FC = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-gray-500">Assignment Method:</span>
                     <span className="font-semibold text-gray-800 bg-white px-2 py-0.5 rounded border border-gray-200">
-                      {visit.assignmentMethod || 'MANUAL'}
+                      {visit.assignmentMethod ?? 'MANUAL'}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -783,9 +783,9 @@ export const VisitDetailPage: React.FC = () => {
                 )}
               </div>
 
-              {(visit.actualDuration || evvRecord?.totalDuration) && (
+              {(visit.actualDuration ?? evvRecord?.totalDuration) && (
                 <p className="text-[11px] text-emerald-800 pt-1 border-t border-emerald-200/60">
-                  Logged Duration: <strong>{visit.actualDuration || evvRecord?.totalDuration} minutes</strong> (Scheduled:{' '}
+                  Logged Duration: <strong>{visit.actualDuration ?? evvRecord?.totalDuration} minutes</strong> (Scheduled:{' '}
                   {visit.scheduledDuration} min)
                 </p>
               )}

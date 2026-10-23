@@ -38,13 +38,13 @@ export function deriveVisitTasks(
   // 1. External task instances (e.g. from care plan task instances API)
   if (externalTasks && externalTasks.length > 0) {
     return externalTasks.map((t: any, idx: number) => ({
-      id: t.id || `task-${idx + 1}`,
-      title: t.name || t.title || 'Care Task',
+      id: t.id ?? `task-${idx + 1}`,
+      title: t.name ?? t.title ?? 'Care Task',
       category: t.category,
       completed: t.status === 'COMPLETED' || Boolean(t.completed),
       required: typeof t.required === 'boolean' ? t.required : (typeof t.isOptional === 'boolean' ? !t.isOptional : true),
       completedAt: t.completedAt ? (formatTimeString(t.completedAt) ?? undefined) : undefined,
-      notes: t.notes || t.completionNote,
+      notes: t.notes ?? t.completionNote,
     }));
   }
 
@@ -52,8 +52,8 @@ export function deriveVisitTasks(
   const visitTasks = (visit as any).tasks;
   if (Array.isArray(visitTasks) && visitTasks.length > 0) {
     return visitTasks.map((t: any, idx: number) => ({
-      id: t.id || `task-${idx + 1}`,
-      title: t.title || t.name || 'Care Task',
+      id: t.id ?? `task-${idx + 1}`,
+      title: t.title ?? t.name ?? 'Care Task',
       category: t.category,
       completed: Boolean(t.completed),
       required: t.required ?? true,
@@ -109,7 +109,7 @@ export function deriveVisitTasks(
 
   const isCompleted = visit.status === 'COMPLETED';
   const isInProgress = visit.status === 'IN_PROGRESS';
-  const completedTimeStr = formatTimeString(visit.actualEndTime || visit.actualStartTime || visit.scheduledStartTime) ?? undefined;
+  const completedTimeStr = formatTimeString(visit.actualEndTime ?? visit.actualStartTime ?? visit.scheduledStartTime) ?? undefined;
 
   return baseTasks.map((t, idx) => {
     let completed = false;

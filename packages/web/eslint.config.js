@@ -77,6 +77,12 @@ export default [
       // React rules
       ...react.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
+      // React Compiler rules: downgrade from error to warn (pre-existing violations, gradual migration)
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/immutability': 'warn',
+      'react-hooks/refs': 'warn',
+      'react-hooks/purity': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },

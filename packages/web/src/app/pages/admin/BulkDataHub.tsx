@@ -237,7 +237,7 @@ export const BulkDataHub: React.FC = () => {
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `Server responded with status ${response.status}`);
+        throw new Error(errData.error ?? `Server responded with status ${response.status}`);
       }
 
       const data = await response.json();
@@ -275,7 +275,7 @@ export const BulkDataHub: React.FC = () => {
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `Commit failed with status ${response.status}`);
+        throw new Error(errData.error ?? `Commit failed with status ${response.status}`);
       }
 
       const resData = await response.json();
@@ -344,7 +344,7 @@ export const BulkDataHub: React.FC = () => {
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `Export failed with status ${response.status}`);
+        throw new Error(errData.error ?? `Export failed with status ${response.status}`);
       }
 
       // Download the blob directly
@@ -372,7 +372,7 @@ export const BulkDataHub: React.FC = () => {
   const targetFields = entityType === 'clients' ? CLIENT_TARGET_FIELDS : CAREGIVER_TARGET_FIELDS;
 
   // Filter preview rows
-  const filteredRows = (previewResult?.rows || []).filter((row) => {
+  const filteredRows = (previewResult?.rows ?? []).filter((row) => {
     if (previewFilter === 'valid') return row.isValid && !row.duplicateMatch;
     if (previewFilter === 'issues') return !row.isValid || row.errors.length > 0 || row.warnings.length > 0;
     if (previewFilter === 'duplicates') return !!row.duplicateMatch;
@@ -606,7 +606,7 @@ export const BulkDataHub: React.FC = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white">
                       {csvHeaders.map((header) => {
-                        const currentTarget = mappings[header] || '';
+                        const currentTarget = mappings[header] ?? '';
 
                         return (
                           <tr key={header} className="hover:bg-gray-50/50">
@@ -785,11 +785,11 @@ export const BulkDataHub: React.FC = () => {
                         const hasDup = !!row.duplicateMatch;
 
                         const idVal = String(
-                          row.data['client_number'] || row.data['employee_number'] || row.data['id'] || '-'
+                          row.data['client_number'] ?? row.data['employee_number'] ?? row.data['id'] ?? '-'
                         );
-                        const nameVal = `${row.data['first_name'] || ''} ${row.data['last_name'] || ''}`.trim() || '-';
-                        const dobVal = String(row.data['date_of_birth'] || '-');
-                        const contactVal = String(row.data['email'] || row.data['phone'] || '-');
+                        const nameVal = `${row.data['first_name'] ?? ''} ${row.data['last_name'] ?? ''}`.trim() || '-';
+                        const dobVal = String(row.data['date_of_birth'] ?? '-');
+                        const contactVal = String(row.data['email'] ?? row.data['phone'] ?? '-');
 
                         return (
                           <tr

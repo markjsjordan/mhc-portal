@@ -720,7 +720,7 @@ export function createCarePlanHandlers(service: CarePlanService, templateService
     async createCarePlanVersion(req: Request, res: Response) {
       try {
         const context = getUserContext(req);
-        const { id } = req.params;
+        const id = req.params.id as string | undefined;
         if (!id) {
           res.status(400).json({ error: 'Care plan ID is required' });
           return;
@@ -779,7 +779,7 @@ export function createCarePlanHandlers(service: CarePlanService, templateService
     async getCarePlanVersions(req: Request, res: Response) {
       try {
         const context = getUserContext(req);
-        const { id } = req.params;
+        const id = req.params.id as string | undefined;
         if (!id) {
           res.status(400).json({ error: 'Care plan ID is required' });
           return;
