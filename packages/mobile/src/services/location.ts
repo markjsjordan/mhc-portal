@@ -193,7 +193,7 @@ export class LocationService {
       distanceInterval: 100, // Or every 100 meters
       foregroundService: {
         notificationTitle: 'Visit in progress',
-        notificationBody: 'Folk is tracking your visit location',
+        notificationBody: 'MHC Portal is tracking your visit location',
         notificationColor: '#007AFF',
       },
       pausesUpdatesAutomatically: false,

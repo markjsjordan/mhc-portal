@@ -1,7 +1,7 @@
 /**
  * Plugin System
  *
- * Provides a flexible plugin architecture for extending Folk Care functionality.
+ * Provides a flexible plugin architecture for extending MHC Portal functionality.
  *
  * @example
  * ```typescript

@@ -1,5 +1,5 @@
 /**
- * Folk API Server
+ * MHC Portal API Server
  * 
  * Main Express application that integrates all vertical route handlers
  */
@@ -209,7 +209,7 @@ async function setupApiRoutes(): Promise<void> {
   // Root endpoint - API overview
   app.get('/', (_req, res) => {
     res.json({
-      name: 'Folk API',
+      name: 'MHC Portal API',
       version: '0.1.0',
       environment: NODE_ENV,
       endpoints: {
@@ -225,7 +225,7 @@ async function setupApiRoutes(): Promise<void> {
   // API version info
   app.get('/api', (_req, res) => {
     res.json({
-      name: 'Folk API',
+      name: 'MHC Portal API',
       version: '0.1.0',
       environment: NODE_ENV,
     });
@@ -256,7 +256,7 @@ async function setupApiRoutes(): Promise<void> {
  * Create and configure the Express app (for Vercel serverless)
  */
 export async function createApp(): Promise<express.Express> {
-  console.log(`Initializing Folk API (${NODE_ENV})`);
+  console.log(`Initializing MHC Portal API (${NODE_ENV})`);
   console.log('Environment variables:', {
     DB_HOST: process.env['DB_HOST'],
     DB_PORT: process.env['DB_PORT'],
@@ -315,7 +315,7 @@ export async function createApp(): Promise<express.Express> {
  */
 async function start(): Promise<void> {
   try {
-    console.log(`Starting Folk API Server (${NODE_ENV})`);
+    console.log(`Starting MHC Portal API Server (${NODE_ENV})`);
     
     await createApp();
 
