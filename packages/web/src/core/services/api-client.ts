@@ -9,6 +9,36 @@ export interface UserContextHeaders {
   permissions?: string[];
 }
 
+/**
+ * Global 401 handler, registered once by the app shell (see App.tsx).
+ *
+ * The server rejects an expired/invalid/revoked token with 401 on any
+ * request. Before this existed, nothing reacted to that: the SPA's
+ * `isAuthenticated` flag (persisted in localStorage/zustand) stayed
+ * true, `ProtectedRoute` kept rendering the authenticated shell, and
+ * every query/mutation on the page just failed silently or showed a
+ * generic error — the user was never redirected to /login even though
+ * their session was no longer valid server-side.
+ *
+ * Login/refresh/logout calls are intentionally excluded (see the
+ * `isAuthEndpoint` check below) since a 401 there is an expected,
+ * normal outcome (bad credentials, expired refresh token) handled by
+ * the calling form/flow, not a "your session died mid-use" event.
+ */
+let onUnauthorized: (() => void) | null = null;
+
+export function registerUnauthorizedHandler(handler: () => void): void {
+  onUnauthorized = handler;
+}
+
+function isAuthEndpoint(url: string): boolean {
+  return (
+    url.includes('/api/auth/login') ||
+    url.includes('/api/auth/refresh') ||
+    url.includes('/api/auth/logout')
+  );
+}
+
 export interface ApiClient {
   get<T>(url: string, config?: RequestConfig): Promise<T>;
   post<T>(url: string, data?: unknown, config?: RequestConfig): Promise<T>;
@@ -96,7 +126,16 @@ class ApiClientImpl implements ApiClient {
                   code: response.status.toString(),
                   status: response.status,
                 }));
-                
+
+                // Fire the global "session died" handler on 401s outside
+                // the auth flow itself. Fire-and-continue: still throw
+                // below so the calling query/mutation also sees the
+                // rejection and can show its own error state briefly
+                // before the redirect takes effect.
+                if (response.status === 401 && !isAuthEndpoint(url) && onUnauthorized) {
+                  onUnauthorized();
+                }
+
                 // Attach response data to error for better error handling
                 const errorMessage = extractApiErrorMessage(error, response.statusText);
                 const enhancedError = new Error(errorMessage) as Error & { response?: { data: ApiError }; status?: number };
