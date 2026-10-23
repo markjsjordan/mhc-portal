@@ -368,16 +368,6 @@ jobs:
           npm run db:migrate
           echo "✅ Migrations complete"
 
-      - name: Seed Demo Data (Production)
-        continue-on-error: true  # Don't block deployment if seeding fails
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          echo "🎭 Seeding evergreen demo data..."
-          echo "⚠️  SAFETY: Only deletes records with is_demo_data = true"
-          npm run db:seed:demo
-          echo "✅ Demo data seeded with fresh dates"
-
       - name: Build for Production
         env:
           NODE_ENV: production
