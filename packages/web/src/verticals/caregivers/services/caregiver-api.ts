@@ -11,6 +11,13 @@ export interface CaregiverApiService {
   createCaregiver(data: Partial<Caregiver>): Promise<Caregiver>;
   updateCaregiver(id: string, data: Partial<Caregiver>): Promise<Caregiver>;
   deleteCaregiver(id: string): Promise<void>;
+  /**
+   * Get the caregiver profile linked to the currently authenticated
+   * user (via GET /api/caregivers/me, which resolves users.email ->
+   * caregivers.email server-side). Throws (404) for users with no
+   * linked caregiver record — e.g. admins, coordinators.
+   */
+  getMyCaregiverProfile(): Promise<Caregiver>;
 }
 
 export const createCaregiverApiService = (apiClient: ApiClient): CaregiverApiService => {
@@ -51,6 +58,10 @@ export const createCaregiverApiService = (apiClient: ApiClient): CaregiverApiSer
 
     async deleteCaregiver(id: string): Promise<void> {
       await apiClient.delete(`/api/caregivers/${id}`);
+    },
+
+    async getMyCaregiverProfile(): Promise<Caregiver> {
+      return apiClient.get<Caregiver>('/api/caregivers/me');
     },
   };
 };

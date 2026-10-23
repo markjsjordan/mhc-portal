@@ -3,19 +3,29 @@ import { format } from 'date-fns';
 import { Calendar, Filter, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { Button, Card, LoadingSpinner, EmptyState, ErrorMessage, Input, Select } from '@/core/components';
 import { useAuth } from '@/core/hooks';
+import { useMyCaregiverId } from '@/verticals/caregivers/hooks';
 import { useTasks } from '../../hooks';
 import { TaskCard, TaskCompletionModal } from '../../components';
 import type { TaskInstance, TaskStatus } from '../../types';
 
 export const CaregiverTasksPage: React.FC = () => {
   const { user } = useAuth();
+  const { caregiverId, isLoading: isCaregiverIdLoading } = useMyCaregiverId();
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [statusFilter, setStatusFilter] = useState<TaskStatus | ''>('');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TaskInstance | null>(null);
+  // Default to "my tasks only"; removable via the "Show all" toggle.
+  // Explicit user action always wins over the default.
+  const [showAllCaregivers, setShowAllCaregivers] = useState(false);
+
+  const isCaregiverRole = user?.roles.some((role) =>
+    ['CAREGIVER', 'NURSE_RN', 'NURSE_LPN', 'NURSE', 'CLINICAL'].includes(role)
+  ) ?? false;
+  const shouldFilterToSelf = isCaregiverRole && !showAllCaregivers;
 
   const { data, isLoading, error, refetch } = useTasks({
-    assignedCaregiverId: user?.id,
+    assignedCaregiverId: shouldFilterToSelf ? caregiverId : undefined,
     scheduledDateFrom: selectedDate,
     scheduledDateTo: selectedDate,
     status: statusFilter ? [statusFilter] : undefined,
@@ -26,7 +36,7 @@ export const CaregiverTasksPage: React.FC = () => {
     refetch();
   };
 
-  if (isLoading) {
+  if (isLoading || (shouldFilterToSelf && isCaregiverIdLoading)) {
     return (
       <div className="flex justify-center items-center py-12">
         <LoadingSpinner size="lg" />
@@ -61,11 +71,24 @@ export const CaregiverTasksPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">My Tasks</h1>
-        <p className="text-gray-600 mt-1">
-          Tasks scheduled for {format(new Date(selectedDate), 'MMMM d, yyyy')}
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {shouldFilterToSelf ? 'My Tasks' : 'All Tasks'}
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Tasks scheduled for {format(new Date(selectedDate), 'MMMM d, yyyy')}
+          </p>
+        </div>
+        {isCaregiverRole && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAllCaregivers((prev) => !prev)}
+          >
+            {showAllCaregivers ? 'Show mine only' : 'Show all'}
+          </Button>
+        )}
       </div>
 
       {/* Quick Stats */}

@@ -31,10 +31,14 @@ vi.mock('react-hot-toast', () => ({
   },
 }));
 
-// Mock useAuth
+// Mock useAuth — mutable so individual tests can exercise different roles
+let mockAuthUser: { id: string; roles: string[] } = {
+  id: 'user-1',
+  roles: ['COORDINATOR', 'ADMINISTRATOR'],
+};
 vi.mock('@/core/hooks', () => ({
   useAuth: () => ({
-    user: { id: 'user-1', roles: ['COORDINATOR', 'ADMINISTRATOR'] },
+    user: mockAuthUser,
   }),
 }));
 
@@ -177,6 +181,16 @@ vi.mock('@/verticals/caregivers/hooks/useCaregivers', () => ({
   }),
 }));
 
+// Mock useMyCaregiverId hook (default filter resolution) — mutable so
+// individual tests can exercise a resolved caregiverId.
+let mockMyCaregiverId: string | undefined = undefined;
+vi.mock('@/verticals/caregivers/hooks/useMyCaregiverId', () => ({
+  useMyCaregiverId: () => ({
+    caregiverId: mockMyCaregiverId,
+    isLoading: false,
+  }),
+}));
+
 // Mock react-big-calendar to render a controllable mock calendar
 vi.mock('react-big-calendar', () => {
   return {
@@ -209,6 +223,8 @@ vi.mock('react-big-calendar/lib/addons/dragAndDrop', () => ({
 describe('CalendarView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAuthUser = { id: 'user-1', roles: ['COORDINATOR', 'ADMINISTRATOR'] };
+    mockMyCaregiverId = undefined;
   });
 
   it('renders page header and responsive KPI metrics row with status color tokens', () => {
@@ -357,5 +373,53 @@ describe('CalendarView', () => {
     expect(screen.getByTestId('calendar-event-visit-1')).toBeInTheDocument();
     expect(screen.getByTestId('calendar-event-visit-2')).toBeInTheDocument();
     expect(screen.getByTestId('calendar-event-visit-3')).toBeInTheDocument();
+  });
+
+  it('defaults to showing only the logged-in caregiver\'s own visits', () => {
+    mockAuthUser = { id: 'user-caregiver-1', roles: ['CAREGIVER'] };
+    mockMyCaregiverId = 'cg-1';
+
+    render(<CalendarView />);
+
+    // visit-1 is unassigned, visit-2 is assigned to cg-1, visit-3 is
+    // assigned to cg-2 (see mockVisits above) — only cg-1's visit
+    // should render by default.
+    expect(screen.queryByTestId('calendar-event-visit-1')).not.toBeInTheDocument();
+    expect(screen.getByTestId('calendar-event-visit-2')).toBeInTheDocument();
+    expect(screen.queryByTestId('calendar-event-visit-3')).not.toBeInTheDocument();
+
+    // "Show all" is offered while the default is active
+    expect(screen.getByText('Show all')).toBeInTheDocument();
+  });
+
+  it('removes the caregiver default with one click on "Show all"', async () => {
+    mockAuthUser = { id: 'user-caregiver-1', roles: ['CAREGIVER'] };
+    mockMyCaregiverId = 'cg-1';
+    const user = userEvent.setup();
+
+    render(<CalendarView />);
+
+    expect(screen.queryByTestId('calendar-event-visit-1')).not.toBeInTheDocument();
+
+    await user.click(screen.getByText('Show all'));
+
+    // All visits (including the unassigned one) are now visible
+    expect(screen.getByTestId('calendar-event-visit-1')).toBeInTheDocument();
+    expect(screen.getByTestId('calendar-event-visit-2')).toBeInTheDocument();
+    expect(screen.getByTestId('calendar-event-visit-3')).toBeInTheDocument();
+    expect(screen.queryByText('Show all')).not.toBeInTheDocument();
+  });
+
+  it('does not apply the caregiver default for admin/coordinator roles', () => {
+    mockAuthUser = { id: 'user-1', roles: ['COORDINATOR', 'ADMINISTRATOR'] };
+    mockMyCaregiverId = undefined;
+
+    render(<CalendarView />);
+
+    // All visits visible, no "Show all" affordance since no default applied
+    expect(screen.getByTestId('calendar-event-visit-1')).toBeInTheDocument();
+    expect(screen.getByTestId('calendar-event-visit-2')).toBeInTheDocument();
+    expect(screen.getByTestId('calendar-event-visit-3')).toBeInTheDocument();
+    expect(screen.queryByText('Show all')).not.toBeInTheDocument();
   });
 });
