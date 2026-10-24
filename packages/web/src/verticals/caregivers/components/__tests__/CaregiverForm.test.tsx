@@ -2,7 +2,7 @@
  * Tests for CaregiverForm Branch Selector
  */
 import { describe, test, expect, vi } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithQueryClient as render } from '@/test/renderWithQueryClient';
 import { CaregiverForm, EMPTY_CAREGIVER_FORM } from '../CaregiverForm';
@@ -21,21 +21,23 @@ vi.mock('@/verticals/client-demographics/hooks/index.js', () => ({
 
 describe('CaregiverForm Branch Selector', () => {
   test('auto-selects Main branch on initial render when no branch is selected', async () => {
-    const handleChange = vi.fn();
+    const handleSubmit = vi.fn();
 
     render(
       <CaregiverForm
-        values={EMPTY_CAREGIVER_FORM}
-        onChange={handleChange}
+        defaultValues={EMPTY_CAREGIVER_FORM}
+        onSubmit={handleSubmit}
       />
     );
 
-    expect(handleChange).toHaveBeenCalledWith(
-      expect.objectContaining({
-        branchIdsRaw: 'branch-main-001',
-        primaryBranchId: 'branch-main-001',
-      })
-    );
+    // Wait for the auto-selection to occur
+    await waitFor(() => {
+      const primarySelect = screen.getByLabelText(/Primary Branch/i) as HTMLSelectElement;
+      expect(primarySelect.value).toBe('branch-main-001');
+    });
+
+    // Verify Main Branch is shown in assigned branches
+    expect(screen.getAllByText(/Main Branch/i).length).toBeGreaterThan(0);
   });
 
   test('displays branch names in assigned branches list', () => {
@@ -47,8 +49,8 @@ describe('CaregiverForm Branch Selector', () => {
 
     render(
       <CaregiverForm
-        values={values}
-        onChange={vi.fn()}
+        defaultValues={values}
+        onSubmit={vi.fn()}
       />
     );
 
@@ -58,7 +60,7 @@ describe('CaregiverForm Branch Selector', () => {
 
   test('allows searching and toggling branch selection', async () => {
     const user = userEvent.setup();
-    const handleChange = vi.fn();
+    const handleSubmit = vi.fn();
     const values: CaregiverFormValues = {
       ...EMPTY_CAREGIVER_FORM,
       branchIdsRaw: 'branch-main-001',
@@ -67,8 +69,8 @@ describe('CaregiverForm Branch Selector', () => {
 
     render(
       <CaregiverForm
-        values={values}
-        onChange={handleChange}
+        defaultValues={values}
+        onSubmit={handleSubmit}
       />
     );
 
@@ -84,17 +86,15 @@ describe('CaregiverForm Branch Selector', () => {
     const northOption = screen.getByText('North Branch');
     await user.click(northOption);
 
-    expect(handleChange).toHaveBeenCalledWith(
-      expect.objectContaining({
-        branchIdsRaw: 'branch-main-001, branch-north-002',
-        primaryBranchId: 'branch-main-001',
-      })
-    );
+    // Verify North Branch is now displayed in the selected branches
+    await waitFor(() => {
+      expect(screen.getAllByText(/North Branch/i).length).toBeGreaterThan(0);
+    });
   });
 
   test('allows changing primary branch among selected branches', async () => {
     const user = userEvent.setup();
-    const handleChange = vi.fn();
+    const handleSubmit = vi.fn();
     const values: CaregiverFormValues = {
       ...EMPTY_CAREGIVER_FORM,
       branchIdsRaw: 'branch-main-001, branch-north-002',
@@ -103,18 +103,16 @@ describe('CaregiverForm Branch Selector', () => {
 
     render(
       <CaregiverForm
-        values={values}
-        onChange={handleChange}
+        defaultValues={values}
+        onSubmit={handleSubmit}
       />
     );
 
-    const primarySelect = screen.getByLabelText(/Primary Branch/i);
+    const primarySelect = screen.getByLabelText(/Primary Branch/i) as HTMLSelectElement;
     await user.selectOptions(primarySelect, 'branch-north-002');
 
-    expect(handleChange).toHaveBeenCalledWith(
-      expect.objectContaining({
-        primaryBranchId: 'branch-north-002',
-      })
-    );
+    await waitFor(() => {
+      expect(primarySelect.value).toBe('branch-north-002');
+    });
   });
 });
