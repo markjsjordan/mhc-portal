@@ -1,0 +1,23 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "preset": "base-nova",
+  "framework": "vite-react",
+  "tsx": true,
+  "tailwind": {
+    "config": "packages/web/tailwind.config.js",
+    "css": "packages/web/src/styles/globals.css",
+    "baseColor": "slate",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "rsc": false,
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
+  },
+  "iconLibrary": "lucide",
+  "monorepo": true
+}
