@@ -51,7 +51,9 @@ export const ShowcaseRouter: React.FC = () => {
       }
     }
     setShowRoleSelector(false);
-    void navigate('/dashboard');
+    navigate('/dashboard').catch((error: unknown) => {
+      console.error('Navigation failed:', error);
+    });
   };
 
   const handleStartTour = () => {
