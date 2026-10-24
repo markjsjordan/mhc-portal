@@ -29,7 +29,7 @@ function tryLocalStorage<T>(operation: (storage: Storage) => T, fallback: () => 
   }
 }
 
-const safeStorage = createJSONStorage<AuthStore>(() => ({
+const safeStorage = createJSONStorage<Pick<AuthStore, 'user'>>(() => ({
   getItem: (key: string) =>
     tryLocalStorage(
       (storage) => storage.getItem(key),
