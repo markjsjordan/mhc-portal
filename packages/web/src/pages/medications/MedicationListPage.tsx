@@ -115,19 +115,6 @@ export function MedicationListPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ACTIVE':
-        return 'bg-green-100 text-green-800';
-      case 'DISCONTINUED':
-        return 'bg-gray-100 text-gray-800';
-      case 'ON_HOLD':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const isOverdue = (medication: Medication) => {
     if (!medication.nextScheduledTime) return false;
     return new Date(medication.nextScheduledTime) < new Date();
@@ -315,11 +302,12 @@ export function MedicationListPage() {
                         >
                           {markAsTakenMutation.isPending ? 'Marking...' : '✓ Mark as Taken'}
                         </Button>
-                        <Button asChild variant="outline">
-                          <Link to={`/clients/${clientId}/medications/${medication.id}`}>
-                            View Details
-                          </Link>
-                        </Button>
+                        <Link
+                          to={`/clients/${clientId}/medications/${medication.id}`}
+                          className="inline-flex items-center justify-center h-8 px-2.5 rounded-lg border border-border bg-background hover:bg-muted text-sm font-medium transition-all"
+                        >
+                          View Details
+                        </Link>
                       </div>
                     )}
                   </div>
