@@ -51,7 +51,7 @@ export const ShowcaseRouter: React.FC = () => {
       }
     }
     setShowRoleSelector(false);
-    void navigate('/dashboard');
+    navigate('/dashboard');
   };
 
   const handleStartTour = () => {
