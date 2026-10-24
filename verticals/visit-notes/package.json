@@ -18,7 +18,7 @@
     "@anthropic-ai/sdk": "^0.71.2",
     "@folkcare/core": "^0.1.0",
     "pg": "^8.11.3",
-    "zod": "^3.22.4"
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

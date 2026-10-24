@@ -615,7 +615,7 @@ router.post('/audit-pack', asyncHandler(async (req: Request, res: Response) => {
   // 5. Generate Manifest
   const exportTimestamp = new Date().toISOString();
   const manifest = {
-    exportPackage: 'FolkCare Regulatory Audit Pack',
+    exportPackage: 'MHC Portal Regulatory Audit Pack',
     version: '1.0.0',
     organizationId,
     exportedAt: exportTimestamp,

@@ -39,6 +39,7 @@ export class CaregiverProvider implements ICaregiverProvider {
     backgroundScreeningStatus: 'CLEARED' | 'PENDING' | 'EXPIRED' | 'FAILED';
     backgroundScreeningExpires?: Date;
     stateRegistryStatus?: Record<string, 'CLEARED' | 'FLAGGED' | 'UNKNOWN'>;
+    isDemoData?: boolean;
   }> {
     const query = `
       SELECT 
@@ -50,7 +51,8 @@ export class CaregiverProvider implements ICaregiverProvider {
         credentials,
         background_check,
         custom_fields,
-        compliance_status
+        compliance_status,
+        is_demo_data
       FROM caregivers
       WHERE id = $1 AND deleted_at IS NULL
     `;
@@ -176,6 +178,7 @@ export class CaregiverProvider implements ICaregiverProvider {
       backgroundScreeningStatus,
       backgroundScreeningExpires,
       stateRegistryStatus: Object.keys(stateRegistryStatus).length > 0 ? stateRegistryStatus : undefined,
+      isDemoData: row['is_demo_data'] as boolean | undefined,
     };
   }
 

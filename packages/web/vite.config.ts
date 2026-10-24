@@ -28,8 +28,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Folk Care',
-        short_name: 'Folk Care',
+        name: 'MHC Portal',
+        short_name: 'MHC Portal',
         description: 'Shared care software for home care agencies',
         theme_color: '#2563eb',
         background_color: '#ffffff',

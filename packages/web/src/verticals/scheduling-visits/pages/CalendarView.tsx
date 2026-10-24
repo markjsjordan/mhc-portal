@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useCalendarVisits, useVisitApi, useCaregiverAvailability } from '../hooks/useVisits';
 import { useCaregivers } from '@/verticals/caregivers/hooks/useCaregivers';
+import { useMyCaregiverId } from '@/verticals/caregivers/hooks/useMyCaregiverId';
 import { useAuth } from '@/core/hooks';
 import { CreateVisitModal } from '@/core/components/forms/CreateVisitModal';
 import {
@@ -199,6 +200,7 @@ const DragAndDropCalendar = withDragAndDrop<CalendarEvent>(Calendar);
 
 export const CalendarView: React.FC = () => {
   const { user } = useAuth();
+  const { caregiverId: myCaregiverId } = useMyCaregiverId();
   const navigate = useNavigate();
   const visitApi = useVisitApi();
   const queryClient = useQueryClient();
@@ -223,6 +225,13 @@ export const CalendarView: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [selectedCaregiverFilter, setSelectedCaregiverFilter] = useState<string | null>(null);
 
+  // Whether a ?caregiver= URL param was present on first render. Captured
+  // once so the caregiver-default effect below never fires after the user
+  // (or an explicit URL) has taken an action — explicit params/actions are
+  // always authoritative over the default.
+  const hadExplicitCaregiverParamOnMount = useRef(searchParams.get('caregiver') !== null);
+  const hasAppliedCaregiverDefault = useRef(false);
+
   // Filters state with URL synchronization
   const [selectedCaregiverFilterIds, setSelectedCaregiverFilterIds] = useState<string[]>(() => {
     const param = searchParams.get('caregiver');
@@ -238,6 +247,38 @@ export const CalendarView: React.FC = () => {
     const param = searchParams.get('status');
     return param ? param.split(',').filter(Boolean) : [];
   });
+
+  const isCaregiverRole = user?.roles.some((role) =>
+    ['CAREGIVER', 'NURSE_RN', 'NURSE_LPN', 'NURSE', 'CLINICAL'].includes(role)
+  ) ?? false;
+
+  // Default Schedule to "my visits only" for caregiver/RN roles when no
+  // explicit ?caregiver= param was present on mount. Runs once per mount
+  // (guarded by hasAppliedCaregiverDefault) as soon as myCaregiverId
+  // resolves. Admin/coordinator/family roles are unaffected (isCaregiverRole
+  // is false for them, so this never fires).
+  useEffect(() => {
+    if (
+      isCaregiverRole &&
+      myCaregiverId &&
+      !hadExplicitCaregiverParamOnMount.current &&
+      !hasAppliedCaregiverDefault.current
+    ) {
+      hasAppliedCaregiverDefault.current = true;
+      setSelectedCaregiverFilterIds([myCaregiverId]);
+    }
+  }, [isCaregiverRole, myCaregiverId]);
+
+  const isDefaultedToSelf =
+    isCaregiverRole &&
+    hasAppliedCaregiverDefault.current &&
+    selectedCaregiverFilterIds.length === 1 &&
+    selectedCaregiverFilterIds[0] === myCaregiverId;
+
+  const handleShowAllCaregivers = useCallback(() => {
+    hasAppliedCaregiverDefault.current = true; // don't re-apply the default after an explicit "show all"
+    setSelectedCaregiverFilterIds([]);
+  }, []);
 
   // Sync state to URL search parameters
   useEffect(() => {
@@ -1011,6 +1052,20 @@ export const CalendarView: React.FC = () => {
             </button>
           )}
 
+          {/* "Show all" — only shown while the caregiver default filter is
+              active; clears just the caregiver filter (distinct from
+              "Clear filters", which also resets status/client). */}
+          {isDefaultedToSelf && (
+            <button
+              type="button"
+              onClick={handleShowAllCaregivers}
+              className="min-h-[44px] px-2.5 py-1 text-xs text-blue-600 hover:text-blue-800 font-semibold underline flex items-center gap-1"
+              title="Show visits for all caregivers"
+            >
+              Show all
+            </button>
+          )}
+
           {/* Clear filters button */}
           {isAnyFilterActive && (
             <button
@@ -1411,6 +1466,7 @@ export const CalendarView: React.FC = () => {
                   timeslots={DENSITY_CONFIG[densityMode].timeslots}
                   defaultView="week"
                   views={['month', 'week', 'day']}
+                  toolbar={false}
                   min={new Date(2025, 0, 1, TIME_RANGES[timeRange].min, 0)}
                   max={new Date(2025, 0, 1, TIME_RANGES[timeRange].max, 0)}
                   messages={{

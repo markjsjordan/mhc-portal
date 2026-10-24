@@ -414,7 +414,11 @@ export function createAuthRouter(db: Database): Router {
    *     tags:
    *       - Authentication
    *     summary: Logout user
-   *     description: Logout user and invalidate all tokens
+   *     description: >
+   *       Logout the authenticated user. Increments the user's
+   *       token_version, which invalidates every token issued to this
+   *       user (all of their devices/sessions) — it does NOT affect
+   *       any other user's session.
    *     security:
    *       - bearerAuth: []
    *     responses:

@@ -207,9 +207,27 @@ describe('EVVService', () => {
       expect(result.verification.passed).toBe(true);
 
       expect(mockValidator.validateClockIn).toHaveBeenCalledWith(validClockInInput);
-      expect(mockVisitProvider.canClockIn).toHaveBeenCalledWith('visit-123', 'caregiver-123');
+      expect(mockVisitProvider.canClockIn).toHaveBeenCalledWith('visit-123', 'caregiver-123', {
+        supervisorOverride: false,
+      });
       expect(mockRepository.createTimeEntry).toHaveBeenCalled();
       expect(mockRepository.createEVVRecord).toHaveBeenCalled();
+    });
+
+    it('should pass supervisorOverride to the visit provider when an admin clocks in for a caregiver', async () => {
+      mockValidator.validateClockIn.mockReturnValue(undefined);
+      mockVisitProvider.canClockIn.mockRejectedValue(new ValidationError('stop here'));
+
+      const adminContext = {
+        ...userContext,
+        userId: 'admin-1' as UUID,
+        roles: ['ORG_ADMIN' as any],
+      };
+
+      await expect(service.clockIn(validClockInInput, adminContext)).rejects.toThrow('stop here');
+      expect(mockVisitProvider.canClockIn).toHaveBeenCalledWith('visit-123', 'caregiver-123', {
+        supervisorOverride: true,
+      });
     });
 
     it('should throw ValidationError for invalid input', async () => {

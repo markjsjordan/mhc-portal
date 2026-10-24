@@ -10,7 +10,7 @@ const specs = swaggerJsdoc(swaggerOptions);
 // Swagger UI
 router.use('/api-docs', swaggerUi.serve);
 router.get('/api-docs', swaggerUi.setup(specs, {
-  customSiteTitle: 'Folk API Documentation',
+  customSiteTitle: 'MHC Portal API Documentation',
   customCss: '.swagger-ui .topbar { display: none }',
   explorer: true,
 }));

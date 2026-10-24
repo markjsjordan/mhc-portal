@@ -33,22 +33,22 @@ const TaskSearchFilters: React.FC<TaskSearchFiltersProps> = ({
   statusOptions,
   categoryOptions,
 }) => {
-  const [queryInput, setQueryInput] = useState(filters.query || '');
+  const [queryInput, setQueryInput] = useState(filters.query ?? '');
   const [prevQuery, setPrevQuery] = useState(filters.query);
 
   if (filters.query !== prevQuery) {
     setPrevQuery(filters.query);
-    setQueryInput(filters.query || '');
+    setQueryInput(filters.query ?? '');
   }
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if ((filters.query || '') !== queryInput) {
+      if ((filters.query ?? '') !== queryInput) {
         onFiltersChange({ ...filters, query: queryInput || undefined });
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [queryInput]);
+  }, [queryInput, filters, onFiltersChange]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -133,7 +133,7 @@ const TaskSearchFilters: React.FC<TaskSearchFiltersProps> = ({
           <Select
             label="Status"
             options={statusOptions}
-            value={filters.status?.[0] || ''}
+            value={filters.status?.[0] ?? ''}
             onChange={(e) =>
               onFiltersChange({
                 ...filters,
@@ -145,7 +145,7 @@ const TaskSearchFilters: React.FC<TaskSearchFiltersProps> = ({
           <Select
             label="Category"
             options={categoryOptions}
-            value={filters.category?.[0] || ''}
+            value={filters.category?.[0] ?? ''}
             onChange={(e) =>
               onFiltersChange({
                 ...filters,
@@ -156,21 +156,21 @@ const TaskSearchFilters: React.FC<TaskSearchFiltersProps> = ({
           
           <Input
             label="Assigned Caregiver ID"
-            value={filters.assignedCaregiverId || ''}
+            value={filters.assignedCaregiverId ?? ''}
             onChange={(e) => onFiltersChange({ ...filters, assignedCaregiverId: e.target.value })}
           />
           
           <Input
             label="Scheduled Date From"
             type="date"
-            value={filters.scheduledDateFrom || ''}
+            value={filters.scheduledDateFrom ?? ''}
             onChange={(e) => onFiltersChange({ ...filters, scheduledDateFrom: e.target.value })}
           />
           
           <Input
             label="Scheduled Date To"
             type="date"
-            value={filters.scheduledDateTo || ''}
+            value={filters.scheduledDateTo ?? ''}
             onChange={(e) => onFiltersChange({ ...filters, scheduledDateTo: e.target.value })}
           />
           
@@ -178,7 +178,7 @@ const TaskSearchFilters: React.FC<TaskSearchFiltersProps> = ({
             <input
               type="checkbox"
               id="overdue"
-              checked={filters.overdue || false}
+              checked={filters.overdue ?? false}
               onChange={(e) => onFiltersChange({ ...filters, overdue: e.target.checked })}
               className="rounded border-gray-300"
             />
@@ -191,7 +191,7 @@ const TaskSearchFilters: React.FC<TaskSearchFiltersProps> = ({
             <input
               type="checkbox"
               id="requiresSignature"
-              checked={filters.requiresSignature || false}
+              checked={filters.requiresSignature ?? false}
               onChange={(e) => onFiltersChange({ ...filters, requiresSignature: e.target.checked })}
               className="rounded border-gray-300"
             />
@@ -246,7 +246,7 @@ export const TaskInstanceList: React.FC<TaskInstanceListProps> = ({
     );
   }
 
-  const tasks = data?.items || [];
+  const tasks = data?.items ?? [];
 
   const statusOptions = [
     { value: '', label: 'All Statuses' },
@@ -306,7 +306,7 @@ export const TaskInstanceList: React.FC<TaskInstanceListProps> = ({
         <div>
           <h2 className="text-xl font-semibold text-gray-900">Tasks</h2>
           <p className="text-gray-600 mt-1">
-            {data?.total || 0} total tasks
+            {data?.total ?? 0} total tasks
           </p>
         </div>
         

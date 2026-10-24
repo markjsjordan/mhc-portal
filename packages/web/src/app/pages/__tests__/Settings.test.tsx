@@ -273,4 +273,33 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
       );
     });
   });
+
+  it('renders team member row with responsive mobile layout (wdvf3abxbv)', async () => {
+    renderSettings();
+
+    // Switch to Team tab
+    const teamTab = await screen.findByRole('button', { name: /Team/i });
+    fireEvent.click(teamTab);
+
+    // Verify member is listed
+    await screen.findByText('Admin User');
+
+    // Find the row containing the member name
+    const memberName = screen.getByText('Admin User');
+    const memberRow = memberName.closest('.divide-y > div');
+    expect(memberRow).not.toBeNull();
+    // Verify vertical stacking on mobile and row on desktop
+    expect(memberRow?.className).toContain('flex-col');
+    expect(memberRow?.className).toContain('md:flex-row');
+
+    // Verify role badges wrap naturally
+    const roleBadge = screen.getByText('Organization Administrator');
+    const badgeContainer = roleBadge.parentElement;
+    expect(badgeContainer?.className).toContain('flex-wrap');
+
+    // Verify edit button is accessible and has shrink-0 to prevent being crushed on small screens
+    const editBtn = screen.getByRole('button', { name: /Edit Admin User/i });
+    expect(editBtn).toBeInTheDocument();
+    expect(editBtn.className).toContain('shrink-0');
+  });
 });

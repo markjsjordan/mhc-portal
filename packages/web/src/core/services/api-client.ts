@@ -1,4 +1,5 @@
 import type { ApiError, RequestConfig } from '../types/api';
+import { extractApiErrorMessage } from '../utils/api-error';
 import { retryWithBackoff, requestDeduplicator, requestThrottler } from '../utils/request-utils';
 
 export interface UserContextHeaders {
@@ -135,9 +136,9 @@ class ApiClientImpl implements ApiClient {
                   code: response.status.toString(),
                   status: response.status,
                 }));
-                
+
                 // Attach response data to error for better error handling
-                const errorMessage = error.message || error.error || response.statusText;
+                const errorMessage = extractApiErrorMessage(error, response.statusText);
                 const enhancedError = new Error(errorMessage) as Error & { response?: { data: ApiError }; status?: number };
                 enhancedError.response = { data: error };
                 enhancedError.status = response.status;

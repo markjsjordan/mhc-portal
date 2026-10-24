@@ -40,8 +40,8 @@ export interface EVVVisitData {
     state: string;
     postalCode: string;
     country: string;
-    latitude: number;
-    longitude: number;
+    latitude?: number; // Optional - required for production users, optional for demo/admin
+    longitude?: number; // Optional - required for production users, optional for demo/admin
     geofenceRadius?: number; // Custom radius if set, otherwise use state default
     addressVerified: boolean;
   };
@@ -79,10 +79,16 @@ export interface IVisitProvider {
   /**
    * Validate that a visit exists and is in a valid state for clock-in
    * 
+   * @param options.supervisorOverride When true (admin/coordinator clocking in on
+   *   behalf of the caregiver), the scheduled-date window check is bypassed.
    * @returns true if visit can be clocked into
    * @throws ValidationError with reason if visit cannot be clocked into
    */
-  canClockIn(visitId: UUID, caregiverId: UUID): Promise<boolean>;
+  canClockIn(
+    visitId: UUID,
+    caregiverId: UUID,
+    options?: { supervisorOverride?: boolean }
+  ): Promise<boolean>;
   
   /**
    * Validate that a visit is in progress and can be clocked out
@@ -153,6 +159,9 @@ export interface ICaregiverProvider {
     
     // State-specific
     stateRegistryStatus?: Record<string, 'CLEARED' | 'FLAGGED' | 'UNKNOWN'>;
+    
+    // Demo/testing flag
+    isDemoData?: boolean;
   }>;
   
   /**

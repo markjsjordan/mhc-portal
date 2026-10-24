@@ -187,7 +187,7 @@ export const InvoiceForm: React.FC = () => {
         await navigate(`/billing/${result.id}`);
       } else {
         const createInput: CreateInvoiceInput = {
-          clientId: data.clientId || undefined,
+          clientId: data.clientId ?? undefined,
           payerId: data.payerId,
           payerType: data.payerType,
           payerName: data.payerName,
@@ -196,7 +196,7 @@ export const InvoiceForm: React.FC = () => {
           periodStart: data.periodStart,
           periodEnd: data.periodEnd,
           billableItemIds: parseBillableItemIds(data.billableItemIdsRaw),
-          notes: data.notes || undefined,
+          notes: data.notes ?? undefined,
         };
         const result = await createInvoice.mutateAsync(createInput);
         await navigate(`/billing/${result.id}`);

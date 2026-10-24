@@ -1,7 +1,7 @@
 /**
  * Mobile Demo Page - Web Demo
  * 
- * Showcases the Folk mobile app for caregivers within the main web demo.
+ * Showcases the MHC Portal mobile app for caregivers within the main web demo.
  * Accessible to coordinators and admins to understand mobile capabilities.
  */
 

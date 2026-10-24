@@ -119,7 +119,7 @@ export function useUserProfile() {
  */
 export function useProfileSyncedAt() {
   const queryClient = useQueryClient();
-  return queryClient.getQueryData<Date>(['profileSyncedAt']) || null;
+  return queryClient.getQueryData<Date>(['profileSyncedAt']) ?? null;
 }
 
 /**

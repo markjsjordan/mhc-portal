@@ -29,7 +29,7 @@ export const CreateCarePlanPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full overflow-x-hidden space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link to="/care-plans">
@@ -48,7 +48,7 @@ export const CreateCarePlanPage: React.FC = () => {
       </div>
 
       {/* Form */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="bg-white rounded-lg shadow-sm border p-6 w-full overflow-x-hidden">
         <CarePlanForm
           onSubmit={handleSubmit}
           isLoading={createCarePlan.isPending}

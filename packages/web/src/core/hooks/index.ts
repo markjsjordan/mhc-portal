@@ -1,4 +1,5 @@
 export * from './auth';
+export * from './useIdleLogout';
 export * from './permissions';
 export * from './api';
 export * from './useTimezone';

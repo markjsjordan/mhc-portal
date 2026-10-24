@@ -288,4 +288,69 @@ describe('CaregiverRepository', () => {
       expect(screenings).toHaveLength(0);
     });
   });
+
+  describe('search', () => {
+    it('should use default ORDER BY last_name asc, first_name asc when no sort is specified', async () => {
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [{ count: '1' }],
+          command: '',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({
+          rows: [{ id: 'cg-1', first_name: 'Alice', last_name: 'Smith', email: 'alice@example.com' }],
+          command: '',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        });
+
+      const result = await repository.search({}, { page: 1, limit: 20 });
+
+      expect(result.items).toHaveLength(1);
+      const dataQuery = vi.mocked(mockDb.query).mock.calls[1]?.[0] as string;
+      expect(dataQuery).toContain('ORDER BY last_name asc, first_name asc');
+    });
+
+    it('should support whitelisted columns first_name, last_name, and email with asc/desc', async () => {
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({ rows: [{ count: '1' }], command: '', rowCount: 1, oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [{ id: 'cg-1', first_name: 'Bob', last_name: 'Jones', email: 'bob@example.com' }], command: '', rowCount: 1, oid: 0, fields: [] });
+
+      await repository.search({}, { page: 1, limit: 20, sortBy: 'first_name', sortOrder: 'desc' });
+      let dataQuery = vi.mocked(mockDb.query).mock.calls[1]?.[0] as string;
+      expect(dataQuery).toContain('ORDER BY first_name desc');
+
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({ rows: [{ count: '1' }], command: '', rowCount: 1, oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [{ id: 'cg-1', first_name: 'Bob', last_name: 'Jones', email: 'bob@example.com' }], command: '', rowCount: 1, oid: 0, fields: [] });
+
+      await repository.search({}, { page: 1, limit: 20, sortBy: 'email', sortOrder: 'asc' });
+      dataQuery = vi.mocked(mockDb.query).mock.calls[3]?.[0] as string;
+      expect(dataQuery).toContain('ORDER BY email asc');
+    });
+
+    it('should map camelCase column names to snake_case safely', async () => {
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({ rows: [{ count: '1' }], command: '', rowCount: 1, oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [{ id: 'cg-1', first_name: 'Bob', last_name: 'Jones', email: 'bob@example.com' }], command: '', rowCount: 1, oid: 0, fields: [] });
+
+      await repository.search({}, { page: 1, limit: 20, sortBy: 'firstName', sortOrder: 'asc' });
+      const dataQuery = vi.mocked(mockDb.query).mock.calls[1]?.[0] as string;
+      expect(dataQuery).toContain('ORDER BY first_name asc');
+    });
+
+    it('should reject unwhitelisted sort columns and fall back to default', async () => {
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({ rows: [{ count: '1' }], command: '', rowCount: 1, oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [{ id: 'cg-1', first_name: 'Bob', last_name: 'Jones', email: 'bob@example.com' }], command: '', rowCount: 1, oid: 0, fields: [] });
+
+      await repository.search({}, { page: 1, limit: 20, sortBy: 'id; DROP TABLE caregivers;', sortOrder: 'desc' });
+      const dataQuery = vi.mocked(mockDb.query).mock.calls[1]?.[0] as string;
+      expect(dataQuery).toContain('ORDER BY last_name asc, first_name asc');
+      expect(dataQuery).not.toContain('DROP TABLE');
+    });
+  });
 });

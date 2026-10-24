@@ -1,7 +1,7 @@
 /**
  * @folkcare/core
  * 
- * Shared foundation for all Folk verticals
+ * Shared foundation for all MHC Portal verticals
  */
 
 export * from './types/base';

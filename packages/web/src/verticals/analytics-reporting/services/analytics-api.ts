@@ -39,7 +39,7 @@ export class AnalyticsApiService {
     if (authStorage) {
       try {
         const parsed = JSON.parse(authStorage);
-        token = parsed.state?.token || null;
+        token = parsed.state?.token ?? null;
       } catch (e) {
         console.error('Failed to parse auth storage:', e);
       }

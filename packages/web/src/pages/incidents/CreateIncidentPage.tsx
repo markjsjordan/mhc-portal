@@ -41,13 +41,7 @@ export function CreateIncidentPage() {
       navigate(`/incidents/${data.id}`);
     },
     onError: (error: Error) => {
-      const status = (error as Error & { status?: number }).status;
-      const isSessionExpired = status === 401;
-      toast.error(
-        isSessionExpired
-          ? 'Session expired, please log in again.'
-          : error.message || 'Failed to report incident'
-      );
+      toast.error(error.message || 'Failed to report incident');
     },
   });
 

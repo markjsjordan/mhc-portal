@@ -237,7 +237,7 @@ export const BulkDataHub: React.FC = () => {
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `Server responded with status ${response.status}`);
+        throw new Error(errData.error ?? `Server responded with status ${response.status}`);
       }
 
       const data = await response.json();
@@ -275,7 +275,7 @@ export const BulkDataHub: React.FC = () => {
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `Commit failed with status ${response.status}`);
+        throw new Error(errData.error ?? `Commit failed with status ${response.status}`);
       }
 
       const resData = await response.json();
@@ -344,7 +344,7 @@ export const BulkDataHub: React.FC = () => {
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `Export failed with status ${response.status}`);
+        throw new Error(errData.error ?? `Export failed with status ${response.status}`);
       }
 
       // Download the blob directly
@@ -372,7 +372,7 @@ export const BulkDataHub: React.FC = () => {
   const targetFields = entityType === 'clients' ? CLIENT_TARGET_FIELDS : CAREGIVER_TARGET_FIELDS;
 
   // Filter preview rows
-  const filteredRows = (previewResult?.rows || []).filter((row) => {
+  const filteredRows = (previewResult?.rows ?? []).filter((row) => {
     if (previewFilter === 'valid') return row.isValid && !row.duplicateMatch;
     if (previewFilter === 'issues') return !row.isValid || row.errors.length > 0 || row.warnings.length > 0;
     if (previewFilter === 'duplicates') return !!row.duplicateMatch;
@@ -557,7 +557,7 @@ export const BulkDataHub: React.FC = () => {
 
                 {/* Templates & Guidance */}
                 <div className="border-t pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-600">
-                  <span>Need an example template formatted for FolkCare?</span>
+                  <span>Need an example template formatted for MHC Portal?</span>
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
@@ -578,7 +578,7 @@ export const BulkDataHub: React.FC = () => {
             <Card>
               <CardHeader
                 title="Column Mapping & Legacy Preset"
-                subtitle={`Map CSV columns from "${selectedFile?.name}" to FolkCare ${entityType} fields.`}
+                subtitle={`Map CSV columns from "${selectedFile?.name}" to MHC Portal ${entityType} fields.`}
               />
               <CardContent className="space-y-6">
                 {/* Preset Banner */}
@@ -600,13 +600,13 @@ export const BulkDataHub: React.FC = () => {
                       <tr>
                         <th className="px-4 py-3 text-left font-semibold text-gray-700">CSV Header</th>
                         <th className="px-4 py-3 text-left font-semibold text-gray-700">Sample Header Name</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Target FolkCare Field</th>
+                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Target MHC Portal Field</th>
                         <th className="px-4 py-3 text-left font-semibold text-gray-700">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white">
                       {csvHeaders.map((header) => {
-                        const currentTarget = mappings[header] || '';
+                        const currentTarget = mappings[header] ?? '';
 
                         return (
                           <tr key={header} className="hover:bg-gray-50/50">
@@ -715,7 +715,7 @@ export const BulkDataHub: React.FC = () => {
                   <div>
                     <div className="font-semibold text-gray-900 text-sm">Duplicate Record Policy</div>
                     <div className="text-xs text-gray-500 mt-0.5">
-                      Choose how FolkCare handles existing matching clients / caregivers during commit.
+                      Choose how MHC Portal handles existing matching clients / caregivers during commit.
                     </div>
                   </div>
                   <div className="flex gap-4">
@@ -785,11 +785,11 @@ export const BulkDataHub: React.FC = () => {
                         const hasDup = !!row.duplicateMatch;
 
                         const idVal = String(
-                          row.data['client_number'] || row.data['employee_number'] || row.data['id'] || '-'
+                          row.data['client_number'] ?? row.data['employee_number'] ?? row.data['id'] ?? '-'
                         );
-                        const nameVal = `${row.data['first_name'] || ''} ${row.data['last_name'] || ''}`.trim() || '-';
-                        const dobVal = String(row.data['date_of_birth'] || '-');
-                        const contactVal = String(row.data['email'] || row.data['phone'] || '-');
+                        const nameVal = `${row.data['first_name'] ?? ''} ${row.data['last_name'] ?? ''}`.trim() || '-';
+                        const dobVal = String(row.data['date_of_birth'] ?? '-');
+                        const contactVal = String(row.data['email'] ?? row.data['phone'] ?? '-');
 
                         return (
                           <tr

@@ -51,7 +51,7 @@ export class ShowcaseApiProvider implements ApiProvider {
       if (authStored) {
         try {
           const auth = JSON.parse(authStored);
-          this.currentUser = this.data.users.find(u => u.id === auth.userId) || null;
+          this.currentUser = this.data.users.find(u => u.id === auth.userId) ?? null;
         } catch (error) {
           console.warn('Failed to load auth state', error);
         }

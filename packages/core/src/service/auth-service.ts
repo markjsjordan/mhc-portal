@@ -359,8 +359,9 @@ export class AuthService {
   }
 
   /**
-   * Logout user and invalidate all tokens
-   * 
+   * Logout user — invalidate all of THIS user's tokens (all their devices/
+   * sessions), not other users' sessions and not just the current device.
+   *
    * @param userId - User ID to logout
    */
   async logout(userId: UUID): Promise<void> {

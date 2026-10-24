@@ -145,5 +145,5 @@ export function getPrimaryRole(roles: Role[]): Role | null {
     }
   }
 
-  return roles[0] || null;
+  return roles[0] ?? null;
 }

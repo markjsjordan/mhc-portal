@@ -17,7 +17,8 @@ import { useAuth } from '@/core/hooks/auth';
 import { useApiClient } from '@/core/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { useClients, useBranches } from '@/verticals/client-demographics/hooks/index.js';
-import type { CreateCarePlanInput, CarePlanGoal } from '../types';
+import type { CreateCarePlanInput } from '../types';
+import { buildCreateCarePlanPayload } from '../utils/build-create-care-plan-payload.js';
 import { Plus, Trash2 } from 'lucide-react';
 
 const goalSchema = z.object({
@@ -186,18 +187,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
   };
 
   const onFormSubmit = (data: CarePlanFormData) => {
-    onSubmit({
-      ...data,
-      goals: (data.goals ?? []).map((g) => ({
-        name: g.name,
-        description: g.description ?? '',
-        category: g.category ?? '',
-        targetDate: g.targetDate ?? '',
-        status: g.status ?? '',
-        priority: g.priority ?? '',
-      })) as Omit<CarePlanGoal, 'id'>[],
-      interventions: [],
-    });
+    onSubmit(buildCreateCarePlanPayload(data));
   };
 
   const renderBasicInfo = () => {
@@ -591,11 +581,11 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="w-full overflow-x-hidden space-y-6">
       {/* Progress Indicator */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap gap-2 md:gap-0 md:flex-nowrap md:items-center md:justify-between">
         {steps.map((step, index) => (
-          <div key={index} className="flex items-center">
+          <div key={index} className="flex items-center flex-shrink-0">
             <div
               className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
                 index <= currentStep
@@ -611,10 +601,10 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
               }`}>
                 {step.title}
               </p>
-              <p className="text-xs text-gray-500">{step.description}</p>
+              <p className="text-xs text-gray-500 hidden md:block">{step.description}</p>
             </div>
             {index < steps.length - 1 && (
-              <div className={`flex-1 h-px mx-4 ${
+              <div className={`hidden md:block flex-1 h-px mx-4 ${
                 index < currentStep ? 'bg-blue-600' : 'bg-gray-200'
               }`} />
             )}
