@@ -3,6 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/hooks';
 import toast from 'react-hot-toast';
 import { US_STATES } from '@/core/constants/us-states';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface SignupFormData {
   // Step 1: Organization
@@ -170,12 +180,19 @@ export const Signup: React.FC = () => {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     // Clear error when user starts typing
     if (errors[name as keyof SignupFormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  const handleStateChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, stateCode: value }));
+    if (errors.stateCode) {
+      setErrors((prev) => ({ ...prev, stateCode: undefined }));
     }
   };
 
@@ -240,18 +257,16 @@ export const Signup: React.FC = () => {
 
       {/* Organization Name */}
       <div className="mb-4">
-        <label htmlFor="organizationName" className="block text-sm font-medium text-gray-700 mb-1">
+        <Label htmlFor="organizationName">
           Organization Name *
-        </label>
-        <input
+        </Label>
+        <Input
           id="organizationName"
           name="organizationName"
           type="text"
           value={formData.organizationName}
           onChange={handleChange}
-          className={`w-full px-4 py-3 border ${
-            errors.organizationName ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+          className={errors.organizationName ? 'border-red-300' : ''}
           placeholder="e.g., Sunshine Home Health"
         />
         {errors.organizationName && (
@@ -261,25 +276,21 @@ export const Signup: React.FC = () => {
 
       {/* State Selection */}
       <div className="mb-4">
-        <label htmlFor="stateCode" className="block text-sm font-medium text-gray-700 mb-1">
+        <Label htmlFor="stateCode">
           State *
-        </label>
-        <select
-          id="stateCode"
-          name="stateCode"
-          value={formData.stateCode}
-          onChange={handleChange}
-          className={`w-full px-4 py-3 border ${
-            errors.stateCode ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white`}
-        >
-          <option value="">Select your state</option>
-          {US_STATES.map((state) => (
-            <option key={state.code} value={state.code}>
-              {state.name}
-            </option>
-          ))}
-        </select>
+        </Label>
+        <Select value={formData.stateCode} onValueChange={handleStateChange}>
+          <SelectTrigger className={errors.stateCode ? 'border-red-300' : ''}>
+            <SelectValue placeholder="Select your state" />
+          </SelectTrigger>
+          <SelectContent>
+            {US_STATES.map((state) => (
+              <SelectItem key={state.code} value={state.code}>
+                {state.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {errors.stateCode && (
           <p className="mt-1 text-sm text-red-600">{errors.stateCode}</p>
         )}
@@ -290,18 +301,16 @@ export const Signup: React.FC = () => {
 
       {/* Organization Phone */}
       <div className="mb-4">
-        <label htmlFor="organizationPhone" className="block text-sm font-medium text-gray-700 mb-1">
+        <Label htmlFor="organizationPhone">
           Organization Phone
-        </label>
-        <input
+        </Label>
+        <Input
           id="organizationPhone"
           name="organizationPhone"
           type="tel"
           value={formData.organizationPhone}
           onChange={handlePhoneChange}
-          className={`w-full px-4 py-3 border ${
-            errors.organizationPhone ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+          className={errors.organizationPhone ? 'border-red-300' : ''}
           placeholder="(555) 555-5555"
         />
         {errors.organizationPhone && (
@@ -319,18 +328,16 @@ export const Signup: React.FC = () => {
       <div className="grid grid-cols-2 gap-4 mb-4">
         {/* First Name */}
         <div>
-          <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+          <Label htmlFor="firstName">
             First Name *
-          </label>
-          <input
+          </Label>
+          <Input
             id="firstName"
             name="firstName"
             type="text"
             value={formData.firstName}
             onChange={handleChange}
-            className={`w-full px-4 py-3 border ${
-              errors.firstName ? 'border-red-300' : 'border-gray-300'
-            } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+            className={errors.firstName ? 'border-red-300' : ''}
             placeholder="John"
           />
           {errors.firstName && (
@@ -340,18 +347,16 @@ export const Signup: React.FC = () => {
 
         {/* Last Name */}
         <div>
-          <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+          <Label htmlFor="lastName">
             Last Name *
-          </label>
-          <input
+          </Label>
+          <Input
             id="lastName"
             name="lastName"
             type="text"
             value={formData.lastName}
             onChange={handleChange}
-            className={`w-full px-4 py-3 border ${
-              errors.lastName ? 'border-red-300' : 'border-gray-300'
-            } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+            className={errors.lastName ? 'border-red-300' : ''}
             placeholder="Smith"
           />
           {errors.lastName && (
@@ -362,19 +367,17 @@ export const Signup: React.FC = () => {
 
       {/* Email */}
       <div className="mb-4">
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+        <Label htmlFor="email">
           Email Address *
-        </label>
-        <input
+        </Label>
+        <Input
           id="email"
           name="email"
           type="email"
           autoComplete="email"
           value={formData.email}
           onChange={handleChange}
-          className={`w-full px-4 py-3 border ${
-            errors.email ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+          className={errors.email ? 'border-red-300' : ''}
           placeholder="you@example.com"
         />
         {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
@@ -382,18 +385,16 @@ export const Signup: React.FC = () => {
 
       {/* Phone */}
       <div className="mb-4">
-        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+        <Label htmlFor="phone">
           Phone Number
-        </label>
-        <input
+        </Label>
+        <Input
           id="phone"
           name="phone"
           type="tel"
           value={formData.phone}
           onChange={handlePhoneChange}
-          className={`w-full px-4 py-3 border ${
-            errors.phone ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+          className={errors.phone ? 'border-red-300' : ''}
           placeholder="(555) 555-5555"
         />
         {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
@@ -408,19 +409,17 @@ export const Signup: React.FC = () => {
 
       {/* Password */}
       <div className="mb-4">
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+        <Label htmlFor="password">
           Password *
-        </label>
-        <input
+        </Label>
+        <Input
           id="password"
           name="password"
           type="password"
           autoComplete="new-password"
           value={formData.password}
           onChange={handleChange}
-          className={`w-full px-4 py-3 border ${
-            errors.password ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+          className={errors.password ? 'border-red-300' : ''}
           placeholder="At least 8 characters"
         />
         {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
@@ -445,19 +444,17 @@ export const Signup: React.FC = () => {
 
       {/* Confirm Password */}
       <div className="mb-4">
-        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+        <Label htmlFor="confirmPassword">
           Confirm Password *
-        </label>
-        <input
+        </Label>
+        <Input
           id="confirmPassword"
           name="confirmPassword"
           type="password"
           autoComplete="new-password"
           value={formData.confirmPassword}
           onChange={handleChange}
-          className={`w-full px-4 py-3 border ${
-            errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+          className={errors.confirmPassword ? 'border-red-300' : ''}
           placeholder="Re-enter your password"
         />
         {errors.confirmPassword && (
@@ -519,18 +516,19 @@ export const Signup: React.FC = () => {
             {/* Navigation Buttons */}
             <div className="flex gap-3 mt-6">
               {step > 1 && (
-                <button
+                <Button
                   type="button"
                   onClick={handleBack}
-                  className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                  variant="outline"
+                  className="flex-1"
                 >
                   Back
-                </button>
+                </Button>
               )}
-              <button
+              <Button
                 type="submit"
                 disabled={isLoading}
-                className={`flex-1 flex justify-center items-center gap-2 py-3 px-4 border border-transparent text-base font-semibold rounded-lg text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all shadow-lg hover:shadow-xl ${
+                className={`flex-1 flex justify-center items-center gap-2 ${
                   isLoading ? 'opacity-75 cursor-not-allowed' : ''
                 }`}
               >
@@ -559,7 +557,7 @@ export const Signup: React.FC = () => {
                     </svg>
                   </>
                 )}
-              </button>
+              </Button>
             </div>
           </form>
 
