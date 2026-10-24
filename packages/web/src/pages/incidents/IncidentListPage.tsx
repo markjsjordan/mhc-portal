@@ -18,6 +18,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 export function IncidentListPage() {
   const [filterStatus, setFilterStatus] = useState<IncidentStatus | 'ALL'>('ALL');
@@ -122,11 +123,10 @@ export function IncidentListPage() {
           <h1 className="text-3xl font-bold text-gray-900">Incident Reports</h1>
           <p className="text-gray-600 mt-1">Track and manage compliance incidents</p>
         </div>
-        <Link
-          to="/incidents/new"
-          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-        >
-          + Report Incident
+        <Link to="/incidents/new">
+          <Button className="bg-red-600 hover:bg-red-700">
+            + Report Incident
+          </Button>
         </Link>
       </div>
 
