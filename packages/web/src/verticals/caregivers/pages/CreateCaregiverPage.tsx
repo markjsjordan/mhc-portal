@@ -1,16 +1,15 @@
 /**
- * Create Caregiver Page
+ * Create Caregiver Page - shadcn/ui + React Hook Form Edition
  *
- * Builds a complete CreateCaregiverInput payload (organizationId, branchIds,
- * primaryBranchId, dateOfBirth, hireDate, payRate.effectiveDate,
- * primaryAddress, emergencyContacts, etc.) so POST /api/caregivers never hits
- * the backend's unconditional `new Date(req.body.dateOfBirth)` /
- * `req.body.payRate.effectiveDate` crash path (packages/app/src/routes/caregivers.ts).
+ * Refactored to use CaregiverForm with React Hook Form integration.
+ * Preserves all validation logic (now in Zod schema), API payload generation,
+ * error handling, and navigation flows. The form now handles its own submission
+ * via onSubmit callback.
  */
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Button } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
 import { useAuth } from '@/core/hooks';
 import { CaregiverForm, EMPTY_CAREGIVER_FORM } from '../components/CaregiverForm.js';
 import type { CaregiverFormValues } from '../components/CaregiverForm.js';
@@ -34,38 +33,6 @@ function parseBranchIds(raw: string): string[] {
     .filter((id) => id.length > 0);
 }
 
-function validate(values: CaregiverFormValues): Partial<Record<keyof CaregiverFormValues, string>> {
-  const errors: Partial<Record<keyof CaregiverFormValues, string>> = {};
-
-  if (!values.firstName.trim()) errors.firstName = 'First name is required';
-  if (!values.lastName.trim()) errors.lastName = 'Last name is required';
-  if (!values.email.trim()) errors.email = 'Email is required';
-  if (!values.phoneNumber.trim()) errors.phoneNumber = 'Phone number is required';
-  if (!values.dateOfBirth) errors.dateOfBirth = 'Date of birth is required';
-  if (!values.hireDate) errors.hireDate = 'Hire date is required';
-  if (!values.addressLine1.trim()) errors.addressLine1 = 'Street address is required';
-  if (!values.addressCity.trim()) errors.addressCity = 'City is required';
-  if (values.addressState.trim().length !== 2) errors.addressState = 'State must be 2 letters';
-  if (!/^\d{5}(-\d{4})?$/.test(values.addressPostalCode.trim())) {
-    errors.addressPostalCode = 'ZIP code must be 5 digits';
-  }
-  if (!values.emergencyContactName.trim()) errors.emergencyContactName = 'Required';
-  if (!values.emergencyContactRelationship.trim()) errors.emergencyContactRelationship = 'Required';
-  if (!values.emergencyContactPhone.trim()) errors.emergencyContactPhone = 'Required';
-  if (parseBranchIds(values.branchIdsRaw).length === 0) {
-    errors.branchIdsRaw = 'At least one branch ID is required';
-  }
-  if (!values.primaryBranchId.trim()) errors.primaryBranchId = 'Primary branch ID is required';
-  if (!values.payRateAmount || Number(values.payRateAmount) <= 0) {
-    errors.payRateAmount = 'Pay rate amount must be greater than 0';
-  }
-  if (!values.payRateEffectiveDate) {
-    errors.payRateEffectiveDate = 'Pay rate effective date is required';
-  }
-
-  return errors;
-}
-
 function normalizePhoneDigits(value: string): string {
   return value.replace(/\D/g, '');
 }
@@ -85,9 +52,9 @@ function toCreatePayload(values: CaregiverFormValues, organizationId: string): R
     branchIds,
     primaryBranchId,
     firstName: values.firstName.trim(),
-    middleName: values.middleName.trim() || undefined,
+    middleName: values.middleName?.trim() || undefined,
     lastName: values.lastName.trim(),
-    preferredName: values.preferredName.trim() || undefined,
+    preferredName: values.preferredName?.trim() || undefined,
     // dateOfBirth / hireDate / payRate.effectiveDate are ALWAYS populated here —
     // this is the fix for the backend's unconditional `new Date(...)` crash risk.
     dateOfBirth: values.dateOfBirth,
@@ -101,7 +68,7 @@ function toCreatePayload(values: CaregiverFormValues, organizationId: string): R
     primaryAddress: {
       type: 'HOME',
       line1: values.addressLine1.trim(),
-      line2: values.addressLine2.trim() || undefined,
+      line2: values.addressLine2?.trim() || undefined,
       city: values.addressCity.trim(),
       state: values.addressState.trim().toUpperCase(),
       postalCode: values.addressPostalCode.trim(),
@@ -138,22 +105,12 @@ export const CreateCaregiverPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const caregiverApi = useCaregiverApi();
-  const [values, setValues] = useState<CaregiverFormValues>(EMPTY_CAREGIVER_FORM);
-  const [errors, setErrors] = useState<Partial<Record<keyof CaregiverFormValues, string>>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const submitButtonRef = React.useRef<HTMLButtonElement>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSubmit = async (values: CaregiverFormValues) => {
     if (!user?.organizationId) {
       toast.error('Unable to determine your organization. Please log in again.');
-      return;
-    }
-
-    const validationErrors = validate(values);
-    setErrors(validationErrors);
-    if (Object.keys(validationErrors).length > 0) {
-      toast.error('Please fix the highlighted fields');
       return;
     }
 
@@ -181,32 +138,36 @@ export const CreateCaregiverPage: React.FC = () => {
         <p className="text-gray-600 mt-1">Create a new caregiver record</p>
       </div>
 
-      <form onSubmit={(e) => { handleSubmit(e).catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to submit form'); }); }} className="bg-white rounded-lg shadow p-6 space-y-6">
+      <div className="bg-white rounded-lg shadow p-6 space-y-6">
         <CaregiverForm
-          values={values}
-          onChange={setValues}
-          errors={errors}
+          defaultValues={EMPTY_CAREGIVER_FORM}
+          onSubmit={handleSubmit}
           disabled={isSubmitting}
+          submitButtonRef={submitButtonRef}
         />
 
         <div className="flex gap-3 pt-4 border-t border-gray-100">
-          <Button type="submit" isLoading={isSubmitting}>
+          <Button 
+            type="button" 
+            disabled={isSubmitting}
+            onClick={() => submitButtonRef.current?.click()}
+          >
             {isSubmitting ? 'Creating...' : 'Create Caregiver'}
           </Button>
           <Button
             type="button"
             variant="outline"
             onClick={() => {
-            Promise.resolve(navigate('/caregivers')).catch((err: unknown) => {
-              toast.error(err instanceof Error ? err.message : 'Navigation failed');
-            });
-          }}
+              Promise.resolve(navigate('/caregivers')).catch((err: unknown) => {
+                toast.error(err instanceof Error ? err.message : 'Navigation failed');
+              });
+            }}
             disabled={isSubmitting}
           >
             Cancel
           </Button>
         </div>
-      </form>
+      </div>
     </div>
   );
 };

@@ -1,10 +1,10 @@
 /**
- * Edit Caregiver Modal
+ * Edit Caregiver Modal - shadcn/ui + React Hook Form Edition
  *
- * Modal form for editing caregiver fields with optimistic locking support.
- * Pre-populates with existing caregiver data and handles PATCH requests.
+ * Refactored to use the new React Hook Form-based CaregiverForm.
+ * Preserves optimistic locking, change tracking, and all data mapping logic.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button, Modal, LoadingSpinner } from '@/core/components';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -110,28 +110,40 @@ export const EditCaregiverModal: React.FC<EditCaregiverModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const [formValues, setFormValues] = useState<CaregiverFormValues>(caregiverToFormValues(caregiver));
+  const [defaultValues, setDefaultValues] = useState<CaregiverFormValues>(caregiverToFormValues(caregiver));
   const [hasChanges, setHasChanges] = useState(false);
+  const [formKey, setFormKey] = useState(0);
+  const submitFormRef = useRef<(() => Promise<void>) | null>(null);
+  const hasChangesRef = useRef(false);
 
-  // Reset form when modal opens. Intentional sync from props; the form is
-  // reset on every open so stale edits never leak between caregivers.
+  // Stable onChange callback that uses a ref to track changes
+  const handleFormChange = React.useCallback(() => {
+    if (!hasChangesRef.current) {
+      hasChangesRef.current = true;
+      setHasChanges(true);
+    }
+  }, []);
+
+  // Reset form when modal opens or caregiver changes
   useEffect(() => {
     if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFormValues(caregiverToFormValues(caregiver));
+      const newDefaultValues = caregiverToFormValues(caregiver);
+      setDefaultValues(newDefaultValues);
       setHasChanges(false);
+      hasChangesRef.current = false;
+      setFormKey(prev => prev + 1); // Force form remount with new key
     }
   }, [isOpen, caregiver]);
 
   const updateMutation = useMutation({
-    mutationFn: (payload: any) => caregiverApi.updateCaregiver(caregiver.id, payload),
+    mutationFn: (payload: Record<string, unknown>) => caregiverApi.updateCaregiver(caregiver.id, payload),
     onSuccess: () => {
       toast.success('Caregiver updated successfully');
       setHasChanges(false);
       onSuccess();
       onClose();
     },
-    onError: (error: any) => {
+    onError: (error: Error & { response?: { data?: { error?: string; message?: string } } }) => {
       if (error.response?.data?.error === 'OPTIMISTIC_LOCK_FAILURE') {
         toast.error(
           'Record was modified by another user. Please refresh and try again.'
@@ -142,9 +154,9 @@ export const EditCaregiverModal: React.FC<EditCaregiverModalProps> = ({
     },
   });
 
-  const handleSave = () => {
-    const payload = formValuesToPayload(formValues, caregiver.version ?? 0);
-    updateMutation.mutate(payload);
+  const handleSubmit = async (values: CaregiverFormValues) => {
+    const payload = formValuesToPayload(values, caregiver.version ?? 0);
+    await updateMutation.mutateAsync(payload);
   };
 
   const handleCancel = () => {
@@ -161,12 +173,12 @@ export const EditCaregiverModal: React.FC<EditCaregiverModalProps> = ({
     <Modal isOpen={isOpen} onClose={handleCancel} title={`Edit Caregiver: ${caregiver.firstName || 'Unknown'}`}>
       <div className="space-y-4">
         <CaregiverForm
-          values={formValues}
-          onChange={(values) => {
-            setFormValues(values);
-            setHasChanges(true);
-          }}
+          key={formKey}
+          defaultValues={defaultValues}
+          onSubmit={handleSubmit}
+          onChange={handleFormChange}
           disabled={updateMutation.isPending}
+          onFormReady={(submit) => { submitFormRef.current = submit; }}
         />
 
         <div className="flex justify-end gap-3 pt-4 border-t">
@@ -178,9 +190,9 @@ export const EditCaregiverModal: React.FC<EditCaregiverModalProps> = ({
             Cancel
           </Button>
           <Button
-            onClick={handleSave}
+            onClick={() => submitFormRef.current?.()}
             variant="primary"
-            disabled={!hasChanges || updateMutation.isPending}
+            disabled={updateMutation.isPending}
             leftIcon={updateMutation.isPending && <LoadingSpinner size="sm" />}
           >
             {updateMutation.isPending ? 'Saving...' : 'Save Changes'}

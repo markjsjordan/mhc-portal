@@ -1,7 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useDemoData, useOrganizationStats } from '@/core/hooks';
-import { Card, CardHeader, CardContent, Button, EmptyState, LoadDemoDataCard } from '@/core/components';
+import { EmptyState, LoadDemoDataCard } from '@/core/components';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Calendar, ClipboardList, AlertCircle, Activity, CalendarPlus } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
@@ -108,25 +110,28 @@ export const Dashboard: React.FC = () => {
         {stats.map((stat) => (
           <Card
             key={stat.label}
-            padding="md"
             className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 active:scale-95"
             onClick={stat.onClick}
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                <p className="mt-2 text-3xl font-bold text-gray-900">{stat.value}</p>
-                <p className="mt-1 text-sm text-gray-600">{stat.change} from last week</p>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">{stat.label}</p>
+                  <p className="mt-2 text-3xl font-bold text-gray-900">{stat.value}</p>
+                  <p className="mt-1 text-sm text-gray-600">{stat.change} from last week</p>
+                </div>
+                <div className="flex-shrink-0">{stat.icon}</div>
               </div>
-              <div className="flex-shrink-0">{stat.icon}</div>
-            </div>
+            </CardContent>
           </Card>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <CardHeader title="Recent Activity" />
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+          </CardHeader>
           <CardContent>
             <div id="visit-timeline">
               <EmptyState
@@ -157,7 +162,9 @@ export const Dashboard: React.FC = () => {
         </Card>
 
         <Card>
-          <CardHeader title="Upcoming Visits" />
+          <CardHeader>
+            <CardTitle>Upcoming Visits</CardTitle>
+          </CardHeader>
           <CardContent>
             <div id="today-visits">
               <EmptyState
@@ -167,7 +174,7 @@ export const Dashboard: React.FC = () => {
                 action={
                   <div className="flex flex-col sm:flex-row gap-3">
                     <Button
-                      variant="primary"
+                      variant="default"
                       size="sm"
                       onClick={() => navigate('/scheduling')}
                     >
