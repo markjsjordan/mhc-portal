@@ -15,6 +15,11 @@ import {
   type IncidentStatus,
   type IncidentType,
 } from '@/verticals/incident-reporting-frontend/services/incident-api.js';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 export function IncidentListPage() {
   const [filterStatus, setFilterStatus] = useState<IncidentStatus | 'ALL'>('ALL');
@@ -128,64 +133,84 @@ export function IncidentListPage() {
       </div>
 
       {/* Filters */}
-      <div className="mb-6 bg-white rounded-lg shadow p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as IncidentStatus | 'ALL')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="REPORTED">Reported</option>
-              <option value="UNDER_REVIEW">Under Review</option>
-              <option value="INVESTIGATION_REQUIRED">Investigation Required</option>
-              <option value="RESOLVED">Resolved</option>
-              <option value="CLOSED">Closed</option>
-            </select>
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="status-filter">Status</Label>
+              <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as IncidentStatus | 'ALL')}>
+                <SelectTrigger id="status-filter">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Statuses</SelectItem>
+                  <SelectItem value="REPORTED">Reported</SelectItem>
+                  <SelectItem value="UNDER_REVIEW">Under Review</SelectItem>
+                  <SelectItem value="INVESTIGATION_REQUIRED">Investigation Required</SelectItem>
+                  <SelectItem value="RESOLVED">Resolved</SelectItem>
+                  <SelectItem value="CLOSED">Closed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="severity-filter">Severity</Label>
+              <Select value={filterSeverity} onValueChange={(value) => setFilterSeverity(value as IncidentSeverity | 'ALL')}>
+                <SelectTrigger id="severity-filter">
+                  <SelectValue placeholder="Select severity" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Severities</SelectItem>
+                  <SelectItem value="LOW">Low</SelectItem>
+                  <SelectItem value="MEDIUM">Medium</SelectItem>
+                  <SelectItem value="HIGH">High</SelectItem>
+                  <SelectItem value="CRITICAL">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Severity</label>
-            <select
-              value={filterSeverity}
-              onChange={(e) => setFilterSeverity(e.target.value as IncidentSeverity | 'ALL')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            >
-              <option value="ALL">All Severities</option>
-              <option value="LOW">Low</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="HIGH">High</option>
-              <option value="CRITICAL">Critical</option>
-            </select>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-600">Total Incidents</p>
-          <p className="text-2xl font-bold text-gray-900">{incidents.length}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-600">Requiring Investigation</p>
-          <p className="text-2xl font-bold text-yellow-600">
-            {incidents.filter((i) => i.investigationRequired).length}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-600">State Reporting Required</p>
-          <p className="text-2xl font-bold text-red-600">
-            {incidents.filter((i) => i.stateReportingRequired).length}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-600">Critical Severity</p>
-          <p className="text-2xl font-bold text-red-600">
-            {incidents.filter((i) => i.severity === 'CRITICAL').length}
-          </p>
-        </div>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Incidents</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{incidents.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Requiring Investigation</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">
+              {incidents.filter((i) => i.investigationRequired).length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">State Reporting Required</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {incidents.filter((i) => i.stateReportingRequired).length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Critical Severity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {incidents.filter((i) => i.severity === 'CRITICAL').length}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Incidents List */}

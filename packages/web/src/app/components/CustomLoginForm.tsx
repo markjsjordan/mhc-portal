@@ -4,6 +4,11 @@ import { useAuth, useAuthService } from '@/core/hooks';
 import { getDashboardRoute } from '@/core/utils';
 import { handleSmartLogin } from '@/core/utils/auth-storage';
 import toast from 'react-hot-toast';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface CustomLoginFormProps {
   onLoginSuccess?: () => void;
@@ -165,119 +170,103 @@ export const CustomLoginForm: React.FC<CustomLoginFormProps> = ({ onLoginSuccess
   }
 
   return (
-    <div className="bg-white shadow-2xl rounded-2xl p-8 sm:p-10">
-      {/* Error Banner */}
-      {error && (
-        <div className="mb-6 bg-red-50 border-2 border-red-200 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-6 w-6 text-red-600"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-base font-semibold text-red-900">Login Error</h3>
-              <p className="mt-1 text-sm text-red-700">{error}</p>
-            </div>
+    <Card className="shadow-2xl">
+      <CardHeader>
+        <CardTitle className="text-2xl">Sign In</CardTitle>
+        <CardDescription>Enter your credentials to access your account</CardDescription>
+      </CardHeader>
+
+      <CardContent>
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <svg
+              className="h-5 w-5"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <AlertTitle>Login Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-6">
+          {/* Email Field */}
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError(null); // Clear error when user starts typing
+              }}
+              placeholder="you@example.com"
+              disabled={isDisabled}
+              autoComplete="email"
+            />
           </div>
-        </div>
-      )}
 
-      <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-6">
-        {/* Email Field */}
-        <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Email Address
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setError(null); // Clear error when user starts typing
-            }}
-            placeholder="you@example.com"
+          {/* Password Field */}
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError(null); // Clear error when user starts typing
+              }}
+              placeholder="••••••••"
+              disabled={isDisabled}
+              autoComplete="current-password"
+            />
+          </div>
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
             disabled={isDisabled}
-            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-200 outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
-            autoComplete="email"
-          />
-        </div>
-
-        {/* Password Field */}
-        <div>
-          <label
-            htmlFor="password"
-            className="block text-sm font-medium text-gray-700 mb-2"
+            className="w-full"
           >
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              setError(null); // Clear error when user starts typing
-            }}
-            placeholder="••••••••"
-            disabled={isDisabled}
-            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-200 outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
-            autoComplete="current-password"
-          />
-        </div>
+            {submitLabel}
+          </Button>
 
-        {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={isDisabled}
-          className={`w-full py-3 px-4 font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 ${ 
-            isDisabled
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transform hover:scale-105'
-          }`}
-        >
-          {submitLabel}
-        </button>
+          {/* Forgot Password Link */}
+          <div className="text-center">
+            <a
+              href="#"
+              className="text-sm text-primary hover:underline font-medium"
+              onClick={(e) => {
+                e.preventDefault();
+                toast.error('Password reset is not yet available');
+              }}
+            >
+              Forgot your password?
+            </a>
+          </div>
+        </form>
+      </CardContent>
 
-        {/* Forgot Password Link */}
-        <div className="text-center">
-          <a
-            href="#"
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-            onClick={(e) => {
-              e.preventDefault();
-              toast.error('Password reset is not yet available');
-            }}
-          >
-            Forgot your password?
-          </a>
-        </div>
-      </form>
-
-      {/* Divider */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <p className="text-center text-sm text-gray-600">
+      <CardFooter className="flex-col border-t pt-6">
+        <p className="text-center text-sm text-muted-foreground">
           Don't have an account?{' '}
           <a
             href="/signup"
-            className="text-blue-600 hover:text-blue-700 font-medium"
+            className="text-primary hover:underline font-medium"
           >
             Sign up here
           </a>
         </p>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 };

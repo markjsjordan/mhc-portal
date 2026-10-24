@@ -12,6 +12,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 interface Medication {
   id: string;
@@ -194,10 +197,10 @@ export function MedicationListPage() {
 
       {/* Medications List */}
       {filteredMedications.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
+        <Card className="p-12 text-center">
           <p className="text-gray-500 text-lg">No medications found</p>
           <p className="text-gray-400 text-sm mt-2">Add medications to start tracking</p>
-        </div>
+        </Card>
       ) : (
         <div className="space-y-4">
           {filteredMedications.map((medication) => {
@@ -205,13 +208,11 @@ export function MedicationListPage() {
             const refillNeeded = needsRefill(medication);
 
             return (
-              <div
+              <Card
                 key={medication.id}
-                className={`bg-white rounded-lg shadow overflow-hidden ${
-                  overdue ? 'border-l-4 border-red-500' : ''
-                }`}
+                className={overdue ? 'border-l-4 border-red-500' : ''}
               >
-                <div className="p-6">
+                <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4 flex-1">
                       {/* Route Icon */}
@@ -223,17 +224,13 @@ export function MedicationListPage() {
                           <h3 className="text-lg font-semibold text-gray-900">
                             {medication.medicationName}
                           </h3>
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                              medication.status
-                            )}`}
-                          >
+                          <Badge variant={medication.status === 'ACTIVE' ? 'default' : medication.status === 'DISCONTINUED' ? 'secondary' : 'outline'}>
                             {medication.status}
-                          </span>
+                          </Badge>
                           {refillNeeded && (
-                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                            <Badge variant="destructive">
                               Refill Needed
-                            </span>
+                            </Badge>
                           )}
                         </div>
 
@@ -311,24 +308,23 @@ export function MedicationListPage() {
                     {/* Actions */}
                     {medication.status === 'ACTIVE' && (
                       <div className="flex flex-col gap-2">
-                        <button
+                        <Button
                           onClick={() => markAsTakenMutation.mutate({ medicationId: medication.id })}
                           disabled={markAsTakenMutation.isPending}
-                          className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+                          className="bg-green-600 hover:bg-green-700"
                         >
                           {markAsTakenMutation.isPending ? 'Marking...' : '✓ Mark as Taken'}
-                        </button>
-                        <Link
-                          to={`/clients/${clientId}/medications/${medication.id}`}
-                          className="px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 text-center transition-colors"
-                        >
-                          View Details
-                        </Link>
+                        </Button>
+                        <Button asChild variant="outline">
+                          <Link to={`/clients/${clientId}/medications/${medication.id}`}>
+                            View Details
+                          </Link>
+                        </Button>
                       </div>
                     )}
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
