@@ -13,6 +13,18 @@ import {
   createIncidentApiService,
   type CreateIncidentInput,
 } from '@/verticals/incident-reporting-frontend/services/incident-api.js';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 
 export function CreateIncidentPage() {
   const navigate = useNavigate();
@@ -51,12 +63,20 @@ export function CreateIncidentPage() {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
+  };
+
+  const handleIncidentTypeChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, incidentType: value as CreateIncidentInput['incidentType'] }));
+  };
+
+  const handleSeverityChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, severity: value as CreateIncidentInput['severity'] }));
   };
 
   return (
@@ -67,162 +87,163 @@ export function CreateIncidentPage() {
         <p className="text-gray-600 mt-1">Document a new incident for compliance tracking</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
-        {/* Client ID */}
-        <div>
-          <label htmlFor="clientId" className="block text-sm font-medium text-gray-700 mb-2">
-            Client ID <span className="text-red-600">*</span>
-          </label>
-          <input
-            type="text"
-            id="clientId"
-            name="clientId"
-            required
-            value={formData.clientId}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter client ID"
-          />
-        </div>
+      <Card>
+        <CardContent className="pt-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Client ID */}
+            <div>
+              <Label htmlFor="clientId">
+                Client ID <span className="text-red-600">*</span>
+              </Label>
+              <Input
+                type="text"
+                id="clientId"
+                name="clientId"
+                required
+                value={formData.clientId}
+                onChange={handleChange}
+                placeholder="Enter client ID"
+              />
+            </div>
 
-        {/* Incident Type */}
-        <div>
-          <label htmlFor="incidentType" className="block text-sm font-medium text-gray-700 mb-2">
-            Incident Type <span className="text-red-600">*</span>
-          </label>
-          <select
-            id="incidentType"
-            name="incidentType"
-            required
-            value={formData.incidentType}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="FALL">Fall</option>
-            <option value="MEDICATION_ERROR">Medication Error</option>
-            <option value="INJURY">Injury</option>
-            <option value="ABUSE_ALLEGATION">Abuse Allegation</option>
-            <option value="NEGLECT_ALLEGATION">Neglect Allegation</option>
-            <option value="EXPLOITATION_ALLEGATION">Exploitation Allegation</option>
-            <option value="EQUIPMENT_FAILURE">Equipment Failure</option>
-            <option value="EMERGENCY_HOSPITALIZATION">Emergency Hospitalization</option>
-            <option value="DEATH">Death</option>
-            <option value="ELOPEMENT">Elopement</option>
-            <option value="BEHAVIORAL_INCIDENT">Behavioral Incident</option>
-            <option value="INFECTION">Infection</option>
-            <option value="PRESSURE_INJURY">Pressure Injury</option>
-            <option value="CLIENT_REFUSAL">Client Refusal</option>
-            <option value="OTHER">Other</option>
-          </select>
-        </div>
+            {/* Incident Type */}
+            <div>
+              <Label htmlFor="incidentType">
+                Incident Type <span className="text-red-600">*</span>
+              </Label>
+              <Select
+                value={formData.incidentType}
+                onValueChange={handleIncidentTypeChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select incident type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="FALL">Fall</SelectItem>
+                  <SelectItem value="MEDICATION_ERROR">Medication Error</SelectItem>
+                  <SelectItem value="INJURY">Injury</SelectItem>
+                  <SelectItem value="ABUSE_ALLEGATION">Abuse Allegation</SelectItem>
+                  <SelectItem value="NEGLECT_ALLEGATION">Neglect Allegation</SelectItem>
+                  <SelectItem value="EXPLOITATION_ALLEGATION">Exploitation Allegation</SelectItem>
+                  <SelectItem value="EQUIPMENT_FAILURE">Equipment Failure</SelectItem>
+                  <SelectItem value="EMERGENCY_HOSPITALIZATION">Emergency Hospitalization</SelectItem>
+                  <SelectItem value="DEATH">Death</SelectItem>
+                  <SelectItem value="ELOPEMENT">Elopement</SelectItem>
+                  <SelectItem value="BEHAVIORAL_INCIDENT">Behavioral Incident</SelectItem>
+                  <SelectItem value="INFECTION">Infection</SelectItem>
+                  <SelectItem value="PRESSURE_INJURY">Pressure Injury</SelectItem>
+                  <SelectItem value="CLIENT_REFUSAL">Client Refusal</SelectItem>
+                  <SelectItem value="OTHER">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        {/* Severity */}
-        <div>
-          <label htmlFor="severity" className="block text-sm font-medium text-gray-700 mb-2">
-            Severity <span className="text-red-600">*</span>
-          </label>
-          <select
-            id="severity"
-            name="severity"
-            required
-            value={formData.severity}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="LOW">Low</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="HIGH">High</option>
-            <option value="CRITICAL">Critical</option>
-          </select>
-        </div>
+            {/* Severity */}
+            <div>
+              <Label htmlFor="severity">
+                Severity <span className="text-red-600">*</span>
+              </Label>
+              <Select
+                value={formData.severity}
+                onValueChange={handleSeverityChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select severity" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="LOW">Low</SelectItem>
+                  <SelectItem value="MEDIUM">Medium</SelectItem>
+                  <SelectItem value="HIGH">High</SelectItem>
+                  <SelectItem value="CRITICAL">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        {/* Date/Time Occurred */}
-        <div>
-          <label htmlFor="occurredAt" className="block text-sm font-medium text-gray-700 mb-2">
-            Date & Time Occurred <span className="text-red-600">*</span>
-          </label>
-          <input
-            type="datetime-local"
-            id="occurredAt"
-            name="occurredAt"
-            required
-            value={formData.occurredAt}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+            {/* Date/Time Occurred */}
+            <div>
+              <Label htmlFor="occurredAt">
+                Date & Time Occurred <span className="text-red-600">*</span>
+              </Label>
+              <Input
+                type="datetime-local"
+                id="occurredAt"
+                name="occurredAt"
+                required
+                value={formData.occurredAt}
+                onChange={handleChange}
+              />
+            </div>
 
-        {/* Location */}
-        <div>
-          <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-            Location <span className="text-red-600">*</span>
-          </label>
-          <input
-            type="text"
-            id="location"
-            name="location"
-            required
-            value={formData.location}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., Client's home, bathroom"
-          />
-        </div>
+            {/* Location */}
+            <div>
+              <Label htmlFor="location">
+                Location <span className="text-red-600">*</span>
+              </Label>
+              <Input
+                type="text"
+                id="location"
+                name="location"
+                required
+                value={formData.location}
+                onChange={handleChange}
+                placeholder="e.g., Client's home, bathroom"
+              />
+            </div>
 
-        {/* Description */}
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-            Description <span className="text-red-600">*</span>
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            required
-            value={formData.description}
-            onChange={handleChange}
-            rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Describe what happened in detail..."
-          />
-          <p className="text-sm text-gray-500 mt-1">
-            Include who, what, when, where, and how. Be specific and factual.
-          </p>
-        </div>
+            {/* Description */}
+            <div>
+              <Label htmlFor="description">
+                Description <span className="text-red-600">*</span>
+              </Label>
+              <Textarea
+                id="description"
+                name="description"
+                required
+                value={formData.description}
+                onChange={handleChange}
+                rows={4}
+                placeholder="Describe what happened in detail..."
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Include who, what, when, where, and how. Be specific and factual.
+              </p>
+            </div>
 
-        {/* Immediate Action */}
-        <div>
-          <label htmlFor="immediateAction" className="block text-sm font-medium text-gray-700 mb-2">
-            Immediate Action Taken
-          </label>
-          <textarea
-            id="immediateAction"
-            name="immediateAction"
-            value={formData.immediateAction}
-            onChange={handleChange}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="What was done immediately after the incident?"
-          />
-        </div>
+            {/* Immediate Action */}
+            <div>
+              <Label htmlFor="immediateAction">
+                Immediate Action Taken
+              </Label>
+              <Textarea
+                id="immediateAction"
+                name="immediateAction"
+                value={formData.immediateAction}
+                onChange={handleChange}
+                rows={3}
+                placeholder="What was done immediately after the incident?"
+              />
+            </div>
 
-        {/* Actions */}
-        <div className="flex gap-3 pt-4">
-          <button
-            type="submit"
-            disabled={createMutation.isPending}
-            className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {createMutation.isPending ? 'Reporting...' : 'Report Incident'}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/incidents')}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
+            {/* Actions */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="submit"
+                disabled={createMutation.isPending}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {createMutation.isPending ? 'Reporting...' : 'Report Incident'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate('/incidents')}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
