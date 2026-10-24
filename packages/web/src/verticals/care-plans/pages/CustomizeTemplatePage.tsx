@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import {
-  Button,
-  LoadingSpinner,
-  ErrorMessage,
-  Card,
-  CardContent,
-  FormField,
-} from '@/core/components';
+import { LoadingSpinner, ErrorMessage } from '@/core/components';
 import { useCarePlanTemplate, useCreateFromTemplate } from '../hooks';
 import type { CarePlanTaskTemplate } from '@folkcare/care-plans-tasks/browser';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface CustomTask extends CarePlanTaskTemplate {
   enabled: boolean;
@@ -101,8 +100,8 @@ export const CustomizeTemplatePage: React.FC = () => {
           <Button
             variant="ghost"
             size="sm"
-            leftIcon={<ArrowLeft className="h-4 w-4" />}
           >
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Templates
           </Button>
         </Link>
@@ -120,9 +119,9 @@ export const CustomizeTemplatePage: React.FC = () => {
       <div className="space-y-6">
         {/* Template Info */}
         <Card>
-          <div className="border-b px-6 py-4">
+          <CardHeader>
             <h3 className="text-lg font-semibold text-gray-900">Template: {template.name}</h3>
-          </div>
+          </CardHeader>
           <CardContent>
             <p className="text-gray-600">{template.description}</p>
           </CardContent>
@@ -130,60 +129,72 @@ export const CustomizeTemplatePage: React.FC = () => {
 
         {/* Basic Information */}
         <Card>
-          <div className="border-b px-6 py-4">
+          <CardHeader>
             <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
-          </div>
+          </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <FormField label="Client ID" required>
-                <input
+              <div>
+                <Label htmlFor="clientId">
+                  Client ID <span className="text-red-500">*</span>
+                </Label>
+                <Input
                   type="text"
+                  id="clientId"
                   value={clientId}
                   onChange={(e) => setClientId(e.target.value)}
                   placeholder="Enter client ID"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="mt-1"
                 />
-              </FormField>
+              </div>
 
-              <FormField label="Care Plan Name" required>
-                <input
+              <div>
+                <Label htmlFor="name">
+                  Care Plan Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
                   type="text"
+                  id="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter care plan name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="mt-1"
                 />
-              </FormField>
+              </div>
 
-              <FormField label="Goals">
-                <textarea
+              <div>
+                <Label htmlFor="goals">Goals</Label>
+                <Textarea
+                  id="goals"
                   value={goals}
                   onChange={(e) => setGoals(e.target.value)}
                   placeholder="Enter care goals"
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="mt-1"
                 />
-              </FormField>
+              </div>
 
-              <FormField label="Additional Notes">
-                <textarea
+              <div>
+                <Label htmlFor="notes">Additional Notes</Label>
+                <Textarea
+                  id="notes"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Any additional notes or instructions"
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="mt-1"
                 />
-              </FormField>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Task Selection */}
         <Card>
-          <div className="border-b px-6 py-4">
+          <CardHeader>
             <h3 className="text-lg font-semibold text-gray-900">Select Tasks</h3>
             <p className="text-sm text-gray-600 mt-1">{enabledTasksCount} of {customTasks.length} tasks selected</p>
-          </div>
+          </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {customTasks.map((task, index) => (
@@ -195,13 +206,13 @@ export const CustomizeTemplatePage: React.FC = () => {
                       : 'border-gray-200 bg-gray-50'
                   }`}
                 >
-                  <input
-                    type="checkbox"
+                  <Checkbox
+                    id={`task-${index}`}
                     checked={task.enabled}
-                    onChange={() => handleTaskToggle(index)}
-                    className="mt-1 mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    onCheckedChange={() => handleTaskToggle(index)}
+                    className="mt-1 mr-3"
                   />
-                  <div className="flex-1">
+                  <Label htmlFor={`task-${index}`} className="flex-1 cursor-pointer">
                     <h4 className="font-medium text-gray-900">
                       {task.description}
                     </h4>
@@ -222,7 +233,7 @@ export const CustomizeTemplatePage: React.FC = () => {
                         {task.priority} priority
                       </span>
                     </div>
-                  </div>
+                  </Label>
                 </div>
               ))}
             </div>
@@ -239,15 +250,18 @@ export const CustomizeTemplatePage: React.FC = () => {
             disabled={
               createFromTemplate.isPending || !clientId || enabledTasksCount === 0
             }
-            leftIcon={
-              createFromTemplate.isPending ? (
-                <LoadingSpinner size="sm" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )
-            }
           >
-            Create Care Plan ({enabledTasksCount} tasks)
+            {createFromTemplate.isPending ? (
+              <>
+                <LoadingSpinner size="sm" />
+                <span className="ml-2">Creating...</span>
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Create Care Plan ({enabledTasksCount} tasks)
+              </>
+            )}
           </Button>
         </div>
       </div>

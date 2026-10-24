@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card } from '@folkcare/shared-components';
-import { Button } from '@folkcare/shared-components';
 import { FormField } from '@/components/forms/FormField';
 import { useApiClient } from '@/core/hooks';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { User, Lock, Bell, Users, UserPlus, Mail, Clock, CheckCircle, XCircle, Trash2, Copy, Pencil } from 'lucide-react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 type SettingsTab = 'profile' | 'account' | 'preferences' | 'team';
 
@@ -215,22 +217,22 @@ function ProfileSettings({ userProfile, isLoading, onSuccess, onError }: Setting
   if (isLoading) {
     return (
       <Card>
-        <Card.Content>
+        <CardContent>
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
           </div>
-        </Card.Content>
+        </CardContent>
       </Card>
     );
   }
 
   return (
     <Card>
-      <Card.Header
-        title="Profile Information"
-        subtitle="Update your personal information"
-      />
-      <Card.Content>
+      <CardHeader>
+        <h3 className="text-lg font-semibold">Profile Information</h3>
+        <p className="text-sm text-gray-500">Update your personal information</p>
+      </CardHeader>
+      <CardContent>
         <form onSubmit={(e) => { void handleSubmit(onSubmit)(e); }} className="space-y-6">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <FormField
@@ -264,10 +266,10 @@ function ProfileSettings({ userProfile, isLoading, onSuccess, onError }: Setting
           <div className="flex items-center gap-4 pt-4">
             <Button
               type="submit"
-              variant="primary"
-              isLoading={updateProfileMutation.isPending}
+              variant="default"
+              disabled={updateProfileMutation.isPending}
             >
-              Save Changes
+              {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
             <Button
               type="button"
@@ -279,7 +281,7 @@ function ProfileSettings({ userProfile, isLoading, onSuccess, onError }: Setting
             </Button>
           </div>
         </form>
-      </Card.Content>
+      </CardContent>
     </Card>
   );
 }
@@ -323,11 +325,11 @@ function AccountSettings({ onSuccess, onError }: Readonly<Omit<SettingsSectionPr
 
   return (
     <Card>
-      <Card.Header
-        title="Change Password"
-        subtitle="Update your password to keep your account secure"
-      />
-      <Card.Content>
+      <CardHeader>
+        <h3 className="text-lg font-semibold">Change Password</h3>
+        <p className="text-sm text-gray-500">Update your password to keep your account secure</p>
+      </CardHeader>
+      <CardContent>
         <form onSubmit={(e) => { void handleSubmit(onSubmit)(e); }} className="space-y-6">
           <FormField
             name="currentPassword"
@@ -360,10 +362,10 @@ function AccountSettings({ onSuccess, onError }: Readonly<Omit<SettingsSectionPr
           <div className="flex items-center gap-4 pt-4">
             <Button
               type="submit"
-              variant="primary"
-              isLoading={changePasswordMutation.isPending}
+              variant="default"
+              disabled={changePasswordMutation.isPending}
             >
-              Change Password
+              {changePasswordMutation.isPending ? 'Changing...' : 'Change Password'}
             </Button>
             <Button
               type="button"
@@ -375,7 +377,7 @@ function AccountSettings({ onSuccess, onError }: Readonly<Omit<SettingsSectionPr
             </Button>
           </div>
         </form>
-      </Card.Content>
+      </CardContent>
     </Card>
   );
 }
@@ -392,9 +394,10 @@ function PreferencesSettings({ onSuccess, onError }: Readonly<Omit<SettingsSecti
   });
 
   const {
-    register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
   } = useForm<PreferencesFormData>({
     resolver: zodResolver(preferencesSchema as any),
     defaultValues: {
@@ -402,6 +405,9 @@ function PreferencesSettings({ onSuccess, onError }: Readonly<Omit<SettingsSecti
       pushNotifications: false,
     },
   });
+
+  const emailNotifications = watch('emailNotifications');
+  const pushNotifications = watch('pushNotifications');
 
   React.useEffect(() => {
     if (preferences) {
@@ -431,58 +437,56 @@ function PreferencesSettings({ onSuccess, onError }: Readonly<Omit<SettingsSecti
   if (isLoadingPreferences) {
     return (
       <Card>
-        <Card.Content>
+        <CardContent>
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
           </div>
-        </Card.Content>
+        </CardContent>
       </Card>
     );
   }
 
   return (
     <Card>
-      <Card.Header
-        title="Preferences"
-        subtitle="Customize your experience"
-      />
-      <Card.Content>
+      <CardHeader>
+        <h3 className="text-lg font-semibold">Preferences</h3>
+        <p className="text-sm text-gray-500">Customize your experience</p>
+      </CardHeader>
+      <CardContent>
         <form onSubmit={(e) => { void handleSubmit(onSubmit)(e); }} className="space-y-6">
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-gray-900">Notifications</h3>
 
             <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="emailNotifications"
-                {...register('emailNotifications')}
-                className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                checked={emailNotifications}
+                onCheckedChange={(checked) => setValue('emailNotifications', checked === true)}
               />
-              <label htmlFor="emailNotifications" className="text-sm text-gray-700">
+              <Label htmlFor="emailNotifications" className="text-sm text-gray-700">
                 Email notifications
-              </label>
+              </Label>
             </div>
 
             <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="pushNotifications"
-                {...register('pushNotifications')}
-                className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                checked={pushNotifications}
+                onCheckedChange={(checked) => setValue('pushNotifications', checked === true)}
               />
-              <label htmlFor="pushNotifications" className="text-sm text-gray-700">
+              <Label htmlFor="pushNotifications" className="text-sm text-gray-700">
                 Push notifications
-              </label>
+              </Label>
             </div>
           </div>
 
           <div className="flex items-center gap-4 pt-4">
             <Button
               type="submit"
-              variant="primary"
-              isLoading={updatePreferencesMutation.isPending}
+              variant="default"
+              disabled={updatePreferencesMutation.isPending}
             >
-              Save Preferences
+              {updatePreferencesMutation.isPending ? 'Saving...' : 'Save Preferences'}
             </Button>
             <Button
               type="button"
@@ -494,7 +498,7 @@ function PreferencesSettings({ onSuccess, onError }: Readonly<Omit<SettingsSecti
             </Button>
           </div>
         </form>
-      </Card.Content>
+      </CardContent>
     </Card>
   );
 }
@@ -678,10 +682,10 @@ function EditMemberModal({
                 </Button>
                 <Button
                   type="submit"
-                  variant="primary"
-                  isLoading={isLoading}
+                  variant="default"
+                  disabled={isLoading}
                 >
-                  Save Changes
+                  {isLoading ? 'Saving...' : 'Save Changes'}
                 </Button>
               </div>
             </form>
@@ -878,21 +882,23 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
     <div className="space-y-6">
       {/* Team Members Card */}
       <Card>
-        <Card.Header
-          title="Team Members"
-          subtitle="Manage your organization's team"
-          action={
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Team Members</h3>
+              <p className="text-sm text-gray-500">Manage your organization's team</p>
+            </div>
             <Button
-              variant="primary"
+              variant="default"
               size="sm"
               onClick={() => setShowInviteModal(true)}
             >
               <UserPlus className="h-4 w-4 mr-2" />
               Invite Member
             </Button>
-          }
-        />
-        <Card.Content>
+          </div>
+        </CardHeader>
+        <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
@@ -963,24 +969,24 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                 Invite team members to start collaborating.
               </p>
               <div className="mt-6">
-                <Button variant="primary" onClick={() => setShowInviteModal(true)}>
+                <Button variant="default" onClick={() => setShowInviteModal(true)}>
                   <UserPlus className="h-4 w-4 mr-2" />
                   Invite your first team member
                 </Button>
               </div>
             </div>
           )}
-        </Card.Content>
+        </CardContent>
       </Card>
 
       {/* Pending Invitations Card */}
       {pendingInvitations.length > 0 && (
         <Card>
-          <Card.Header
-            title="Pending Invitations"
-            subtitle={`${pendingInvitations.length} invitation${pendingInvitations.length === 1 ? '' : 's'} waiting for response`}
-          />
-          <Card.Content>
+          <CardHeader>
+            <h3 className="text-lg font-semibold">Pending Invitations</h3>
+            <p className="text-sm text-gray-500">{pendingInvitations.length} invitation{pendingInvitations.length === 1 ? '' : 's'} waiting for response</p>
+          </CardHeader>
+          <CardContent>
             <div className="divide-y divide-gray-200">
               {pendingInvitations.map((invitation) => (
                 <div
@@ -1049,7 +1055,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                 </div>
               ))}
             </div>
-          </Card.Content>
+          </CardContent>
         </Card>
       )}
 
@@ -1086,7 +1092,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                       />
                       <Button
                         type="button"
-                        variant="primary"
+                        variant="default"
                         size="sm"
                         onClick={handleCopyInviteUrl}
                       >
@@ -1167,11 +1173,11 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                     </Button>
                     <Button
                       type="submit"
-                      variant="primary"
-                      isLoading={createInvitationMutation.isPending}
+                      variant="default"
+                      disabled={createInvitationMutation.isPending}
                     >
                       <Copy className="h-4 w-4 mr-2" />
-                      Generate Invite URL
+                      {createInvitationMutation.isPending ? 'Generating...' : 'Generate Invite URL'}
                     </Button>
                   </div>
                 </form>

@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
-import { Card, Button } from '@/core/components';
 import { Settings, Save, RotateCcw, CheckCircle2 } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 
 type StateCode = 'TX' | 'FL' | 'OH' | 'PA' | 'GA' | 'NC' | 'AZ';
 
@@ -165,7 +169,7 @@ export const StateConfigPanel: React.FC = () => {
             Reset
           </Button>
           <Button
-            variant="primary"
+            variant="default"
             onClick={handleSave}
             disabled
             title="State configuration save feature coming soon"
@@ -187,7 +191,7 @@ export const StateConfigPanel: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* State Selector Sidebar */}
         <div className="lg:col-span-1">
-          <Card padding="sm">
+          <Card className="p-4">
             <h3 className="text-sm font-semibold text-gray-900 mb-3 px-2">
               Select State
             </h3>
@@ -221,7 +225,7 @@ export const StateConfigPanel: React.FC = () => {
 
         {/* Configuration Form */}
         <div className="lg:col-span-3">
-          <Card padding="md">
+          <Card className="p-6">
             <div className="flex items-center gap-3 mb-6">
               <Settings className="h-6 w-6 text-primary-600" />
               <div>
@@ -264,10 +268,10 @@ export const StateConfigPanel: React.FC = () => {
 
               {/* Geofence Tolerance */}
               <div>
-                <label htmlFor="geofence-tolerance" className="block text-sm font-medium text-gray-900 mb-2">
+                <Label htmlFor="geofence-tolerance">
                   Geofence Tolerance (meters)
-                </label>
-                <input
+                </Label>
+                <Input
                   id="geofence-tolerance"
                   type="number"
                   min={50}
@@ -277,7 +281,7 @@ export const StateConfigPanel: React.FC = () => {
                   onChange={(e) =>
                     updateConfig('geofenceTolerance', parseInt(e.target.value))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                  className="mt-2"
                 />
                 <p className="text-xs text-gray-600 mt-1">
                   Maximum acceptable distance from client location for GPS verification
@@ -286,10 +290,10 @@ export const StateConfigPanel: React.FC = () => {
 
               {/* Grace Period */}
               <div>
-                <label htmlFor="grace-period" className="block text-sm font-medium text-gray-900 mb-2">
+                <Label htmlFor="grace-period">
                   Clock-In Grace Period (minutes)
-                </label>
-                <input
+                </Label>
+                <Input
                   id="grace-period"
                   type="number"
                   min={5}
@@ -299,7 +303,7 @@ export const StateConfigPanel: React.FC = () => {
                   onChange={(e) =>
                     updateConfig('gracePeriodMinutes', parseInt(e.target.value))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                  className="mt-2"
                 />
                 <p className="text-xs text-gray-600 mt-1">
                   How early caregivers can clock in before scheduled visit start time
@@ -308,10 +312,10 @@ export const StateConfigPanel: React.FC = () => {
 
               {/* GPS Accuracy Threshold */}
               <div>
-                <label htmlFor="gps-accuracy" className="block text-sm font-medium text-gray-900 mb-2">
+                <Label htmlFor="gps-accuracy">
                   GPS Accuracy Threshold (meters)
-                </label>
-                <input
+                </Label>
+                <Input
                   id="gps-accuracy"
                   type="number"
                   min={50}
@@ -321,7 +325,7 @@ export const StateConfigPanel: React.FC = () => {
                   onChange={(e) =>
                     updateConfig('gpsAccuracyThreshold', parseInt(e.target.value))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+                  className="mt-2"
                 />
                 <p className="text-xs text-gray-600 mt-1">
                   Minimum GPS accuracy required for location verification
@@ -352,27 +356,28 @@ export const StateConfigPanel: React.FC = () => {
 
               {/* Required Documents */}
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <Label className="block mb-2">
                   Required Documentation
-                </label>
+                </Label>
                 <div className="space-y-2">
                   {DOCUMENT_OPTIONS.map((option) => (
-                    <label key={option.value} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
+                    <div key={option.value} className="flex items-center gap-2">
+                      <Checkbox
+                        id={option.value}
                         checked={currentConfig.requiredDocuments.includes(option.value)}
-                        onChange={(e) => {
-                          const newDocs = e.target.checked
+                        onCheckedChange={(checked) => {
+                          const newDocs = checked === true
                             ? [...currentConfig.requiredDocuments, option.value]
                             : currentConfig.requiredDocuments.filter(
                                 (d) => d !== option.value
                               );
                           updateConfig('requiredDocuments', newDocs);
                         }}
-                        className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                       />
-                      <span className="text-sm text-gray-700">{option.label}</span>
-                    </label>
+                      <Label htmlFor={option.value} className="text-sm text-gray-700 cursor-pointer">
+                        {option.label}
+                      </Label>
+                    </div>
                   ))}
                 </div>
                 <p className="text-xs text-gray-600 mt-1">

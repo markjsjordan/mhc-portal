@@ -7,11 +7,13 @@
 
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Card } from '@folkcare/shared-components';
-import { Button } from '@folkcare/shared-components';
 import { useApiClient } from '@/core/hooks';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { CheckCircle, XCircle, Clock, Building2, Mail, Shield } from 'lucide-react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface InviteDetails {
   token: string;
@@ -125,7 +127,7 @@ export function AcceptInvite() {
       const hasUppercase = /[A-Z]/.test(pwd);
       const hasLowercase = /[a-z]/.test(pwd);
       const hasNumber = /\d/.test(pwd);
-      const hasSpecial = /[!"#$%&()*,.:<>?@^{|}]/.test(pwd);
+      const hasSpecial = /["#$%&()*,.:<>?@^{|}]/.test(pwd);
 
       if (!hasUppercase || !hasLowercase || !hasNumber || !hasSpecial) {
         newErrors[PWD_FIELD] = 'Password must contain uppercase, lowercase, number, and special character';
@@ -192,16 +194,16 @@ export function AcceptInvite() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <Card className="max-w-md w-full">
-          <Card.Content className="text-center py-8">
+          <CardContent className="text-center py-8">
             <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Invalid Invitation</h2>
             <p className="text-gray-600 mb-6">
               This invitation link is invalid or has been removed. Please contact your administrator for a new invitation.
             </p>
             <Link to="/login">
-              <Button variant="primary">Go to Login</Button>
+              <Button variant="default">Go to Login</Button>
             </Link>
-          </Card.Content>
+          </CardContent>
         </Card>
       </div>
     );
@@ -212,16 +214,16 @@ export function AcceptInvite() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <Card className="max-w-md w-full">
-          <Card.Content className="text-center py-8">
+          <CardContent className="text-center py-8">
             <Clock className="h-16 w-16 text-amber-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Invitation Expired</h2>
             <p className="text-gray-600 mb-6">
               This invitation has expired. Please contact your administrator to send a new invitation.
             </p>
             <Link to="/login">
-              <Button variant="primary">Go to Login</Button>
+              <Button variant="default">Go to Login</Button>
             </Link>
-          </Card.Content>
+          </CardContent>
         </Card>
       </div>
     );
@@ -232,16 +234,16 @@ export function AcceptInvite() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <Card className="max-w-md w-full">
-          <Card.Content className="text-center py-8">
+          <CardContent className="text-center py-8">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Already Accepted</h2>
             <p className="text-gray-600 mb-6">
               This invitation has already been accepted. You can log in with your credentials.
             </p>
             <Link to="/login">
-              <Button variant="primary">Go to Login</Button>
+              <Button variant="default">Go to Login</Button>
             </Link>
-          </Card.Content>
+          </CardContent>
         </Card>
       </div>
     );
@@ -252,16 +254,16 @@ export function AcceptInvite() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <Card className="max-w-md w-full">
-          <Card.Content className="text-center py-8">
+          <CardContent className="text-center py-8">
             <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Invitation Revoked</h2>
             <p className="text-gray-600 mb-6">
               This invitation has been revoked. Please contact your administrator if you believe this is an error.
             </p>
             <Link to="/login">
-              <Button variant="primary">Go to Login</Button>
+              <Button variant="default">Go to Login</Button>
             </Link>
-          </Card.Content>
+          </CardContent>
         </Card>
       </div>
     );
@@ -281,7 +283,7 @@ export function AcceptInvite() {
 
         {/* Invitation Details Card */}
         <Card>
-          <Card.Content className="py-4">
+          <CardContent className="py-4">
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0">
                 <div className="h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center">
@@ -310,30 +312,28 @@ export function AcceptInvite() {
                 {inviteDetails.email}
               </div>
             </div>
-          </Card.Content>
+          </CardContent>
         </Card>
 
         {/* Accept Form */}
         <Card>
-          <Card.Header title="Create Your Account" />
-          <Card.Content>
+          <CardHeader>
+            <h3 className="text-lg font-semibold">Create Your Account</h3>
+          </CardHeader>
+          <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Name Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                  <Label htmlFor="firstName">
                     First Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
+                  </Label>
+                  <Input
                     type="text"
                     id="firstName"
                     value={formData.firstName}
                     onChange={(e) => handleInputChange('firstName', e.target.value)}
-                    className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
-                      errors['firstName']
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
-                    }`}
+                    className={errors['firstName'] ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}
                     disabled={acceptMutation.isPending}
                   />
                   {errors['firstName'] && (
@@ -341,19 +341,15 @@ export function AcceptInvite() {
                   )}
                 </div>
                 <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                  <Label htmlFor="lastName">
                     Last Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
+                  </Label>
+                  <Input
                     type="text"
                     id="lastName"
                     value={formData.lastName}
                     onChange={(e) => handleInputChange('lastName', e.target.value)}
-                    className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
-                      errors['lastName']
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
-                    }`}
+                    className={errors['lastName'] ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}
                     disabled={acceptMutation.isPending}
                   />
                   {errors['lastName'] && (
@@ -364,19 +360,15 @@ export function AcceptInvite() {
 
               {/* Password */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                <Label htmlFor="password">
                   Password <span className="text-red-500">*</span>
-                </label>
-                <input
+                </Label>
+                <Input
                   type="password"
                   id="password"
                   value={formData.password}
                   onChange={(e) => handleInputChange('password', e.target.value)}
-                  className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
-                    errors['password']
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
-                  }`}
+                  className={errors['password'] ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}
                   disabled={acceptMutation.isPending}
                 />
                 <p className="mt-1 text-xs text-gray-500">
@@ -389,19 +381,15 @@ export function AcceptInvite() {
 
               {/* Confirm Password */}
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                <Label htmlFor="confirmPassword">
                   Confirm Password <span className="text-red-500">*</span>
-                </label>
-                <input
+                </Label>
+                <Input
                   type="password"
                   id="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                  className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
-                    errors['confirmPassword']
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
-                  }`}
+                  className={errors['confirmPassword'] ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}
                   disabled={acceptMutation.isPending}
                 />
                 {errors['confirmPassword'] && (
@@ -411,16 +399,15 @@ export function AcceptInvite() {
 
               {/* Phone (Optional) */}
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                <Label htmlFor="phone">
                   Phone Number <span className="text-gray-400">(optional)</span>
-                </label>
-                <input
+                </Label>
+                <Input
                   type="tel"
                   id="phone"
                   value={formData.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   placeholder="(555) 123-4567"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                   disabled={acceptMutation.isPending}
                 />
               </div>
@@ -440,15 +427,15 @@ export function AcceptInvite() {
               <div className="pt-4">
                 <Button
                   type="submit"
-                  variant="primary"
+                  variant="default"
                   className="w-full"
-                  isLoading={acceptMutation.isPending}
+                  disabled={acceptMutation.isPending}
                 >
-                  Accept Invitation & Create Account
+                  {acceptMutation.isPending ? 'Accepting...' : 'Accept Invitation & Create Account'}
                 </Button>
               </div>
             </form>
-          </Card.Content>
+          </CardContent>
         </Card>
 
         {/* Footer */}
