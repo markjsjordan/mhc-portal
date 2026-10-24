@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Card } from '@/core/components';
 import { Database, Eye, Download } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 interface DatabaseTable {
   name: string;
@@ -178,31 +180,23 @@ export const DataGridPanel: React.FC = () => {
       {/* Search and Filter */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
-          <input
+          <Input
             type="text"
             placeholder="Search tables..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
         <div className="flex gap-2 overflow-x-auto">
           {categories.map((category) => (
-            <button
+            <Button
               key={category.value}
               onClick={() => setSelectedCategory(category.value)}
-              className={`
-                px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap
-                transition-colors
-                ${
-                  selectedCategory === category.value
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }
-              `}
+              variant={selectedCategory === category.value ? 'default' : 'secondary'}
+              className="whitespace-nowrap"
             >
               {category.label} ({category.count})
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -240,20 +234,23 @@ export const DataGridPanel: React.FC = () => {
 
               {/* Actions */}
               <div className="flex gap-2 pt-2 border-t border-gray-200">
-                <button
+                <Button
                   onClick={() => handleView(table.name)}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                  variant="secondary"
+                  size="sm"
+                  className="flex-1"
                 >
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-4 w-4 mr-2" />
                   View
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => handleExport(table.name)}
-                  className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 bg-primary-50 rounded-md hover:bg-primary-100 transition-colors"
+                  variant="outline"
+                  size="sm"
                   title="Export to CSV"
                 >
                   <Download className="h-4 w-4" />
-                </button>
+                </Button>
               </div>
             </div>
           </Card>

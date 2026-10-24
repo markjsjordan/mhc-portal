@@ -11,6 +11,14 @@ import { Button, LoadingSpinner, Card } from '@/core/components';
 import { useAudits } from '../hooks';
 import { AuditCard } from '../components';
 import type { AuditStatus } from '../types';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export const AuditsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -18,7 +26,7 @@ export const AuditsPage: React.FC = () => {
   // navigation between "View All" links without extra state or effects.
   const statusFilter: AuditStatus | '' = (searchParams.get('status') as AuditStatus | null) ?? '';
 
-  const handleStatusFilterChange = (value: AuditStatus | '') => {
+  const handleStatusFilterChange = (value: string) => {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       if (value) {
@@ -78,23 +86,24 @@ export const AuditsPage: React.FC = () => {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Filter className="h-5 w-5 text-gray-400" />
-              <span className="text-sm font-medium text-gray-700">Filter by Status:</span>
+              <Label className="text-sm font-medium">Filter by Status:</Label>
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => handleStatusFilterChange(e.target.value as AuditStatus | '')}
-              className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-            >
-              <option value="">All Statuses</option>
-              <option value="DRAFT">Draft</option>
-              <option value="SCHEDULED">Scheduled</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="FINDINGS_REVIEW">Findings Review</option>
-              <option value="CORRECTIVE_ACTIONS">Corrective Actions</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="APPROVED">Approved</option>
-              <option value="ARCHIVED">Archived</option>
-            </select>
+            <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="DRAFT">Draft</SelectItem>
+                <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                <SelectItem value="FINDINGS_REVIEW">Findings Review</SelectItem>
+                <SelectItem value="CORRECTIVE_ACTIONS">Corrective Actions</SelectItem>
+                <SelectItem value="COMPLETED">Completed</SelectItem>
+                <SelectItem value="APPROVED">Approved</SelectItem>
+                <SelectItem value="ARCHIVED">Archived</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </Card>

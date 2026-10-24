@@ -6,6 +6,14 @@ import { useAuth } from '@/core/hooks';
 import { usePayStubs, useDownloadPayStubPdf } from '../hooks';
 import { formatCurrency, formatDate } from '../utils';
 import { Link } from 'react-router-dom';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export const CaregiverPayStubs: React.FC = () => {
   const { user } = useAuth();
@@ -67,15 +75,28 @@ export const CaregiverPayStubs: React.FC = () => {
           </p>
         </div>
         <div>
-          <select
-            className="px-4 py-2 border border-gray-300 rounded-md"
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+          <Label htmlFor="year-select" className="sr-only">
+            Select Year
+          </Label>
+          <Select
+            value={selectedYear.toString()}
+            onValueChange={(value) => setSelectedYear(parseInt(value))}
           >
-            <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>
-            <option value={new Date().getFullYear() - 1}>{new Date().getFullYear() - 1}</option>
-            <option value={new Date().getFullYear() - 2}>{new Date().getFullYear() - 2}</option>
-          </select>
+            <SelectTrigger id="year-select" className="w-[180px]">
+              <SelectValue placeholder="Select year" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={new Date().getFullYear().toString()}>
+                {new Date().getFullYear()}
+              </SelectItem>
+              <SelectItem value={(new Date().getFullYear() - 1).toString()}>
+                {new Date().getFullYear() - 1}
+              </SelectItem>
+              <SelectItem value={(new Date().getFullYear() - 2).toString()}>
+                {new Date().getFullYear() - 2}
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -142,25 +163,25 @@ export const CaregiverPayStubs: React.FC = () => {
 
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                       <div>
-                        <label className="text-xs text-gray-500">Pay Date</label>
+                        <Label className="text-xs text-gray-500">Pay Date</Label>
                         <p className="text-sm font-medium">{formatDate(payStub.payDate)}</p>
                       </div>
                       <div>
-                        <label className="text-xs text-gray-500">Hours</label>
+                        <Label className="text-xs text-gray-500">Hours</Label>
                         <p className="text-sm font-medium">{payStub.totalHours.toFixed(2)}</p>
                       </div>
                       <div>
-                        <label className="text-xs text-gray-500">Gross Pay</label>
+                        <Label className="text-xs text-gray-500">Gross Pay</Label>
                         <p className="text-sm font-medium">{formatCurrency(payStub.currentGrossPay)}</p>
                       </div>
                       <div>
-                        <label className="text-xs text-gray-500">Deductions</label>
+                        <Label className="text-xs text-gray-500">Deductions</Label>
                         <p className="text-sm font-medium text-red-600">
                           -{formatCurrency(payStub.totalTaxWithheld + payStub.totalOtherDeductions)}
                         </p>
                       </div>
                       <div>
-                        <label className="text-xs text-gray-500">Net Pay</label>
+                        <Label className="text-xs text-gray-500">Net Pay</Label>
                         <p className="text-sm font-medium text-green-600">
                           {formatCurrency(payStub.currentNetPay)}
                         </p>

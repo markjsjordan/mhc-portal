@@ -19,6 +19,14 @@ import {
   useExportReport,
 } from '@/verticals/analytics-reporting/hooks/useAnalytics';
 import type { ReportType, ExportFormat } from '@/types/analytics-types';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const REPORT_TYPES: { value: ReportType; label: string; description: string }[] = [
   {
@@ -149,20 +157,24 @@ export function ReportsPage() {
               <div className="space-y-4">
                 {/* Report Type Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Label htmlFor="report-type" className="block mb-2">
                     Report Type
-                  </label>
-                  <select
+                  </Label>
+                  <Select
                     value={selectedReportType}
-                    onChange={(e) => setSelectedReportType(e.target.value as ReportType)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    onValueChange={(value) => setSelectedReportType(value as ReportType)}
                   >
-                    {REPORT_TYPES.map((type) => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger id="report-type">
+                      <SelectValue placeholder="Select a report type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REPORT_TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <p className="mt-1 text-sm text-gray-600">
                     {REPORT_TYPES.find((t) => t.value === selectedReportType)?.description}
                   </p>
@@ -170,10 +182,10 @@ export function ReportsPage() {
 
                 {/* Filters */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Label className="block mb-2">
                     <Filter className="inline h-4 w-4 mr-1" />
                     Filters
-                  </label>
+                  </Label>
                   <AnalyticsFilters
                     onFiltersChange={setFilters}
                     showClientFilter
