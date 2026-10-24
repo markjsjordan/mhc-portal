@@ -14,6 +14,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import express, { Express } from 'express';
 import request from 'supertest';
+import cookieParser from 'cookie-parser';
 import type { Database } from '@folkcare/core';
 import { AuthenticationError, ValidationError } from '@folkcare/core';
 import { createAuthRouter } from '../auth.js';
@@ -70,6 +71,7 @@ describe('Authentication Routes', () => {
   beforeEach(() => {
     app = express();
     app.use(express.json());
+    app.use(cookieParser());
 
     mockDb = {
       query: vi.fn(),
@@ -244,6 +246,15 @@ describe('Authentication Routes', () => {
       expect(response.body.data.tokens.accessToken).toBe(mockTokens.accessToken);
       expect(response.body.data.tokens.refreshToken).toBeUndefined();
 
+      // Verify HttpOnly refresh token cookie is set
+      const cookies = response.headers['set-cookie'] as string[] | undefined;
+      expect(cookies).toBeDefined();
+      const refreshCookie = cookies?.find((c: string) => c.startsWith('mhc_rt='));
+      expect(refreshCookie).toBeDefined();
+      expect(refreshCookie).toContain('HttpOnly');
+      expect(refreshCookie).toContain('Path=/api/auth');
+      expect(refreshCookie).toContain('SameSite=Strict');
+
       // Verify audit logging parameters
       // eslint-disable-next-line sonarjs/no-hardcoded-passwords
       const expectedPassword = 'SecurePassword123!';
@@ -340,9 +351,11 @@ describe('Authentication Routes', () => {
   describe('POST /api/auth/refresh', () => {
     it('should successfully refresh access token', async () => {
       const newAccessToken = 'new-access-token';
+      const newRefreshToken = 'new-refresh-token';
 
       mockAuthService.refreshToken.mockResolvedValue({
         accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
       });
 
       const response = await request(app)
@@ -353,6 +366,14 @@ describe('Authentication Routes', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data.accessToken).toBe(newAccessToken);
       expect(mockAuthService.refreshToken).toHaveBeenCalledWith('valid-refresh-token');
+
+      // Verify new HttpOnly refresh token cookie is set (rotation)
+      const cookies = response.headers['set-cookie'] as string[] | undefined;
+      expect(cookies).toBeDefined();
+      const refreshCookie = cookies?.find((c: string) => c.startsWith('mhc_rt='));
+      expect(refreshCookie).toBeDefined();
+      expect(refreshCookie).toContain('HttpOnly');
+      expect(refreshCookie).toContain('Path=/api/auth');
     });
 
     it('should return 400 when refreshToken is missing', async () => {
@@ -419,6 +440,44 @@ describe('Authentication Routes', () => {
       expect(response.body.error).toBe('Service unavailable');
       expect(response.body.code).toBe('REFRESH_ERROR');
     });
+
+    it('should accept refresh token from cookie (cookie-first)', async () => {
+      const newAccessToken = 'new-access-token';
+      const newRefreshToken = 'new-refresh-token';
+
+      mockAuthService.refreshToken.mockResolvedValue({
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+      });
+
+      const response = await request(app)
+        .post('/api/auth/refresh')
+        .set('Cookie', ['mhc_rt=cookie-refresh-token']);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(mockAuthService.refreshToken).toHaveBeenCalledWith('cookie-refresh-token');
+    });
+
+    it('should clear cookie on refresh failure', async () => {
+      const authError = new AuthenticationError('Refresh token expired');
+      (authError as any).code = 'TOKEN_EXPIRED';
+
+      mockAuthService.refreshToken.mockRejectedValue(authError);
+
+      const response = await request(app)
+        .post('/api/auth/refresh')
+        .set('Cookie', ['mhc_rt=expired-cookie-token']);
+
+      expect(response.status).toBe(401);
+
+      // Verify cookie is cleared
+      const cookies = response.headers['set-cookie'] as string[] | undefined;
+      expect(cookies).toBeDefined();
+      const clearCookie = cookies?.find((c: string) => c.startsWith('mhc_rt='));
+      expect(clearCookie).toBeDefined();
+      expect(clearCookie).toContain('Max-Age=0');
+    });
   });
 
   describe('POST /api/auth/logout', () => {
@@ -435,6 +494,13 @@ describe('Authentication Routes', () => {
       expect(mockAuthService.logout).toHaveBeenCalledWith(
         '123e4567-e89b-12d3-a456-426614174000'
       );
+
+      // Verify refresh token cookie is cleared
+      const cookies = response.headers['set-cookie'] as string[] | undefined;
+      expect(cookies).toBeDefined();
+      const clearCookie = cookies?.find((c: string) => c.startsWith('mhc_rt='));
+      expect(clearCookie).toBeDefined();
+      expect(clearCookie).toContain('Max-Age=0');
     });
 
     it('should return 401 when user is not authenticated', async () => {
