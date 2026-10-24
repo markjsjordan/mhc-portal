@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster, default as toast } from 'react-hot-toast';
 import { useAuth } from './core/hooks';
 import { registerUnauthorizedHandler } from './core/services/api-client';
-import { ProtectedRoute, FamilyProtectedRoute, PublicRoute, LoadingSpinner } from './core/components';
+import { ProtectedRoute, FamilyProtectedRoute, PublicRoute, LoadingSpinner, UpdatePrompt, OnlineStatus } from './core/components';
 import { AppShell } from './app/components';
 import { initAuthStorage } from './core/utils/auth-storage';
 import { AcceptInvite } from './app/pages/AcceptInvite';
@@ -920,9 +920,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <OnlineStatus />
         <DemoModeBar />
         <AppRoutes />
         <Toaster position="top-right" />
+        <UpdatePrompt />
       </BrowserRouter>
       <Analytics />
       <SpeedInsights />

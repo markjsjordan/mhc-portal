@@ -25,13 +25,14 @@ export default defineConfig({
     }),
     // PWA plugin for offline functionality
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
-        name: 'MHC Portal',
+        name: 'Marquette Home Care',
         short_name: 'MHC Portal',
-        description: 'Shared care software for home care agencies',
-        theme_color: '#2563eb',
+        description: 'Marquette Home Care staff and client care portal',
+        id: '/',
+        theme_color: '#1E3A8A',
         background_color: '#ffffff',
         display: 'standalone',
         scope: '/',
@@ -40,37 +41,39 @@ export default defineConfig({
           {
             src: 'pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable'
           },
           {
             src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       },
       workbox: {
-        // Service worker immediately activates on deploy (no tab close/reopen)
-        skipWaiting: true,
         clientsClaim: true,
         // Increase max file size to cache the large JS bundle
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB
-        // Cache API responses
+        // Runtime caching rules
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/api\..*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
+            // Explicit NetworkOnly for /api/* - never cache PHI responses
+            urlPattern: /\/api\/.*/i,
+            handler: 'NetworkOnly',
           },
           {
             urlPattern: /\.(png|jpg|jpeg|svg|gif|webp)$/,
@@ -85,7 +88,12 @@ export default defineConfig({
           }
         ],
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//],
+        navigateFallbackDenylist: [
+          /^\/api\//,
+          /^\/health(\/|$)/,
+          /^\/metrics(\/|$)/,
+          /^\/webhooks(\/|$)/,
+        ],
         cleanupOutdatedCaches: true
       },
       devOptions: {
