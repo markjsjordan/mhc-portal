@@ -24,7 +24,7 @@ import {
 function setRefreshTokenCookie(res: Response, refreshToken: string): void {
   const envExpiry = process.env.JWT_REFRESH_EXPIRATION;
   const expiryStr = envExpiry ? String(envExpiry) : '7d';
-  const match = /^(\d+)([smhd])$/.exec(expiryStr);
+  const match = /^(\d+)([dhms])$/.exec(expiryStr);
   let maxAge = 7 * 24 * 60 * 60 * 1000; // Default 7 days
   if (match) {
     const value = parseInt(match[1], 10);
@@ -147,7 +147,7 @@ export function createAuthRouter(db: Database): Router {
           user: result.user,
           tokens: {
             accessToken: result.tokens.accessToken,
-            refreshToken: result.tokens.refreshToken, // Keep for mobile compatibility
+            // refreshToken omitted from response - sent via HttpOnly cookie
           },
         },
       });
@@ -283,7 +283,7 @@ export function createAuthRouter(db: Database): Router {
           user: result.user,
           tokens: {
             accessToken: result.tokens.accessToken,
-            refreshToken: result.tokens.refreshToken, // Keep for mobile compatibility
+            // refreshToken omitted from response - sent via HttpOnly cookie
           },
         },
       });
@@ -363,7 +363,13 @@ export function createAuthRouter(db: Database): Router {
       if (!refreshToken || typeof refreshToken !== 'string') {
         // Clear cookie if present but invalid
         if (cookieToken !== undefined) {
-          res.clearCookie('mhc_rt', { path: '/api/auth' });
+          res.cookie('mhc_rt', '', { 
+            httpOnly: true, 
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            path: '/api/auth',
+            maxAge: 0 
+          });
         }
         return res.status(400).json({
           success: false,
@@ -381,14 +387,20 @@ export function createAuthRouter(db: Database): Router {
         success: true,
         data: {
           accessToken: result.accessToken,
-          refreshToken: result.refreshToken, // Keep for mobile compatibility
+          // refreshToken omitted from response - sent via HttpOnly cookie
         },
       });
     } catch (error) {
       const err = error as { message?: string; code?: string; statusCode?: number; name?: string };
       
       // Clear cookie on auth failure
-      res.clearCookie('mhc_rt', { path: '/api/auth' });
+      res.cookie('mhc_rt', '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production', 
+        sameSite: 'strict',
+        path: '/api/auth',
+        maxAge: 0
+      });
       
       if (error instanceof AuthenticationError || err.statusCode === 401 || err.name === 'AuthenticationError') {
         return res.status(401).json({
@@ -440,16 +452,28 @@ export function createAuthRouter(db: Database): Router {
    *       500:
    *         description: Server error
    */
-   router.post('/logout', async (req: Request, res: Response) => {
+   router.post('/logout', authMiddleware.requireAuth, async (req: Request, res: Response) => {
     try {
       // Clear the refresh token cookie
-      res.clearCookie('mhc_rt', { path: '/api/auth' });
+      res.cookie('mhc_rt', '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/api/auth',
+        maxAge: 0
+      });
 
-      // If authenticated, invalidate server-side tokens
+      // Invalidate server-side tokens
        
-      if (req.user) {
-        await authService.logout(req.user.userId);
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          error: 'Not authenticated',
+          code: 'NOT_AUTHENTICATED'
+        });
       }
+
+      await authService.logout(req.user.userId);
 
       return res.json({
         success: true,
