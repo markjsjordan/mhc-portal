@@ -1,23 +1,42 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useAuth } from '@/core/hooks';
 import toast from 'react-hot-toast';
 import { US_STATES } from '@/core/constants/us-states';
+import { Input, Select, FormField } from '@/core/components';
 
-interface SignupFormData {
+// Zod schema for form validation
+const signupSchema = z.object({
   // Step 1: Organization
-  organizationName: string;
-  stateCode: string;
-  organizationPhone: string;
+  organizationName: z.string().min(2, 'Organization name must be at least 2 characters'),
+  stateCode: z.string().min(1, 'Please select your state'),
+  organizationPhone: z.string()
+    .regex(/^\d{10}$/, 'Please enter a valid 10-digit phone number')
+    .optional()
+    .or(z.literal('')),
   // Step 2: Admin User
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Please enter a valid email address'),
+  phone: z.string()
+    .regex(/^\d{10}$/, 'Please enter a valid 10-digit phone number')
+    .optional()
+    .or(z.literal('')),
   // Step 3: Password
-  password: string;
-  confirmPassword: string;
-}
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!"#$%&()*,.:<>?@^{|}])/, 
+      'Password must contain uppercase, lowercase, number, and special character'),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
+});
+
+type SignupFormData = z.infer<typeof signupSchema>;
 
 const INITIAL_FORM_DATA: SignupFormData = {
   organizationName: '',
@@ -36,70 +55,40 @@ export const Signup: React.FC = () => {
   const { login } = useAuth();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState<SignupFormData>(INITIAL_FORM_DATA);
-  const [errors, setErrors] = useState<Partial<Record<keyof SignupFormData, string>>>({});
 
   const totalSteps = 3;
 
-  const validateStep = (currentStep: number): boolean => {
-    const newErrors: Partial<Record<keyof SignupFormData, string>> = {};
+  const {
+    register,
+    handleSubmit,
+    trigger,
+    watch,
+    formState: { errors },
+  } = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: INITIAL_FORM_DATA,
+    mode: 'onChange',
+  });
 
+  const password = watch('password', '');
+
+  const validateStep = async (currentStep: number): Promise<boolean> => {
+    const fieldsToValidate: Array<keyof SignupFormData> = [];
+    
     if (currentStep === 1) {
-      if (!formData.organizationName.trim()) {
-        newErrors.organizationName = 'Organization name is required';
-      } else if (formData.organizationName.trim().length < 2) {
-        newErrors.organizationName = 'Organization name must be at least 2 characters';
-      }
-
-      if (!formData.stateCode) {
-        newErrors.stateCode = 'Please select your state';
-      }
-
-      if (formData.organizationPhone && !/^\d{10}$/.test(formData.organizationPhone.replace(/\D/g, ''))) {
-        newErrors.organizationPhone = 'Please enter a valid 10-digit phone number';
-      }
+      fieldsToValidate.push('organizationName', 'stateCode', 'organizationPhone');
+    } else if (currentStep === 2) {
+      fieldsToValidate.push('firstName', 'lastName', 'email', 'phone');
+    } else if (currentStep === 3) {
+      fieldsToValidate.push('password', 'confirmPassword');
     }
 
-    if (currentStep === 2) {
-      if (!formData.firstName.trim()) {
-        newErrors.firstName = 'First name is required';
-      }
-
-      if (!formData.lastName.trim()) {
-        newErrors.lastName = 'Last name is required';
-      }
-
-      if (!formData.email) {
-        newErrors.email = 'Email is required';
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        newErrors.email = 'Please enter a valid email address';
-      }
-
-      if (formData.phone && !/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) {
-        newErrors.phone = 'Please enter a valid 10-digit phone number';
-      }
-    }
-
-    if (currentStep === 3) {
-      if (!formData.password) {
-        newErrors.password = 'Password is required';
-      } else if (formData.password.length < 8) {
-        newErrors.password = 'Password must be at least 8 characters';
-      } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!"#$%&()*,.:<>?@^{|}])/.test(formData.password)) {
-        newErrors.password = 'Password must contain uppercase, lowercase, number, and special character';
-      }
-
-      if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = 'Passwords do not match';
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return await trigger(fieldsToValidate);
   };
 
-  const handleNext = () => {
-    if (validateStep(step)) {
+  const handleNext = async () => {
+    const isValid = await validateStep(step);
+    if (isValid) {
       setStep((prev) => Math.min(prev + 1, totalSteps));
     }
   };
@@ -108,19 +97,13 @@ export const Signup: React.FC = () => {
     setStep((prev) => Math.max(prev - 1, 1));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateStep(step)) {
-      return;
-    }
-
+  const onFormSubmit = async (data: SignupFormData) => {
     setIsLoading(true);
 
     try {
       // Format phone numbers (remove non-digits)
-      const cleanOrgPhone = formData.organizationPhone.replace(/\D/g, '');
-      const cleanAdminPhone = formData.phone.replace(/\D/g, '');
+      const cleanOrgPhone = data.organizationPhone.replace(/\D/g, '');
+      const cleanAdminPhone = data.phone.replace(/\D/g, '');
 
       // Call the correct signup API endpoint
       const response = await fetch('/api/signup', {
@@ -129,14 +112,14 @@ export const Signup: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          organizationName: formData.organizationName.trim(),
-          organizationEmail: formData.email, // Use admin email as org email
+          organizationName: data.organizationName.trim(),
+          organizationEmail: data.email, // Use admin email as org email
           organizationPhone: cleanOrgPhone || undefined,
-          stateCode: formData.stateCode,
-          adminFirstName: formData.firstName.trim(),
-          adminLastName: formData.lastName.trim(),
-          adminEmail: formData.email,
-          adminPassword: formData.password,
+          stateCode: data.stateCode,
+          adminFirstName: data.firstName.trim(),
+          adminLastName: data.lastName.trim(),
+          adminEmail: data.email,
+          adminPassword: data.password,
           adminPhone: cleanAdminPhone || undefined,
           planName: 'STARTER', // Default to starter plan (14-day trial)
         }),
@@ -148,15 +131,15 @@ export const Signup: React.FC = () => {
         throw new Error(responseData.message ?? responseData.error ?? 'Signup failed');
       }
 
-      const { data } = responseData;
+      const { data: signupData } = responseData;
 
       // Auto-login after successful signup
-      if (data.user && data.tokens?.accessToken) {
-        login(data.user, data.tokens.accessToken);
+      if (signupData.user && signupData.tokens?.accessToken) {
+        login(signupData.user, signupData.tokens.accessToken);
       }
 
       toast.success(
-        `Welcome to MHC Portal! Check your email (${formData.email}) to verify your account.`,
+        `Welcome to MHC Portal! Check your email (${data.email}) to verify your account.`,
         { duration: 6000 }
       );
 
@@ -170,15 +153,6 @@ export const Signup: React.FC = () => {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
-    if (errors[name as keyof SignupFormData]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
-  };
-
   const formatPhoneNumber = (value: string): string => {
     const digits = value.replace(/\D/g, '').slice(0, 10);
     if (digits.length >= 6) {
@@ -187,15 +161,6 @@ export const Signup: React.FC = () => {
       return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
     }
     return digits;
-  };
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const formatted = formatPhoneNumber(value);
-    setFormData((prev) => ({ ...prev, [name]: formatted }));
-    if (errors[name as keyof SignupFormData]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
   };
 
   const renderStepIndicator = () => (
@@ -238,76 +203,40 @@ export const Signup: React.FC = () => {
       <h2 className="text-xl font-semibold text-gray-900 mb-1">Organization Details</h2>
       <p className="text-sm text-gray-600 mb-6">Tell us about your home health agency</p>
 
-      {/* Organization Name */}
-      <div className="mb-4">
-        <label htmlFor="organizationName" className="block text-sm font-medium text-gray-700 mb-1">
-          Organization Name *
-        </label>
-        <input
-          id="organizationName"
-          name="organizationName"
-          type="text"
-          value={formData.organizationName}
-          onChange={handleChange}
-          className={`w-full px-4 py-3 border ${
-            errors.organizationName ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+      <FormField label="Organization Name" error={errors.organizationName?.message} required>
+        <Input
+          {...register('organizationName')}
           placeholder="e.g., Sunshine Home Health"
+          className={errors.organizationName ? 'border-red-300' : ''}
         />
-        {errors.organizationName && (
-          <p className="mt-1 text-sm text-red-600">{errors.organizationName}</p>
-        )}
-      </div>
+      </FormField>
 
-      {/* State Selection */}
-      <div className="mb-4">
-        <label htmlFor="stateCode" className="block text-sm font-medium text-gray-700 mb-1">
-          State *
-        </label>
-        <select
-          id="stateCode"
-          name="stateCode"
-          value={formData.stateCode}
-          onChange={handleChange}
-          className={`w-full px-4 py-3 border ${
-            errors.stateCode ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white`}
-        >
-          <option value="">Select your state</option>
-          {US_STATES.map((state) => (
-            <option key={state.code} value={state.code}>
-              {state.name}
-            </option>
-          ))}
-        </select>
-        {errors.stateCode && (
-          <p className="mt-1 text-sm text-red-600">{errors.stateCode}</p>
-        )}
+      <FormField label="State" error={errors.stateCode?.message} required>
+        <Select
+          {...register('stateCode')}
+          options={[
+            { value: '', label: 'Select your state' },
+            ...US_STATES.map((state) => ({ value: state.code, label: state.name })),
+          ]}
+          className={errors.stateCode ? 'border-red-300' : ''}
+        />
         <p className="mt-1 text-xs text-gray-500">
           Your state determines regulatory requirements and EVV settings
         </p>
-      </div>
+      </FormField>
 
-      {/* Organization Phone */}
-      <div className="mb-4">
-        <label htmlFor="organizationPhone" className="block text-sm font-medium text-gray-700 mb-1">
-          Organization Phone
-        </label>
-        <input
-          id="organizationPhone"
-          name="organizationPhone"
+      <FormField label="Organization Phone" error={errors.organizationPhone?.message}>
+        <Input
+          {...register('organizationPhone', {
+            onChange: (e) => {
+              e.target.value = formatPhoneNumber(e.target.value);
+            },
+          })}
           type="tel"
-          value={formData.organizationPhone}
-          onChange={handlePhoneChange}
-          className={`w-full px-4 py-3 border ${
-            errors.organizationPhone ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
           placeholder="(555) 555-5555"
+          className={errors.organizationPhone ? 'border-red-300' : ''}
         />
-        {errors.organizationPhone && (
-          <p className="mt-1 text-sm text-red-600">{errors.organizationPhone}</p>
-        )}
-      </div>
+      </FormField>
     </>
   );
 
@@ -316,88 +245,46 @@ export const Signup: React.FC = () => {
       <h2 className="text-xl font-semibold text-gray-900 mb-1">Administrator Account</h2>
       <p className="text-sm text-gray-600 mb-6">Create your admin login credentials</p>
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        {/* First Name */}
-        <div>
-          <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-            First Name *
-          </label>
-          <input
-            id="firstName"
-            name="firstName"
-            type="text"
-            value={formData.firstName}
-            onChange={handleChange}
-            className={`w-full px-4 py-3 border ${
-              errors.firstName ? 'border-red-300' : 'border-gray-300'
-            } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+      <div className="grid grid-cols-2 gap-4">
+        <FormField label="First Name" error={errors.firstName?.message} required>
+          <Input
+            {...register('firstName')}
             placeholder="John"
+            className={errors.firstName ? 'border-red-300' : ''}
           />
-          {errors.firstName && (
-            <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
-          )}
-        </div>
+        </FormField>
 
-        {/* Last Name */}
-        <div>
-          <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-            Last Name *
-          </label>
-          <input
-            id="lastName"
-            name="lastName"
-            type="text"
-            value={formData.lastName}
-            onChange={handleChange}
-            className={`w-full px-4 py-3 border ${
-              errors.lastName ? 'border-red-300' : 'border-gray-300'
-            } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+        <FormField label="Last Name" error={errors.lastName?.message} required>
+          <Input
+            {...register('lastName')}
             placeholder="Smith"
+            className={errors.lastName ? 'border-red-300' : ''}
           />
-          {errors.lastName && (
-            <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
-          )}
-        </div>
+        </FormField>
       </div>
 
-      {/* Email */}
-      <div className="mb-4">
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-          Email Address *
-        </label>
-        <input
-          id="email"
-          name="email"
+      <FormField label="Email Address" error={errors.email?.message} required>
+        <Input
+          {...register('email')}
           type="email"
           autoComplete="email"
-          value={formData.email}
-          onChange={handleChange}
-          className={`w-full px-4 py-3 border ${
-            errors.email ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
           placeholder="you@example.com"
+          className={errors.email ? 'border-red-300' : ''}
         />
-        {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
-      </div>
+      </FormField>
 
-      {/* Phone */}
-      <div className="mb-4">
-        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-          Phone Number
-        </label>
-        <input
-          id="phone"
-          name="phone"
+      <FormField label="Phone Number" error={errors.phone?.message}>
+        <Input
+          {...register('phone', {
+            onChange: (e) => {
+              e.target.value = formatPhoneNumber(e.target.value);
+            },
+          })}
           type="tel"
-          value={formData.phone}
-          onChange={handlePhoneChange}
-          className={`w-full px-4 py-3 border ${
-            errors.phone ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
           placeholder="(555) 555-5555"
+          className={errors.phone ? 'border-red-300' : ''}
         />
-        {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
-      </div>
+      </FormField>
     </>
   );
 
@@ -406,67 +293,44 @@ export const Signup: React.FC = () => {
       <h2 className="text-xl font-semibold text-gray-900 mb-1">Set Your Password</h2>
       <p className="text-sm text-gray-600 mb-6">Create a secure password for your account</p>
 
-      {/* Password */}
-      <div className="mb-4">
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-          Password *
-        </label>
-        <input
-          id="password"
-          name="password"
+      <FormField label="Password" error={errors.password?.message} required>
+        <Input
+          {...register('password')}
           type="password"
           autoComplete="new-password"
-          value={formData.password}
-          onChange={handleChange}
-          className={`w-full px-4 py-3 border ${
-            errors.password ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
           placeholder="At least 8 characters"
+          className={errors.password ? 'border-red-300' : ''}
         />
-        {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
         <div className="mt-2 space-y-1">
-          <p className={`text-xs ${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
-            {formData.password.length >= 8 ? '✓' : '○'} At least 8 characters
+          <p className={`text-xs ${password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
+            {password.length >= 8 ? '✓' : '○'} At least 8 characters
           </p>
-          <p className={`text-xs ${/[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-            {/[A-Z]/.test(formData.password) ? '✓' : '○'} Contains uppercase letter
+          <p className={`text-xs ${/[A-Z]/.test(password) ? 'text-green-600' : 'text-gray-500'}`}>
+            {/[A-Z]/.test(password) ? '✓' : '○'} Contains uppercase letter
           </p>
-          <p className={`text-xs ${/[a-z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-            {/[a-z]/.test(formData.password) ? '✓' : '○'} Contains lowercase letter
+          <p className={`text-xs ${/[a-z]/.test(password) ? 'text-green-600' : 'text-gray-500'}`}>
+            {/[a-z]/.test(password) ? '✓' : '○'} Contains lowercase letter
           </p>
-          <p className={`text-xs ${/\d/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-            {/\d/.test(formData.password) ? '✓' : '○'} Contains a number
+          <p className={`text-xs ${/\d/.test(password) ? 'text-green-600' : 'text-gray-500'}`}>
+            {/\d/.test(password) ? '✓' : '○'} Contains a number
           </p>
-          <p className={`text-xs ${/[!"#$%&()*,.:<>?@^{|}]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-            {/[!"#$%&()*,.:<>?@^{|}]/.test(formData.password) ? '✓' : '○'} Contains special character (!@#$%...)
+          <p className={`text-xs ${/[!"#$%&()*,.:<>?@^{|}]/.test(password) ? 'text-green-600' : 'text-gray-500'}`}>
+            {/[!"#$%&()*,.:<>?@^{|}]/.test(password) ? '✓' : '○'} Contains special character (!@#$%...)
           </p>
         </div>
-      </div>
+      </FormField>
 
-      {/* Confirm Password */}
-      <div className="mb-4">
-        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-          Confirm Password *
-        </label>
-        <input
-          id="confirmPassword"
-          name="confirmPassword"
+      <FormField label="Confirm Password" error={errors.confirmPassword?.message} required>
+        <Input
+          {...register('confirmPassword')}
           type="password"
           autoComplete="new-password"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          className={`w-full px-4 py-3 border ${
-            errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
           placeholder="Re-enter your password"
+          className={errors.confirmPassword ? 'border-red-300' : ''}
         />
-        {errors.confirmPassword && (
-          <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
-        )}
-      </div>
+      </FormField>
 
-      {/* Trial info */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
           <svg className="h-5 w-5 text-green-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
             <path
@@ -511,7 +375,13 @@ export const Signup: React.FC = () => {
 
         {/* Form Card */}
         <div className="bg-white shadow-2xl rounded-2xl p-8">
-          <form onSubmit={step === totalSteps ? handleSubmit : (e) => { e.preventDefault(); handleNext(); }}>
+          <form 
+            onSubmit={step === totalSteps ? handleSubmit(onFormSubmit) : (e) => { 
+              e.preventDefault(); 
+              void handleNext(); 
+            }}
+            className="space-y-4"
+          >
             {step === 1 && renderStep1()}
             {step === 2 && renderStep2()}
             {step === 3 && renderStep3()}

@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useAuth, useOnboarding } from '@/core/hooks';
 import toast from 'react-hot-toast';
+import { Input, Select, FormField } from '@/core/components';
 import type { OnboardingStepId } from '@folkcare/core';
 
 /**
@@ -154,35 +158,37 @@ const STEP_CONFIGS: StepConfig[] = [
   },
 ];
 
-// Organization profile form data
-interface OrgProfileForm {
-  street1: string;
-  street2: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  phone: string;
-  legalName: string;
-}
+// Form schemas for each step
+const orgProfileSchema = z.object({
+  street1: z.string().min(1, 'Street address is required'),
+  street2: z.string().optional(),
+  city: z.string().min(1, 'City is required'),
+  state: z.string().min(1, 'State is required'),
+  zipCode: z.string().min(5, 'ZIP code is required'),
+  phone: z.string().optional(),
+  legalName: z.string().optional(),
+});
 
-// Caregiver form data
-interface CaregiverForm {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-}
+const caregiverSchema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Invalid email address'),
+  phone: z.string().optional(),
+});
 
-// Client form data
-interface ClientForm {
-  firstName: string;
-  lastName: string;
-  phone: string;
-  street1: string;
-  city: string;
-  state: string;
-  zipCode: string;
-}
+const clientSchema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  phone: z.string().optional(),
+  street1: z.string().min(1, 'Street address is required'),
+  city: z.string().min(1, 'City is required'),
+  state: z.string().min(1, 'State is required'),
+  zipCode: z.string().min(5, 'ZIP code is required'),
+});
+
+type OrgProfileForm = z.infer<typeof orgProfileSchema>;
+type CaregiverForm = z.infer<typeof caregiverSchema>;
+type ClientForm = z.infer<typeof clientSchema>;
 
 export const Onboarding: React.FC = () => {
   const navigate = useNavigate();
@@ -199,32 +205,41 @@ export const Onboarding: React.FC = () => {
   const [isInitializing, setIsInitializing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Form states
-  const [orgProfile, setOrgProfile] = useState<OrgProfileForm>({
-    street1: '',
-    street2: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    phone: '',
-    legalName: '',
+  // Form hooks for each step
+  const orgProfileForm = useForm<OrgProfileForm>({
+    resolver: zodResolver(orgProfileSchema),
+    defaultValues: {
+      street1: '',
+      street2: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      phone: '',
+      legalName: '',
+    },
   });
 
-  const [caregiverForm, setCaregiverForm] = useState<CaregiverForm>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
+  const caregiverForm = useForm<CaregiverForm>({
+    resolver: zodResolver(caregiverSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+    },
   });
 
-  const [clientForm, setClientForm] = useState<ClientForm>({
-    firstName: '',
-    lastName: '',
-    phone: '',
-    street1: '',
-    city: '',
-    state: '',
-    zipCode: '',
+  const clientForm = useForm<ClientForm>({
+    resolver: zodResolver(clientSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      phone: '',
+      street1: '',
+      city: '',
+      state: '',
+      zipCode: '',
+    },
   });
 
   // Initialize onboarding if not already initialized
@@ -310,7 +325,7 @@ export const Onboarding: React.FC = () => {
   };
 
   // Save organization profile
-  const handleSaveOrgProfile = async () => {
+  const handleSaveOrgProfile = async (data: OrgProfileForm) => {
     if (!user?.organizationId || !token) return;
     
     setIsSaving(true);
@@ -322,22 +337,22 @@ export const Onboarding: React.FC = () => {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          legalName: orgProfile.legalName || undefined,
-          phone: orgProfile.phone || undefined,
+          legalName: data.legalName || undefined,
+          phone: data.phone || undefined,
           primaryAddress: {
-            street1: orgProfile.street1,
-            street2: orgProfile.street2 || undefined,
-            city: orgProfile.city,
-            state: orgProfile.state,
-            zipCode: orgProfile.zipCode,
+            street1: data.street1,
+            street2: data.street2 || undefined,
+            city: data.city,
+            state: data.state,
+            zipCode: data.zipCode,
             country: 'USA',
           },
         }),
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error ?? 'Failed to update profile');
+        const responseData = await response.json();
+        throw new Error(responseData.error ?? 'Failed to update profile');
       }
 
       toast.success('Organization profile updated!');
@@ -350,7 +365,7 @@ export const Onboarding: React.FC = () => {
   };
 
   // Save caregiver
-  const handleSaveCaregiver = async () => {
+  const handleSaveCaregiver = async (data: CaregiverForm) => {
     if (!user?.organizationId || !token) return;
     
     setIsSaving(true);
@@ -362,22 +377,22 @@ export const Onboarding: React.FC = () => {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          firstName: caregiverForm.firstName,
-          lastName: caregiverForm.lastName,
-          email: caregiverForm.email,
-          phone: caregiverForm.phone || undefined,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phone: data.phone || undefined,
           roles: ['CAREGIVER'],
           status: 'ACTIVE',
         }),
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error ?? 'Failed to create caregiver');
+        const responseData = await response.json();
+        throw new Error(responseData.error ?? 'Failed to create caregiver');
       }
 
       toast.success('Caregiver added successfully!');
-      setCaregiverForm({ firstName: '', lastName: '', email: '', phone: '' });
+      caregiverForm.reset();
       await handleMarkComplete('first_caregiver');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to add caregiver');
@@ -387,7 +402,7 @@ export const Onboarding: React.FC = () => {
   };
 
   // Save client
-  const handleSaveClient = async () => {
+  const handleSaveClient = async (data: ClientForm) => {
     if (!user?.organizationId || !token) return;
     
     setIsSaving(true);
@@ -399,14 +414,14 @@ export const Onboarding: React.FC = () => {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          firstName: clientForm.firstName,
-          lastName: clientForm.lastName,
-          phone: clientForm.phone || undefined,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone || undefined,
           address: {
-            street1: clientForm.street1,
-            city: clientForm.city,
-            state: clientForm.state,
-            zipCode: clientForm.zipCode,
+            street1: data.street1,
+            city: data.city,
+            state: data.state,
+            zipCode: data.zipCode,
             country: 'USA',
           },
           status: 'ACTIVE',
@@ -414,12 +429,12 @@ export const Onboarding: React.FC = () => {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error ?? 'Failed to create client');
+        const responseData = await response.json();
+        throw new Error(responseData.error ?? 'Failed to create client');
       }
 
       toast.success('Client added successfully!');
-      setClientForm({ firstName: '', lastName: '', phone: '', street1: '', city: '', state: '', zipCode: '' });
+      clientForm.reset();
       await handleMarkComplete('first_client');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to add client');
@@ -461,119 +476,80 @@ export const Onboarding: React.FC = () => {
               Complete your organization profile with your business address and details.
             </p>
             
-            {/* Organization Profile Form */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Legal Business Name
-                </label>
-                <input
-                  type="text"
-                  value={orgProfile.legalName}
-                  onChange={(e) => setOrgProfile({ ...orgProfile, legalName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            <form onSubmit={orgProfileForm.handleSubmit(handleSaveOrgProfile)} className="space-y-4">
+              <FormField label="Legal Business Name" error={orgProfileForm.formState.errors.legalName?.message}>
+                <Input
+                  {...orgProfileForm.register('legalName')}
                   placeholder="e.g., Sunshine Home Health LLC"
                 />
-              </div>
+              </FormField>
 
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Street Address *
-                </label>
-                <input
-                  type="text"
-                  value={orgProfile.street1}
-                  onChange={(e) => setOrgProfile({ ...orgProfile, street1: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              <FormField label="Street Address" error={orgProfileForm.formState.errors.street1?.message} required>
+                <Input
+                  {...orgProfileForm.register('street1')}
                   placeholder="123 Main Street"
                 />
-              </div>
+              </FormField>
 
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Suite/Unit (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={orgProfile.street2}
-                  onChange={(e) => setOrgProfile({ ...orgProfile, street2: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              <FormField label="Suite/Unit (Optional)" error={orgProfileForm.formState.errors.street2?.message}>
+                <Input
+                  {...orgProfileForm.register('street2')}
                   placeholder="Suite 100"
                 />
+              </FormField>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="City" error={orgProfileForm.formState.errors.city?.message} required>
+                  <Input
+                    {...orgProfileForm.register('city')}
+                    placeholder="Austin"
+                  />
+                </FormField>
+
+                <FormField label="State" error={orgProfileForm.formState.errors.state?.message} required>
+                  <Select
+                    {...orgProfileForm.register('state')}
+                    options={[
+                      { value: '', label: 'Select state' },
+                      ...US_STATES.map((s) => ({ value: s.code, label: s.name })),
+                    ]}
+                  />
+                </FormField>
+
+                <FormField label="ZIP Code" error={orgProfileForm.formState.errors.zipCode?.message} required>
+                  <Input
+                    {...orgProfileForm.register('zipCode')}
+                    placeholder="78701"
+                    maxLength={10}
+                  />
+                </FormField>
+
+                <FormField label="Business Phone" error={orgProfileForm.formState.errors.phone?.message}>
+                  <Input
+                    {...orgProfileForm.register('phone')}
+                    type="tel"
+                    placeholder="(512) 555-1234"
+                  />
+                </FormField>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  City *
-                </label>
-                <input
-                  type="text"
-                  value={orgProfile.city}
-                  onChange={(e) => setOrgProfile({ ...orgProfile, city: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Austin"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  State *
-                </label>
-                <select
-                  value={orgProfile.state}
-                  onChange={(e) => setOrgProfile({ ...orgProfile, state: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <option value="">Select state</option>
-                  {US_STATES.map((s) => (
-                    <option key={s.code} value={s.code}>{s.name}</option>
-                  ))}
-                </select>
+                  {isSaving ? 'Saving...' : 'Save & Continue'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSkipStep(step.id)}
+                  className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Skip for Now
+                </button>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ZIP Code *
-                </label>
-                <input
-                  type="text"
-                  value={orgProfile.zipCode}
-                  onChange={(e) => setOrgProfile({ ...orgProfile, zipCode: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="78701"
-                  maxLength={10}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Business Phone
-                </label>
-                <input
-                  type="tel"
-                  value={orgProfile.phone}
-                  onChange={(e) => setOrgProfile({ ...orgProfile, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="(512) 555-1234"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={handleSaveOrgProfile}
-                disabled={isSaving || !orgProfile.street1 || !orgProfile.city || !orgProfile.state || !orgProfile.zipCode}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSaving ? 'Saving...' : 'Save & Continue'}
-              </button>
-              <button
-                onClick={() => void handleSkipStep(step.id)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Skip for Now
-              </button>
-            </div>
+            </form>
           </div>
         );
       
@@ -644,76 +620,56 @@ export const Onboarding: React.FC = () => {
               as a test caregiver using a different email address.
             </p>
 
-            {/* Caregiver Form */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  First Name *
-                </label>
-                <input
-                  type="text"
-                  value={caregiverForm.firstName}
-                  onChange={(e) => setCaregiverForm({ ...caregiverForm, firstName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Jane"
-                />
+            <form onSubmit={caregiverForm.handleSubmit(handleSaveCaregiver)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="First Name" error={caregiverForm.formState.errors.firstName?.message} required>
+                  <Input
+                    {...caregiverForm.register('firstName')}
+                    placeholder="Jane"
+                  />
+                </FormField>
+
+                <FormField label="Last Name" error={caregiverForm.formState.errors.lastName?.message} required>
+                  <Input
+                    {...caregiverForm.register('lastName')}
+                    placeholder="Smith"
+                  />
+                </FormField>
+
+                <FormField label="Email" error={caregiverForm.formState.errors.email?.message} required>
+                  <Input
+                    {...caregiverForm.register('email')}
+                    type="email"
+                    placeholder="jane@example.com"
+                  />
+                </FormField>
+
+                <FormField label="Phone" error={caregiverForm.formState.errors.phone?.message}>
+                  <Input
+                    {...caregiverForm.register('phone')}
+                    type="tel"
+                    placeholder="(555) 555-1234"
+                  />
+                </FormField>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Last Name *
-                </label>
-                <input
-                  type="text"
-                  value={caregiverForm.lastName}
-                  onChange={(e) => setCaregiverForm({ ...caregiverForm, lastName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Smith"
-                />
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving ? 'Adding...' : 'Add Caregiver'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSkipStep(step.id)}
+                  className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Skip for Now
+                </button>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  value={caregiverForm.email}
-                  onChange={(e) => setCaregiverForm({ ...caregiverForm, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="jane@example.com"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  value={caregiverForm.phone}
-                  onChange={(e) => setCaregiverForm({ ...caregiverForm, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="(555) 555-1234"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={handleSaveCaregiver}
-                disabled={isSaving || !caregiverForm.firstName || !caregiverForm.lastName || !caregiverForm.email}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSaving ? 'Adding...' : 'Add Caregiver'}
-              </button>
-              <button
-                onClick={() => void handleSkipStep(step.id)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Skip for Now
-              </button>
-            </div>
+            </form>
           </div>
         );
       
@@ -725,119 +681,84 @@ export const Onboarding: React.FC = () => {
               You can use test data or add a real client.
             </p>
 
-            {/* Client Form */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  First Name *
-                </label>
-                <input
-                  type="text"
-                  value={clientForm.firstName}
-                  onChange={(e) => setClientForm({ ...clientForm, firstName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="John"
-                />
+            <form onSubmit={clientForm.handleSubmit(handleSaveClient)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="First Name" error={clientForm.formState.errors.firstName?.message} required>
+                  <Input
+                    {...clientForm.register('firstName')}
+                    placeholder="John"
+                  />
+                </FormField>
+
+                <FormField label="Last Name" error={clientForm.formState.errors.lastName?.message} required>
+                  <Input
+                    {...clientForm.register('lastName')}
+                    placeholder="Doe"
+                  />
+                </FormField>
+
+                <div className="col-span-2">
+                  <FormField label="Phone" error={clientForm.formState.errors.phone?.message}>
+                    <Input
+                      {...clientForm.register('phone')}
+                      type="tel"
+                      placeholder="(555) 555-1234"
+                    />
+                  </FormField>
+                </div>
+
+                <div className="col-span-2">
+                  <FormField label="Street Address" error={clientForm.formState.errors.street1?.message} required>
+                    <Input
+                      {...clientForm.register('street1')}
+                      placeholder="456 Oak Street"
+                    />
+                  </FormField>
+                </div>
+
+                <FormField label="City" error={clientForm.formState.errors.city?.message} required>
+                  <Input
+                    {...clientForm.register('city')}
+                    placeholder="Austin"
+                  />
+                </FormField>
+
+                <FormField label="State" error={clientForm.formState.errors.state?.message} required>
+                  <Select
+                    {...clientForm.register('state')}
+                    options={[
+                      { value: '', label: 'Select state' },
+                      ...US_STATES.map((s) => ({ value: s.code, label: s.name })),
+                    ]}
+                  />
+                </FormField>
+
+                <FormField label="ZIP Code" error={clientForm.formState.errors.zipCode?.message} required>
+                  <Input
+                    {...clientForm.register('zipCode')}
+                    placeholder="78701"
+                    maxLength={10}
+                  />
+                </FormField>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Last Name *
-                </label>
-                <input
-                  type="text"
-                  value={clientForm.lastName}
-                  onChange={(e) => setClientForm({ ...clientForm, lastName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Doe"
-                />
-              </div>
-
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  value={clientForm.phone}
-                  onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="(555) 555-1234"
-                />
-              </div>
-
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Street Address *
-                </label>
-                <input
-                  type="text"
-                  value={clientForm.street1}
-                  onChange={(e) => setClientForm({ ...clientForm, street1: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="456 Oak Street"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  City *
-                </label>
-                <input
-                  type="text"
-                  value={clientForm.city}
-                  onChange={(e) => setClientForm({ ...clientForm, city: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Austin"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  State *
-                </label>
-                <select
-                  value={clientForm.state}
-                  onChange={(e) => setClientForm({ ...clientForm, state: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <option value="">Select state</option>
-                  {US_STATES.map((s) => (
-                    <option key={s.code} value={s.code}>{s.name}</option>
-                  ))}
-                </select>
+                  {isSaving ? 'Adding...' : 'Add Client'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSkipStep(step.id)}
+                  className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Skip for Now
+                </button>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ZIP Code *
-                </label>
-                <input
-                  type="text"
-                  value={clientForm.zipCode}
-                  onChange={(e) => setClientForm({ ...clientForm, zipCode: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="78701"
-                  maxLength={10}
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={handleSaveClient}
-                disabled={isSaving || !clientForm.firstName || !clientForm.lastName || !clientForm.street1 || !clientForm.city || !clientForm.state || !clientForm.zipCode}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSaving ? 'Adding...' : 'Add Client'}
-              </button>
-              <button
-                onClick={() => void handleSkipStep(step.id)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Skip for Now
-              </button>
-            </div>
+            </form>
           </div>
         );
       
