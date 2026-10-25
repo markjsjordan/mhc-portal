@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth, useOnboarding } from '@/core/hooks';
 import toast from 'react-hot-toast';
 import type { OnboardingStepId } from '@folkcare/core';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 /**
  * Onboarding Wizard for new agencies
@@ -438,18 +442,17 @@ export const Onboarding: React.FC = () => {
               Click the link in the email to verify your account.
             </p>
             <div className="flex gap-3">
-              <button
+              <Button
                 onClick={() => toast.success('Verification email resent!')}
-                className="px-4 py-2 text-sm font-medium text-green-600 border border-green-600 rounded-lg hover:bg-green-50"
+                variant="outline"
               >
                 Resend Email
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => void handleMarkComplete(step.id)}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
               >
                 I&apos;ve Verified My Email
-              </button>
+              </Button>
             </div>
           </div>
         );
@@ -464,115 +467,117 @@ export const Onboarding: React.FC = () => {
             {/* Organization Profile Form */}
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="legalName">
                   Legal Business Name
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="legalName"
                   type="text"
                   value={orgProfile.legalName}
                   onChange={(e) => setOrgProfile({ ...orgProfile, legalName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="e.g., Sunshine Home Health LLC"
                 />
               </div>
 
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="street1">
                   Street Address *
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="street1"
                   type="text"
                   value={orgProfile.street1}
                   onChange={(e) => setOrgProfile({ ...orgProfile, street1: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="123 Main Street"
                 />
               </div>
 
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="street2">
                   Suite/Unit (Optional)
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="street2"
                   type="text"
                   value={orgProfile.street2}
                   onChange={(e) => setOrgProfile({ ...orgProfile, street2: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Suite 100"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="city">
                   City *
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="city"
                   type="text"
                   value={orgProfile.city}
                   onChange={(e) => setOrgProfile({ ...orgProfile, city: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Austin"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="state">
                   State *
-                </label>
-                <select
+                </Label>
+                <Select
                   value={orgProfile.state}
-                  onChange={(e) => setOrgProfile({ ...orgProfile, state: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                  onValueChange={(value) => setOrgProfile({ ...orgProfile, state: value })}
                 >
-                  <option value="">Select state</option>
-                  {US_STATES.map((s) => (
-                    <option key={s.code} value={s.code}>{s.name}</option>
-                  ))}
-                </select>
+                  <SelectTrigger id="state">
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {US_STATES.map((s) => (
+                      <SelectItem key={s.code} value={s.code}>{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="zipCode">
                   ZIP Code *
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="zipCode"
                   type="text"
                   value={orgProfile.zipCode}
                   onChange={(e) => setOrgProfile({ ...orgProfile, zipCode: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="78701"
                   maxLength={10}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="phone">
                   Business Phone
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="phone"
                   type="tel"
                   value={orgProfile.phone}
                   onChange={(e) => setOrgProfile({ ...orgProfile, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="(512) 555-1234"
                 />
               </div>
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button
+              <Button
                 onClick={handleSaveOrgProfile}
                 disabled={isSaving || !orgProfile.street1 || !orgProfile.city || !orgProfile.state || !orgProfile.zipCode}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? 'Saving...' : 'Save & Continue'}
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => void handleSkipStep(step.id)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                variant="outline"
               >
                 Skip for Now
-              </button>
+              </Button>
             </div>
           </div>
         );
@@ -585,21 +590,20 @@ export const Onboarding: React.FC = () => {
               Most agencies work with Medicaid, Medicare, and private pay clients.
             </p>
             <div className="flex gap-3">
-              <button
+              <Button
                 onClick={() => {
                   void handleMarkComplete(step.id);
                   navigate('/billing/payors');
                 }}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
               >
                 Add Payors
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => void handleSkipStep(step.id)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                variant="outline"
               >
                 Skip for Now
-              </button>
+              </Button>
             </div>
           </div>
         );
@@ -617,21 +621,20 @@ export const Onboarding: React.FC = () => {
               </p>
             </div>
             <div className="flex gap-3">
-              <button
+              <Button
                 onClick={() => {
                   void handleMarkComplete(step.id);
                   navigate('/settings/evv');
                 }}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
               >
                 Configure EVV
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => void handleSkipStep(step.id)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                variant="outline"
               >
                 Skip for Now
-              </button>
+              </Button>
             </div>
           </div>
         );
@@ -647,72 +650,71 @@ export const Onboarding: React.FC = () => {
             {/* Caregiver Form */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="cgFirstName">
                   First Name *
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="cgFirstName"
                   type="text"
                   value={caregiverForm.firstName}
                   onChange={(e) => setCaregiverForm({ ...caregiverForm, firstName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Jane"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="cgLastName">
                   Last Name *
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="cgLastName"
                   type="text"
                   value={caregiverForm.lastName}
                   onChange={(e) => setCaregiverForm({ ...caregiverForm, lastName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Smith"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="cgEmail">
                   Email *
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="cgEmail"
                   type="email"
                   value={caregiverForm.email}
                   onChange={(e) => setCaregiverForm({ ...caregiverForm, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="jane@example.com"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="cgPhone">
                   Phone
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="cgPhone"
                   type="tel"
                   value={caregiverForm.phone}
                   onChange={(e) => setCaregiverForm({ ...caregiverForm, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="(555) 555-1234"
                 />
               </div>
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button
+              <Button
                 onClick={handleSaveCaregiver}
                 disabled={isSaving || !caregiverForm.firstName || !caregiverForm.lastName || !caregiverForm.email}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? 'Adding...' : 'Add Caregiver'}
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => void handleSkipStep(step.id)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                variant="outline"
               >
                 Skip for Now
-              </button>
+              </Button>
             </div>
           </div>
         );
@@ -728,95 +730,98 @@ export const Onboarding: React.FC = () => {
             {/* Client Form */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="clientFirstName">
                   First Name *
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="clientFirstName"
                   type="text"
                   value={clientForm.firstName}
                   onChange={(e) => setClientForm({ ...clientForm, firstName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="John"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="clientLastName">
                   Last Name *
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="clientLastName"
                   type="text"
                   value={clientForm.lastName}
                   onChange={(e) => setClientForm({ ...clientForm, lastName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Doe"
                 />
               </div>
 
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="clientPhone">
                   Phone
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="clientPhone"
                   type="tel"
                   value={clientForm.phone}
                   onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="(555) 555-1234"
                 />
               </div>
 
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="clientStreet1">
                   Street Address *
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="clientStreet1"
                   type="text"
                   value={clientForm.street1}
                   onChange={(e) => setClientForm({ ...clientForm, street1: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="456 Oak Street"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="clientCity">
                   City *
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="clientCity"
                   type="text"
                   value={clientForm.city}
                   onChange={(e) => setClientForm({ ...clientForm, city: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Austin"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="clientState">
                   State *
-                </label>
-                <select
+                </Label>
+                <Select
                   value={clientForm.state}
-                  onChange={(e) => setClientForm({ ...clientForm, state: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                  onValueChange={(value) => setClientForm({ ...clientForm, state: value })}
                 >
-                  <option value="">Select state</option>
-                  {US_STATES.map((s) => (
-                    <option key={s.code} value={s.code}>{s.name}</option>
-                  ))}
-                </select>
+                  <SelectTrigger id="clientState">
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {US_STATES.map((s) => (
+                      <SelectItem key={s.code} value={s.code}>{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="clientZipCode">
                   ZIP Code *
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="clientZipCode"
                   type="text"
                   value={clientForm.zipCode}
                   onChange={(e) => setClientForm({ ...clientForm, zipCode: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="78701"
                   maxLength={10}
                 />
@@ -824,19 +829,18 @@ export const Onboarding: React.FC = () => {
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button
+              <Button
                 onClick={handleSaveClient}
                 disabled={isSaving || !clientForm.firstName || !clientForm.lastName || !clientForm.street1 || !clientForm.city || !clientForm.state || !clientForm.zipCode}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? 'Adding...' : 'Add Client'}
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => void handleSkipStep(step.id)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                variant="outline"
               >
                 Skip for Now
-              </button>
+              </Button>
             </div>
           </div>
         );
@@ -849,21 +853,20 @@ export const Onboarding: React.FC = () => {
               through EVV clock-in/out and documentation.
             </p>
             <div className="flex gap-3">
-              <button
+              <Button
                 onClick={() => {
                   void handleMarkComplete(step.id);
                   navigate('/schedule');
                 }}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
               >
                 Schedule Visit
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => void handleSkipStep(step.id)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                variant="outline"
               >
                 Skip for Now
-              </button>
+              </Button>
             </div>
           </div>
         );
@@ -876,21 +879,20 @@ export const Onboarding: React.FC = () => {
               You can assign different roles like Coordinator, Scheduler, or Billing.
             </p>
             <div className="flex gap-3">
-              <button
+              <Button
                 onClick={() => {
                   void handleMarkComplete(step.id);
                   navigate('/settings/team');
                 }}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
               >
                 Invite Team
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => void handleSkipStep(step.id)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                variant="outline"
               >
                 Skip for Now
-              </button>
+              </Button>
             </div>
           </div>
         );
@@ -916,12 +918,11 @@ export const Onboarding: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
-          <button
+          <Button
             onClick={() => navigate('/dashboard')}
-            className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
           >
             Go to Dashboard
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -937,12 +938,13 @@ export const Onboarding: React.FC = () => {
               <h1 className="text-2xl font-bold text-gray-900">Welcome to MHC Portal</h1>
               <p className="text-gray-600 mt-1">Let&apos;s get your agency set up</p>
             </div>
-            <button
+            <Button
               onClick={handleSkipOnboarding}
-              className="text-sm text-gray-500 hover:text-gray-700 underline"
+              variant="ghost"
+              className="text-sm underline"
             >
               Skip setup, go to dashboard
-            </button>
+            </Button>
           </div>
           
           {/* Progress bar */}
@@ -1064,12 +1066,12 @@ export const Onboarding: React.FC = () => {
                 Your agency is configured and ready to start serving clients.
               </p>
             </div>
-            <button
+            <Button
               onClick={handleCompleteOnboarding}
-              className="px-8 py-3 text-lg font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 shadow-lg hover:shadow-xl transition-all"
+              className="px-8 py-3 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
             >
               Go to Dashboard
-            </button>
+            </Button>
           </div>
         )}
       </div>
