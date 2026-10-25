@@ -1,4 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
+import { Button } from '@/components/ui/button.js';
+import { Badge } from '@/components/ui/badge.js';
+import { Textarea } from '@/components/ui/textarea.js';
 
 interface Message {
   id: string;
@@ -131,13 +135,6 @@ export default function MessagingPage() {
     }, 2000);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -182,10 +179,10 @@ export default function MessagingPage() {
 
       <div style={styles.content}>
         {/* Conversations sidebar */}
-        <div style={styles.sidebar}>
-          <div style={styles.sidebarHeader}>
-            <h3 style={styles.sidebarTitle}>Conversations</h3>
-          </div>
+        <Card className="w-80 flex-shrink-0 flex flex-col overflow-hidden">
+          <CardHeader className="p-4 border-b">
+            <CardTitle className="text-base font-semibold">Conversations</CardTitle>
+          </CardHeader>
           <div style={styles.conversationList}>
             {conversations.map(conv => (
               <div
@@ -209,20 +206,22 @@ export default function MessagingPage() {
                   )}
                 </div>
                 {conv.unreadCount > 0 && (
-                  <div style={styles.unreadBadge}>{conv.unreadCount}</div>
+                  <Badge variant="destructive" className="ml-2 px-2 py-0.5 text-xs font-bold">
+                    {conv.unreadCount}
+                  </Badge>
                 )}
               </div>
             ))}
           </div>
-        </div>
+        </Card>
 
         {/* Chat area */}
-        <div style={styles.chatContainer}>
+        <Card className="flex-1 flex flex-col overflow-hidden">
           {selectedConversation ? (
             <>
-              <div style={styles.chatHeader}>
+              <CardHeader className="p-4 border-b">
                 <div>
-                  <h2 style={styles.chatTitle}>{selectedConversation.clientName}</h2>
+                  <CardTitle className="text-lg font-semibold">{selectedConversation.clientName}</CardTitle>
                   <div style={styles.participants}>
                     {selectedConversation.participants
                       .filter(p => p.role !== 'family')
@@ -234,7 +233,7 @@ export default function MessagingPage() {
                       ))}
                   </div>
                 </div>
-              </div>
+              </CardHeader>
 
               <div style={styles.messagesContainer}>
                 {filteredMessages.map(message => {
@@ -277,47 +276,51 @@ export default function MessagingPage() {
               </div>
 
               <div style={styles.inputContainer}>
-                <textarea
-                  style={styles.input}
+                <Textarea
                   placeholder="Type your message..."
                   value={newMessage}
                   onChange={e => setNewMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  rows={3}
-                />
-                <button
-                  style={{
-                    ...styles.sendButton,
-                    ...(newMessage.trim() ? {} : styles.sendButtonDisabled),
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
                   }}
+                  rows={3}
+                  className="resize-none"
+                />
+                <Button
                   onClick={handleSendMessage}
                   disabled={!newMessage.trim()}
+                  className="self-end px-6 py-2.5"
                 >
                   Send
-                </button>
+                </Button>
               </div>
             </>
           ) : (
-            <div style={styles.emptyState}>
+            <CardContent className="flex flex-1 items-center justify-center text-gray-500">
               <p style={styles.emptyStateText}>
                 Select a conversation to start messaging
               </p>
-            </div>
+            </CardContent>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* Info banner */}
-      <div style={styles.infoBanner}>
-        <div style={styles.infoBannerIcon}>💬</div>
-        <div>
-          <div style={styles.infoBannerTitle}>Real-time messaging with your care team</div>
-          <div style={styles.infoBannerText}>
-            Get quick answers to your questions. Typical response time: &lt; 30 minutes during
-            business hours (8am-6pm).
+      <Card className="mt-6 bg-blue-50/50 border-blue-200">
+        <CardContent className="p-4 flex items-center gap-4">
+          <div style={styles.infoBannerIcon}>💬</div>
+          <div>
+            <div className="font-semibold text-blue-900">Real-time messaging with your care team</div>
+            <div className="text-sm text-blue-800">
+              Get quick answers to your questions. Typical response time: &lt; 30 minutes during
+              business hours (8am-6pm).
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
