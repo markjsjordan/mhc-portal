@@ -6,6 +6,11 @@
 
 import { useState, useEffect } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface BrandingForm {
   logoUrl: string;
@@ -95,158 +100,142 @@ export default function BrandingSettings() {
       <h1 className="text-3xl font-bold mb-6">Branding Settings</h1>
 
       {message && (
-        <div
-          className={`p-4 mb-6 rounded ${
-            message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-          }`}
-        >
-          {message.text}
-        </div>
+        <Alert variant={message.type === 'success' ? 'default' : 'destructive'} className="mb-6">
+          <AlertTitle>{message.type === 'success' ? 'Success' : 'Error'}</AlertTitle>
+          <AlertDescription>{message.text}</AlertDescription>
+        </Alert>
       )}
 
       <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Visual Identity</h2>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Logo URL
-              </label>
-              <input
-                type="url"
-                value={form.logoUrl}
-                onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="https://example.com/logo.png"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Primary Color
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="color"
-                  value={form.primaryColor}
-                  onChange={(e) => setForm({ ...form, primaryColor: e.target.value })}
-                  className="h-10 w-20 rounded"
+        <Card>
+          <CardHeader>
+            <CardTitle>Visual Identity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="logoUrl">Logo URL</Label>
+                <Input
+                  id="logoUrl"
+                  type="url"
+                  value={form.logoUrl}
+                  onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
+                  placeholder="https://example.com/logo.png"
                 />
-                <input
+              </div>
+
+              <div>
+                <Label>Primary Color</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="color"
+                    value={form.primaryColor}
+                    onChange={(e) => setForm({ ...form, primaryColor: e.target.value })}
+                    className="h-10 w-20"
+                  />
+                  <Input
+                    type="text"
+                    value={form.primaryColor}
+                    onChange={(e) => setForm({ ...form, primaryColor: e.target.value })}
+                    className="flex-1"
+                    pattern="^#[0-9A-Fa-f]{6}$"
+                    placeholder="#0ea5e9"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label>Secondary Color (Optional)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="color"
+                    value={form.secondaryColor || '#000000'}
+                    onChange={(e) => setForm({ ...form, secondaryColor: e.target.value })}
+                    className="h-10 w-20"
+                  />
+                  <Input
+                    type="text"
+                    value={form.secondaryColor}
+                    onChange={(e) => setForm({ ...form, secondaryColor: e.target.value })}
+                    className="flex-1"
+                    pattern="^#[0-9A-Fa-f]{6}$"
+                    placeholder="#6b7280"
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Organization Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="brandName">Brand Name</Label>
+                <Input
+                  id="brandName"
                   type="text"
-                  value={form.primaryColor}
-                  onChange={(e) => setForm({ ...form, primaryColor: e.target.value })}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  pattern="^#[0-9A-Fa-f]{6}$"
-                  placeholder="#0ea5e9"
+                  value={form.brandName}
+                  onChange={(e) => setForm({ ...form, brandName: e.target.value })}
+                  placeholder="Your Agency Name"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="tagline">Tagline</Label>
+                <Input
+                  id="tagline"
+                  type="text"
+                  value={form.tagline}
+                  onChange={(e) => setForm({ ...form, tagline: e.target.value })}
+                  placeholder="Caring for your community"
                 />
               </div>
             </div>
+          </CardContent>
+        </Card>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Secondary Color (Optional)
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="color"
-                  value={form.secondaryColor || '#000000'}
-                  onChange={(e) => setForm({ ...form, secondaryColor: e.target.value })}
-                  className="h-10 w-20 rounded"
+        <Card>
+          <CardHeader>
+            <CardTitle>Contact Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="supportEmail">Support Email</Label>
+                <Input
+                  id="supportEmail"
+                  type="email"
+                  value={form.supportEmail}
+                  onChange={(e) => setForm({ ...form, supportEmail: e.target.value })}
+                  placeholder="support@yourorganization.com"
                 />
-                <input
-                  type="text"
-                  value={form.secondaryColor}
-                  onChange={(e) => setForm({ ...form, secondaryColor: e.target.value })}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  pattern="^#[0-9A-Fa-f]{6}$"
-                  placeholder="#6b7280"
+              </div>
+
+              <div>
+                <Label htmlFor="supportPhone">Support Phone</Label>
+                <Input
+                  id="supportPhone"
+                  type="tel"
+                  value={form.supportPhone}
+                  onChange={(e) => setForm({ ...form, supportPhone: e.target.value })}
+                  placeholder="(555) 123-4567"
                 />
               </div>
             </div>
-          </div>
-        </div>
-
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Organization Information</h2>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Brand Name
-              </label>
-              <input
-                type="text"
-                value={form.brandName}
-                onChange={(e) => setForm({ ...form, brandName: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Your Agency Name"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tagline
-              </label>
-              <input
-                type="text"
-                value={form.tagline}
-                onChange={(e) => setForm({ ...form, tagline: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Caring for your community"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Support Email
-              </label>
-              <input
-                type="email"
-                value={form.supportEmail}
-                onChange={(e) => setForm({ ...form, supportEmail: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="support@yourorganization.com"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Support Phone
-              </label>
-              <input
-                type="tel"
-                value={form.supportPhone}
-                onChange={(e) => setForm({ ...form, supportPhone: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="(555) 123-4567"
-              />
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         <div className="flex justify-end gap-4">
-          <button
-            type="button"
-            onClick={() => void loadBranding()}
-            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-          >
+          <Button type="button" variant="outline" onClick={() => void loadBranding()}>
             Reset
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-          >
+          </Button>
+          <Button type="submit" disabled={loading}>
             {loading ? 'Saving...' : 'Save Changes'}
-          </button>
+          </Button>
         </div>
       </form>
     </div>
