@@ -12,6 +12,8 @@
 import React, { useMemo, useState } from 'react';
 import { TrendingUp, TrendingDown, Award, AlertCircle, Users, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.js';
 import { useQuery } from '@tanstack/react-query';
 import { useShiftMatchingApi } from '../hooks/useShiftMatching';
 
@@ -65,36 +67,24 @@ export const MatchAnalyticsDashboard: React.FC = () => {
 
         {/* Date range selector */}
         <div className="flex gap-2">
-          <button
+          <Button
+            variant={dateRange === '7d' ? 'default' : 'outline'}
             onClick={() => setDateRange('7d')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              dateRange === '7d'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
           >
             Last 7 Days
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={dateRange === '30d' ? 'default' : 'outline'}
             onClick={() => setDateRange('30d')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              dateRange === '30d'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
           >
             Last 30 Days
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={dateRange === '90d' ? 'default' : 'outline'}
             onClick={() => setDateRange('90d')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              dateRange === '90d'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
           >
             Last 90 Days
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -143,9 +133,11 @@ export const MatchAnalyticsDashboard: React.FC = () => {
 
       {/* Match Quality Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Match Quality Distribution</h3>
-          <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-gray-900">Match Quality Distribution</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <QualityBar
               label="Excellent (85-100)"
               count={analytics.excellentMatches}
@@ -170,12 +162,14 @@ export const MatchAnalyticsDashboard: React.FC = () => {
               total={analytics.shiftsMatched}
               color="red"
             />
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Proposal Outcomes</h3>
-          <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-gray-900">Proposal Outcomes</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <OutcomeBar
               label="Accepted"
               percentage={analytics.proposalAcceptanceRate}
@@ -191,15 +185,17 @@ export const MatchAnalyticsDashboard: React.FC = () => {
               percentage={analytics.proposalExpirationRate}
               color="gray"
             />
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Top Rejection Reasons */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Rejection Reasons</h3>
-        <div className="space-y-3">
-          {analytics?.topRejectionReasons.map((reason, idx) => (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-900">Top Rejection Reasons</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {analytics.topRejectionReasons.map((reason, idx) => (
             <div key={idx} className="flex items-center justify-between">
               <span className="text-sm text-gray-700">
                 {reason.category.replace(/_/g, ' ')}
@@ -208,7 +204,7 @@ export const MatchAnalyticsDashboard: React.FC = () => {
                 <div className="w-32 bg-gray-200 rounded-full h-2">
                   <div
                     className="bg-red-500 h-2 rounded-full"
-                    style={{ width: `${(reason.count / (analytics?.topRejectionReasons[0]?.count || 1)) * 100}%` }}
+                    style={{ width: `${(reason.count / (analytics.topRejectionReasons[0]?.count ?? 1)) * 100}%` }}
                   />
                 </div>
                 <span className="text-sm font-medium text-gray-900 w-12 text-right">
@@ -217,8 +213,8 @@ export const MatchAnalyticsDashboard: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Insights */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -269,22 +265,24 @@ const MetricCard: React.FC<MetricCardProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-gray-600 mb-1">{title}</p>
-          <p className="text-3xl font-bold text-gray-900">{value}</p>
-          <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm text-gray-600 mb-1">{title}</p>
+            <p className="text-3xl font-bold text-gray-900">{value}</p>
+            <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+          </div>
+          <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
+            {icon}
+          </div>
         </div>
-        <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
-          {icon}
+        <div className="mt-4 flex items-center gap-2 text-sm">
+          {trend}
+          <span className="text-gray-600">{trendLabel}</span>
         </div>
-      </div>
-      <div className="mt-4 flex items-center gap-2 text-sm">
-        {trend}
-        <span className="text-gray-600">{trendLabel}</span>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -381,14 +379,16 @@ const InsightCard: React.FC<InsightCardProps> = ({ title, description, type }) =
   const style = colors[type];
 
   return (
-    <div className={`${style.bg} border ${style.border} rounded-lg p-4`}>
-      <div className="flex items-start gap-3">
-        <AlertCircle className={`h-5 w-5 ${style.icon} flex-shrink-0 mt-0.5`} />
-        <div>
-          <h4 className={`text-sm font-semibold ${style.text} mb-1`}>{title}</h4>
-          <p className={`text-sm ${style.text}`}>{description}</p>
+    <Card className={`${style.bg} border ${style.border}`}>
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3">
+          <AlertCircle className={`h-5 w-5 ${style.icon} flex-shrink-0 mt-0.5`} />
+          <div>
+            <h4 className={`text-sm font-semibold ${style.text} mb-1`}>{title}</h4>
+            <p className={`text-sm ${style.text}`}>{description}</p>
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
