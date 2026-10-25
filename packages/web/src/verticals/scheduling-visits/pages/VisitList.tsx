@@ -18,7 +18,9 @@ import {
   Plus,
   ChevronDown,
 } from 'lucide-react';
-import { LoadingSpinner, EmptyState, ErrorMessage, Button } from '@/core/components';
+import { LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
 import { CreateVisitModal } from '@/core/components/forms/CreateVisitModal';
 import { useVisits } from '../hooks/useVisits';
 import { VisitCard, SummaryCard, VisitFilters } from '../components';
@@ -279,11 +281,11 @@ export const VisitList: React.FC = () => {
         <div className="flex gap-3 items-center">
           <div className="relative inline-flex rounded-md shadow-sm">
             <Button
-              variant="primary"
+              variant="default"
               size="sm"
-              leftIcon={<Plus className="h-4 w-4" />}
               onClick={() => handleOpenCreateModal('REGULAR')}
             >
+              <Plus className="h-4 w-4 mr-2" />
               Schedule Visit
             </Button>
             <button
@@ -329,30 +331,30 @@ export const VisitList: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              leftIcon={<Calendar className="h-4 w-4 text-gray-600" />}
             >
+              <Calendar className="h-4 w-4 mr-2 text-gray-600" />
               Schedule Builder
             </Button>
           </Link>
-          <div className="flex border border-gray-300 rounded-md">
-            <button
+          <div className="flex border border-input rounded-md overflow-hidden">
+            <Button
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="icon"
               onClick={() => setViewMode('grid')}
-              className={`p-2 ${
-                viewMode === 'grid' ? 'bg-gray-100' : 'hover:bg-gray-50'
-              }`}
               aria-label="Grid view"
+              className="rounded-none h-8 w-8"
             >
-              <Grid className="h-5 w-5 text-gray-700" />
-            </button>
-            <button
+              <Grid className="h-4 w-4 text-gray-700" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="icon"
               onClick={() => setViewMode('list')}
-              className={`p-2 ${
-                viewMode === 'list' ? 'bg-gray-100' : 'hover:bg-gray-50'
-              }`}
               aria-label="List view"
+              className="rounded-none h-8 w-8"
             >
-              <List className="h-5 w-5 text-gray-700" />
-            </button>
+              <List className="h-4 w-4 text-gray-700" />
+            </Button>
           </div>
         </div>
       </div>
@@ -412,12 +414,12 @@ export const VisitList: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
+            <Input
               type="text"
               placeholder="Search by client, caregiver, service, address, or visit #..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-9 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+              className="w-full pl-9 pr-9 bg-white"
             />
             {searchQuery && (
               <button
@@ -439,15 +441,15 @@ export const VisitList: React.FC = () => {
             />
 
             {hasAnyFilterActive && (
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={clearAllFilters}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 title="Clear all active filters"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
                 <span className="hidden sm:inline">Clear All</span>
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -634,43 +636,51 @@ export const VisitList: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-1">
-                  <button
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
                     onClick={() => setPage(1)}
                     disabled={currentPage === 1}
                     aria-label="First page"
-                    className="p-1.5 rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700"
                   >
                     <ChevronsLeft className="h-4 w-4" />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
                     aria-label="Previous page"
-                    className="p-1.5 rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700"
                   >
                     <ChevronLeft className="h-4 w-4" />
-                  </button>
+                  </Button>
 
                   <span className="px-3 py-1 text-sm text-gray-700">
                     Page {currentPage} of {totalPages}
                   </span>
 
-                  <button
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
                     aria-label="Next page"
-                    className="p-1.5 rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700"
                   >
                     <ChevronRight className="h-4 w-4" />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
                     onClick={() => setPage(totalPages)}
                     disabled={currentPage === totalPages}
                     aria-label="Last page"
-                    className="p-1.5 rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700"
                   >
                     <ChevronsRight className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

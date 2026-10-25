@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
 import { TaskClientPicker, TaskInstanceList } from '../components';
 
 export const TaskList: React.FC = () => {

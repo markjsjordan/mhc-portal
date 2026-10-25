@@ -29,6 +29,8 @@ import { useCaregivers } from '@/verticals/caregivers/hooks/useCaregivers';
 import { useMyCaregiverId } from '@/verticals/caregivers/hooks/useMyCaregiverId';
 import { useAuth } from '@/core/hooks';
 import { CreateVisitModal } from '@/core/components/forms/CreateVisitModal';
+import { Button } from '@/components/ui/button.js';
+import { Badge } from '@/components/ui/badge.js';
 import {
   MiniCalendar,
   VisitStatusLegend,
@@ -842,47 +844,41 @@ export const CalendarView: React.FC = () => {
               Scheduling &gt; Calendar
             </span>
             {visits.length >= 500 && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+              <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-800">
                 <Zap className="h-3 w-3" />
                 500+ Visits (Optimized)
-              </span>
+              </Badge>
             )}
           </div>
 
           {/* Action buttons (Min 44px touch targets) */}
           <div className="flex items-center gap-2 flex-wrap">
             {/* Toggle Left Rail (Mini Calendar & Filters) */}
-            <button
-              type="button"
+            <Button
+              variant={showSidebar ? 'secondary' : 'outline'}
+              size="sm"
               onClick={() => setShowSidebar((prev) => !prev)}
-              className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold border transition-colors flex items-center gap-2 ${
-                showSidebar
-                  ? 'bg-blue-50 text-blue-700 border-blue-300'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
+              className="min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-semibold flex items-center gap-2"
               aria-label="Toggle mini calendar and filters"
             >
               <PanelLeft className="h-4 w-4 text-blue-600" />
               <span className="hidden sm:inline">Mini Calendar & Filters</span>
               <span className="sm:hidden">Filters</span>
-            </button>
+            </Button>
 
             {/* Single Source of Truth: Legend Popover Toggle */}
             <div className="relative" ref={legendRef}>
-              <button
-                type="button"
+              <Button
+                variant={showLegendPopover ? 'secondary' : 'outline'}
+                size="sm"
                 onClick={() => setShowLegendPopover((prev) => !prev)}
-                className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold border transition-colors flex items-center gap-2 ${
-                  showLegendPopover
-                    ? 'bg-blue-50 text-blue-700 border-blue-300'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                }`}
+                className="min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-semibold flex items-center gap-2"
                 aria-label="Toggle status legend"
                 data-testid="legend-toggle-button"
               >
                 <Info className="h-4 w-4 text-blue-600" />
                 <span>Legend</span>
-              </button>
+              </Button>
 
               {/* Legend Popover (Single Source of Truth) */}
               {showLegendPopover && (
@@ -910,33 +906,31 @@ export const CalendarView: React.FC = () => {
             </div>
 
             {/* Availability Panel Toggle Button */}
-            <button
-              type="button"
+            <Button
+              variant={showAvailability ? 'secondary' : 'outline'}
+              size="sm"
               onClick={() => setShowAvailability((prev) => !prev)}
-              className={`min-h-[44px] px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold border transition-colors flex items-center gap-2 ${
-                showAvailability
-                  ? 'bg-blue-50 text-blue-700 border-blue-300'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
+              className="min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-semibold flex items-center gap-2"
               aria-label="Toggle caregiver availability"
             >
               <List className="h-4 w-4 text-gray-600" />
               <span className="hidden md:inline">Availability</span>
-            </button>
+            </Button>
 
             {/* Refresh Button */}
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => refetch()}
               disabled={isLoading || isRefetching}
-              className="min-h-[44px] px-3.5 py-2 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-semibold flex items-center gap-2"
               aria-label="Refresh calendar"
             >
               {(isLoading || isRefetching) && (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-700"></div>
               )}
               <span className="hidden sm:inline">Refresh</span>
-            </button>
+            </Button>
           </div>
         </div>
 

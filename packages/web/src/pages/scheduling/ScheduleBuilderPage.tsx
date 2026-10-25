@@ -9,6 +9,7 @@ import type { Visit as ApiVisit } from '@/verticals/scheduling-visits/types';
 import { useClients } from '@/verticals/client-demographics/hooks/useClients';
 import { calculateSupervisoryCadence } from '@/verticals/scheduling-visits/utils/supervisory-cadence';
 import { SupervisionAlertBanner } from '@/verticals/scheduling-visits/components/SupervisionAlertBanner';
+import { Button } from '@/components/ui/button.js';
 
 interface Caregiver {
   id: string;
@@ -371,7 +372,7 @@ export default function ScheduleBuilderPage() {
           {isMobile ? (
             <div className="schedule-builder-controls-row" style={styles.controlsRowMobile}>
               <div className="schedule-builder-toggle" style={styles.viewToggleMobile}>
-                <button
+                <Button
                   style={{
                     ...styles.viewButtonMobile,
                     ...(viewMode === 'day' ? styles.viewButtonActive : {}),
@@ -379,8 +380,8 @@ export default function ScheduleBuilderPage() {
                   onClick={() => setViewMode('day')}
                 >
                   Day
-                </button>
-                <button
+                </Button>
+                <Button
                   style={{
                     ...styles.viewButtonMobile,
                     ...(viewMode === 'week' ? styles.viewButtonActive : {}),
@@ -388,7 +389,7 @@ export default function ScheduleBuilderPage() {
                   onClick={() => setViewMode('week')}
                 >
                   Week
-                </button>
+                </Button>
               </div>
               <select
                 value={selectedDate}
@@ -410,7 +411,7 @@ export default function ScheduleBuilderPage() {
           ) : (
             <>
               <div style={styles.viewToggle}>
-                <button
+                <Button
                   style={{
                     ...styles.viewButton,
                     ...(viewMode === 'day' ? styles.viewButtonActive : {}),
@@ -418,8 +419,8 @@ export default function ScheduleBuilderPage() {
                   onClick={() => setViewMode('day')}
                 >
                   Day
-                </button>
-                <button
+                </Button>
+                <Button
                   style={{
                     ...styles.viewButton,
                     ...(viewMode === 'week' ? styles.viewButtonActive : {}),
@@ -427,7 +428,7 @@ export default function ScheduleBuilderPage() {
                   onClick={() => setViewMode('week')}
                 >
                   Week
-                </button>
+                </Button>
               </div>
               <select
                 value={selectedDate}
@@ -446,14 +447,14 @@ export default function ScheduleBuilderPage() {
               </select>
             </>
           )}
-          <button
+          <Button
             className="schedule-builder-action-btn"
             style={isMobile ? styles.patternButtonMobile : styles.patternButton}
             onClick={() => setShowPatternModal(true)}
           >
             + Recurring Schedule
-          </button>
-          <button
+          </Button>
+          <Button
             className="schedule-builder-action-btn"
             style={{
               ...(isMobile ? styles.patternButtonMobile : styles.patternButton),
@@ -474,8 +475,8 @@ export default function ScheduleBuilderPage() {
             }}
           >
             + New Visit
-          </button>
-          <button
+          </Button>
+          <Button
             style={{
               ...(isMobile ? styles.patternButtonMobile : styles.patternButton),
               backgroundColor: '#1d4ed8',
@@ -486,7 +487,7 @@ export default function ScheduleBuilderPage() {
             onClick={() => setShowSupervisionModal(true)}
           >
             Schedule Supervision Visit
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -1423,21 +1424,22 @@ function CreateRecurringPatternModal({
           </div>
 
           <div style={modalStyles.footer}>
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={onClose}
               disabled={submitting}
               style={modalStyles.cancelBtn}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={submitting}
               style={modalStyles.submitBtn}
             >
               {submitting ? 'Generating Schedule...' : 'Generate Recurring Visits'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -1600,10 +1602,10 @@ function ScheduleSupervisionVisitModal({
           </div>
 
           <div style={modalStyles.footer}>
-            <button type="button" onClick={onClose} style={modalStyles.cancelBtn}>
+            <Button type="button" variant="outline" onClick={onClose} style={modalStyles.cancelBtn}>
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={submitting}
               style={{
@@ -1612,7 +1614,7 @@ function ScheduleSupervisionVisitModal({
               }}
             >
               {submitting ? 'Scheduling...' : 'Confirm & Schedule Supervision'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -1903,8 +1905,8 @@ function CreateAppointmentModal({
         </div>
 
         <div style={styles.footer}>
-          <button onClick={onClose} style={styles.cancelBtn}>Cancel</button>
-          <button
+          <Button variant="outline" onClick={onClose} style={styles.cancelBtn}>Cancel</Button>
+          <Button
             onClick={handleSubmit}
             disabled={isSubmitting}
             style={{
@@ -1914,7 +1916,7 @@ function CreateAppointmentModal({
             }}
           >
             {isSubmitting ? 'Creating...' : 'Create'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

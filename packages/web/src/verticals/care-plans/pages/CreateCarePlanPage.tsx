@@ -1,7 +1,9 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { Button, LoadingSpinner, ErrorMessage } from '@/core/components';
+import { LoadingSpinner, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent } from '@/components/ui/card.js';
 import { useCreateCarePlan } from '../hooks';
 import { CarePlanForm } from '../components';
 import type { CreateCarePlanInput } from '../types';
@@ -33,7 +35,8 @@ export const CreateCarePlanPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link to="/care-plans">
-          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Care Plans
           </Button>
         </Link>
@@ -48,12 +51,14 @@ export const CreateCarePlanPage: React.FC = () => {
       </div>
 
       {/* Form */}
-      <div className="bg-white rounded-lg shadow-sm border p-6 w-full overflow-x-hidden">
-        <CarePlanForm
-          onSubmit={handleSubmit}
-          isLoading={createCarePlan.isPending}
-        />
-      </div>
+      <Card className="w-full overflow-x-hidden">
+        <CardContent className="p-6">
+          <CarePlanForm
+            onSubmit={handleSubmit}
+            isLoading={createCarePlan.isPending}
+          />
+        </CardContent>
+      </Card>
 
       {/* Loading Overlay */}
       {createCarePlan.isPending && (
