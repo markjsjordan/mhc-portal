@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { Card } from '@/core/components';
+import { Card, CardContent } from '@/components/ui/card.js';
 import { useFamilyDashboard } from '../hooks';
 import { useAuth } from '@/core/hooks';
 import { ActivityFeed, VisitCard } from '../components';
@@ -45,8 +45,8 @@ export const HealthUpdatesPage: React.FC = () => {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card padding="md">
-          <div className="flex items-center gap-3">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
               <FileText className="h-6 w-6 text-blue-600" />
             </div>
@@ -54,11 +54,11 @@ export const HealthUpdatesPage: React.FC = () => {
               <div className="text-2xl font-bold text-gray-900">{completedVisits.length}</div>
               <div className="text-sm text-gray-600">Recent Visits</div>
             </div>
-          </div>
+          </CardContent>
         </Card>
 
-        <Card padding="md">
-          <div className="flex items-center gap-3">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
               <Heart className="h-6 w-6 text-green-600" />
             </div>
@@ -66,11 +66,11 @@ export const HealthUpdatesPage: React.FC = () => {
               <div className="text-2xl font-bold text-gray-900">{recentActivity.length}</div>
               <div className="text-sm text-gray-600">Activity Updates</div>
             </div>
-          </div>
+          </CardContent>
         </Card>
 
-        <Card padding="md">
-          <div className="flex items-center gap-3">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
               <Activity className="h-6 w-6 text-purple-600" />
             </div>
@@ -80,7 +80,7 @@ export const HealthUpdatesPage: React.FC = () => {
               </div>
               <div className="text-sm text-gray-600">Care Plan Status</div>
             </div>
-          </div>
+          </CardContent>
         </Card>
       </div>
 
@@ -97,14 +97,14 @@ export const HealthUpdatesPage: React.FC = () => {
             ))}
           </div>
         ) : (
-          <Card padding="lg">
-            <div className="text-center py-8">
+          <Card>
+            <CardContent className="text-center py-8">
               <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
               <p className="text-gray-500">No completed visits yet</p>
               <p className="text-sm text-gray-400 mt-1">
                 Visit summaries will appear here after visits are completed
               </p>
-            </div>
+            </CardContent>
           </Card>
         )}
       </div>
@@ -115,21 +115,23 @@ export const HealthUpdatesPage: React.FC = () => {
           <Activity className="h-5 w-5" />
           Recent Activity
         </h2>
-        <Card padding="md">
-          {recentActivity.length > 0 ? (
-            <ActivityFeed activities={recentActivity} showLimit={10} />
-          ) : (
-            <div className="text-center py-8">
-              <Activity className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-              <p className="text-gray-500">No recent activity</p>
-            </div>
-          )}
+        <Card>
+          <CardContent className="p-4">
+            {recentActivity.length > 0 ? (
+              <ActivityFeed activities={recentActivity} showLimit={10} />
+            ) : (
+              <div className="text-center py-8">
+                <Activity className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <p className="text-gray-500">No recent activity</p>
+              </div>
+            )}
+          </CardContent>
         </Card>
       </div>
 
       {/* Information Box */}
-      <Card padding="md" className="bg-blue-50 border-blue-200">
-        <div className="flex items-start gap-3">
+      <Card className="bg-blue-50/50 border-blue-200">
+        <CardContent className="p-4 flex items-start gap-3">
           <Heart className="h-5 w-5 text-blue-600 mt-0.5" />
           <div>
             <h3 className="font-semibold text-blue-900 mb-1">About Health Updates</h3>
@@ -139,7 +141,7 @@ export const HealthUpdatesPage: React.FC = () => {
               any health information, please contact the care team directly.
             </p>
           </div>
-        </div>
+        </CardContent>
       </Card>
     </div>
   );

@@ -6,6 +6,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import type { Message } from '@folkcare/family-engagement';
+import { Badge } from '@/components/ui/badge.js';
 
 interface MessageThreadProps {
   messages: Message[];
@@ -72,7 +73,9 @@ export const MessageThread: React.FC<MessageThreadProps> = ({ messages, loading,
               <div className="mb-1 flex items-center gap-2 text-xs text-gray-500">
                 {!isMine && <span className="font-medium">{message.senderName}</span>}
                 {message.isInternal && (
-                  <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-800">Internal</span>
+                  <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-[10px] px-1.5 py-0">
+                    Internal
+                  </Badge>
                 )}
                 <span>{timestamp}</span>
               </div>

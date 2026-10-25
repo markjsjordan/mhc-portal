@@ -10,6 +10,7 @@ import { useRecentActivity } from '../hooks';
 import { useAuth } from '@/core/hooks';
 import { ActivityFeed, ActivityFilters } from '../components';
 import type { UUID } from '@folkcare/core/browser';
+import { Badge } from '@/components/ui/badge.js';
 
 // Calculate default date range outside component to avoid impure function during render
 const getDefaultDateRange = () => ({
@@ -67,8 +68,12 @@ export const ActivityPage: React.FC = () => {
         {/* Activity Feed */}
         <div className="lg:col-span-3">
           {filteredActivities && filteredActivities.length > 0 && (
-            <div className="mb-4 text-sm text-gray-600">
-              Showing {filteredActivities.length} of {activities?.length || 0} activities
+            <div className="mb-4 flex items-center gap-2 text-sm text-gray-600">
+              <span>Showing</span>
+              <Badge variant="secondary">{filteredActivities.length}</Badge>
+              <span>of</span>
+              <Badge variant="outline">{activities?.length || 0}</Badge>
+              <span>activities</span>
             </div>
           )}
           <ActivityFeed activities={filteredActivities || []} loading={isLoading} />

@@ -7,6 +7,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import type { MessageThread } from '@folkcare/family-engagement';
+import { Badge } from '@/components/ui/badge.js';
 
 interface MessageListProps {
   threads: MessageThread[];
@@ -57,12 +58,6 @@ export const MessageList: React.FC<MessageListProps> = ({ threads, loading }) =>
         });
 
         const hasUnread = thread.unreadCountFamily > 0;
-        const statusColor =
-          thread.status === 'OPEN'
-            ? 'bg-green-100 text-green-800'
-            : thread.status === 'CLOSED'
-            ? 'bg-gray-100 text-gray-800'
-            : 'bg-gray-100 text-gray-600';
 
         return (
           <Link
@@ -89,13 +84,13 @@ export const MessageList: React.FC<MessageListProps> = ({ threads, loading }) =>
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2">
-                <span className={`rounded-full px-2 py-1 text-xs font-medium ${statusColor}`}>
+                <Badge variant={thread.status === 'OPEN' ? 'default' : 'secondary'} className="text-xs">
                   {thread.status}
-                </span>
+                </Badge>
                 {hasUnread && (
-                  <span className="rounded-full bg-blue-600 px-2 py-1 text-xs font-bold text-white">
+                  <Badge variant="destructive" className="px-2 py-0.5 text-xs font-bold">
                     {thread.unreadCountFamily}
-                  </span>
+                  </Badge>
                 )}
               </div>
             </div>

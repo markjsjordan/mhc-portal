@@ -5,7 +5,8 @@
  */
 
 import React from 'react';
-import { Card } from '@/core/components';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { Badge } from '@/components/ui/badge.js';
 import { Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import type { VisitSummary } from '@folkcare/family-engagement';
 
@@ -68,11 +69,10 @@ export const VisitCard: React.FC<VisitCardProps> = ({ visit, onClick }) => {
 
   return (
     <Card
-      padding="md"
-      hover={!!onClick}
-      className={onClick ? 'cursor-pointer' : ''}
+      onClick={onClick}
+      className={`hover:shadow-md transition-shadow ${onClick ? 'cursor-pointer hover:border-primary/50' : ''}`}
     >
-      <div className="flex items-start gap-4">
+      <CardContent className="p-4 flex items-start gap-4">
         {/* Caregiver Photo */}
         <div className="flex-shrink-0">
           {visit.caregiverPhotoUrl ? (
@@ -94,9 +94,9 @@ export const VisitCard: React.FC<VisitCardProps> = ({ visit, onClick }) => {
             <h3 className="text-base font-semibold text-gray-900">
               {visit.caregiverName}
             </h3>
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${config.color}`}>
+            <Badge variant="outline" className={`text-xs font-medium ${config.color}`}>
               {visit.status.replace('_', ' ')}
-            </span>
+            </Badge>
           </div>
 
           <div className="space-y-1 text-sm text-gray-600">
@@ -143,7 +143,7 @@ export const VisitCard: React.FC<VisitCardProps> = ({ visit, onClick }) => {
             </div>
           )}
         </div>
-      </div>
+      </CardContent>
     </Card>
   );
 };

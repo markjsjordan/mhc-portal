@@ -6,6 +6,8 @@
 
 import React from 'react';
 import type { VisitSummary } from '@folkcare/family-engagement';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
+import { Badge } from '@/components/ui/badge.js';
 
 interface UpcomingVisitsProps {
   visits: VisitSummary[];
@@ -14,20 +16,24 @@ interface UpcomingVisitsProps {
 export const UpcomingVisits: React.FC<UpcomingVisitsProps> = ({ visits }) => {
   if (visits.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Visits</h2>
-        <div className="text-center py-4">
+      <Card>
+        <CardHeader className="p-6 pb-2">
+          <CardTitle className="text-lg font-semibold text-gray-900">Upcoming Visits</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 pt-0 text-center py-4">
           <p className="text-3xl mb-2">📅</p>
           <p className="text-sm text-gray-600">No upcoming visits scheduled</p>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Visits (Next 7 Days)</h2>
-      <div className="space-y-3">
+    <Card>
+      <CardHeader className="p-6 pb-4">
+        <CardTitle className="text-lg font-semibold text-gray-900">Upcoming Visits (Next 7 Days)</CardTitle>
+      </CardHeader>
+      <CardContent className="p-6 pt-0 space-y-3">
         {visits.map((visit) => {
           const startTime = new Date(visit.scheduledStartTime);
           const endTime = new Date(visit.scheduledEndTime);
@@ -44,19 +50,19 @@ export const UpcomingVisits: React.FC<UpcomingVisitsProps> = ({ visits }) => {
             minute: '2-digit',
           })}`;
 
-          const statusColor =
+          const statusVariant =
             visit.status === 'SCHEDULED'
-              ? 'bg-blue-100 text-blue-800'
+              ? 'default'
               : visit.status === 'IN_PROGRESS'
-              ? 'bg-green-100 text-green-800'
+              ? 'secondary'
               : visit.status === 'COMPLETED'
-              ? 'bg-gray-100 text-gray-800'
-              : 'bg-red-100 text-red-800';
+              ? 'outline'
+              : 'destructive';
 
           return (
             <div
               key={visit.id}
-              className="flex items-center gap-4 rounded-lg border border-gray-200 p-4 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-4 rounded-lg border border-gray-200 p-4 hover:bg-muted/50 transition-colors"
             >
               <div className="flex-shrink-0">
                 {visit.caregiverPhotoUrl ? (
@@ -66,7 +72,7 @@ export const UpcomingVisits: React.FC<UpcomingVisitsProps> = ({ visits }) => {
                     className="h-12 w-12 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-200 text-lg font-semibold text-blue-700">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 text-lg font-semibold text-primary-700">
                     {visit.caregiverName.charAt(0)}
                   </div>
                 )}
@@ -76,9 +82,9 @@ export const UpcomingVisits: React.FC<UpcomingVisitsProps> = ({ visits }) => {
                   <h3 className="text-sm font-semibold text-gray-900">
                     {visit.caregiverName}
                   </h3>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColor}`}>
+                  <Badge variant={statusVariant} className="text-xs">
                     {visit.status}
-                  </span>
+                  </Badge>
                 </div>
                 <p className="text-xs text-gray-600">{dateStr}</p>
                 <p className="text-xs text-gray-600">{timeStr}</p>
@@ -86,12 +92,7 @@ export const UpcomingVisits: React.FC<UpcomingVisitsProps> = ({ visits }) => {
             </div>
           );
         })}
-      </div>
-      {visits.length === 0 && (
-        <p className="text-center text-sm text-gray-500 py-4">
-          No visits scheduled for the next 7 days
-        </p>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 };

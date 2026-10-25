@@ -15,6 +15,9 @@ import {
   useUpdateMessageThread,
 } from '../hooks';
 import { MessageThread, MessageComposer } from '../components';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
+import { Button } from '@/components/ui/button.js';
+import { Badge } from '@/components/ui/badge.js';
 
 type StatusFilter = 'OPEN' | 'CLOSED';
 
@@ -38,77 +41,83 @@ export const StaffMessagesPage: React.FC = () => {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1">
-          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex gap-2" role="tablist" aria-label="Conversation status">
-              {(['OPEN', 'CLOSED'] as const).map((s) => (
-                <button
-                  key={s}
-                  role="tab"
-                  aria-selected={status === s}
-                  onClick={() => setStatus(s)}
-                  className={`rounded-md px-3 py-1 text-sm font-medium ${
-                    status === s ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {s === 'OPEN' ? 'Open' : 'Closed'}
-                </button>
-              ))}
-            </div>
-
-            {threadsLoading ? (
-              <p className="py-6 text-center text-sm text-gray-500">Loading conversations…</p>
-            ) : !threads || threads.length === 0 ? (
-              <p className="py-6 text-center text-sm text-gray-500">No {status.toLowerCase()} conversations</p>
-            ) : (
-              <ul className="space-y-2">
-                {threads.map((thread) => (
-                  <li key={thread.id}>
-                    <Link
-                      to={`/messages/${thread.id}`}
-                      className={`block rounded-lg border p-3 hover:bg-gray-50 ${
-                        thread.id === threadId ? 'border-primary-500 bg-primary-50' : 'border-gray-200'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="truncate text-sm font-semibold text-gray-900">{thread.subject}</p>
-                        {thread.unreadCountStaff > 0 && (
-                          <span className="rounded-full bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white">
-                            {thread.unreadCountStaff}
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-0.5 truncate text-xs text-gray-600">
-                        {thread.familyMemberName} ({thread.familyMemberRelationship.toLowerCase()})
-                      </p>
-                      <p className="mt-0.5 text-xs text-gray-500">
-                        {new Date(thread.lastMessageAt).toLocaleString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit',
-                        })}
-                        {thread.priority === 'HIGH' && (
-                          <span className="ml-2 font-semibold text-red-600">High priority</span>
-                        )}
-                      </p>
-                    </Link>
-                  </li>
+          <Card>
+            <CardContent className="p-4">
+              <div className="mb-3 flex gap-2" role="tablist" aria-label="Conversation status">
+                {(['OPEN', 'CLOSED'] as const).map((s) => (
+                  <Button
+                    key={s}
+                    role="tab"
+                    aria-selected={status === s}
+                    variant={status === s ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setStatus(s)}
+                    className={status === s ? 'font-semibold' : 'text-muted-foreground'}
+                  >
+                    {s === 'OPEN' ? 'Open' : 'Closed'}
+                  </Button>
                 ))}
-              </ul>
-            )}
-          </div>
+              </div>
+
+              {threadsLoading ? (
+                <p className="py-6 text-center text-sm text-gray-500">Loading conversations…</p>
+              ) : !threads || threads.length === 0 ? (
+                <p className="py-6 text-center text-sm text-gray-500">No {status.toLowerCase()} conversations</p>
+              ) : (
+                <ul className="space-y-2">
+                  {threads.map((thread) => (
+                    <li key={thread.id}>
+                      <Link
+                        to={`/messages/${thread.id}`}
+                        className={`block rounded-lg border p-3 hover:bg-gray-50 transition-colors ${
+                          thread.id === threadId ? 'border-primary bg-primary/5' : 'border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="truncate text-sm font-semibold text-gray-900">{thread.subject}</p>
+                          {thread.unreadCountStaff > 0 && (
+                            <Badge variant="destructive" className="px-2 py-0.5 text-xs font-semibold">
+                              {thread.unreadCountStaff}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-gray-600">
+                          {thread.familyMemberName} ({thread.familyMemberRelationship.toLowerCase()})
+                        </p>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                          <span>
+                            {new Date(thread.lastMessageAt).toLocaleString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                          {thread.priority === 'HIGH' && (
+                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                              High priority
+                            </Badge>
+                          )}
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         <div className="lg:col-span-2">
           {threadId ? (
-            <div className="flex flex-col rounded-lg border border-gray-200 bg-white shadow-sm">
-              <div className="flex items-center justify-between border-b border-gray-200 p-4">
+            <Card className="flex flex-col">
+              <CardHeader className="flex flex-row items-center justify-between border-b p-4 space-y-0">
                 <div>
-                  <h2 className="text-base font-semibold text-gray-900">
+                  <CardTitle className="text-base font-semibold text-gray-900">
                     {activeThread?.subject ?? 'Conversation'}
-                  </h2>
+                  </CardTitle>
                   {activeThread && (
-                    <p className="text-xs text-gray-600">
+                    <p className="text-xs text-gray-600 mt-0.5">
                       with {activeThread.familyMemberName} ({activeThread.familyMemberRelationship.toLowerCase()})
                     </p>
                   )}
@@ -118,7 +127,9 @@ export const StaffMessagesPage: React.FC = () => {
                     <span className="text-xs text-gray-500">
                       {activeThread.assignedToUserId ? 'Assigned' : 'Unassigned'}
                     </span>
-                    <button
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() =>
                         updateThread.mutate({
                           threadId: activeThread.id,
@@ -126,13 +137,12 @@ export const StaffMessagesPage: React.FC = () => {
                         })
                       }
                       disabled={updateThread.isPending}
-                      className="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                     >
                       {activeThread.status === 'OPEN' ? 'Close conversation' : 'Reopen'}
-                    </button>
+                    </Button>
                   </div>
                 )}
-              </div>
+              </CardHeader>
               <div className="flex-1 overflow-y-auto" style={{ maxHeight: '500px' }}>
                 <MessageThread messages={messages || []} loading={messagesLoading} viewer="STAFF" />
               </div>
@@ -141,11 +151,13 @@ export const StaffMessagesPage: React.FC = () => {
                 disabled={sendMessage.isPending || activeThread?.status === 'CLOSED'}
                 placeholder="Reply to the family…"
               />
-            </div>
+            </Card>
           ) : (
-            <div className="flex h-96 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500">
-              <p>Select a conversation</p>
-            </div>
+            <Card className="flex h-96 items-center justify-center text-gray-500">
+              <CardContent className="text-center">
+                <p>Select a conversation</p>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>

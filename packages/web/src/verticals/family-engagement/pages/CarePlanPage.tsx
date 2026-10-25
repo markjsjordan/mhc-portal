@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { Card } from '@/core/components';
+import { Card, CardContent } from '@/components/ui/card.js';
 import { useFamilyDashboard } from '../hooks';
 import { useAuth } from '@/core/hooks';
 import { CarePlanSummary, CareTeam } from '../components';
@@ -151,8 +151,8 @@ export const CarePlanPage: React.FC = () => {
           <CarePlanSummary report={mockCarePlanReport} loading={false} />
         </div>
       ) : (
-        <Card padding="lg">
-          <div className="text-center py-12">
+        <Card>
+          <CardContent className="text-center py-12">
             <ClipboardList className="h-16 w-16 mx-auto mb-4 text-gray-300" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
               No Active Care Plan
@@ -160,7 +160,7 @@ export const CarePlanPage: React.FC = () => {
             <p className="text-gray-600">
               A care plan will be created by the care coordinator and will appear here.
             </p>
-          </div>
+          </CardContent>
         </Card>
       )}
 

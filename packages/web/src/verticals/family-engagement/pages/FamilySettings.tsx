@@ -10,6 +10,11 @@ import toast from 'react-hot-toast';
 import { useFamilyMemberProfile } from '../hooks';
 import { useAuth } from '@/core/hooks';
 import { NotificationSettings } from '../components/NotificationSettings';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { Textarea } from '@/components/ui/textarea.js';
 import type { FamilyMember, FamilyRelationship } from '@folkcare/family-engagement';
 import type { UUID } from '@folkcare/core/browser';
 
@@ -128,43 +133,44 @@ const ProfileTab: React.FC<{ familyMember: FamilyMember }> = ({ familyMember }) 
   };
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Personal Information</h2>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-6">
+        <CardTitle className="text-lg font-semibold text-gray-900">Personal Information</CardTitle>
         {!isEditing && (
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setIsEditing(true)}
-            className="text-sm font-medium text-blue-600 hover:text-blue-700"
+            className="text-sm font-medium text-primary hover:text-primary/80"
           >
             Edit
-          </button>
+          </Button>
         )}
-      </div>
-
-      <div className="space-y-6">
+      </CardHeader>
+      <CardContent className="space-y-6 pt-0">
         {/* Name */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+            <Label className="block text-sm font-medium text-gray-700 mb-1">First Name</Label>
             {isEditing ? (
-              <input
+              <Input
                 type="text"
                 value={formData.firstName}
                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full text-sm"
               />
             ) : (
               <p className="text-sm text-gray-900">{familyMember.firstName}</p>
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+            <Label className="block text-sm font-medium text-gray-700 mb-1">Last Name</Label>
             {isEditing ? (
-              <input
+              <Input
                 type="text"
                 value={formData.lastName}
                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full text-sm"
               />
             ) : (
               <p className="text-sm text-gray-900">{familyMember.lastName}</p>
@@ -174,13 +180,13 @@ const ProfileTab: React.FC<{ familyMember: FamilyMember }> = ({ familyMember }) 
 
         {/* Contact Information */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <Label className="block text-sm font-medium text-gray-700 mb-1">Email</Label>
           {isEditing ? (
-            <input
+            <Input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+              className="w-full text-sm"
             />
           ) : (
             <p className="text-sm text-gray-900">{familyMember.email}</p>
@@ -188,13 +194,13 @@ const ProfileTab: React.FC<{ familyMember: FamilyMember }> = ({ familyMember }) 
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+          <Label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</Label>
           {isEditing ? (
-            <input
+            <Input
               type="tel"
               value={formData.phoneNumber}
               onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+              className="w-full text-sm"
             />
           ) : (
             <p className="text-sm text-gray-900">{familyMember.phoneNumber}</p>
@@ -203,9 +209,9 @@ const ProfileTab: React.FC<{ familyMember: FamilyMember }> = ({ familyMember }) 
 
         {/* Preferred Contact Method */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <Label className="block text-sm font-medium text-gray-700 mb-1">
             Preferred Contact Method
-          </label>
+          </Label>
           {isEditing ? (
             <select
               value={formData.preferredContactMethod}
@@ -215,7 +221,7 @@ const ProfileTab: React.FC<{ familyMember: FamilyMember }> = ({ familyMember }) 
                   preferredContactMethod: e.target.value as FamilyMember['preferredContactMethod'],
                 })
               }
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 bg-background"
             >
               <option value="EMAIL">Email</option>
               <option value="PHONE">Phone Call</option>
@@ -231,9 +237,9 @@ const ProfileTab: React.FC<{ familyMember: FamilyMember }> = ({ familyMember }) 
 
         {/* Relationship */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <Label className="block text-sm font-medium text-gray-700 mb-1">
             Relationship to Care Recipient
-          </label>
+          </Label>
           {isEditing ? (
             <select
               value={formData.relationship}
@@ -243,7 +249,7 @@ const ProfileTab: React.FC<{ familyMember: FamilyMember }> = ({ familyMember }) 
                   relationship: e.target.value as FamilyRelationship,
                 })
               }
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 bg-background"
             >
               <option value="SPOUSE">Spouse</option>
               <option value="PARENT">Parent</option>
@@ -266,15 +272,15 @@ const ProfileTab: React.FC<{ familyMember: FamilyMember }> = ({ familyMember }) 
         {/* Relationship Note */}
         {(isEditing || familyMember.relationshipNote) && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <Label className="block text-sm font-medium text-gray-700 mb-1">
               Relationship Details (Optional)
-            </label>
+            </Label>
             {isEditing ? (
-              <textarea
+              <Textarea
                 value={formData.relationshipNote}
                 onChange={(e) => setFormData({ ...formData, relationshipNote: e.target.value })}
                 rows={2}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full text-sm"
                 placeholder="e.g., Primary caregiver, lives nearby"
               />
             ) : (
@@ -285,7 +291,7 @@ const ProfileTab: React.FC<{ familyMember: FamilyMember }> = ({ familyMember }) 
 
         {/* Access Level (read-only) */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Portal Access Level</label>
+          <Label className="block text-sm font-medium text-gray-700 mb-1">Portal Access Level</Label>
           <p className="text-sm text-gray-900 capitalize">
             {familyMember.portalAccessLevel.replace(/_/g, ' ').toLowerCase()}
           </p>
@@ -297,13 +303,14 @@ const ProfileTab: React.FC<{ familyMember: FamilyMember }> = ({ familyMember }) 
         {/* Edit Mode Actions */}
         {isEditing && (
           <div className="flex gap-3 pt-4 border-t">
-            <button
+            <Button
               onClick={handleSave}
-              className="flex-1 rounded-md bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+              className="flex-1"
             >
               Save Changes
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => {
                 setFormData({
                   firstName: familyMember.firstName,
@@ -316,14 +323,14 @@ const ProfileTab: React.FC<{ familyMember: FamilyMember }> = ({ familyMember }) 
                 });
                 setIsEditing(false);
               }}
-              className="flex-1 rounded-md border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex-1"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -339,72 +346,84 @@ const DataTab: React.FC<{ familyMember: FamilyMember }> = ({ familyMember }) => 
   return (
     <div className="space-y-6">
       {/* Data Export */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Export Your Data</h2>
-        <p className="text-sm text-gray-600 mb-4">
-          Download all your portal data, including notification history, messages, and activity logs.
-          Data will be provided in JSON format.
-        </p>
-        <button
-          onClick={handleExportData}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
-        >
-          Export My Data
-        </button>
-      </div>
+      <Card>
+        <CardHeader className="p-6 pb-2">
+          <CardTitle className="text-lg font-semibold text-gray-900">Export Your Data</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 pt-0">
+          <p className="text-sm text-gray-600 mb-4">
+            Download all your portal data, including notification history, messages, and activity logs.
+            Data will be provided in JSON format.
+          </p>
+          <Button
+            onClick={handleExportData}
+          >
+            Export My Data
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Privacy Information */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Privacy & Security</h2>
-        <div className="space-y-4 text-sm">
-          <div>
-            <h3 className="font-medium text-gray-900 mb-1">Last Login</h3>
-            <p className="text-gray-600">
-              {familyMember.lastLoginAt
-                ? new Date(familyMember.lastLoginAt).toLocaleString()
-                : 'Never logged in'}
-            </p>
-          </div>
-
-          <div>
-            <h3 className="font-medium text-gray-900 mb-1">Portal Status</h3>
-            <p className="text-gray-600 capitalize">{familyMember.status.toLowerCase()}</p>
-          </div>
-
-          <div>
-            <h3 className="font-medium text-gray-900 mb-1">Access Granted</h3>
-            <p className="text-gray-600">
-              {new Date(familyMember.accessGrantedAt).toLocaleDateString()}
-            </p>
-          </div>
-
-          {familyMember.accessExpiresAt && (
+      <Card>
+        <CardHeader className="p-6 pb-2">
+          <CardTitle className="text-lg font-semibold text-gray-900">Privacy & Security</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 pt-0">
+          <div className="space-y-4 text-sm">
             <div>
-              <h3 className="font-medium text-gray-900 mb-1">Access Expires</h3>
+              <h3 className="font-medium text-gray-900 mb-1">Last Login</h3>
               <p className="text-gray-600">
-                {new Date(familyMember.accessExpiresAt).toLocaleDateString()}
+                {familyMember.lastLoginAt
+                  ? new Date(familyMember.lastLoginAt).toLocaleString()
+                  : 'Never logged in'}
               </p>
             </div>
-          )}
-        </div>
-      </div>
+
+            <div>
+              <h3 className="font-medium text-gray-900 mb-1">Portal Status</h3>
+              <p className="text-gray-600 capitalize">{familyMember.status.toLowerCase()}</p>
+            </div>
+
+            <div>
+              <h3 className="font-medium text-gray-900 mb-1">Access Granted</h3>
+              <p className="text-gray-600">
+                {new Date(familyMember.accessGrantedAt).toLocaleDateString()}
+              </p>
+            </div>
+
+            {familyMember.accessExpiresAt && (
+              <div>
+                <h3 className="font-medium text-gray-900 mb-1">Access Expires</h3>
+                <p className="text-gray-600">
+                  {new Date(familyMember.accessExpiresAt).toLocaleDateString()}
+                </p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Account Actions */}
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6">
-        <h2 className="text-lg font-semibold text-red-900 mb-4">Deactivate Portal Access</h2>
-        <p className="text-sm text-red-700 mb-4">
-          If you no longer need portal access, you can request deactivation. This action requires
-          confirmation from your care coordinator.
-        </p>
-        <button
-          onClick={() =>
-            alert('Portal deactivation requires coordinator approval. Please contact your care team.')
-          }
-          className="rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 transition-colors"
-        >
-          Request Deactivation
-        </button>
-      </div>
+      <Card className="border-destructive/30 bg-destructive/5">
+        <CardHeader className="p-6 pb-2">
+          <CardTitle className="text-lg font-semibold text-destructive">Deactivate Portal Access</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 pt-0">
+          <p className="text-sm text-destructive/80 mb-4">
+            If you no longer need portal access, you can request deactivation. This action requires
+            confirmation from your care coordinator.
+          </p>
+          <Button
+            variant="outline"
+            onClick={() =>
+              alert('Portal deactivation requires coordinator approval. Please contact your care team.')
+            }
+            className="border-destructive/30 text-destructive hover:bg-destructive/10"
+          >
+            Request Deactivation
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -7,6 +7,7 @@
 import React from 'react';
 import type { Notification } from '@folkcare/family-engagement';
 import { useMarkNotificationAsRead } from '../hooks';
+import { Card, CardContent } from '@/components/ui/card.js';
 
 interface NotificationListProps {
   notifications: Notification[];
@@ -65,13 +66,15 @@ export const NotificationList: React.FC<NotificationListProps> = ({ notification
 
   if (notifications.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-8 text-center">
-        <p className="text-4xl">🔔</p>
-        <p className="mt-2 text-gray-600">No notifications</p>
-        <p className="mt-1 text-sm text-gray-500">
-          You'll receive notifications about important care updates
-        </p>
-      </div>
+      <Card>
+        <CardContent className="p-8 text-center">
+          <p className="text-4xl">🔔</p>
+          <p className="mt-2 text-gray-600">No notifications</p>
+          <p className="mt-1 text-sm text-gray-500">
+            You'll receive notifications about important care updates
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -92,14 +95,14 @@ export const NotificationList: React.FC<NotificationListProps> = ({ notification
         );
 
         return (
-          <button
+          <Card
             key={notification.id}
             onClick={() => handleNotificationClick(notification)}
-            className={`w-full text-left rounded-lg border-l-4 ${borderColor} bg-white p-4 shadow-sm hover:shadow-md transition-all ${
-              isUnread ? 'bg-blue-50' : ''
+            className={`w-full text-left border-l-4 ${borderColor} cursor-pointer hover:shadow-md transition-all ${
+              isUnread ? 'bg-blue-50/50' : ''
             }`}
           >
-            <div className="flex gap-3">
+            <CardContent className="p-4 flex gap-3">
               <div className="flex-shrink-0">
                 <div
                   className={`flex h-10 w-10 items-center justify-center rounded-full text-2xl ${
@@ -130,8 +133,8 @@ export const NotificationList: React.FC<NotificationListProps> = ({ notification
                   </span>
                 )}
               </div>
-            </div>
-          </button>
+            </CardContent>
+          </Card>
         );
       })}
     </div>

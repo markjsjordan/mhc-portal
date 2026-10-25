@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge.js';
 
 interface NotificationBellProps {
   unreadCount: number;
@@ -20,9 +21,12 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ unreadCount 
     >
       <span className="text-2xl">🔔</span>
       {unreadCount > 0 && (
-        <span className="absolute right-0 top-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white animate-pulse">
+        <Badge
+          variant="destructive"
+          className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold"
+        >
           {unreadCount > 9 ? '9+' : unreadCount}
-        </span>
+        </Badge>
       )}
     </Link>
   );

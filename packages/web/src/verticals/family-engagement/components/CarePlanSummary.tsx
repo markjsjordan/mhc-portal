@@ -5,7 +5,8 @@
  */
 
 import React from 'react';
-import { Card, Badge } from '@/core/components';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { Badge } from '@/components/ui/badge.js';
 import { Target, CheckCircle, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
 import type { CarePlanProgressReport, GoalProgressSummary } from '@folkcare/family-engagement';
 
@@ -47,21 +48,22 @@ const GoalCard: React.FC<{ goal: GoalProgressSummary }> = ({ goal }) => {
   const StatusIcon = config.icon;
 
   return (
-    <div className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className={`flex items-center justify-center w-10 h-10 rounded-full bg-gray-100`}>
-            <StatusIcon className="w-5 h-5 ${config.iconColor}" />
+    <Card className="hover:shadow-md transition-shadow">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className={`flex items-center justify-center w-10 h-10 rounded-full bg-gray-100`}>
+              <StatusIcon className={`w-5 h-5 ${config.iconColor}`} />
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900">{goal.goalName}</h4>
+              <p className="text-xs text-gray-500">{goal.category}</p>
+            </div>
           </div>
-          <div>
-            <h4 className="font-semibold text-gray-900">{goal.goalName}</h4>
-            <p className="text-xs text-gray-500">{goal.category}</p>
-          </div>
+          <Badge variant="outline" className={config.color}>
+            {goal.currentStatus.replace('_', ' ')}
+          </Badge>
         </div>
-        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${config.color}`}>
-          {goal.currentStatus.replace('_', ' ')}
-        </span>
-      </div>
 
       {/* Progress bar */}
       <div className="mb-3">
@@ -98,8 +100,9 @@ const GoalCard: React.FC<{ goal: GoalProgressSummary }> = ({ goal }) => {
           })}
         </span>
       </div>
-    </div>
-  );
+    </CardContent>
+  </Card>
+);
 };
 
 export const CarePlanSummary: React.FC<CarePlanSummaryProps> = ({ report, loading }) => {
@@ -134,8 +137,8 @@ export const CarePlanSummary: React.FC<CarePlanSummaryProps> = ({ report, loadin
   return (
     <div className="space-y-6">
       {/* Overall Summary Card */}
-      <Card padding="lg">
-        <div className="space-y-4">
+      <Card>
+        <CardContent className="p-6 space-y-4">
           <div className="flex items-start justify-between">
             <div>
               <h3 className="text-xl font-semibold text-gray-900">Care Plan Progress</h3>
@@ -144,7 +147,7 @@ export const CarePlanSummary: React.FC<CarePlanSummaryProps> = ({ report, loadin
                 {new Date(report.reportPeriodEnd).toLocaleDateString()}
               </p>
             </div>
-            <Badge className="bg-primary-100 text-primary-800">
+            <Badge variant="secondary" className="bg-primary-100 text-primary-800">
               {report.reportType}
             </Badge>
           </div>
@@ -211,7 +214,7 @@ export const CarePlanSummary: React.FC<CarePlanSummaryProps> = ({ report, loadin
               <p className="text-sm text-gray-700">{report.recommendationsForFamily}</p>
             </div>
           )}
-        </div>
+        </CardContent>
       </Card>
 
       {/* Individual Goals */}
