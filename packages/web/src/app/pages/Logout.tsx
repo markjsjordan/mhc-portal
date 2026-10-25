@@ -1,21 +1,23 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth, useAuthService } from '@/core/hooks';
+import { wipeClientData } from '@/core/services/logout-wipe';
 
 /**
  * Logout Page
  *
- * Invalidates the current session server-side (POST /api/auth/logout —
- * bumps the user's token_version, which also invalidates that user's
- * OTHER active sessions/devices, since all their tokens share one
- * version), then clears local auth state and redirects to /login.
+ * Performs complete logout:
+ * 1. Server-side session invalidation (POST /api/auth/logout)
+ *    - Bumps the user's token_version, invalidating ALL their tokens
+ *    - Invalidates other active sessions/devices for this user
+ * 2. Wipes client data (Cache Storage, IndexedDB, app localStorage)
+ *    - Removes cached PHI and session credentials
+ *    - Preserves precache (app shell) for offline PWA boot
+ * 3. Clears local auth state
+ * 4. Redirects to /login
  *
- * Previously this only cleared local state via useAuth().logout()
- * (zustand clearAuth) and never called the server, so a stolen/leaked
- * token stayed valid after the user "logged out" until its natural
- * expiry (access token 15m, refresh token 7d). The server call is
- * best-effort: local state is always cleared so the UI never gets
- * stuck on a failed network call.
+ * Server call is best-effort: local cleanup always happens even if
+ * network call fails (offline, token expired, server error).
  */
 export const Logout: React.FC = () => {
   const { logout: clearLocalAuth } = useAuth();
@@ -24,15 +26,23 @@ export const Logout: React.FC = () => {
   React.useEffect(() => {
     const performLogout = async () => {
       try {
+        // 1. Server-side logout (invalidate tokens)
         await authService.logout();
       } catch (error) {
-        // Best-effort: proceed with local cleanup even if the network
-        // call fails (offline, token already expired, server error).
+        // Best-effort: proceed with local cleanup even if network fails
         console.error('Server-side logout failed:', error);
+      }
+
+      try {
+        // 2. Wipe client data (Cache Storage, IndexedDB, localStorage)
+        const wipeResult = await wipeClientData();
+        console.log('[logout] Client data wiped:', wipeResult);
+      } catch (error) {
+        // Best-effort: continue with auth state cleanup
+        console.warn('[logout] Client data wipe failed:', error);
       } finally {
-        // Safe to call after unmount: this is a zustand store update,
-        // not React state, so there is no "set state on unmounted
-        // component" warning risk.
+        // 3. Clear local auth state (always runs)
+        // Safe after unmount: zustand store update, not React state
         clearLocalAuth();
       }
     };
@@ -40,6 +50,6 @@ export const Logout: React.FC = () => {
     void performLogout();
   }, [authService, clearLocalAuth]);
 
-  // Redirect to login
+  // 4. Redirect to login
   return <Navigate to="/login" replace />;
 };

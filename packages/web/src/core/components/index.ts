@@ -10,3 +10,6 @@ export * from './ProtectedRoute';
 export * from './FilterDropdown';
 export * from './FilterCheckboxSection';
 export * from './FilterDateRangeSection';
+
+export * from './OnlineStatus';
+export * from './UpdatePrompt';
