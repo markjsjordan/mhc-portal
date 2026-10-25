@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Card } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
 import { Shield, FileText, Eye, Download, AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface AuditLogEntry {
@@ -189,10 +190,10 @@ export const ComplianceCenter: React.FC = () => {
         <Card padding="md">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">System Audit Trail</h3>
-            <button className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="flex items-center gap-2">
               <Download className="h-4 w-4" />
               Export
-            </button>
+            </Button>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -263,10 +264,10 @@ export const ComplianceCenter: React.FC = () => {
                 Protected Health Information access tracking for HIPAA compliance
               </p>
             </div>
-            <button className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="flex items-center gap-2">
               <Download className="h-4 w-4" />
               Export
-            </button>
+            </Button>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -313,10 +314,10 @@ export const ComplianceCenter: React.FC = () => {
                       {log.purpose}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button className="text-primary-600 hover:text-primary-700 flex items-center gap-1">
+                      <Button variant="ghost" size="sm" className="flex items-center gap-1">
                         <Eye className="h-4 w-4" />
                         View
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -359,10 +360,10 @@ export const ComplianceCenter: React.FC = () => {
                 </div>
 
                 <div className="flex gap-2 pt-2 border-t border-gray-200">
-                  <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors">
+                  <Button variant="secondary" className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-md hover:bg-secondary/80 transition-colors">
                     <Eye className="h-4 w-4" />
                     View
-                  </button>
+                  </Button>
                   <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 bg-primary-50 rounded-md hover:bg-primary-100 transition-colors">
                     <Download className="h-4 w-4" />
                     Download
