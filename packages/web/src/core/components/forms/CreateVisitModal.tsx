@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { X } from 'lucide-react';
-import { VisitForm } from './VisitForm';
-import { useVisitApi } from '@/verticals/scheduling-visits/hooks/useVisits';
-import type { CreateVisitPayload } from '@/verticals/scheduling-visits/services/visit-api';
-
-import type { VisitType } from '@/verticals/scheduling-visits/types';
+import { VisitForm } from './VisitForm.js';
+import { useVisitApi } from '@/verticals/scheduling-visits/hooks/useVisits.js';
+import type { CreateVisitPayload } from '@/verticals/scheduling-visits/services/visit-api.js';
+import type { VisitType } from '@/verticals/scheduling-visits/types/index.js';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog.js';
 
 interface CreateVisitModalProps {
   isOpen: boolean;
@@ -45,26 +49,13 @@ export const CreateVisitModal: React.FC<CreateVisitModalProps> = ({
     }
   };
 
-  if (!isOpen) {
-    return null;
-  }
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-          <h2 className="text-lg font-semibold text-gray-900">Create New Visit</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="p-6 overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Create New Visit</DialogTitle>
+        </DialogHeader>
+        <div className="py-2">
           <VisitForm
             initialDate={preSelectedDate}
             initialStartTime={preSelectedStartTime}
@@ -74,7 +65,7 @@ export const CreateVisitModal: React.FC<CreateVisitModalProps> = ({
             isSubmitting={isSubmitting}
           />
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

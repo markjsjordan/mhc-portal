@@ -144,6 +144,27 @@ const SelectSeparator = React.forwardRef<
 ))
 SelectSeparator.displayName = SelectPrimitive.Separator.displayName
 
+export interface NativeSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  error?: boolean;
+}
+
+const NativeSelect = React.forwardRef<HTMLSelectElement, NativeSelectProps>(
+  ({ className, error, children, ...props }, ref) => (
+    <select
+      ref={ref}
+      className={cn(
+        "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        error && "border-destructive focus:ring-destructive",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </select>
+  )
+)
+NativeSelect.displayName = "NativeSelect"
+
 export {
   Select,
   SelectGroup,
@@ -155,4 +176,5 @@ export {
   SelectSeparator,
   SelectScrollUpButton,
   SelectScrollDownButton,
+  NativeSelect,
 }
