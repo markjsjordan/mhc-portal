@@ -180,12 +180,14 @@ const VisitCard: React.FC<VisitCardProps> = ({
         {clientPhone && isMobile && onCall && (
           <div className="flex items-center gap-2">
             <Phone className="h-4 w-4 text-gray-400" />
-            <button
+            <Button
+              variant="link"
+              size="sm"
               onClick={onCall}
-              className="text-sm text-primary-600 hover:text-primary-700 font-medium underline"
+              className="h-auto p-0 text-sm font-medium underline"
             >
               {clientPhone}
-            </button>
+            </Button>
           </div>
         )}
 
