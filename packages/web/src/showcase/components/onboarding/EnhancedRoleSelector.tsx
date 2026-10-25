@@ -8,6 +8,8 @@ import React from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { personas } from '../../data/personas';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 interface EnhancedRoleSelectorProps {
   isOpen: boolean;
@@ -53,13 +55,15 @@ export const EnhancedRoleSelector: React.FC<EnhancedRoleSelectorProps> = ({
             <div className="bg-gray-900 p-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-white">Choose Role</h2>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={onClose}
-                  className="text-white hover:text-gray-300 transition-colors"
+                  className="text-white hover:text-gray-300 hover:bg-gray-800 transition-colors h-8 w-8"
                   aria-label="Close"
                 >
                   <X className="h-6 w-6" />
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -119,8 +123,10 @@ const PersonaDetailCard: React.FC<PersonaDetailCardProps> = ({
         </div>
       </div>
       {isCurrent && (
-        <div className="mt-3 text-xs text-gray-600">
-          Current
+        <div className="mt-3">
+          <Badge variant="secondary" className="text-xs">
+            Current
+          </Badge>
         </div>
       )}
     </button>

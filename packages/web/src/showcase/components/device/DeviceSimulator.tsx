@@ -7,6 +7,7 @@
 import React, { useState } from 'react';
 import { X, RotateCw, Smartphone, Tablet } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 
 export interface DeviceConfig {
   id: string;
@@ -102,9 +103,10 @@ export const DeviceSimulator: React.FC<DeviceSimulatorProps> = ({
         <div className="flex items-center gap-4">
           {/* Device Selector */}
           <div className="relative">
-            <button
+            <Button
+              variant="ghost"
               onClick={() => setShowDeviceSelector(!showDeviceSelector)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 hover:text-white transition-colors h-auto font-normal"
             >
               {currentDevice.type === 'phone' ? (
                 <Smartphone className="h-4 w-4" />
@@ -112,7 +114,7 @@ export const DeviceSimulator: React.FC<DeviceSimulatorProps> = ({
                 <Tablet className="h-4 w-4" />
               )}
               <span className="text-sm font-medium">{currentDevice.name}</span>
-            </button>
+            </Button>
 
             {showDeviceSelector && (
               <div className="absolute top-full left-0 mt-2 w-64 bg-gray-700 rounded-lg shadow-xl border border-gray-600 overflow-hidden">
@@ -146,14 +148,15 @@ export const DeviceSimulator: React.FC<DeviceSimulatorProps> = ({
           </div>
 
           {/* Rotate Button */}
-          <button
+          <Button
+            variant="ghost"
             onClick={handleRotate}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 hover:text-white transition-colors h-auto font-normal"
             title="Rotate Device"
           >
             <RotateCw className="h-4 w-4" />
             <span className="text-sm">Rotate</span>
-          </button>
+          </Button>
 
           {/* Device Info */}
           <div className="text-sm text-gray-400">
@@ -163,13 +166,15 @@ export const DeviceSimulator: React.FC<DeviceSimulatorProps> = ({
 
         {/* Close Button */}
         {onClose && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-white transition-colors"
+            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
             title="Exit Device Simulator"
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         )}
       </div>
 

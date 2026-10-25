@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 
 interface EnhancedLandingPageProps {
   onStartTour?: () => void;
@@ -35,12 +36,13 @@ export const EnhancedLandingPage: React.FC<EnhancedLandingPageProps> = ({
             </p>
 
             {/* Single CTA Button */}
-            <button
+            <Button
+              size="lg"
               onClick={onStartTour}
-              className="px-8 py-4 bg-gray-900 text-white rounded-lg font-medium text-lg hover:bg-gray-800 transition-colors"
+              className="px-8 py-4 bg-gray-900 text-white rounded-lg font-medium text-lg hover:bg-gray-800 transition-colors h-auto"
             >
               Start
-            </button>
+            </Button>
           </motion.div>
         </div>
       </div>
