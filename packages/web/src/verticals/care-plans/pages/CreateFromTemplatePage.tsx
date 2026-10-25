@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { ArrowLeft, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Button, LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
+import { LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
 import { useCarePlanTemplates } from '../hooks';
 import { TemplateCard, TemplatePreviewModal } from '../components';
 import type { CarePlanTemplate } from '@folkcare/care-plans-tasks/browser';
@@ -50,8 +51,8 @@ export const CreateFromTemplatePage: React.FC = () => {
           <Button
             variant="ghost"
             size="sm"
-            leftIcon={<ArrowLeft className="h-4 w-4" />}
           >
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Care Plans
           </Button>
         </Link>
@@ -71,17 +72,15 @@ export const CreateFromTemplatePage: React.FC = () => {
       <div className="mb-6">
         <div className="flex gap-2 overflow-x-auto pb-2">
           {categories.map((category) => (
-            <button
+            <Button
               key={category.value}
+              variant={filterCategory === category.value ? 'default' : 'secondary'}
+              size="sm"
               onClick={() => setFilterCategory(category.value)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition ${
-                filterCategory === category.value
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className="whitespace-nowrap"
             >
               {category.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>

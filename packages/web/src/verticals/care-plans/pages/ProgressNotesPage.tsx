@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, FileText, Plus } from 'lucide-react';
-import { Button, Card, CardHeader, CardContent, LoadingSpinner, ErrorMessage, StatusBadge } from '@/core/components';
+import { LoadingSpinner, ErrorMessage, StatusBadge } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
+import { Badge } from '@/components/ui/badge.js';
 import { useAuth } from '@/core/hooks';
 import { formatDate } from '@/core/utils';
 import { useCarePlan, useProgressNotes, useCreateProgressNote } from '../hooks';
@@ -55,7 +58,8 @@ export const ProgressNotesPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link to={id ? `/care-plans/${id}` : '/care-plans'}>
-          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
         </Link>
@@ -68,14 +72,15 @@ export const ProgressNotesPage: React.FC = () => {
             <p className="text-gray-600 mt-1">{carePlan.name}</p>
           )}
         </div>
-        <Button onClick={() => setIsFormOpen(true)} leftIcon={<Plus className="h-4 w-4" />}>
+        <Button onClick={() => setIsFormOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
           Add Note
         </Button>
       </div>
 
       {(!progressNotes || progressNotes.length === 0) ? (
         <Card>
-          <CardContent>
+          <CardContent className="pt-6">
             <div className="text-center py-12">
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600">No progress notes yet.</p>
@@ -86,7 +91,11 @@ export const ProgressNotesPage: React.FC = () => {
         <div className="space-y-4">
           {progressNotes.map((note) => (
             <Card key={note.id}>
-              <CardHeader title={note.noteType.replace(/_/g, ' ')} />
+              <CardHeader>
+                <CardTitle className="text-base font-semibold">
+                  {note.noteType.replace(/_/g, ' ')}
+                </CardTitle>
+              </CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   <div className="flex items-center gap-3 text-sm text-gray-500">
@@ -98,12 +107,9 @@ export const ProgressNotesPage: React.FC = () => {
                   {note.tags && note.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {note.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 border border-blue-300"
-                        >
+                        <Badge key={tag} variant="secondary">
                           {tag}
-                        </span>
+                        </Badge>
                       ))}
                     </div>
                   )}

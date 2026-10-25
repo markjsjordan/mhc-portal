@@ -12,7 +12,9 @@ import {
   FileText,
   Trash2
 } from 'lucide-react';
-import { Button, Card, CardHeader, CardContent, LoadingSpinner, ErrorMessage, StatusBadge } from '@/core/components';
+import { LoadingSpinner, ErrorMessage, StatusBadge } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
 import { usePermissions } from '@/core/hooks';
 import { formatDate } from '@/core/utils';
 import { useCarePlan, useActivateCarePlan, useUpdateCarePlan, useDeleteCarePlan } from '../hooks';
@@ -108,7 +110,8 @@ export const CarePlanDetail: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link to="/care-plans">
-          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
         </Link>
@@ -128,10 +131,10 @@ export const CarePlanDetail: React.FC = () => {
             <>
               {carePlan.status === 'DRAFT' && (
                 <Button
-                  leftIcon={<Play className="h-4 w-4" />}
                   onClick={handleActivate}
-                  isLoading={activateCarePlan.isPending}
+                  disabled={activateCarePlan.isPending}
                 >
+                  <Play className="h-4 w-4 mr-2" />
                   Activate
                 </Button>
               )}
@@ -139,14 +142,15 @@ export const CarePlanDetail: React.FC = () => {
                 <Button
                   variant="outline"
                   onClick={handleDiscontinue}
-                  isLoading={updateCarePlan.isPending}
+                  disabled={updateCarePlan.isPending}
                 >
                   Discontinue
                 </Button>
               )}
               {canEditCarePlans && (
                 <Link to={`/care-plans/${carePlan.id}/edit`}>
-                  <Button variant="outline" leftIcon={<Edit className="h-4 w-4" />}>
+                  <Button variant="outline">
+                    <Edit className="h-4 w-4 mr-2" />
                     Edit
                   </Button>
                 </Link>
@@ -157,11 +161,11 @@ export const CarePlanDetail: React.FC = () => {
               >
                 <Button 
                   variant="outline" 
-                  leftIcon={<Trash2 className="h-4 w-4" />}
                   onClick={() => setShowDeleteConfirm(true)}
                   disabled={isDeleteDisabled}
                   className={isDeleteDisabled ? 'opacity-50 pointer-events-none' : 'text-red-600 hover:text-red-700 hover:border-red-300'}
                 >
+                  <Trash2 className="h-4 w-4 mr-2" />
                   Delete
                 </Button>
               </span>
@@ -202,7 +206,9 @@ export const CarePlanDetail: React.FC = () => {
         <div className="lg:col-span-2 space-y-6">
           {/* Plan Information */}
           <Card>
-            <CardHeader title="Plan Information" />
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">Plan Information</CardTitle>
+            </CardHeader>
             <CardContent>
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -282,7 +288,9 @@ export const CarePlanDetail: React.FC = () => {
 
           {/* Goals */}
           <Card>
-            <CardHeader title={`Goals (${carePlan.goals.length})`} />
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">{`Goals (${carePlan.goals.length})`}</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {carePlan.goals.map((goal) => (
@@ -323,7 +331,9 @@ export const CarePlanDetail: React.FC = () => {
 
           {/* Interventions */}
           <Card>
-            <CardHeader title={`Interventions (${carePlan.interventions.length})`} />
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">{`Interventions (${carePlan.interventions.length})`}</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {carePlan.interventions.map((intervention) => (
@@ -356,7 +366,9 @@ export const CarePlanDetail: React.FC = () => {
         <div className="space-y-6">
           {/* Quick Stats */}
           <Card>
-            <CardHeader title="Quick Stats" />
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">Quick Stats</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
@@ -385,7 +397,9 @@ export const CarePlanDetail: React.FC = () => {
 
           {/* Quick Actions */}
           <Card>
-            <CardHeader title="Quick Actions" />
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <Link to={`/tasks?carePlanId=${carePlan.id}`}>
@@ -414,7 +428,9 @@ export const CarePlanDetail: React.FC = () => {
 
           {/* Timeline */}
           <Card>
-            <CardHeader title="Timeline" />
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">Timeline</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
@@ -486,10 +502,9 @@ export const CarePlanDetail: React.FC = () => {
                 Cancel
               </Button>
               <Button
-                variant="primary"
+                variant="destructive"
                 onClick={handleDelete}
-                isLoading={deleteCarePlan.isPending}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                disabled={deleteCarePlan.isPending}
               >
                 Delete Plan
               </Button>
