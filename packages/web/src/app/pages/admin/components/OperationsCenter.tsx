@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Card } from '@/core/components';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   MapPin,
   AlertTriangle,
@@ -177,22 +179,22 @@ export const OperationsCenter: React.FC = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Active Visits - Live GPS Tracking */}
-      <Card className="lg:col-span-2" padding="md">
-        <div className="flex items-center justify-between mb-4">
+      <Card className="lg:col-span-2">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div className="flex items-center gap-2">
-            <Navigation className="h-5 w-5 text-primary-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
+            <Navigation className="h-5 w-5 text-primary" />
+            <CardTitle className="text-lg font-semibold text-gray-900">
               Active Visits - Live GPS Tracking
-            </h3>
-            <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+            </CardTitle>
+            <Badge variant="outline" className="ml-2 bg-green-100 text-green-800 border-green-200">
               {activeVisits.length} Active
-            </span>
+            </Badge>
           </div>
-          <button className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+          <Button variant="ghost" size="sm" className="text-sm text-primary hover:text-primary/80 font-medium">
             View Map
-          </button>
-        </div>
-        <div className="space-y-4">
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-4">
           {activeVisits.map((visit) => (
             <div
               key={visit.id}
@@ -212,41 +214,43 @@ export const OperationsCenter: React.FC = () => {
                     </div>
                   </div>
                   <div className="mt-3 flex items-center gap-3">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${getGPSStatusColor(visit.gpsStatus)}`}
+                    <Badge
+                      variant="outline"
+                      className={`gap-1 ${getGPSStatusColor(visit.gpsStatus)}`}
                     >
                       <MapPin className="h-3 w-3" />
                       GPS: {visit.gpsStatus.toUpperCase()}
-                    </span>
-                    <span
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${getGeofenceStatusColor(visit.geofenceStatus)}`}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className={`gap-1 ${getGeofenceStatusColor(visit.geofenceStatus)}`}
                     >
                       Geofence: {visit.geofenceStatus.toUpperCase()}
-                    </span>
-                    <span className="inline-flex items-center px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium">
+                    </Badge>
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                       {visit.state}
-                    </span>
+                    </Badge>
                   </div>
                 </div>
-                <button className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                <Button variant="ghost" size="sm" className="text-sm text-primary hover:text-primary/80 font-medium">
                   Track
-                </button>
+                </Button>
               </div>
             </div>
           ))}
-        </div>
+        </CardContent>
       </Card>
 
       {/* EVV Exceptions - Instant Resolution */}
-      <Card padding="md">
-        <div className="flex items-center gap-2 mb-4">
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-2 space-y-0 pb-4">
           <AlertTriangle className="h-5 w-5 text-yellow-600" />
-          <h3 className="text-lg font-semibold text-gray-900">EVV Exceptions</h3>
-          <span className="ml-2 px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">
+          <CardTitle className="text-lg font-semibold text-gray-900">EVV Exceptions</CardTitle>
+          <Badge variant="outline" className="ml-2 bg-red-100 text-red-800 border-red-200">
             {exceptions.filter((e) => e.requiresAction).length} Require Action
-          </span>
-        </div>
-        <div className="space-y-3">
+          </Badge>
+        </CardHeader>
+        <CardContent className="space-y-3">
           {exceptions.map((exception) => (
             <div
               key={exception.id}
@@ -260,9 +264,9 @@ export const OperationsCenter: React.FC = () => {
                       {exception.type.replace(/_/g, ' ')}
                     </p>
                     {exception.requiresAction && (
-                      <span className="px-1.5 py-0.5 bg-red-100 text-red-700 text-xs font-medium rounded">
+                      <Badge variant="destructive" className="text-xs">
                         Action Required
-                      </span>
+                      </Badge>
                     )}
                   </div>
                   <p className="text-sm text-gray-600 mt-1">
@@ -272,29 +276,29 @@ export const OperationsCenter: React.FC = () => {
                     {exception.caregiverName} • {formatDuration(exception.detectedAt)}
                   </p>
                 </div>
-                <button className="text-xs text-primary-600 hover:text-primary-700 font-medium whitespace-nowrap">
+                <Button variant="ghost" size="xs" className="text-xs text-primary hover:text-primary/80 font-medium whitespace-nowrap">
                   Resolve
-                </button>
+                </Button>
               </div>
             </div>
           ))}
-        </div>
+        </CardContent>
       </Card>
 
       {/* Pending VMURs (Texas) */}
-      <Card padding="md">
-        <div className="mb-4">
+      <Card>
+        <CardHeader className="space-y-0 pb-4">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
+            <CardTitle className="text-lg font-semibold text-gray-900">
               Pending VMURs (Texas)
-            </h3>
+            </CardTitle>
           </div>
-          <p className="mt-1 text-sm text-gray-600">
+          <CardDescription className="mt-1 text-sm text-gray-600">
             Visit Maintenance Unlock Requests requiring approval
-          </p>
-        </div>
-        <div className="space-y-3">
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
           {pendingVMURs.map((vmur) => (
             <div
               key={vmur.id}
@@ -316,17 +320,17 @@ export const OperationsCenter: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <button className="text-xs text-green-600 hover:text-green-700 font-medium">
+                  <Button variant="ghost" size="xs" className="text-xs text-green-600 hover:text-green-700 font-medium">
                     Approve
-                  </button>
-                  <button className="text-xs text-red-600 hover:text-red-700 font-medium">
+                  </Button>
+                  <Button variant="ghost" size="xs" className="text-xs text-destructive hover:text-destructive/80 font-medium">
                     Deny
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
           ))}
-        </div>
+        </CardContent>
       </Card>
     </div>
   );

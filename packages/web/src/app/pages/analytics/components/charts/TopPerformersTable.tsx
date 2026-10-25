@@ -5,6 +5,7 @@
 
 import { Award, TrendingUp } from 'lucide-react';
 import type { CaregiverPerformance } from '@/types/analytics-types';
+import { Badge } from '@/components/ui/badge';
 
 interface TopPerformersTableProps {
   caregivers: CaregiverPerformance[];
@@ -91,17 +92,18 @@ export function TopPerformersTable({
                 </div>
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
-                <span
-                  className={`text-sm font-medium ${
+                <Badge
+                  variant="outline"
+                  className={
                     caregiver.evvComplianceRate >= 95
-                      ? 'text-green-600'
+                      ? 'bg-green-50 text-green-700 border-green-200'
                       : caregiver.evvComplianceRate >= 85
-                      ? 'text-yellow-600'
-                      : 'text-red-600'
-                  }`}
+                      ? 'bg-amber-50 text-amber-700 border-amber-200'
+                      : 'bg-red-50 text-red-700 border-red-200'
+                  }
                 >
                   {caregiver.evvComplianceRate.toFixed(1)}%
-                </span>
+                </Badge>
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
                 <div className="flex items-center">
