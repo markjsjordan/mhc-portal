@@ -2,7 +2,7 @@
  * Tests for CaregiverForm Branch Selector
  */
 import { describe, test, expect, vi } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithQueryClient as render } from '@/test/renderWithQueryClient';
 import { CaregiverForm, EMPTY_CAREGIVER_FORM } from '../CaregiverForm';
@@ -109,7 +109,9 @@ describe('CaregiverForm Branch Selector', () => {
     );
 
     const primarySelect = screen.getByLabelText(/Primary Branch/i);
-    await user.selectOptions(primarySelect, 'branch-north-002');
+    fireEvent.keyDown(primarySelect, { key: 'ArrowDown' });
+    const option = await screen.findByRole('option', { name: /North Branch/i });
+    fireEvent.click(option);
 
     expect(handleChange).toHaveBeenCalledWith(
       expect.objectContaining({
