@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useCreateClient, useClients, useUpdateClient, useBranches } from '@/verticals/client-demographics/hooks';
 import type { CreateClientInput, UpdateClientInput } from '@/verticals/client-demographics/types';
 import { useAuth } from '@/core/hooks';
@@ -494,24 +497,24 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </h3>
               <div className="flex flex-col sm:flex-row gap-4 md:gap-5 mb-4 md:mb-5">
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <Label htmlFor="firstName">
                     First Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
+                  </Label>
+                  <Input
+                    id="firstName"
                     type="text"
-                    className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
                     value={intakeData.firstName ?? ''}
                     onChange={(e) => updateData('firstName', e.target.value)}
                     placeholder="Enter first name"
                   />
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <Label htmlFor="lastName">
                     Last Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
+                  </Label>
+                  <Input
+                    id="lastName"
                     type="text"
-                    className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
                     value={intakeData.lastName ?? ''}
                     onChange={(e) => updateData('lastName', e.target.value)}
                     placeholder="Enter last name"
@@ -521,9 +524,9 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
 
               <div className="flex flex-col sm:flex-row gap-4 md:gap-5 mb-4 md:mb-5">
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <Label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Date of Birth <span className="text-red-500">*</span>
-                  </label>
+                  </Label>
                   <input
                     type="date"
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
@@ -533,7 +536,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   />
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone</label>
+                  <Label className="block text-sm font-medium text-gray-700 mb-1.5">Phone</Label>
                   <input
                     type="tel"
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
@@ -545,7 +548,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </div>
 
               <div className="flex-1 min-w-0 flex flex-col mb-4 md:mb-5">
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+                <Label className="block text-sm font-medium text-gray-700 mb-1.5">Email</Label>
                 <input
                   type="email"
                   className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
@@ -557,7 +560,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
 
               {branches && branches.length > 0 && (
                 <div className="flex-1 min-w-0 flex flex-col mb-4 md:mb-5">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Branch / Office</label>
+                  <Label className="block text-sm font-medium text-gray-700 mb-1.5">Branch / Office</Label>
                   <select
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
                     value={activeBranchId}
@@ -578,7 +581,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 Address
               </h3>
               <div className="flex-1 min-w-0 flex flex-col mb-4 md:mb-5">
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Street Address</label>
+                <Label className="block text-sm font-medium text-gray-700 mb-1.5">Street Address</Label>
                 <input
                   type="text"
                   className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
@@ -588,7 +591,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 />
               </div>
               <div className="flex-1 min-w-0 flex flex-col mb-4 md:mb-5">
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Apt/Suite</label>
+                <Label className="block text-sm font-medium text-gray-700 mb-1.5">Apt/Suite</Label>
                 <input
                   type="text"
                   className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
@@ -599,7 +602,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </div>
               <div className="flex flex-col sm:flex-row gap-4 md:gap-5 mb-4 md:mb-5">
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">City</label>
+                  <Label className="block text-sm font-medium text-gray-700 mb-1.5">City</Label>
                   <input
                     type="text"
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
@@ -609,7 +612,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   />
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">State</label>
+                  <Label className="block text-sm font-medium text-gray-700 mb-1.5">State</Label>
                   <select
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
                     value={intakeData.address?.state ?? ''}
@@ -624,7 +627,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   </select>
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">ZIP Code</label>
+                  <Label className="block text-sm font-medium text-gray-700 mb-1.5">ZIP Code</Label>
                   <input
                     type="text"
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
@@ -644,7 +647,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 <div key={index} className="p-4 md:p-5 mb-4 bg-gray-50 rounded-xl border border-gray-200">
                   <div className="flex flex-col md:flex-row gap-4 md:gap-5">
                     <div className="flex-1 min-w-0 flex flex-col">
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Name</label>
+                      <Label className="block text-sm font-medium text-gray-700 mb-1.5">Name</Label>
                       <input
                         type="text"
                         className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
@@ -658,7 +661,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                       />
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col">
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Relationship</label>
+                      <Label className="block text-sm font-medium text-gray-700 mb-1.5">Relationship</Label>
                       <input
                         type="text"
                         className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
@@ -672,7 +675,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                       />
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col">
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone</label>
+                      <Label className="block text-sm font-medium text-gray-700 mb-1.5">Phone</Label>
                       <input
                         type="tel"
                         className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
@@ -688,13 +691,11 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   </div>
                 </div>
               ))}
-              <button
-                type="button"
+              <Button variant="ghost" type="button"
                 className="w-full sm:w-auto px-5 py-2.5 text-sm font-medium text-blue-600 bg-white border-2 border-blue-600 rounded-lg hover:bg-blue-50 active:bg-blue-100 transition-colors min-h-[44px] cursor-pointer"
-                onClick={addEmergencyContact}
-              >
+                onClick={addEmergencyContact}>
                 + Add Emergency Contact
-              </button>
+              </Button>
             </div>
 
             <div className="mb-4">
@@ -703,7 +704,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </h3>
               <div className="flex flex-col sm:flex-row gap-4 md:gap-5 mb-4 md:mb-5">
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Insurance Type</label>
+                  <Label className="block text-sm font-medium text-gray-700 mb-1.5">Insurance Type</Label>
                   <select
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
                     value={intakeData.insurance?.type ?? ''}
@@ -717,7 +718,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   </select>
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Member ID</label>
+                  <Label className="block text-sm font-medium text-gray-700 mb-1.5">Member ID</Label>
                   <input
                     type="text"
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
@@ -746,12 +747,12 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   key={adl}
                   className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3.5 border-b border-gray-200 gap-2 sm:gap-4"
                 >
-                  <label className="text-sm font-semibold sm:font-medium text-gray-800 sm:min-w-[150px]">
+                  <Label className="text-sm font-semibold sm:font-medium text-gray-800 sm:min-w-[150px]">
                     {adl.charAt(0).toUpperCase() + adl.slice(1)}
-                  </label>
+                  </Label>
                   <div className="flex flex-wrap items-center gap-2 sm:gap-4 w-full sm:w-auto">
                     {['independent', 'assistance', 'dependent'].map((level) => (
-                      <label
+                      <Label
                         key={level}
                         className="flex items-center gap-2 py-1.5 px-3 rounded-md hover:bg-gray-100 active:bg-gray-200 cursor-pointer min-h-[40px] text-sm text-gray-700 select-none border border-transparent has-[:checked]:border-blue-200 has-[:checked]:bg-blue-50"
                       >
@@ -764,7 +765,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                         />
                         <span className="capitalize">{level}</span>
-                      </label>
+                      </Label>
                     ))}
                   </div>
                 </div>
@@ -780,12 +781,12 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   key={iadl}
                   className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3.5 border-b border-gray-200 gap-2 sm:gap-4"
                 >
-                  <label className="text-sm font-semibold sm:font-medium text-gray-800 sm:min-w-[150px]">
+                  <Label className="text-sm font-semibold sm:font-medium text-gray-800 sm:min-w-[150px]">
                     {iadl === 'mealPrep' ? 'Meal Prep' : iadl.charAt(0).toUpperCase() + iadl.slice(1)}
-                  </label>
+                  </Label>
                   <div className="flex flex-wrap items-center gap-2 sm:gap-4 w-full sm:w-auto">
                     {['independent', 'assistance', 'dependent'].map((level) => (
-                      <label
+                      <Label
                         key={level}
                         className="flex items-center gap-2 py-1.5 px-3 rounded-md hover:bg-gray-100 active:bg-gray-200 cursor-pointer min-h-[40px] text-sm text-gray-700 select-none border border-transparent has-[:checked]:border-blue-200 has-[:checked]:bg-blue-50"
                       >
@@ -798,7 +799,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                         />
                         <span className="capitalize">{level}</span>
-                      </label>
+                      </Label>
                     ))}
                   </div>
                 </div>
@@ -811,7 +812,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </h3>
               <div className="flex flex-col sm:flex-row gap-4 md:gap-5 mb-4 md:mb-5">
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Mobility</label>
+                  <Label className="block text-sm font-medium text-gray-700 mb-1.5">Mobility</Label>
                   <select
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
                     value={intakeData.mobility ?? ''}
@@ -825,7 +826,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   </select>
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Cognitive Status</label>
+                  <Label className="block text-sm font-medium text-gray-700 mb-1.5">Cognitive Status</Label>
                   <select
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
                     value={intakeData.cognitive ?? ''}
@@ -851,7 +852,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   className="flex flex-col md:flex-row gap-3 md:gap-4 mb-3 p-3 md:p-0 bg-gray-50 md:bg-transparent rounded-lg md:rounded-none border md:border-0 border-gray-200"
                 >
                   <div className="flex-1 min-w-0">
-                    <label className="md:hidden block text-xs font-medium text-gray-500 mb-1">Medication Name</label>
+                    <Label className="md:hidden block text-xs font-medium text-gray-500 mb-1">Medication Name</Label>
                     <input
                       type="text"
                       className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
@@ -865,7 +866,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <label className="md:hidden block text-xs font-medium text-gray-500 mb-1">Dosage</label>
+                    <Label className="md:hidden block text-xs font-medium text-gray-500 mb-1">Dosage</Label>
                     <input
                       type="text"
                       className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
@@ -879,7 +880,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <label className="md:hidden block text-xs font-medium text-gray-500 mb-1">Frequency</label>
+                    <Label className="md:hidden block text-xs font-medium text-gray-500 mb-1">Frequency</Label>
                     <input
                       type="text"
                       className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
@@ -894,13 +895,11 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   </div>
                 </div>
               ))}
-              <button
-                type="button"
+              <Button variant="ghost" type="button"
                 className="w-full sm:w-auto px-5 py-2.5 text-sm font-medium text-blue-600 bg-white border-2 border-blue-600 rounded-lg hover:bg-blue-50 active:bg-blue-100 transition-colors min-h-[44px] cursor-pointer"
-                onClick={addMedication}
-              >
+                onClick={addMedication}>
                 + Add Medication
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -917,7 +916,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {['Personal Care', 'Companion Care', 'Homemaking', 'Skilled Nursing', 'Physical Therapy', 'Occupational Therapy'].map((type) => (
-                  <label
+                  <Label
                     key={type}
                     className="flex items-center gap-3 p-3.5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 cursor-pointer min-h-[48px] select-none transition-colors has-[:checked]:bg-blue-50 has-[:checked]:border-blue-300"
                   >
@@ -928,7 +927,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                       className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                     />
                     <span className="text-sm font-medium text-gray-800">{type}</span>
-                  </label>
+                  </Label>
                 ))}
               </div>
             </div>
@@ -939,7 +938,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </h3>
               <div className="flex flex-col sm:flex-row gap-4 md:gap-5 mb-4 md:mb-5">
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Visit Frequency</label>
+                  <Label className="block text-sm font-medium text-gray-700 mb-1.5">Visit Frequency</Label>
                   <select
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
                     value={intakeData.visitFrequency ?? ''}
@@ -953,7 +952,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   </select>
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Visit Duration (minutes)</label>
+                  <Label className="block text-sm font-medium text-gray-700 mb-1.5">Visit Duration (minutes)</Label>
                   <select
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
                     value={intakeData.visitDuration ?? ''}
@@ -990,7 +989,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   'Vital signs monitoring',
                   'Wound care',
                 ].map((task) => (
-                  <label
+                  <Label
                     key={task}
                     className="flex items-center gap-3 p-3.5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 cursor-pointer min-h-[48px] select-none transition-colors has-[:checked]:bg-blue-50 has-[:checked]:border-blue-300"
                   >
@@ -1001,7 +1000,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                       className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                     />
                     <span className="text-sm font-medium text-gray-800">{task}</span>
-                  </label>
+                  </Label>
                 ))}
               </div>
             </div>
@@ -1033,7 +1032,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </h3>
               <div className="flex flex-col sm:flex-row gap-4 md:gap-5 mb-4 md:mb-5">
                 <div className="w-full sm:max-w-xs flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Gender Preference</label>
+                  <Label className="block text-sm font-medium text-gray-700 mb-1.5">Gender Preference</Label>
                   <select
                     className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
                     value={intakeData.preferences?.gender ?? 'no-preference'}
@@ -1123,7 +1122,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 Schedule Start Date
               </h3>
               <div className="w-full sm:max-w-xs flex flex-col">
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">First Visit Date</label>
+                <Label className="block text-sm font-medium text-gray-700 mb-1.5">First Visit Date</Label>
                 <input
                   type="date"
                   className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
@@ -1184,7 +1183,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </h3>
 
               <div className="mb-4 p-4 md:p-5 bg-gray-50 rounded-xl border border-gray-200">
-                <label className="flex items-start gap-3.5 cursor-pointer select-none">
+                <Label className="flex items-start gap-3.5 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     className="h-5 w-5 mt-0.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 shrink-0"
@@ -1198,11 +1197,11 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                       scope, fees, and responsibilities.
                     </p>
                   </span>
-                </label>
+                </Label>
               </div>
 
               <div className="mb-4 p-4 md:p-5 bg-gray-50 rounded-xl border border-gray-200">
-                <label className="flex items-start gap-3.5 cursor-pointer select-none">
+                <Label className="flex items-start gap-3.5 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     className="h-5 w-5 mt-0.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 shrink-0"
@@ -1217,11 +1216,11 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                       healthcare operations.
                     </p>
                   </span>
-                </label>
+                </Label>
               </div>
 
               <div className="mb-4 p-4 md:p-5 bg-gray-50 rounded-xl border border-gray-200">
-                <label className="flex items-start gap-3.5 cursor-pointer select-none">
+                <Label className="flex items-start gap-3.5 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     className="h-5 w-5 mt-0.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 shrink-0"
@@ -1237,11 +1236,11 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                       for any services not covered by insurance.
                     </p>
                   </span>
-                </label>
+                </Label>
               </div>
 
               <div className="mb-4 p-4 md:p-5 bg-gray-50 rounded-xl border border-gray-200">
-                <label className="flex items-start gap-3.5 cursor-pointer select-none">
+                <Label className="flex items-start gap-3.5 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     className="h-5 w-5 mt-0.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 shrink-0"
@@ -1255,7 +1254,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                       for compliance with state and federal regulations.
                     </p>
                   </span>
-                </label>
+                </Label>
               </div>
             </div>
 
@@ -1264,9 +1263,9 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 Signature
               </h3>
               <div className="flex-1 min-w-0 flex flex-col mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <Label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Client/Representative Name
-                </label>
+                </Label>
                 <input
                   type="text"
                   className="w-full px-3 py-2.5 text-base md:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white box-border min-h-[44px]"
@@ -1502,31 +1501,25 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
 
         {/* Action Buttons */}
         <div className="w-full sm:w-auto flex flex-col-reverse sm:flex-row gap-3 order-1 sm:order-1 sm:contents">
-          <button
-            type="button"
+          <Button variant="ghost" type="button"
             className="w-full sm:w-auto px-6 py-3 border-2 border-blue-600 text-blue-600 rounded-lg font-semibold text-sm hover:bg-blue-50 active:bg-blue-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors min-h-[48px] sm:min-w-[120px] text-center cursor-pointer order-2 sm:order-1"
             onClick={handleBack}
-            disabled={currentStep === 1}
-          >
+            disabled={currentStep === 1}>
             ← Back
-          </button>
+          </Button>
 
           {currentStep < 7 ? (
-            <button
-              type="button"
+            <Button variant="ghost" type="button"
               className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg font-semibold text-sm shadow-sm transition-colors min-h-[48px] sm:min-w-[120px] text-center cursor-pointer order-1 sm:order-3"
-              onClick={handleNext}
-            >
+              onClick={handleNext}>
               Next →
-            </button>
+            </Button>
           ) : (
-            <button
-              type="button"
+            <Button type="button"
               className="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-lg font-semibold text-base shadow-md transition-colors min-h-[50px] sm:min-w-[200px] text-center cursor-pointer order-1 sm:order-3"
-              onClick={handleSubmit}
-            >
+              onClick={handleSubmit}>
               Submit & Create Client
-            </button>
+            </Button>
           )}
         </div>
       </div>
