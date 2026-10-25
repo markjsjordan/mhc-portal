@@ -36,7 +36,10 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { Card, Button, LoadingSpinner, ErrorMessage, Badge, DemoBadge } from '@/core/components';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card.js';
+import { Button } from '@/components/ui/button.js';
+import { Badge } from '@/components/ui/badge.js';
+import { LoadingSpinner, ErrorMessage, DemoBadge } from '@/core/components';
 import {
   useOperationalKPIs,
   useRevenueTrends,
@@ -178,15 +181,18 @@ export function ReportsPage() {
               variant="secondary"
               onClick={handleExportPDF}
               disabled={exportFormat === 'PDF'}
-              leftIcon={<Download className="h-5 w-5" />}
+              className="flex items-center gap-2"
             >
+              <Download className="h-4 w-4" />
               {exportFormat === 'PDF' ? 'Exporting...' : 'Export PDF'}
             </Button>
             <Button
+              variant="default"
               onClick={handleExportExcel}
               disabled={exportFormat === 'EXCEL'}
-              leftIcon={<Download className="h-5 w-5" />}
+              className="flex items-center gap-2"
             >
+              <Download className="h-4 w-4" />
               {exportFormat === 'EXCEL' ? 'Exporting...' : 'Export Excel'}
             </Button>
           </div>
@@ -194,7 +200,7 @@ export function ReportsPage() {
       </div>
 
       {/* Filters */}
-      <Card padding="md" className="mb-6">
+      <Card className="p-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
           <Filter className="h-5 w-5 text-gray-500" />
           <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
@@ -213,7 +219,7 @@ export function ReportsPage() {
         <div className="space-y-6">
           {/* Summary KPIs */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card padding="md">
+            <Card className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Revenue</p>
@@ -229,7 +235,7 @@ export function ReportsPage() {
               </div>
             </Card>
 
-            <Card padding="md">
+            <Card className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Visit Completion</p>
@@ -244,7 +250,7 @@ export function ReportsPage() {
               </div>
             </Card>
 
-            <Card padding="md">
+            <Card className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">EVV Compliance</p>
@@ -259,7 +265,7 @@ export function ReportsPage() {
               </div>
             </Card>
 
-            <Card padding="md">
+            <Card className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Active Caregivers</p>
@@ -276,12 +282,12 @@ export function ReportsPage() {
           </div>
 
           {/* Monthly Revenue by Payer Source */}
-          <Card padding="md">
-            <Card.Header
-              title="Monthly Revenue by Payer Source"
-              subtitle="Revenue breakdown by Medicaid, Medicare, and Private Pay"
-            />
-            <Card.Content>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-gray-900">Monthly Revenue by Payer Source</CardTitle>
+              <CardDescription>Revenue breakdown by Medicaid, Medicare, and Private Pay</CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Pie Chart */}
                 <div>
@@ -336,16 +342,16 @@ export function ReportsPage() {
                   </div>
                 </div>
               </div>
-            </Card.Content>
+            </CardContent>
           </Card>
 
           {/* Caregiver Utilization Rates */}
-          <Card padding="md">
-            <Card.Header
-              title="Caregiver Utilization Rates"
-              subtitle="Visits completed vs. capacity"
-            />
-            <Card.Content>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-gray-900">Caregiver Utilization Rates</CardTitle>
+              <CardDescription>Visits completed vs. capacity</CardDescription>
+            </CardHeader>
+            <CardContent>
               <ResponsiveContainer width="100%" height={400}>
                 <BarChart data={caregiverUtilizationData}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -368,16 +374,16 @@ export function ReportsPage() {
                   <strong>Target:</strong> 75-85%
                 </p>
               </div>
-            </Card.Content>
+            </CardContent>
           </Card>
 
           {/* Visit Completion Rates by Coordinator */}
-          <Card padding="md">
-            <Card.Header
-              title="Visit Completion Rates by Coordinator"
-              subtitle="Performance metrics for care coordinators"
-            />
-            <Card.Content>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-gray-900">Visit Completion Rates by Coordinator</CardTitle>
+              <CardDescription>Performance metrics for care coordinators</CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -420,11 +426,11 @@ export function ReportsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {coordinator.rate >= 90 ? (
-                            <Badge variant="success">Excellent</Badge>
+                            <Badge className="bg-green-100 text-green-800 border-transparent hover:bg-green-100">Excellent</Badge>
                           ) : coordinator.rate >= 85 ? (
-                            <Badge variant="default">Good</Badge>
+                            <Badge variant="secondary">Good</Badge>
                           ) : (
-                            <Badge variant="warning">Needs Improvement</Badge>
+                            <Badge variant="destructive">Needs Improvement</Badge>
                           )}
                         </td>
                       </tr>
@@ -432,16 +438,16 @@ export function ReportsPage() {
                   </tbody>
                 </table>
               </div>
-            </Card.Content>
+            </CardContent>
           </Card>
 
           {/* Compliance Metrics */}
-          <Card padding="md">
-            <Card.Header
-              title="Compliance Metrics"
-              subtitle="EVV, documentation, credentials, and training compliance"
-            />
-            <Card.Content>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-gray-900">Compliance Metrics</CardTitle>
+              <CardDescription>EVV, documentation, credentials, and training compliance</CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-4">
                 {complianceMetricsData.map((metric) => (
                   <div key={metric.metric}>
@@ -484,16 +490,16 @@ export function ReportsPage() {
                   </div>
                 </div>
               </div>
-            </Card.Content>
+            </CardContent>
           </Card>
 
           {/* Client Satisfaction Trends */}
-          <Card padding="md">
-            <Card.Header
-              title="Client Satisfaction Trends"
-              subtitle="Monthly satisfaction scores over time"
-            />
-            <Card.Content>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-gray-900">Client Satisfaction Trends</CardTitle>
+              <CardDescription>Monthly satisfaction scores over time</CardDescription>
+            </CardHeader>
+            <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={clientSatisfactionTrendsData}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -534,7 +540,7 @@ export function ReportsPage() {
                   </p>
                 </div>
               </div>
-            </Card.Content>
+            </CardContent>
           </Card>
         </div>
       )}

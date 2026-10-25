@@ -11,7 +11,9 @@
 
 import React, { useState } from 'react';
 import { useCompliance } from '@/core/hooks';
-import { Card, CardContent, Button, EmptyState, LoadingSpinner } from '@/core/components';
+import { EmptyState, LoadingSpinner } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent } from '@/components/ui/card.js';
 import {
   AlertCircle,
   AlertTriangle,
@@ -286,7 +288,7 @@ export const ComplianceDashboard: React.FC = () => {
         title="Failed to Load Compliance Data"
         description={error}
         action={
-          <Button onClick={refresh}>
+          <Button variant="outline" onClick={refresh}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Retry
           </Button>
@@ -320,6 +322,7 @@ export const ComplianceDashboard: React.FC = () => {
             {isScanning ? 'Scanning...' : 'Run Scan'}
           </Button>
           <Button
+            variant="default"
             onClick={handleGenerateReport}
             disabled={isGeneratingReport}
           >

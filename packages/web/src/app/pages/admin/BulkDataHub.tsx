@@ -31,7 +31,10 @@ import {
   Lock,
   Check,
 } from 'lucide-react';
-import { Card, CardHeader, CardContent, Button, Badge } from '@/core/components';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card.js';
+import { Button } from '@/components/ui/button.js';
+import { Badge } from '@/components/ui/badge.js';
+import { Input } from '@/components/ui/input.js';
 
 type EntityType = 'clients' | 'caregivers';
 type ImportStep = 'upload' | 'mapping' | 'preview' | 'completed';
@@ -479,10 +482,10 @@ export const BulkDataHub: React.FC = () => {
           {/* STEP 1: UPLOAD */}
           {step === 'upload' && (
             <Card>
-              <CardHeader
-                title="Select Entity & Upload CSV"
-                subtitle="Import clients or caregivers from HHAeXchange, ClearCare, Alora, or standard CSV."
-              />
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold text-gray-900">Select Entity & Upload CSV</CardTitle>
+                <CardDescription>Import clients or caregivers from HHAeXchange, ClearCare, Alora, or standard CSV.</CardDescription>
+              </CardHeader>
               <CardContent className="space-y-6">
                 {/* Entity Selector */}
                 <div>
@@ -547,7 +550,7 @@ export const BulkDataHub: React.FC = () => {
                     Supports exports from HHAeXchange, ClearCare, Alora, or custom agency exports.
                   </p>
                   <Button
-                    variant="primary"
+                    variant="default"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Upload className="h-4 w-4 mr-2" />
@@ -576,10 +579,10 @@ export const BulkDataHub: React.FC = () => {
           {/* STEP 2: MAPPING */}
           {step === 'mapping' && (
             <Card>
-              <CardHeader
-                title="Column Mapping & Legacy Preset"
-                subtitle={`Map CSV columns from "${selectedFile?.name}" to MHC Portal ${entityType} fields.`}
-              />
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold text-gray-900">Column Mapping & Legacy Preset</CardTitle>
+                <CardDescription>Map CSV columns from &quot;{selectedFile?.name}&quot; to MHC Portal {entityType} fields.</CardDescription>
+              </CardHeader>
               <CardContent className="space-y-6">
                 {/* Preset Banner */}
                 <div className="flex items-center justify-between p-4 rounded-lg bg-blue-50 border border-blue-200">
@@ -590,7 +593,7 @@ export const BulkDataHub: React.FC = () => {
                       <span className="text-blue-800 font-medium">{detectedPreset} Format</span>
                     </div>
                   </div>
-                  <Badge variant="info">Auto-Mapped {Object.keys(mappings).length} Columns</Badge>
+                  <Badge variant="outline" className="border-blue-300 text-blue-700 bg-blue-50">Auto-Mapped {Object.keys(mappings).length} Columns</Badge>
                 </div>
 
                 {/* Mapping Table */}
@@ -639,9 +642,9 @@ export const BulkDataHub: React.FC = () => {
                             </td>
                             <td className="px-4 py-3">
                               {currentTarget ? (
-                                <Badge variant="success">Mapped</Badge>
+                                <Badge className="bg-green-100 text-green-800 border-transparent hover:bg-green-100">Mapped</Badge>
                               ) : (
-                                <Badge variant="default">Ignored</Badge>
+                                <Badge variant="secondary">Ignored</Badge>
                               )}
                             </td>
                           </tr>
@@ -657,7 +660,7 @@ export const BulkDataHub: React.FC = () => {
                     Back
                   </Button>
                   <Button
-                    variant="primary"
+                    variant="default"
                     disabled={isProcessing || Object.keys(mappings).length === 0}
                     onClick={handleRunValidationPreview}
                   >
@@ -681,10 +684,10 @@ export const BulkDataHub: React.FC = () => {
           {/* STEP 3: PREVIEW */}
           {step === 'preview' && previewResult && (
             <Card>
-              <CardHeader
-                title="Phase 1: Validation & Deduplication Preview"
-                subtitle="Review validated records, duplicates, and errors before committing to the database."
-              />
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold text-gray-900">Phase 1: Validation & Deduplication Preview</CardTitle>
+                <CardDescription>Review validated records, duplicates, and errors before committing to the database.</CardDescription>
+              </CardHeader>
               <CardContent className="space-y-6">
                 {/* Stats Summary Cards */}
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -801,11 +804,11 @@ export const BulkDataHub: React.FC = () => {
                             <td className="px-3 py-2 font-mono text-gray-500">{row.rowNumber}</td>
                             <td className="px-3 py-2">
                               {hasErrors ? (
-                                <Badge variant="error">Invalid</Badge>
+                                <Badge variant="destructive">Invalid</Badge>
                               ) : hasDup ? (
-                                <Badge variant="warning">Duplicate</Badge>
+                                <Badge className="bg-yellow-100 text-yellow-800 border-transparent hover:bg-yellow-100">Duplicate</Badge>
                               ) : (
-                                <Badge variant="success">Valid</Badge>
+                                <Badge className="bg-green-100 text-green-800 border-transparent hover:bg-green-100">Valid</Badge>
                               )}
                             </td>
                             <td className="px-3 py-2 font-mono font-medium text-gray-900">{idVal}</td>
@@ -840,7 +843,7 @@ export const BulkDataHub: React.FC = () => {
                     Back to Mappings
                   </Button>
                   <Button
-                    variant="primary"
+                    variant="default"
                     disabled={isProcessing || previewResult.validRows === 0}
                     onClick={handleConfirmAndCommit}
                   >
@@ -890,7 +893,7 @@ export const BulkDataHub: React.FC = () => {
 
                 <div className="pt-4 flex justify-center gap-3">
                   <Button
-                    variant="primary"
+                    variant="default"
                     onClick={() => {
                       setStep('upload');
                       setSelectedFile(null);
@@ -911,10 +914,12 @@ export const BulkDataHub: React.FC = () => {
       {/* TAB 2: REGULATORY AUDIT PACK EXPORT */}
       {activeTab === 'export' && (
         <Card>
-          <CardHeader
-            title="State Regulatory Audit Pack Export"
-            subtitle="Generate a comprehensive, immutable ZIP audit package for state licensing surveys (HHSC/AHCA), CMS Medicare/Medicaid audits, or accreditation reviews."
-          />
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-gray-900">State Regulatory Audit Pack Export</CardTitle>
+            <CardDescription>
+              Generate a comprehensive, immutable ZIP audit package for state licensing surveys (HHSC/AHCA), CMS Medicare/Medicaid audits, or accreditation reviews.
+            </CardDescription>
+          </CardHeader>
           <CardContent className="space-y-6">
             {/* Security Notice */}
             <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4 flex items-start gap-3">
@@ -924,7 +929,7 @@ export const BulkDataHub: React.FC = () => {
                   HIPAA Security Rule Audit Compliance (45 CFR § 164.312(b))
                 </div>
                 <div className="text-xs text-blue-800 leading-relaxed">
-                  Every regulatory audit pack generation is permanently logged with the requester's user ID, IP
+                  Every regulatory audit pack generation is permanently logged with the requester&apos;s user ID, IP
                   address, export timestamp, client count, and cryptographic manifest. The resulting archive contains
                   self-contained verification manifests to support state survey audit trails.
                 </div>
@@ -938,13 +943,13 @@ export const BulkDataHub: React.FC = () => {
                   Audit Survey Start Date
                 </label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                  <input
+                  <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 z-10 pointer-events-none" />
+                  <Input
                     id={auditPackStartDateId}
                     type="date"
                     value={exportStartDate}
                     onChange={(e) => setExportStartDate(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500"
+                    className="pl-9"
                   />
                 </div>
               </div>
@@ -954,13 +959,13 @@ export const BulkDataHub: React.FC = () => {
                   Audit Survey End Date
                 </label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                  <input
+                  <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 z-10 pointer-events-none" />
+                  <Input
                     id={auditPackEndDateId}
                     type="date"
                     value={exportEndDate}
                     onChange={(e) => setExportEndDate(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500"
+                    className="pl-9"
                   />
                 </div>
               </div>
@@ -1035,7 +1040,7 @@ export const BulkDataHub: React.FC = () => {
             {/* Action Button */}
             <div className="pt-4 border-t flex justify-end">
               <Button
-                variant="primary"
+                variant="default"
                 disabled={isExporting}
                 onClick={handleGenerateAuditPack}
               >
