@@ -97,14 +97,16 @@ describe('EditVisitModal', () => {
     expect(screen.getByDisplayValue('Patient requires transfer assistance.')).toBeInTheDocument();
   });
 
-  it('calculates end time dynamically when duration changes', () => {
+  it('calculates end time dynamically when duration changes', async () => {
     renderModal();
 
     // Initial end time is 21:10 (18:10 + 180 mins)
     expect(screen.getByText('21:10')).toBeInTheDocument();
 
     const durationSelect = screen.getByLabelText(/Duration/i);
-    fireEvent.change(durationSelect, { target: { value: '60' } });
+    fireEvent.click(durationSelect);
+    const option = await screen.findByRole('option', { name: /^60 minutes/i });
+    fireEvent.click(option);
 
     // New calculated end time should be 19:10 (18:10 + 60 mins)
     expect(screen.getByText('19:10')).toBeInTheDocument();
@@ -129,7 +131,9 @@ describe('EditVisitModal', () => {
     fireEvent.change(startInput, { target: { value: '09:00' } });
 
     const durationSelect = screen.getByLabelText(/Duration/i);
-    fireEvent.change(durationSelect, { target: { value: '120' } });
+    fireEvent.click(durationSelect);
+    const option = await screen.findByRole('option', { name: /120 minutes/i });
+    fireEvent.click(option);
 
     const saveButton = screen.getByTestId('save-visit-button');
     fireEvent.click(saveButton);
