@@ -34,11 +34,14 @@ export type StateCode = 'TX' | 'FL';
 /**
  * Validation result
  */
-export type ValidationResult =
+export type CaptureTimeValidationResult =
   | { status: 'ok'; reasons?: string[] }
   | { status: 'outOfGrace'; reasons: string[] }
   | { status: 'outOfGeofence'; reasons: string[] }
   | { status: 'flagged'; reasons: string[] };
+
+// Backwards-compatible alias
+export type ValidationResult = CaptureTimeValidationResult;
 
 /**
  * Clock event input
@@ -103,7 +106,7 @@ const STATE_RULES: Record<StateCode, StateRules> = {
  * @param input - Clock event to validate
  * @returns Validation result with status and reasons
  */
-export function validateCaptureTimeClockEvent(input: ClockEventInput): ValidationResult {
+export function validateCaptureTimeClockEvent(input: ClockEventInput): CaptureTimeValidationResult {
   const reasons: string[] = [];
 
   // Validate state

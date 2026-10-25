@@ -505,6 +505,89 @@ describe('POST /sync/push - Idempotent Capture-Time EVV', () => {
     );
   });
 
+  it('should validate capture-time geofence and flag conflict without dropping visit mutation', async () => {
+    const clientMutationId = 'mutation-out-of-geofence';
+    const scheduledStart = new Date(FIXED_CAPTURE_TIME.getTime());
+
+    mockReq.body = {
+      deviceId: 'device-abc',
+      mutations: [
+        {
+          clientMutationId,
+          entityType: 'VISIT',
+          entityId: 'visit-geo-flag',
+          operation: 'UPDATE',
+          data: {
+            status: 'IN_PROGRESS',
+            actualStart: FIXED_CAPTURE_TIME.toISOString(),
+            distanceFromVisitMeters: 250, // Beyond TX 100m + 50m tolerance + 15m GPS = 165m
+            state: 'TX',
+          },
+          capturedAt: FIXED_CAPTURE_TIME.toISOString(),
+          capturedOffline: true,
+          gps: {
+            latitude: 30.2672,
+            longitude: -97.7431,
+            accuracy: 15,
+          },
+        },
+      ],
+    };
+
+    (mockDb as any).__setQueryResult('visit_lookup', [
+      {
+        id: 'visit-geo-flag',
+        state: 'TX',
+        scheduled_start_time: scheduledStart.toISOString(),
+      },
+    ]);
+
+    const handler = router.stack.find((layer: any) =>
+      layer.route?.path === '/sync/push' && layer.route?.methods?.post
+    )?.route?.stack[0]?.handle;
+
+    if (!handler) {
+      throw new Error('POST /sync/push handler not found');
+    }
+
+    await handler(mockReq as Request, mockRes as Response, vi.fn());
+
+    expect(jsonSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({
+          conflictCount: 1,
+          results: [
+            expect.objectContaining({
+              success: true,
+              clientMutationId,
+              entityType: 'VISIT',
+              entityId: 'visit-geo-flag',
+              conflict: expect.objectContaining({
+                reason: 'OUT_OF_GEOFENCE',
+                details: expect.arrayContaining([
+                  expect.stringContaining('exceeds effective geofence radius'),
+                ]),
+              }),
+            }),
+          ],
+        }),
+      })
+    );
+
+    // Verify verification_data records FLAGGED status
+    const updateVisitCalls = (mockDb.query as ReturnType<typeof vi.fn>).mock.calls.filter(
+      (call) => typeof call[0] === 'string' && call[0].includes('UPDATE visits')
+    );
+    const verificationCall = updateVisitCalls.find((call) =>
+      call[0].includes('verification_data')
+    );
+    expect(verificationCall).toBeDefined();
+    expect(verificationCall?.[1]).toEqual(
+      expect.arrayContaining(['FLAGGED'])
+    );
+  });
+
   it('should handle batch mutations with mixed success/conflict/error', async () => {
     mockReq.body = {
       deviceId: 'device-abc',

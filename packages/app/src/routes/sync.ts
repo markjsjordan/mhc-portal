@@ -6,6 +6,11 @@
 
 import { Router, type Request, type Response } from 'express';
 import { Database, AuthMiddleware } from '@folkcare/core';
+import {
+  validateCaptureTimeClockEvent,
+  type StateCode,
+  type CaptureTimeValidationResult,
+} from '@folkcare/time-tracking-evv';
 import { syncLimiter } from '../middleware/rate-limit.js';
 
 /**
@@ -23,6 +28,7 @@ interface SyncMutation {
     latitude: number;
     longitude: number;
     accuracy: number; // meters
+    distanceMeters?: number; // Distance from visit service address in meters
   };
 }
 
@@ -37,6 +43,8 @@ interface SyncMutationResult {
   conflict?: {
     reason: string;
     serverVersion?: Record<string, unknown>;
+    details?: string[];
+    validation?: unknown;
   };
   error?: string;
 }
@@ -326,11 +334,33 @@ export function createSyncRouter(db: Database): Router {
                 continue;
               }
 
-              // Validate geofence if GPS provided (use capture timestamp for validation)
-              if (gps && data.status === 'IN_PROGRESS') {
-                // This is where we would validate against state-specific geofence rules
-                // For now, just store the GPS data with the EVV event
-                // TODO: Implement geofence validation using evv_state_validation_rules
+              // Validate geofence & grace period if GPS provided (evaluate against capture timestamp)
+              let validationResult: CaptureTimeValidationResult | undefined;
+              if (gps && (data.status === 'IN_PROGRESS' || data.status === 'COMPLETED')) {
+                const visitRecord = existing.rows[0] as Record<string, unknown>;
+                const stateRaw = (data.state as string) || (visitRecord.state as string) || 'TX';
+                const state: StateCode = stateRaw === 'FL' ? 'FL' : 'TX';
+                const distanceMeters =
+                  typeof data.distanceFromVisitMeters === 'number'
+                    ? data.distanceFromVisitMeters
+                    : typeof gps.distanceMeters === 'number'
+                    ? gps.distanceMeters
+                    : 0;
+
+                const scheduledStart =
+                  visitRecord.scheduled_start_time
+                    ? new Date(visitRecord.scheduled_start_time as string | number)
+                    : data.scheduledStartTime
+                    ? new Date(data.scheduledStartTime as string | number)
+                    : undefined;
+
+                validationResult = validateCaptureTimeClockEvent({
+                  captureTimestamp,
+                  state,
+                  gpsAccuracyMeters: gps.accuracy ?? 0,
+                  distanceFromVisitMeters: distanceMeters,
+                  scheduledStartTime: scheduledStart,
+                });
               }
 
               // Update visit - use captureTimestamp for actual_start/actual_end
@@ -367,16 +397,18 @@ export function createSyncRouter(db: Database): Router {
                 );
               }
 
-              // Store EVV event with GPS and capture timestamp
+              // Store EVV event with GPS, capture timestamp, and capture-time validation results
               if (gps && (data.status === 'IN_PROGRESS' || data.status === 'COMPLETED')) {
-                // Store verification data
+                // Store verification data with validation status (never drop the EVV event)
                 await db.query(
                   `UPDATE visits 
                    SET verification_data = jsonb_build_object(
                      'gps', $2::jsonb,
                      'capturedAt', $3,
                      'capturedOffline', $4,
-                     'deviceId', $5
+                     'deviceId', $5,
+                     'validation', $6::jsonb,
+                     'complianceStatus', $7
                    )
                    WHERE id = $1`,
                   [
@@ -385,18 +417,57 @@ export function createSyncRouter(db: Database): Router {
                     captureTimestamp.toISOString(),
                     capturedOffline ?? false,
                     deviceId,
+                    JSON.stringify(validationResult ?? { status: 'ok' }),
+                    validationResult && validationResult.status !== 'ok' ? 'FLAGGED' : 'COMPLIANT',
                   ]
                 );
               }
 
+              const hasConflict = !!(validationResult && validationResult.status !== 'ok');
+              const conflictReason =
+                validationResult?.status === 'outOfGeofence'
+                  ? 'OUT_OF_GEOFENCE'
+                  : validationResult?.status === 'outOfGrace'
+                  ? 'OUT_OF_GRACE'
+                  : 'VALIDATION_FLAGGED';
+              const conflictReasons =
+                hasConflict && validationResult && 'reasons' in validationResult
+                  ? validationResult.reasons
+                  : [];
+
               await db.query(
                 `UPDATE sync_metadata 
-                 SET sync_status = 'SYNCED', updated_at = NOW()
+                 SET sync_status = $2,
+                     conflict_data = $3::jsonb,
+                     updated_at = NOW()
                  WHERE change_hash = $1`,
-                [clientMutationId]
+                [
+                  clientMutationId,
+                  hasConflict ? 'CONFLICT' : 'SYNCED',
+                  hasConflict
+                    ? JSON.stringify({
+                        reason: conflictReason,
+                        details: conflictReasons,
+                        validation: validationResult,
+                      })
+                    : null,
+                ]
               );
 
-              results.push({ success: true, clientMutationId, entityType, entityId });
+              results.push({
+                success: true,
+                clientMutationId,
+                entityType,
+                entityId,
+                ...(hasConflict
+                  ? {
+                      conflict: {
+                        reason: conflictReason,
+                        details: conflictReasons,
+                      },
+                    }
+                  : {}),
+              });
             } else {
               // Unsupported operation/entity type
               await db.query(
