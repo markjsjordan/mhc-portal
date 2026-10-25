@@ -31,6 +31,7 @@ import { securityHeaders } from './middleware/security-headers';
 import { configureCsrfProtection } from './middleware/csrf';
 import { generalApiLimiter } from './middleware/rate-limit';
 import { demoReadOnlyMiddleware } from './middleware/demo-read-only';
+import { dataEgressControl, restrictReferrerPolicy, validateExternalServiceConfig } from './middleware/data-egress-control';
 import { initializeDatabase, getDatabase } from '@folkcare/core';
 import { initCacheService } from '@folkcare/core/service/cache.service';
 import { setupRoutes } from './routes/index';
@@ -132,6 +133,12 @@ function setupMiddleware(): void {
 
   // Additional security headers (complements helmet)
   app.use(securityHeaders);
+  
+  // HIPAA-005: Third-party data egress control
+  app.use(dataEgressControl);
+  
+  // HIPAA-005: Strict referrer policy to prevent PHI leakage
+  app.use(restrictReferrerPolicy);
 
   // CORS - restrict to allowed origins in production
   const allowedOrigins = process.env['CORS_ORIGIN']?.split(',').map(o => o.trim()).filter(Boolean) ?? [];
@@ -257,6 +264,10 @@ async function setupApiRoutes(): Promise<void> {
  */
 export async function createApp(): Promise<express.Express> {
   console.log(`Initializing MHC Portal API (${NODE_ENV})`);
+  
+  // HIPAA-005: Validate external service configurations on startup
+  validateExternalServiceConfig();
+  
   console.log('Environment variables:', {
     DB_HOST: process.env['DB_HOST'],
     DB_PORT: process.env['DB_PORT'],
