@@ -1,7 +1,7 @@
 /**
  * JWT Utilities Tests
  */
-/* eslint-disable sonarjs/hardcoded-secret-signatures -- test file uses intentional fake secrets */
+/* eslint-disable security/detect-non-literal-fs-filename -- test file uses intentional fake secrets */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { sign } from 'jsonwebtoken';
