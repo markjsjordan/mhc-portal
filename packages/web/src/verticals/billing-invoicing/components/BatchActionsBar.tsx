@@ -8,7 +8,7 @@ import {
   FileSpreadsheet,
   ChevronDown,
 } from 'lucide-react';
-import { Button } from '@/core/components';
+import { Button } from '@/components/ui/button';
 
 interface BatchActionsBarProps {
   onGenerateInvoices: () => void;
@@ -68,10 +68,10 @@ export const BatchActionsBar: React.FC<BatchActionsBarProps> = ({
         <Button
           onClick={onGenerateInvoices}
           disabled={isGenerating || verifiedReadyCount === 0}
-          leftIcon={<Sparkles className="h-4 w-4 text-yellow-400" />}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm whitespace-nowrap"
+          className="whitespace-nowrap text-xs"
           title={`Generate invoices for ${verifiedReadyCount} EVV-verified visits. Visits with missing EVV are blocked.`}
         >
+          <Sparkles className="h-4 w-4 mr-1.5 text-yellow-400" />
           {isGenerating ? 'Validating & Invoicing...' : `Generate Invoices (${verifiedReadyCount} Verified)`}
         </Button>
 
@@ -80,11 +80,11 @@ export const BatchActionsBar: React.FC<BatchActionsBarProps> = ({
           <Button
             variant="outline"
             onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
-            rightIcon={<ChevronDown className="h-3.5 w-3.5" />}
-            leftIcon={<Download className="h-4 w-4 text-gray-600" />}
-            className="text-xs font-semibold border-gray-300 text-gray-700 hover:bg-gray-50 whitespace-nowrap"
+            className="text-xs whitespace-nowrap"
           >
+            <Download className="h-4 w-4 mr-1.5 text-muted-foreground" />
             Export Claims
+            <ChevronDown className="h-3.5 w-3.5 ml-1.5" />
           </Button>
 
           {exportDropdownOpen && (

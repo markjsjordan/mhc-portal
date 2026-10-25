@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card } from '@/core/components';
+import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrency } from '../utils';
 import type { Deduction } from '../types';
 
@@ -37,7 +37,7 @@ export const DeductionsList: React.FC<DeductionsListProps> = ({ deductions }) =>
 
   return (
     <Card>
-      <div className="p-6">
+      <CardContent className="p-6">
         <h2 className="text-xl font-bold mb-4">Other Deductions</h2>
 
         {Object.entries(groupedDeductions).map(([category, categoryDeductions]) => (
@@ -66,31 +66,22 @@ export const DeductionsList: React.FC<DeductionsListProps> = ({ deductions }) =>
                       </div>
                     )}
                   </div>
-                  <div className="text-right">
-                    <span className="font-semibold text-red-600">
-                      -{formatCurrency(deduction.amount)}
-                    </span>
-                    {deduction.employerMatch && deduction.employerMatch > 0 && (
-                      <div className="text-xs text-green-600">
-                        +{formatCurrency(deduction.employerMatch)} match
-                      </div>
-                    )}
-                  </div>
+                  <span className="font-semibold text-red-600">
+                    -{formatCurrency(deduction.amount)}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
         ))}
 
-        {totalDeductions > 0 && (
-          <div className="flex justify-between items-center pt-4 border-t-2 border-gray-300 mt-4">
-            <span className="text-lg font-bold">Total Other Deductions</span>
-            <span className="text-lg font-bold text-red-600">
-              -{formatCurrency(totalDeductions)}
-            </span>
-          </div>
-        )}
-      </div>
+        <div className="flex justify-between items-center pt-4 border-t-2 border-gray-300 mt-4">
+          <span className="text-lg font-bold">Total Other Deductions</span>
+          <span className="text-lg font-bold text-red-600">
+            -{formatCurrency(totalDeductions)}
+          </span>
+        </div>
+      </CardContent>
     </Card>
   );
 };

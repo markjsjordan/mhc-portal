@@ -10,7 +10,10 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Button, LoadingSpinner, ErrorMessage } from '@/core/components';
+import { LoadingSpinner, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { usePermissions } from '@/core/hooks';
 import {
   useClaimsQueue,
@@ -171,19 +174,23 @@ export const BillingDashboard: React.FC = () => {
     setExportModalOpen(true);
   };
 
-  if (isLoadingClaims && activeViewTab === 'claims') {
+  if (isLoadingClaims && !claimsQueueData) {
     return (
-      <div className="flex justify-center items-center py-20">
+      <div className="flex justify-center items-center py-16">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
 
-  if (claimsError && activeViewTab === 'claims') {
+  if (claimsError && !claimsQueueData) {
     return (
       <ErrorMessage
-        message={(claimsError as Error).message || 'Failed to load billing & claims queue'}
-        retry={() => { refetchClaims().catch((err: unknown) => { toast.error(billingErrorMessage(err, 'Failed to refresh claims queue')); }); }}
+        message={billingErrorMessage(claimsError, 'Failed to load claims queue')}
+        retry={() => {
+          refetchClaims().catch((err: unknown) => {
+            toast.error(billingErrorMessage(err, 'Failed to refresh claims'));
+          });
+        }}
       />
     );
   }
@@ -195,10 +202,10 @@ export const BillingDashboard: React.FC = () => {
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl font-bold text-gray-900">Billing & Claims Dashboard</h1>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+            <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200 flex items-center gap-1 font-bold">
               <FileCheck2 className="h-3.5 w-3.5 text-blue-600" />
               EVV Gate Active
-            </span>
+            </Badge>
           </div>
           <p className="text-sm text-gray-500 mt-1">
             21st Century Cures Act compliance validation, electronic 837P/CMS-1500 claims queue, and invoice generation.
@@ -208,20 +215,21 @@ export const BillingDashboard: React.FC = () => {
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
+            size="sm"
             onClick={() => {
               Promise.all([refetchClaims(), refetchInvoices()]).catch((err: unknown) => {
                 toast.error(billingErrorMessage(err, 'Failed to refresh billing data'));
               });
             }}
-            leftIcon={<RefreshCw className="h-4 w-4" />}
-            className="text-xs"
           >
+            <RefreshCw className="h-4 w-4 mr-1.5" />
             Refresh
           </Button>
 
           {can('billing:write') && (
             <Link to="/billing/new">
-              <Button leftIcon={<Plus className="h-4 w-4" />} className="text-xs">
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-1.5" />
                 New Invoice
               </Button>
             </Link>
@@ -272,9 +280,9 @@ export const BillingDashboard: React.FC = () => {
         >
           <Layers className="h-4 w-4" />
           <span>Claims Queue & EVV Verification</span>
-          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-800">
+          <Badge variant="secondary" className="px-1.5 py-0.2 text-[10px] font-bold bg-blue-100 text-blue-800">
             {claims.length}
-          </span>
+          </Badge>
         </button>
 
         <button
@@ -287,9 +295,9 @@ export const BillingDashboard: React.FC = () => {
         >
           <Receipt className="h-4 w-4" />
           <span>Generated Invoices</span>
-          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-gray-100 text-gray-700">
+          <Badge variant="secondary" className="px-1.5 py-0.2 text-[10px] font-bold bg-gray-100 text-gray-700">
             {invoiceData?.total ?? 0}
-          </span>
+          </Badge>
         </button>
       </div>
 
@@ -344,13 +352,15 @@ export const BillingDashboard: React.FC = () => {
               <LoadingSpinner size="md" />
             </div>
           ) : (invoiceData?.items ?? []).length === 0 ? (
-            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center text-gray-500">
-              <FileText className="h-10 w-10 mx-auto text-gray-300 mb-2" />
-              <p className="text-sm font-semibold text-gray-900">No invoices generated yet</p>
-              <p className="text-xs text-gray-500 mt-1">
-                Go to the Claims Queue and click &quot;Generate Invoices for Verified Visits&quot; to batch bill compliant visits.
-              </p>
-            </div>
+            <Card>
+              <CardContent className="p-12 text-center text-muted-foreground">
+                <FileText className="h-10 w-10 mx-auto text-gray-300 mb-2" />
+                <p className="text-sm font-semibold text-gray-900">No invoices generated yet</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Go to the Claims Queue and click &quot;Generate Invoices for Verified Visits&quot; to batch bill compliant visits.
+                </p>
+              </CardContent>
+            </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {(invoiceData?.items ?? []).map((invoice) => (
