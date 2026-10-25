@@ -11,7 +11,9 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/hooks';
-import { Card, CardHeader, CardContent, Button, EmptyState, LoadingSpinner, ErrorMessage } from '@/core/components';
+import { EmptyState, LoadingSpinner, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
 import {
   Users,
   Calendar,
@@ -54,8 +56,7 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, icon, change, trend, 
 
   return (
     <Card
-      padding="md"
-      className={`${onClick ? 'cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 active:scale-95' : ''}`}
+      className={`p-6 ${onClick ? 'cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 active:scale-95' : ''}`}
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
@@ -408,7 +409,7 @@ export const AdministratorDashboard: React.FC = () => {
         {!user?.roles?.includes('CAREGIVER') && (
           <Button
             onClick={() => setIsLoginAsOpen(true)}
-            variant="primary"
+            variant="default"
             size="sm"
             className="flex items-center gap-2"
           >
@@ -472,7 +473,9 @@ export const AdministratorDashboard: React.FC = () => {
 
       {/* Recent Activity */}
       <Card>
-        <CardHeader title="Recent System Activity" />
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-900">Recent System Activity</CardTitle>
+        </CardHeader>
         <CardContent>
           <EmptyState
             title="No recent activity"
@@ -480,7 +483,7 @@ export const AdministratorDashboard: React.FC = () => {
             icon={<Activity className="h-12 w-12" />}
             action={
               <Button
-                variant="primary"
+                variant="default"
                 size="sm"
                 onClick={() => navigate('/admin/activity')}
               >

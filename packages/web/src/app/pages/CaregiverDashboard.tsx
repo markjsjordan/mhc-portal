@@ -25,7 +25,9 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useIsMobile } from '@/core/hooks';
 import { useConnectionStatus } from '@/hooks';
-import { Card, CardHeader, CardContent, Button, EmptyState, DemoBadge } from '@/core/components';
+import { EmptyState, DemoBadge } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
 import { DataFreshness, StaleDataWarning } from '@/components/DataFreshness';
 import { NetworkStatusBanner } from '@/components/sync/NetworkStatusBanner';
 import {
@@ -136,7 +138,7 @@ const VisitCard: React.FC<VisitCardProps> = ({
   };
 
   return (
-    <Card padding="md" className={`border-2 ${styles.border} ${styles.bg} ${isOptimistic ? 'opacity-70' : ''}`}>
+    <Card className={`p-6 border-2 ${styles.border} ${styles.bg} ${isOptimistic ? 'opacity-70' : ''}`}>
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -206,7 +208,7 @@ const VisitCard: React.FC<VisitCardProps> = ({
         <div className={`flex ${isMobile ? 'flex-col' : 'flex-wrap'} gap-2 pt-2 border-t border-gray-200`}>
           {onCheckIn && status === 'upcoming' && (
             <Button
-              variant="primary"
+              variant="default"
               size={isMobile ? 'lg' : 'sm'}
               onClick={() => void handleCheckIn()}
               disabled={isProcessing}
@@ -218,7 +220,7 @@ const VisitCard: React.FC<VisitCardProps> = ({
           )}
           {onCheckOut && status === 'in-progress' && (
             <Button
-              variant="primary"
+              variant="default"
               size={isMobile ? 'lg' : 'sm'}
               onClick={() => void handleCheckOut()}
               disabled={isProcessing}
@@ -748,7 +750,7 @@ export const CaregiverDashboard: React.FC = () => {
           />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-          <Card padding="md">
+          <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Today's Visits</p>
@@ -759,7 +761,7 @@ export const CaregiverDashboard: React.FC = () => {
             </div>
           </Card>
 
-          <Card padding="md">
+          <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">This Week</p>
@@ -770,7 +772,7 @@ export const CaregiverDashboard: React.FC = () => {
             </div>
           </Card>
 
-          <Card padding="md">
+          <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Active Clients</p>
@@ -853,7 +855,7 @@ export const CaregiverDashboard: React.FC = () => {
             ))
           ) : (
             <Card>
-              <CardContent>
+              <CardContent className="pt-6">
                 <EmptyState
                   title="No visits scheduled today"
                   description="Enjoy your day off! Check back tomorrow for your schedule."
@@ -904,7 +906,9 @@ export const CaregiverDashboard: React.FC = () => {
 
       {/* Quick Actions */}
       <Card>
-        <CardHeader title="Quick Actions" />
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-900">Quick Actions</CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Button

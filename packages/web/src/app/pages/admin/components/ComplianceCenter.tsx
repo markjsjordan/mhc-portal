@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card } from '@/core/components';
+import { Card } from '@/components/ui/card.js';
 import { Button } from '@/components/ui/button.js';
 import { Shield, FileText, Eye, Download, AlertTriangle, CheckCircle } from 'lucide-react';
 
@@ -187,7 +187,7 @@ export const ComplianceCenter: React.FC = () => {
 
       {/* Audit Trail Tab */}
       {activeTab === 'audit' && (
-        <Card padding="md">
+        <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">System Audit Trail</h3>
             <Button variant="ghost" size="sm" className="flex items-center gap-2">
@@ -256,7 +256,7 @@ export const ComplianceCenter: React.FC = () => {
 
       {/* HIPAA Access Logs Tab */}
       {activeTab === 'hipaa' && (
-        <Card padding="md">
+        <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">HIPAA PHI Access Logs</h3>
@@ -331,7 +331,7 @@ export const ComplianceCenter: React.FC = () => {
       {activeTab === 'reports' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {COMPLIANCE_REPORTS.map((report) => (
-            <Card key={report.id} padding="md" hover>
+            <Card key={report.id} className="p-6 transition-all hover:shadow-md">
               <div className="space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -364,10 +364,10 @@ export const ComplianceCenter: React.FC = () => {
                     <Eye className="h-4 w-4" />
                     View
                   </Button>
-                  <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-primary-700 bg-primary-50 rounded-md hover:bg-primary-100 transition-colors">
+                  <Button variant="outline" className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-colors">
                     <Download className="h-4 w-4" />
                     Download
-                  </button>
+                  </Button>
                 </div>
               </div>
             </Card>
