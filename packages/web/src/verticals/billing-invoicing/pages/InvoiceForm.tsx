@@ -12,16 +12,15 @@ import { z } from 'zod';
 import { ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
-  Button,
-  Card,
-  CardHeader,
-  CardContent,
-  Input,
   Select,
   FormField,
   LoadingSpinner,
   ErrorMessage,
 } from '@/core/components';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useInvoice, useCreateInvoice, useUpdateInvoice } from '../hooks';
 import { billingErrorMessage } from '../services/billing-api';
 import type { CreateInvoiceInput, UpdateInvoiceInput } from '../types';
@@ -123,7 +122,7 @@ export const InvoiceForm: React.FC = () => {
   const updateInvoice = useUpdateInvoice();
 
   const isPending = createInvoice.isPending || updateInvoice.isPending;
-  const isError = createInvoice.isError || updateInvoice.isError;
+  const isError = createInvoice.isError || updateInvoice.error;
   const error = createInvoice.error || updateInvoice.error;
 
   const {
@@ -232,7 +231,8 @@ export const InvoiceForm: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link to={isEditMode && id ? `/billing/${id}` : '/billing'}>
-          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
         </Link>
@@ -250,7 +250,9 @@ export const InvoiceForm: React.FC = () => {
       </div>
 
       <Card>
-        <CardHeader title="Invoice Details" />
+        <CardHeader>
+          <CardTitle>Invoice Details</CardTitle>
+        </CardHeader>
         <CardContent>
           <form onSubmit={(e) => { handleSubmit(onFormSubmit)(e).catch((err: unknown) => { toast.error(billingErrorMessage(err, 'Failed to save invoice')); }); }} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -299,11 +301,10 @@ export const InvoiceForm: React.FC = () => {
               label="Billable Item IDs"
               error={errors.billableItemIdsRaw?.message}
             >
-              <textarea
+              <Textarea
                 {...register('billableItemIdsRaw')}
                 rows={4}
                 placeholder="Enter billable item IDs, one per line or comma-separated"
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                 disabled={isEditMode}
                 data-testid="invoice-billable-item-ids"
               />
@@ -326,11 +327,10 @@ export const InvoiceForm: React.FC = () => {
             )}
 
             <FormField label="Notes" error={errors.notes?.message}>
-              <textarea
+              <Textarea
                 {...register('notes')}
                 rows={3}
                 placeholder="Optional notes"
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                 data-testid="invoice-notes"
               />
             </FormField>
@@ -350,8 +350,8 @@ export const InvoiceForm: React.FC = () => {
       </Card>
 
       {isPending && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background rounded-lg p-6 flex items-center gap-3 shadow-lg border">
             <LoadingSpinner size="lg" />
             <span className="text-lg font-medium">
               {isEditMode ? 'Saving Invoice...' : 'Creating Invoice...'}

@@ -2,7 +2,11 @@ import React from 'react';
 import toast from 'react-hot-toast';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download } from 'lucide-react';
-import { Button, LoadingSpinner, ErrorMessage, Card } from '@/core/components';
+import { LoadingSpinner, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { usePayStub, useDownloadPayStubPdf } from '../hooks';
 import { formatCurrency, formatDate } from '../utils';
 import { TaxSummary, DeductionsList } from '../components';
@@ -33,12 +37,12 @@ export const PayStubDetail: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      CALCULATED: 'bg-yellow-100 text-yellow-800',
-      APPROVED: 'bg-blue-100 text-blue-800',
-      PAID: 'bg-green-100 text-green-800',
-      VOID: 'bg-red-100 text-red-800',
+      CALCULATED: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+      APPROVED: 'bg-blue-100 text-blue-800 border-blue-300',
+      PAID: 'bg-green-100 text-green-800 border-green-300',
+      VOID: 'bg-red-100 text-red-800 border-red-300',
     };
-    return colors[status] ?? 'bg-gray-100 text-gray-800';
+    return colors[status] ?? 'bg-gray-100 text-gray-800 border-gray-300';
   };
 
   return (
@@ -48,8 +52,8 @@ export const PayStubDetail: React.FC = () => {
           <Button
             variant="outline"
             onClick={() => { Promise.resolve(navigate('/payroll/pay-stubs')).catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Navigation failed'); }); }}
-            leftIcon={<ArrowLeft className="h-4 w-4" />}
           >
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
           <div>
@@ -64,9 +68,9 @@ export const PayStubDetail: React.FC = () => {
           <Button
             variant="outline"
             onClick={() => downloadPdf.mutate(payStub.id)}
-            leftIcon={<Download className="h-4 w-4" />}
             disabled={downloadPdf.isPending}
           >
+            <Download className="h-4 w-4 mr-2" />
             Download PDF
           </Button>
         </div>
@@ -74,35 +78,37 @@ export const PayStubDetail: React.FC = () => {
 
       {/* Pay Period Info */}
       <Card>
-        <div className="p-6">
+        <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div>
-              <label className="text-sm text-gray-600">Pay Period</label>
-              <p className="text-lg font-semibold">
+              <Label className="text-sm text-gray-600">Pay Period</Label>
+              <p className="text-lg font-semibold mt-1">
                 {formatDate(payStub.payPeriodStartDate)} - {formatDate(payStub.payPeriodEndDate)}
               </p>
             </div>
             <div>
-              <label className="text-sm text-gray-600">Pay Date</label>
-              <p className="text-lg font-semibold">{formatDate(payStub.payDate)}</p>
+              <Label className="text-sm text-gray-600">Pay Date</Label>
+              <p className="text-lg font-semibold mt-1">{formatDate(payStub.payDate)}</p>
             </div>
             <div>
-              <label className="text-sm text-gray-600">Payment Method</label>
-              <p className="text-lg font-semibold">{payStub.paymentMethod.replace(/_/g, ' ')}</p>
+              <Label className="text-sm text-gray-600">Payment Method</Label>
+              <p className="text-lg font-semibold mt-1">{payStub.paymentMethod.replace(/_/g, ' ')}</p>
             </div>
             <div>
-              <label className="text-sm text-gray-600">Status</label>
-              <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(payStub.status)}`}>
-                {payStub.status}
-              </span>
+              <Label className="text-sm text-gray-600">Status</Label>
+              <div className="mt-1">
+                <Badge variant="outline" className={getStatusColor(payStub.status)}>
+                  {payStub.status}
+                </Badge>
+              </div>
             </div>
           </div>
-        </div>
+        </CardContent>
       </Card>
 
       {/* Earnings Summary */}
       <Card>
-        <div className="p-6">
+        <CardContent className="p-6">
           <h2 className="text-xl font-bold mb-4">Earnings</h2>
           <div className="space-y-3">
             <div className="flex justify-between items-center border-b pb-2">
@@ -158,7 +164,7 @@ export const PayStubDetail: React.FC = () => {
               <span className="text-lg font-bold">{formatCurrency(payStub.currentGrossPay)}</span>
             </div>
           </div>
-        </div>
+        </CardContent>
       </Card>
 
       {/* Tax Withholdings */}
@@ -170,8 +176,8 @@ export const PayStubDetail: React.FC = () => {
       )}
 
       {/* Net Pay */}
-      <Card>
-        <div className="p-6 bg-green-50">
+      <Card className="bg-green-50 border-green-200">
+        <CardContent className="p-6">
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Net Pay</h2>
@@ -186,34 +192,34 @@ export const PayStubDetail: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </CardContent>
       </Card>
 
       {/* Year-to-Date Summary */}
       <Card>
-        <div className="p-6">
+        <CardContent className="p-6">
           <h2 className="text-xl font-bold mb-4">Year-to-Date Totals</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <label className="text-sm text-gray-600">Hours</label>
-              <p className="text-lg font-semibold">{payStub.ytdHours.toFixed(2)}</p>
+              <Label className="text-sm text-gray-600">Hours</Label>
+              <p className="text-lg font-semibold mt-1">{payStub.ytdHours.toFixed(2)}</p>
             </div>
             <div>
-              <label className="text-sm text-gray-600">Gross Pay</label>
-              <p className="text-lg font-semibold">{formatCurrency(payStub.ytdGrossPay)}</p>
+              <Label className="text-sm text-gray-600">Gross Pay</Label>
+              <p className="text-lg font-semibold mt-1">{formatCurrency(payStub.ytdGrossPay)}</p>
             </div>
             <div>
-              <label className="text-sm text-gray-600">Total Tax</label>
-              <p className="text-lg font-semibold">
+              <Label className="text-sm text-gray-600">Total Tax</Label>
+              <p className="text-lg font-semibold mt-1">
                 {formatCurrency(payStub.ytdFederalTax + payStub.ytdStateTax + payStub.ytdSocialSecurity + payStub.ytdMedicare)}
               </p>
             </div>
             <div>
-              <label className="text-sm text-gray-600">Net Pay</label>
-              <p className="text-lg font-semibold">{formatCurrency(payStub.ytdNetPay)}</p>
+              <Label className="text-sm text-gray-600">Net Pay</Label>
+              <p className="text-lg font-semibold mt-1">{formatCurrency(payStub.ytdNetPay)}</p>
             </div>
           </div>
-        </div>
+        </CardContent>
       </Card>
     </div>
   );

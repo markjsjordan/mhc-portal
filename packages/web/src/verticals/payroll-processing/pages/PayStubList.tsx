@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Grid, List, Filter } from 'lucide-react';
-import { Button, LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
+import { LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePayStubs } from '../hooks';
 import { PayStubCard } from '../components';
 import type { PayStubSearchFilters } from '../types';
@@ -41,99 +46,107 @@ export const PayStubList: React.FC = () => {
             {payStubData?.total ?? 0} total pay stubs
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
-            leftIcon={<Filter className="h-4 w-4" />}
           >
+            <Filter className="h-4 w-4 mr-2" />
             Filters
           </Button>
-          <div className="flex border border-gray-300 rounded-md">
-            <button
+          <div className="flex border border-input rounded-md p-0.5 bg-background">
+            <Button
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="icon-sm"
               onClick={() => setViewMode('grid')}
-              className={`p-2 ${
-                viewMode === 'grid' ? 'bg-gray-100' : 'hover:bg-gray-50'
-              }`}
               aria-label="Grid view"
             >
-              <Grid className="h-5 w-5" />
-            </button>
-            <button
+              <Grid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="icon-sm"
               onClick={() => setViewMode('list')}
-              className={`p-2 ${
-                viewMode === 'list' ? 'bg-gray-100' : 'hover:bg-gray-50'
-              }`}
               aria-label="List view"
             >
-              <List className="h-5 w-5" />
-            </button>
+              <List className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>
 
       {showFilters && (
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4">Filters</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
-              </label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                value={filters.status ?? ''}
-                onChange={(e) =>
-                  setFilters({ ...filters, status: (e.target.value || undefined) as PayStubSearchFilters['status'] })
-                }
+        <Card>
+          <CardContent className="pt-6">
+            <h3 className="text-lg font-semibold mb-4">Filters</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="stub-status-filter" className="block text-sm font-medium text-gray-700 mb-2">
+                  Status
+                </Label>
+                <Select
+                  value={filters.status ?? 'ALL'}
+                  onValueChange={(val) =>
+                    setFilters({ ...filters, status: val === 'ALL' ? undefined : (val as PayStubSearchFilters['status']) })
+                  }
+                >
+                  <SelectTrigger id="stub-status-filter">
+                    <SelectValue placeholder="All Statuses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Statuses</SelectItem>
+                    <SelectItem value="CALCULATED">Calculated</SelectItem>
+                    <SelectItem value="APPROVED">Approved</SelectItem>
+                    <SelectItem value="PAID">Paid</SelectItem>
+                    <SelectItem value="VOID">Void</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="stub-payment-method-filter" className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Method
+                </Label>
+                <Select
+                  value={filters.paymentMethod ?? 'ALL'}
+                  onValueChange={(val) =>
+                    setFilters({ ...filters, paymentMethod: val === 'ALL' ? undefined : (val as PayStubSearchFilters['paymentMethod']) })
+                  }
+                >
+                  <SelectTrigger id="stub-payment-method-filter">
+                    <SelectValue placeholder="All Methods" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Methods</SelectItem>
+                    <SelectItem value="DIRECT_DEPOSIT">Direct Deposit</SelectItem>
+                    <SelectItem value="CHECK">Check</SelectItem>
+                    <SelectItem value="CASH">Cash</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="stub-start-date" className="block text-sm font-medium text-gray-700 mb-2">
+                  Start Date
+                </Label>
+                <Input
+                  id="stub-start-date"
+                  type="date"
+                  value={filters.startDate ?? ''}
+                  onChange={(e) =>
+                    setFilters({ ...filters, startDate: e.target.value || undefined })
+                  }
+                />
+              </div>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setFilters({})}
               >
-                <option value="">All Statuses</option>
-                <option value="CALCULATED">Calculated</option>
-                <option value="APPROVED">Approved</option>
-                <option value="PAID">Paid</option>
-                <option value="VOID">Void</option>
-              </select>
+                Clear Filters
+              </Button>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Payment Method
-              </label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                value={filters.paymentMethod ?? ''}
-                onChange={(e) =>
-                  setFilters({ ...filters, paymentMethod: (e.target.value || undefined) as PayStubSearchFilters['paymentMethod'] })
-                }
-              >
-                <option value="">All Methods</option>
-                <option value="DIRECT_DEPOSIT">Direct Deposit</option>
-                <option value="CHECK">Check</option>
-                <option value="CASH">Cash</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Start Date
-              </label>
-              <input
-                type="date"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                value={filters.startDate ?? ''}
-                onChange={(e) =>
-                  setFilters({ ...filters, startDate: e.target.value || undefined })
-                }
-              />
-            </div>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setFilters({})}
-            >
-              Clear Filters
-            </Button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {payStubs.length === 0 ? (

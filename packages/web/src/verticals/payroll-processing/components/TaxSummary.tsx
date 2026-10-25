@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card } from '@/core/components';
+import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrency } from '../utils';
 import type { PayStub } from '../types';
 
@@ -49,7 +49,7 @@ export const TaxSummary: React.FC<TaxSummaryProps> = ({ payStub }) => {
 
   return (
     <Card>
-      <div className="p-6">
+      <CardContent className="p-6">
         <h2 className="text-xl font-bold mb-4">Tax Withholdings</h2>
         <div className="space-y-3">
           {taxItems.map((item, index) => (
@@ -75,7 +75,7 @@ export const TaxSummary: React.FC<TaxSummaryProps> = ({ payStub }) => {
             </span>
           </div>
         </div>
-      </div>
+      </CardContent>
     </Card>
   );
 };
