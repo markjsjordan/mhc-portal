@@ -13,6 +13,7 @@
  */
 
 import React, { useState } from 'react';
+import { Button } from '@/components/ui/button.js';
 import {
   CheckCircle,
   XCircle,
@@ -135,9 +136,11 @@ export const MatchExplanationVisualization: React.FC<
           return (
             <div key={explanation.category} className="px-6 py-4">
               {/* Category Header */}
-              <button
+              <Button
+                type="button"
+                variant="ghost"
                 onClick={() => toggleCategory(explanation.category)}
-                className="w-full flex items-center justify-between hover:bg-gray-50 -mx-2 px-2 py-2 rounded-md transition-colors"
+                className="w-full h-auto flex items-center justify-between hover:bg-muted/50 -mx-2 px-2 py-2 rounded-md font-normal text-left"
               >
                 <div className="flex items-center gap-3">
                   <div className={`text-${categoryColor}-600`}>
@@ -165,7 +168,7 @@ export const MatchExplanationVisualization: React.FC<
                     <ChevronRight className="h-5 w-5 text-gray-400" />
                   )}
                 </div>
-              </button>
+              </Button>
 
               {/* Details */}
               {isExpanded && (

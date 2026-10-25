@@ -15,6 +15,14 @@ import { Button } from '@/components/ui/button.js';
 import { Input } from '@/components/ui/input.js';
 import { Label } from '@/components/ui/label.js';
 import { Textarea } from '@/components/ui/textarea.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
+import { cn } from '@/lib/utils.js';
 import type { FamilyMember, FamilyRelationship } from '@folkcare/family-engagement';
 import type { UUID } from '@folkcare/core/browser';
 
@@ -61,36 +69,45 @@ export const FamilySettings: React.FC = () => {
       {/* Tabs */}
       <div className="border-b border-gray-200 mb-6">
         <nav className="-mb-px flex space-x-8" aria-label="Settings">
-          <button
+          <Button
+            type="button"
+            variant="ghost"
             onClick={() => setActiveTab('profile')}
-            className={`${
+            className={cn(
+              "rounded-none border-b-2 py-4 px-1 text-sm font-medium transition-colors h-auto",
               activeTab === 'profile'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-            } whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors`}
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
+            )}
           >
             Profile Information
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
             onClick={() => setActiveTab('notifications')}
-            className={`${
+            className={cn(
+              "rounded-none border-b-2 py-4 px-1 text-sm font-medium transition-colors h-auto",
               activeTab === 'notifications'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-            } whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors`}
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
+            )}
           >
             Notifications
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
             onClick={() => setActiveTab('data')}
-            className={`${
+            className={cn(
+              "rounded-none border-b-2 py-4 px-1 text-sm font-medium transition-colors h-auto",
               activeTab === 'data'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-            } whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors`}
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
+            )}
           >
             Data & Privacy
-          </button>
+          </Button>
         </nav>
       </div>
 
@@ -209,25 +226,29 @@ const ProfileTab: React.FC<{ familyMember: FamilyMember }> = ({ familyMember }) 
 
         {/* Preferred Contact Method */}
         <div>
-          <Label className="block text-sm font-medium text-gray-700 mb-1">
+          <Label htmlFor="preferred-contact-method" className="block text-sm font-medium mb-1">
             Preferred Contact Method
           </Label>
           {isEditing ? (
-            <select
+            <Select
               value={formData.preferredContactMethod}
-              onChange={(e) =>
+              onValueChange={(val) =>
                 setFormData({
                   ...formData,
-                  preferredContactMethod: e.target.value as FamilyMember['preferredContactMethod'],
+                  preferredContactMethod: val as FamilyMember['preferredContactMethod'],
                 })
               }
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 bg-background"
             >
-              <option value="EMAIL">Email</option>
-              <option value="PHONE">Phone Call</option>
-              <option value="SMS">Text Message (SMS)</option>
-              <option value="PORTAL">Portal Only</option>
-            </select>
+              <SelectTrigger id="preferred-contact-method" className="w-full">
+                <SelectValue placeholder="Select contact method" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="EMAIL">Email</SelectItem>
+                <SelectItem value="PHONE">Phone Call</SelectItem>
+                <SelectItem value="SMS">Text Message (SMS)</SelectItem>
+                <SelectItem value="PORTAL">Portal Only</SelectItem>
+              </SelectContent>
+            </Select>
           ) : (
             <p className="text-sm text-gray-900 capitalize">
               {familyMember.preferredContactMethod.replace('_', ' ').toLowerCase()}
@@ -237,31 +258,35 @@ const ProfileTab: React.FC<{ familyMember: FamilyMember }> = ({ familyMember }) 
 
         {/* Relationship */}
         <div>
-          <Label className="block text-sm font-medium text-gray-700 mb-1">
+          <Label htmlFor="family-relationship" className="block text-sm font-medium mb-1">
             Relationship to Care Recipient
           </Label>
           {isEditing ? (
-            <select
+            <Select
               value={formData.relationship}
-              onChange={(e) =>
+              onValueChange={(val) =>
                 setFormData({
                   ...formData,
-                  relationship: e.target.value as FamilyRelationship,
+                  relationship: val as FamilyRelationship,
                 })
               }
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 bg-background"
             >
-              <option value="SPOUSE">Spouse</option>
-              <option value="PARENT">Parent</option>
-              <option value="CHILD">Child</option>
-              <option value="SIBLING">Sibling</option>
-              <option value="GRANDPARENT">Grandparent</option>
-              <option value="GRANDCHILD">Grandchild</option>
-              <option value="GUARDIAN">Legal Guardian</option>
-              <option value="POWER_OF_ATTORNEY">Power of Attorney</option>
-              <option value="HEALTHCARE_PROXY">Healthcare Proxy</option>
-              <option value="OTHER">Other</option>
-            </select>
+              <SelectTrigger id="family-relationship" className="w-full">
+                <SelectValue placeholder="Select relationship" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SPOUSE">Spouse</SelectItem>
+                <SelectItem value="PARENT">Parent</SelectItem>
+                <SelectItem value="CHILD">Child</SelectItem>
+                <SelectItem value="SIBLING">Sibling</SelectItem>
+                <SelectItem value="GRANDPARENT">Grandparent</SelectItem>
+                <SelectItem value="GRANDCHILD">Grandchild</SelectItem>
+                <SelectItem value="GUARDIAN">Legal Guardian</SelectItem>
+                <SelectItem value="POWER_OF_ATTORNEY">Power of Attorney</SelectItem>
+                <SelectItem value="HEALTHCARE_PROXY">Healthcare Proxy</SelectItem>
+                <SelectItem value="OTHER">Other</SelectItem>
+              </SelectContent>
+            </Select>
           ) : (
             <p className="text-sm text-gray-900 capitalize">
               {familyMember.relationship.replace(/_/g, ' ').toLowerCase()}

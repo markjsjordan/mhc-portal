@@ -10,7 +10,16 @@
 
 import React, { useState } from 'react';
 import { Search, Download, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, X, Clock } from 'lucide-react';
-import { Button } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 
 interface MatchHistoryRecord {
   id: string;
@@ -203,42 +212,51 @@ export const MatchHistoryTable: React.FC<MatchHistoryTableProps> = ({
           <Button
             variant="outline"
             size="sm"
-            leftIcon={<Download className="h-4 w-4" />}
             onClick={handleExport}
           >
+            <Download className="h-4 w-4 mr-2" />
             Export CSV
           </Button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-4 items-center">
         {/* Search */}
-        <div className="flex-1">
+        <div className="flex-1 w-full">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
+            <Label htmlFor="match-history-search" className="sr-only">Search</Label>
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="match-history-search"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by client, caregiver, or shift ID..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="pl-9"
             />
           </div>
         </div>
 
         {/* Outcome filter */}
-        <select
-          value={outcomeFilter}
-          onChange={(e) => setOutcomeFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option value="ALL">All Outcomes</option>
-          <option value="ACCEPTED">Accepted</option>
-          <option value="REJECTED">Rejected</option>
-          <option value="EXPIRED">Expired</option>
-          <option value="MANUAL_OVERRIDE">Manual Override</option>
-        </select>
+        <div className="w-full sm:w-56">
+          <Label htmlFor="match-outcome-filter" className="sr-only">Outcome</Label>
+          <Select
+            value={outcomeFilter}
+            onValueChange={(val) => setOutcomeFilter(val)}
+          >
+            <SelectTrigger id="match-outcome-filter" className="w-full">
+              <SelectValue placeholder="All Outcomes" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Outcomes</SelectItem>
+              <SelectItem value="ACCEPTED">Accepted</SelectItem>
+              <SelectItem value="REJECTED">Rejected</SelectItem>
+              <SelectItem value="EXPIRED">Expired</SelectItem>
+              <SelectItem value="MANUAL_OVERRIDE">Manual Override</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Table */}
@@ -325,12 +343,15 @@ export const MatchHistoryTable: React.FC<MatchHistoryTableProps> = ({
                         : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
                         onClick={() => setExpandedRow(expandedRow === record.id ? null : record.id)}
-                        className="text-blue-600 hover:text-blue-800 font-medium"
+                        className="p-0 h-auto font-medium"
                       >
                         {expandedRow === record.id ? 'Hide' : 'Details'}
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                   {expandedRow === record.id && (

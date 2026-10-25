@@ -11,6 +11,14 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.j
 import { Button } from '@/components/ui/button.js';
 import { Input } from '@/components/ui/input.js';
 import { Label } from '@/components/ui/label.js';
+import { Checkbox } from '@/components/ui/checkbox.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 
 interface NotificationSettingsProps {
   familyMemberId: string;
@@ -46,35 +54,42 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
         <div className="mb-6">
           <Label className="block text-sm font-semibold text-gray-900 mb-3">Notification Channels</Label>
           <div className="space-y-3">
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="channel-email"
                 checked={preferences.emailEnabled}
-                onChange={(e) =>
-                  setPreferences({ ...preferences, emailEnabled: e.target.checked })
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, emailEnabled: Boolean(checked) })
                 }
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="ml-3 text-sm text-gray-700">Email notifications</span>
-            </label>
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
+              <Label htmlFor="channel-email" className="text-sm font-normal text-gray-700 cursor-pointer">
+                Email notifications
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="channel-sms"
                 checked={preferences.smsEnabled}
-                onChange={(e) => setPreferences({ ...preferences, smsEnabled: e.target.checked })}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, smsEnabled: Boolean(checked) })
+                }
               />
-              <span className="ml-3 text-sm text-gray-700">SMS text messages</span>
-            </label>
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
+              <Label htmlFor="channel-sms" className="text-sm font-normal text-gray-700 cursor-pointer">
+                SMS text messages
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="channel-push"
                 checked={preferences.pushEnabled}
-                onChange={(e) => setPreferences({ ...preferences, pushEnabled: e.target.checked })}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, pushEnabled: Boolean(checked) })
+                }
               />
-              <span className="ml-3 text-sm text-gray-700">Push notifications (mobile app)</span>
-            </label>
+              <Label htmlFor="channel-push" className="text-sm font-normal text-gray-700 cursor-pointer">
+                Push notifications (mobile app)
+              </Label>
+            </div>
           </div>
         </div>
 
@@ -82,93 +97,103 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
         <div className="mb-6">
           <Label className="block text-sm font-semibold text-gray-900 mb-3">What to notify me about</Label>
           <div className="space-y-3">
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="type-visit-reminders"
                 checked={preferences.visitReminders}
-                onChange={(e) =>
-                  setPreferences({ ...preferences, visitReminders: e.target.checked })
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, visitReminders: Boolean(checked) })
                 }
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="ml-3 text-sm text-gray-700">Visit reminders</span>
-            </label>
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
+              <Label htmlFor="type-visit-reminders" className="text-sm font-normal text-gray-700 cursor-pointer">
+                Visit reminders
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="type-visit-completed"
                 checked={preferences.visitCompletedUpdates}
-                onChange={(e) =>
-                  setPreferences({ ...preferences, visitCompletedUpdates: e.target.checked })
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, visitCompletedUpdates: Boolean(checked) })
                 }
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="ml-3 text-sm text-gray-700">Visit completion updates</span>
-            </label>
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
+              <Label htmlFor="type-visit-completed" className="text-sm font-normal text-gray-700 cursor-pointer">
+                Visit completion updates
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="type-careplan-updates"
                 checked={preferences.careplanUpdates}
-                onChange={(e) =>
-                  setPreferences({ ...preferences, careplanUpdates: e.target.checked })
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, careplanUpdates: Boolean(checked) })
                 }
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="ml-3 text-sm text-gray-700">Care plan updates</span>
-            </label>
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
+              <Label htmlFor="type-careplan-updates" className="text-sm font-normal text-gray-700 cursor-pointer">
+                Care plan updates
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="type-incident-alerts"
                 checked={preferences.incidentAlerts}
-                onChange={(e) =>
-                  setPreferences({ ...preferences, incidentAlerts: e.target.checked })
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, incidentAlerts: Boolean(checked) })
                 }
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="ml-3 text-sm text-gray-700">Incident alerts (important)</span>
-            </label>
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
+              <Label htmlFor="type-incident-alerts" className="text-sm font-normal text-gray-700 cursor-pointer">
+                Incident alerts (important)
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="type-appointment-reminders"
                 checked={preferences.appointmentReminders}
-                onChange={(e) =>
-                  setPreferences({ ...preferences, appointmentReminders: e.target.checked })
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, appointmentReminders: Boolean(checked) })
                 }
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="ml-3 text-sm text-gray-700">Appointment reminders</span>
-            </label>
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
+              <Label htmlFor="type-appointment-reminders" className="text-sm font-normal text-gray-700 cursor-pointer">
+                Appointment reminders
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="type-message-notifications"
                 checked={preferences.messageNotifications}
-                onChange={(e) =>
-                  setPreferences({ ...preferences, messageNotifications: e.target.checked })
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, messageNotifications: Boolean(checked) })
                 }
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="ml-3 text-sm text-gray-700">New messages</span>
-            </label>
+              <Label htmlFor="type-message-notifications" className="text-sm font-normal text-gray-700 cursor-pointer">
+                New messages
+              </Label>
+            </div>
           </div>
         </div>
 
         {/* Digest Frequency */}
         <div className="mb-6">
-          <Label className="block text-sm font-semibold text-gray-900 mb-3">Delivery frequency</Label>
-          <select
+          <Label htmlFor="delivery-frequency" className="block text-sm font-semibold text-gray-900 mb-3">Delivery frequency</Label>
+          <Select
             value={preferences.digestFrequency}
-            onChange={(e) =>
+            onValueChange={(val) =>
               setPreferences({
                 ...preferences,
-                digestFrequency: e.target.value as NotificationPreferences['digestFrequency'],
+                digestFrequency: val as NotificationPreferences['digestFrequency'],
               })
             }
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 bg-background"
           >
-            <option value="IMMEDIATE">Send immediately</option>
-            <option value="DAILY">Daily digest</option>
-            <option value="WEEKLY">Weekly digest</option>
-            <option value="NONE">No notifications</option>
-          </select>
+            <SelectTrigger id="delivery-frequency" className="w-full">
+              <SelectValue placeholder="Select delivery frequency" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="IMMEDIATE">Send immediately</SelectItem>
+              <SelectItem value="DAILY">Daily digest</SelectItem>
+              <SelectItem value="WEEKLY">Weekly digest</SelectItem>
+              <SelectItem value="NONE">No notifications</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Quiet Hours */}
@@ -176,8 +201,9 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
           <Label className="block text-sm font-semibold text-gray-900 mb-3">Quiet hours (optional)</Label>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="block text-xs text-gray-600 mb-1">From</Label>
+              <Label htmlFor="quiet-hours-start" className="block text-xs text-gray-600 mb-1">From</Label>
               <Input
+                id="quiet-hours-start"
                 type="time"
                 value={preferences.quietHoursStart || ''}
                 onChange={(e) =>
@@ -187,8 +213,9 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
               />
             </div>
             <div>
-              <Label className="block text-xs text-gray-600 mb-1">To</Label>
+              <Label htmlFor="quiet-hours-end" className="block text-xs text-gray-600 mb-1">To</Label>
               <Input
+                id="quiet-hours-end"
                 type="time"
                 value={preferences.quietHoursEnd || ''}
                 onChange={(e) => setPreferences({ ...preferences, quietHoursEnd: e.target.value })}

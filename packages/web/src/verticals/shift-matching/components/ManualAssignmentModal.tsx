@@ -10,7 +10,12 @@
 
 import React, { useState } from 'react';
 import { Search, AlertTriangle, Info, X, CheckCircle } from 'lucide-react';
-import { Button, LoadingSpinner } from '@/core/components';
+import { LoadingSpinner } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { Textarea } from '@/components/ui/textarea.js';
+import { cn } from '@/lib/utils.js';
 import type { MatchCandidate, OpenShift } from '../types';
 import toast from 'react-hot-toast';
 
@@ -80,12 +85,16 @@ export const ManualAssignmentModal: React.FC<ManualAssignmentModalProps> = ({
               {new Date(shift.scheduledDate).toLocaleDateString()} • {shift.startTime} - {shift.endTime}
             </p>
           </div>
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground"
+            aria-label="Close"
           >
-            <X className="h-6 w-6" />
-          </button>
+            <X className="h-5 w-5" />
+          </Button>
         </div>
 
         {/* Content */}
@@ -93,17 +102,18 @@ export const ManualAssignmentModal: React.FC<ManualAssignmentModalProps> = ({
           {/* Search for caregiver */}
           {!selectedCandidate && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Label htmlFor="caregiver-search" className="block text-sm font-medium mb-2">
                 Search for Caregiver
-              </label>
+              </Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="caregiver-search"
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search by name or phone..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="pl-9"
                   autoFocus
                 />
               </div>
@@ -115,12 +125,14 @@ export const ManualAssignmentModal: React.FC<ManualAssignmentModalProps> = ({
                     <p className="text-sm text-gray-500 text-center py-4">No caregivers found</p>
                   ) : (
                     filteredCandidates.map((candidate, index) => (
-                      <button
+                      <Button
                         key={candidate.caregiverId}
+                        type="button"
+                        variant="outline"
                         onClick={() => handleSelectCandidate(candidate)}
-                        className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                        className="w-full h-auto text-left justify-between p-3 whitespace-normal font-normal"
                       >
-                        <div className="flex justify-between items-start">
+                        <div className="flex justify-between items-start w-full">
                           <div>
                             <p className="font-medium text-gray-900">{candidate.caregiverName}</p>
                             <p className="text-sm text-gray-600">{candidate.caregiverPhone}</p>
@@ -133,7 +145,7 @@ export const ManualAssignmentModal: React.FC<ManualAssignmentModalProps> = ({
                             </div>
                           </div>
                         </div>
-                      </button>
+                      </Button>
                     ))
                   )}
                 </div>
@@ -267,10 +279,11 @@ export const ManualAssignmentModal: React.FC<ManualAssignmentModalProps> = ({
 
               {/* Override reason - REQUIRED */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Reason for Manual Assignment <span className="text-red-500">*</span>
-                </label>
-                <textarea
+                <Label htmlFor="override-reason" className={cn("block text-sm font-medium mb-2", showReasonError && "text-destructive")}>
+                  Reason for Manual Assignment <span className="text-destructive">*</span>
+                </Label>
+                <Textarea
+                  id="override-reason"
                   value={overrideReason}
                   onChange={(e) => {
                     setOverrideReason(e.target.value);
@@ -278,17 +291,15 @@ export const ManualAssignmentModal: React.FC<ManualAssignmentModalProps> = ({
                   }}
                   placeholder="Explain why you are manually assigning this caregiver instead of using the top match suggestions..."
                   rows={4}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    showReasonError ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={cn(showReasonError && "border-destructive focus-visible:ring-destructive")}
                   required
                 />
                 {showReasonError && (
-                  <p className="mt-1 text-sm text-red-600">
+                  <p className="mt-1 text-sm text-destructive" role="alert">
                     Override reason is required for audit compliance
                   </p>
                 )}
-                <p className="mt-2 text-xs text-gray-500">
+                <p className="mt-2 text-xs text-muted-foreground">
                   This reason will be logged for compliance and quality assurance purposes.
                 </p>
               </div>
@@ -322,7 +333,7 @@ export const ManualAssignmentModal: React.FC<ManualAssignmentModalProps> = ({
                   toast.error(err instanceof Error ? err.message : 'Failed to assign candidate');
                 });
               }}
-              variant="primary"
+              variant="default"
               disabled={!selectedCandidate || isAssigning}
               className="min-w-32"
             >

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Input } from '@/components/ui/input.js';
+import { Button } from '@/components/ui/button.js';
 import {
   FilterDropdown,
   FilterCheckboxSection,
@@ -128,14 +129,16 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
             className="pl-9 pr-9"
           />
           {queryInput && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setQueryInput('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground"
               aria-label="Clear search"
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           )}
         </div>
 

@@ -11,7 +11,8 @@
 
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, MapPin, Clock, Star, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
-import { Button, LoadingSpinner } from '@/core/components';
+import { LoadingSpinner } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
 import type { MatchCandidate } from '../types';
 import { getMatchQualityColor, getMatchScoreColor, formatDistance } from '../utils';
 
@@ -217,7 +218,7 @@ const MatchSuggestionCard: React.FC<MatchSuggestionCardProps> = ({
                   <Button
                     onClick={() => onAssign(candidate.caregiverId)}
                     disabled={isCreatingProposal}
-                    variant="primary"
+                    variant="default"
                     className="flex-1"
                   >
                     <CheckCircle className="h-4 w-4 mr-2" />
