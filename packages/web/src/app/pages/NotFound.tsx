@@ -1,7 +1,7 @@
 import React from 'react';
+import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Home } from 'lucide-react';
-import { Button } from '@/core/components';
 
 export const NotFound: React.FC = () => {
   return (
@@ -16,7 +16,8 @@ export const NotFound: React.FC = () => {
         </p>
         <div className="mt-6">
           <Link to="/">
-            <Button variant="primary" leftIcon={<Home className="h-4 w-4" />}>
+            <Button variant="default">
+              <Home className="h-4 w-4" />
               Go back home
             </Button>
           </Link>

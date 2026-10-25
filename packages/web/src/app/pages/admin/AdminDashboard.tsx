@@ -1,17 +1,10 @@
 import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
-  Activity,
-  AlertTriangle,
-  FileCheck,
-  MapPin,
-  Settings,
-  Database,
-  Shield,
-  Clock,
-  LogIn,
-  X,
-} from 'lucide-react';
-import { Card } from '@/core/components';
+  Card,
+  CardContent,
+} from '@/components/ui/card';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/core/hooks/auth';
 import {
   OperationsCenter,
@@ -20,6 +13,7 @@ import {
   ComplianceCenter,
   LoginAsModal,
 } from './components';
+import { X } from 'lucide-react';
 
 type TabView = 'operations' | 'state-config' | 'data' | 'compliance';
 
@@ -32,25 +26,25 @@ export const AdminDashboard: React.FC = () => {
     {
       id: 'operations' as const,
       label: 'Operations Center',
-      icon: <Activity className="h-5 w-5" />,
+      icon: '📊',
       description: 'Live monitoring and exception management',
     },
     {
       id: 'state-config' as const,
       label: 'State Configuration',
-      icon: <Settings className="h-5 w-5" />,
+      icon: '⚙️',
       description: 'Multi-state EVV compliance settings',
     },
     {
       id: 'data' as const,
       label: 'Data Management',
-      icon: <Database className="h-5 w-5" />,
+      icon: '🗄️',
       description: 'Direct access to all system tables',
     },
     {
       id: 'compliance' as const,
       label: 'Compliance Center',
-      icon: <Shield className="h-5 w-5" />,
+      icon: '🛡️',
       description: 'Audit trails and regulatory reports',
     },
   ];
@@ -60,28 +54,28 @@ export const AdminDashboard: React.FC = () => {
     {
       label: 'Active Visits',
       value: '23',
-      icon: <Clock className="h-6 w-6 text-green-600" />,
+      icon: '🕐',
       status: 'success' as const,
       change: '+3 from yesterday',
     },
     {
       label: 'EVV Exceptions',
       value: '7',
-      icon: <AlertTriangle className="h-6 w-6 text-yellow-600" />,
+      icon: '⚠️',
       status: 'warning' as const,
       change: '2 critical, 5 warnings',
     },
     {
       label: 'Pending VMURs (TX)',
       value: '4',
-      icon: <FileCheck className="h-6 w-6 text-blue-600" />,
+      icon: '📋',
       status: 'info' as const,
       change: 'All within deadline',
     },
     {
       label: 'Geofence Violations',
       value: '2',
-      icon: <MapPin className="h-6 w-6 text-red-600" />,
+      icon: '📍',
       status: 'error' as const,
       change: 'Requires investigation',
     },
@@ -91,27 +85,25 @@ export const AdminDashboard: React.FC = () => {
     <div className="space-y-6">
       {/* Impersonation Banner */}
       {user && user.roles?.includes('CAREGIVER') && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-yellow-800">
-              You are currently logged in as a caregiver
-            </p>
-            <p className="text-xs text-yellow-700 mt-1">
-              This is an impersonation session. Your actions are being audited for compliance.
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              localStorage.removeItem('auth-storage');
-              window.location.href = '/login';
-            }}
-            className="text-yellow-600 hover:text-yellow-800 flex-shrink-0"
-            aria-label="End impersonation"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+        <Alert variant="destructive">
+          <AlertTitle>Impersonation Active</AlertTitle>
+          <AlertDescription className="flex items-center justify-between">
+            <span>
+              You are currently logged in as a caregiver. This is an impersonation session. Your actions are being audited for compliance.
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                localStorage.removeItem('auth-storage');
+                window.location.href = '/login';
+              }}
+              aria-label="End impersonation"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Header with Login As Button */}
@@ -123,28 +115,29 @@ export const AdminDashboard: React.FC = () => {
           </p>
         </div>
         {!user?.roles?.includes('CAREGIVER') && (
-          <button
+          <Button
             onClick={() => setIsLoginAsOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2"
           >
-            <LogIn className="h-4 w-4" />
             <span className="text-sm font-medium">Login As Caregiver</span>
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Real-time Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => (
-          <Card key={stat.label} padding="md">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                <p className="mt-2 text-3xl font-bold text-gray-900">{stat.value}</p>
-                <p className="mt-1 text-sm text-gray-600">{stat.change}</p>
+          <Card key={stat.label}>
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600">{stat.label}</p>
+                  <p className="mt-2 text-3xl font-bold text-gray-900">{stat.value}</p>
+                  <p className="mt-1 text-sm text-gray-600">{stat.change}</p>
+                </div>
+                <div className="shrink-0 text-2xl">{stat.icon}</div>
               </div>
-              <div className="shrink-0">{stat.icon}</div>
-            </div>
+            </CardContent>
           </Card>
         ))}
       </div>
@@ -167,7 +160,7 @@ export const AdminDashboard: React.FC = () => {
               `}
               aria-current={activeTab === tab.id ? 'page' : undefined}
             >
-              {tab.icon}
+              <span>{tab.icon}</span>
               <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
