@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Grid, List, Users, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
-  Button, 
   LoadingSpinner, 
   ErrorMessage, 
   EmptyState
@@ -52,28 +52,33 @@ export const ClientList: React.FC = () => {
             {data?.total || 0} total clients
           </p>
         </div>
-        <div className="flex gap-2">
-          <div className="flex border border-gray-300 rounded-md">
-            <button
+        <div className="flex gap-2 items-center">
+          <div className="flex border border-border rounded-md p-0.5 bg-muted/40">
+            <Button
+              type="button"
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="icon-sm"
               onClick={() => setViewMode('grid')}
-              className={`p-2 ${
-                viewMode === 'grid' ? 'bg-gray-100' : 'hover:bg-gray-50'
-              }`}
+              title="Grid view"
+              aria-label="Grid view"
             >
-              <Grid className="h-5 w-5" />
-            </button>
-            <button
+              <Grid className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="icon-sm"
               onClick={() => setViewMode('list')}
-              className={`p-2 ${
-                viewMode === 'list' ? 'bg-gray-100' : 'hover:bg-gray-50'
-              }`}
+              title="List view"
+              aria-label="List view"
             >
-              <List className="h-5 w-5" />
-            </button>
+              <List className="h-4 w-4" />
+            </Button>
           </div>
           {can('clients:write') && (
             <Link to="/clients/new/intake">
-              <Button leftIcon={<Plus className="h-4 w-4" />}>
+              <Button>
+                <Plus className="h-4 w-4 mr-1.5" />
                 New Client
               </Button>
             </Link>
@@ -98,22 +103,22 @@ export const ClientList: React.FC = () => {
           action={
             !hasDemoData ? (
               <Button
-                variant="primary"
+                variant="default"
                 size="lg"
-                leftIcon={<Sparkles className="h-4 w-4" />}
                 onClick={() => void seedDemoData()}
-                isLoading={isSeeding}
+                disabled={isSeeding}
               >
-                Load Sample Data
+                <Sparkles className="h-4 w-4 mr-2" />
+                {isSeeding ? 'Loading...' : 'Load Sample Data'}
               </Button>
             ) : (
               can('clients:write') && (
                 <Button
-                  variant="primary"
+                  variant="default"
                   size="lg"
-                  leftIcon={<Plus className="h-4 w-4" />}
                   onClick={() => navigate('/clients/intake')}
                 >
+                  <Plus className="h-4 w-4 mr-2" />
                   Add Client
                 </Button>
               )
@@ -124,9 +129,9 @@ export const ClientList: React.FC = () => {
               <Button
                 variant="outline"
                 size="lg"
-                leftIcon={<Plus className="h-4 w-4" />}
                 onClick={() => navigate('/clients/new/intake')}
               >
+                <Plus className="h-4 w-4 mr-2" />
                 Add Client
               </Button>
             ) : null

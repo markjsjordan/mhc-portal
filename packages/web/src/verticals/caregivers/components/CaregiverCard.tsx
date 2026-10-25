@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, Calendar } from 'lucide-react';
-import { Card, StatusBadge, DemoBadge } from '@/core/components';
+import { Card, CardContent } from '@/components/ui/card';
+import { StatusBadge, DemoBadge } from '@/core/components';
 import { formatDate, formatPhone } from '@/core/utils';
 import type { CaregiverListItem } from '../types';
 
@@ -17,8 +18,9 @@ export const CaregiverCard: React.FC<CaregiverCardProps> = ({ caregiver, compact
 
   return (
     <Link to={`/caregivers/${caregiver.id}`}>
-      <Card padding="md" hover className="h-full">
-        <div className="flex justify-between items-start gap-4">
+      <Card className="h-full hover:shadow-md transition-shadow">
+        <CardContent className="p-5">
+          <div className="flex justify-between items-start gap-4">
           <div className="min-w-0 flex-1">
             <h3 className="text-lg font-semibold text-gray-900 truncate">
               {caregiver.preferredName ?? fullName}
@@ -52,6 +54,7 @@ export const CaregiverCard: React.FC<CaregiverCardProps> = ({ caregiver, compact
             </div>
           </div>
         )}
+        </CardContent>
       </Card>
     </Link>
   );

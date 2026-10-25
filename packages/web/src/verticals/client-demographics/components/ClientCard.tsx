@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Calendar } from 'lucide-react';
-import { Card, StatusBadge, DemoBadge } from '@/core/components';
+import { Card, CardContent } from '@/components/ui/card';
+import { StatusBadge, DemoBadge } from '@/core/components';
 import { formatDate, formatPhone } from '@/core/utils';
 import type { Client } from '../types';
 
@@ -17,8 +18,9 @@ export const ClientCard: React.FC<ClientCardProps> = ({ client, compact = false 
 
   return (
     <Link to={`/clients/${client.id}`}>
-      <Card padding="md" hover className="h-full">
-        <div className="flex justify-between items-start">
+      <Card className="h-full hover:shadow-md transition-shadow">
+        <CardContent className="p-5">
+          <div className="flex justify-between items-start">
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-gray-900">
               {client.preferredName || fullName}
@@ -62,6 +64,7 @@ export const ClientCard: React.FC<ClientCardProps> = ({ client, compact = false 
             </div>
           </div>
         )}
+        </CardContent>
       </Card>
     </Link>
   );

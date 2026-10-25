@@ -10,7 +10,9 @@
 
 import React from 'react';
 import { useIsMobile } from '@/core/hooks';
-import { Card } from '@/core/components';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import {
   Phone,
   MapPin,
@@ -68,8 +70,9 @@ export const ClientContactCard: React.FC<ClientContactCardProps> = ({
   };
 
   return (
-    <Card padding="md" className={className}>
-      <div className="space-y-4">
+    <Card className={cn(className)}>
+      <CardContent className="p-6">
+        <div className="space-y-4">
         {/* Client Name */}
         <div>
           <h3 className={`font-semibold text-gray-900 ${isMobile ? 'text-lg' : 'text-base'}`}>
@@ -97,7 +100,9 @@ export const ClientContactCard: React.FC<ClientContactCardProps> = ({
                 </p>
               </div>
               <div className="flex-shrink-0">
-                <span className="text-xs font-medium text-primary-600">TAP TO CALL</span>
+                <Badge variant="secondary" className="text-xs font-medium text-primary">
+                  TAP TO CALL
+                </Badge>
               </div>
             </button>
           )}
@@ -183,6 +188,7 @@ export const ClientContactCard: React.FC<ClientContactCardProps> = ({
           </div>
         )}
       </div>
+      </CardContent>
     </Card>
   );
 };

@@ -5,7 +5,10 @@
  * Requires name confirmation and checkbox confirmation.
  */
 import React, { useState } from 'react';
-import { Button, Modal, Checkbox } from '@/core/components';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Modal, Checkbox } from '@/core/components';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { caregiverApi } from '../api/index.js';
@@ -97,30 +100,28 @@ export const DeleteCaregiverConfirmation: React.FC<DeleteCaregiverConfirmationPr
         </div>
 
         {/* Name confirmation */}
-        <div>
-          <label className="block text-sm font-medium text-gray-900 mb-2">
+        <div className="space-y-1.5">
+          <Label className="block text-sm font-medium text-foreground">
             To confirm, type the caregiver name:
-          </label>
-          <input
+          </Label>
+          <Input
             type="text"
             value={nameConfirmation}
             onChange={(e) => setNameConfirmation(e.target.value)}
             placeholder={expectedName}
-            className={`w-full px-3 py-2 border rounded-lg text-sm ${
+            className={
               nameConfirmation && !isNameConfirmed
-                ? 'border-red-300 bg-red-50'
-                : 'border-gray-300 focus:border-blue-500'
-            } focus:outline-none focus:ring-2 focus:ring-offset-0 ${
-              isNameConfirmed ? 'focus:ring-green-500' : 'focus:ring-blue-300'
-            }`}
+                ? 'border-destructive bg-destructive/10'
+                : ''
+            }
             disabled={deleteMutation.isPending}
             autoFocus
           />
           {nameConfirmation && !isNameConfirmed && (
-            <p className="text-xs text-red-600 mt-1">Name does not match</p>
+            <p className="text-xs text-destructive">Name does not match</p>
           )}
           {isNameConfirmed && (
-            <p className="text-xs text-green-600 mt-1">✓ Name confirmed</p>
+            <p className="text-xs text-green-600">✓ Name confirmed</p>
           )}
         </div>
 
@@ -131,17 +132,18 @@ export const DeleteCaregiverConfirmation: React.FC<DeleteCaregiverConfirmationPr
             onCheckedChange={(checked) => setUnderstandsConfirm(checked)}
             disabled={deleteMutation.isPending}
           />
-          <label
+          <Label
             htmlFor="understand-permanent"
-            className="text-sm text-gray-700 cursor-pointer"
+            className="text-sm text-muted-foreground cursor-pointer"
           >
             I understand this action is permanent (within the context of data retention)
-          </label>
+          </Label>
         </div>
 
         {/* Action buttons */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        <div className="flex justify-end gap-3 pt-4 border-t border-border">
           <Button
+            type="button"
             onClick={handleClose}
             variant="outline"
             disabled={deleteMutation.isPending}
@@ -149,12 +151,12 @@ export const DeleteCaregiverConfirmation: React.FC<DeleteCaregiverConfirmationPr
             Cancel
           </Button>
           <Button
+            type="button"
             onClick={() => deleteMutation.mutate()}
-            variant="danger"
+            variant="destructive"
             disabled={!canDelete}
-            isLoading={deleteMutation.isPending}
           >
-            Delete Caregiver
+            {deleteMutation.isPending ? 'Deleting...' : 'Delete Caregiver'}
           </Button>
         </div>
       </div>
