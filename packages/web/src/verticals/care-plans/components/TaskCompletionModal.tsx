@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { X, CheckCircle, Camera, MapPin, Clock } from 'lucide-react';
-import { Button, Card, CardHeader, CardContent, FormField, LoadingSpinner } from '@/core/components';
+import { LoadingSpinner } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
+import { Textarea } from '@/components/ui/textarea.js';
+import { Label } from '@/components/ui/label.js';
 import { formatDate, formatTime } from '@/core/utils';
 import { useAuth } from '@/core/hooks';
 import { useCompleteTask } from '../hooks';
-import { SignaturePad } from './SignaturePad';
+import { SignaturePad } from './SignaturePad.js';
 import type { TaskInstance, CompleteTaskInput } from '../types';
 
 export interface TaskCompletionModalProps {
@@ -103,29 +107,33 @@ export const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Complete Task</h2>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-card text-card-foreground rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center p-6 border-b border-border">
+          <h2 className="text-xl font-semibold">Complete Task</h2>
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={onClose}
-            leftIcon={<X className="h-4 w-4" />}
-          />
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
 
         <div className="p-6 space-y-6">
           {/* Task Information */}
           <Card>
-            <CardHeader title="Task Details" />
+            <CardHeader>
+              <CardTitle className="text-base">Task Details</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <div>
                   <span className="font-medium">{task.name}</span>
-                  <p className="text-sm text-gray-600">{task.description}</p>
+                  <p className="text-sm text-muted-foreground">{task.description}</p>
                 </div>
-                <div className="flex items-center gap-4 text-sm text-gray-500">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Clock className="h-4 w-4" />
                     {formatDate(task.scheduledDate)} {task.scheduledTime && formatTime(task.scheduledTime)}
@@ -137,27 +145,29 @@ export const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({
           </Card>
 
           {/* Completion Note */}
-          <FormField
-            label="Completion Note"
-            required
-          >
-            <textarea
+          <div className="space-y-1.5">
+            <Label htmlFor="task-completion-note">
+              Completion Note <span className="text-destructive">*</span>
+            </Label>
+            <Textarea
+              id="task-completion-note"
               value={completionNote}
               onChange={(e) => setCompletionNote(e.target.value)}
               placeholder="Describe how the task was completed..."
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-          </FormField>
+          </div>
 
           {/* Signature Capture */}
           {task.requiredSignature && (
             <Card>
-              <CardHeader title="Signature Required" />
+              <CardHeader>
+                <CardTitle className="text-base">Signature Required</CardTitle>
+              </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {signatureData ? (
-                    <div className="border-2 border-gray-300 rounded-md p-4">
+                    <div className="border-2 border-border rounded-md p-4">
                       <img src={signatureData} alt="Signature" className="max-h-32 mx-auto" />
                       <Button
                         variant="outline"
@@ -178,7 +188,9 @@ export const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({
 
           {/* Photo Capture */}
           <Card>
-            <CardHeader title="Photos (Optional)" />
+            <CardHeader>
+              <CardTitle className="text-base">Photos (Optional)</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {photoData.length > 0 && (
@@ -191,10 +203,11 @@ export const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({
                           className="w-full h-24 object-cover rounded-md border"
                         />
                         <Button
-                          variant="ghost"
-                          size="sm"
+                          variant="destructive"
+                          size="icon"
                           onClick={() => setPhotoData(photoData.filter((_, i) => i !== index))}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
+                          className="absolute top-1 right-1 h-6 w-6 rounded-full"
+                          aria-label="Remove photo"
                         >
                           <X className="h-3 w-3" />
                         </Button>
@@ -207,9 +220,9 @@ export const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({
                   variant="outline"
                   onClick={handlePhotoCapture}
                   disabled
-                  leftIcon={<Camera className="h-4 w-4" />}
                   title="Photo capture coming soon"
                 >
+                  <Camera className="h-4 w-4 mr-2" />
                   📷 Add Photo (Coming Soon)
                 </Button>
               </div>
@@ -218,11 +231,13 @@ export const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({
 
           {/* GPS Verification */}
           <Card>
-            <CardHeader title="Location Verification" />
+            <CardHeader>
+              <CardTitle className="text-base">Location Verification</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {gpsLocation ? (
-                  <div className="flex items-center gap-2 text-sm text-green-600">
+                  <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
                     <MapPin className="h-4 w-4" />
                     Location verified: {gpsLocation.lat.toFixed(6)}, {gpsLocation.lng.toFixed(6)}
                   </div>
@@ -230,8 +245,8 @@ export const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({
                   <Button
                     variant="outline"
                     onClick={requestGPSLocation}
-                    leftIcon={<MapPin className="h-4 w-4" />}
                   >
+                    <MapPin className="h-4 w-4 mr-2" />
                     Verify Location
                   </Button>
                 )}
@@ -241,53 +256,62 @@ export const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({
 
           {/* Observations */}
           <Card>
-            <CardHeader title="Observations" />
+            <CardHeader>
+              <CardTitle className="text-base">Observations</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <FormField label="Client Condition">
-                  <textarea
+                <div className="space-y-1.5">
+                  <Label htmlFor="observation-client-condition">Client Condition</Label>
+                  <Textarea
+                    id="observation-client-condition"
                     value={observations.clientCondition || ''}
                     onChange={(e) => handleObservationChange('clientCondition', e.target.value)}
                     placeholder="Describe client's condition during task..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                </FormField>
+                </div>
 
-                <FormField label="Issues or Concerns">
-                  <textarea
+                <div className="space-y-1.5">
+                  <Label htmlFor="observation-concerns">Issues or Concerns</Label>
+                  <Textarea
+                    id="observation-concerns"
                     value={observations.concerns || ''}
                     onChange={(e) => handleObservationChange('concerns', e.target.value)}
                     placeholder="Any issues or concerns noted..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                </FormField>
+                </div>
 
-                <FormField label="Additional Notes">
-                  <textarea
+                <div className="space-y-1.5">
+                  <Label htmlFor="observation-additional-notes">Additional Notes</Label>
+                  <Textarea
+                    id="observation-additional-notes"
                     value={observations.additionalNotes || ''}
                     onChange={(e) => handleObservationChange('additionalNotes', e.target.value)}
                     placeholder="Any additional observations..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                </FormField>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 p-6 border-t bg-gray-50">
+        <div className="flex justify-end gap-3 p-6 border-t border-border bg-muted/20">
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
           <Button
             onClick={handleComplete}
             disabled={completeTask.isPending || (task.requiredSignature && !signatureData)}
-            leftIcon={completeTask.isPending ? <LoadingSpinner size="sm" /> : <CheckCircle className="h-4 w-4" />}
           >
+            {completeTask.isPending ? (
+              <LoadingSpinner size="sm" className="mr-2" />
+            ) : (
+              <CheckCircle className="h-4 w-4 mr-2" />
+            )}
             Complete Task
           </Button>
         </div>

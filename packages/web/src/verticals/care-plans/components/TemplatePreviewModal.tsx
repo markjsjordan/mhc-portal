@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Clock, CheckSquare, Target } from 'lucide-react';
-import { Button, Card, CardContent } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent } from '@/components/ui/card.js';
 import type { CarePlanTemplate } from '@folkcare/care-plans-tasks/browser';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,10 +12,10 @@ export interface TemplatePreviewModalProps {
 }
 
 const priorityColors: Record<string, string> = {
-  low: 'text-gray-600',
-  medium: 'text-blue-600',
+  low: 'text-muted-foreground',
+  medium: 'text-primary',
   high: 'text-orange-600',
-  critical: 'text-red-600',
+  critical: 'text-destructive',
 };
 
 const categoryColors: Record<string, string> = {
@@ -35,18 +36,18 @@ export const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
   if (!isOpen) return null;
 
   const categoryColor =
-    categoryColors[template.category] || 'bg-gray-100 text-gray-800';
+    categoryColors[template.category] || 'bg-muted text-muted-foreground';
 
   const handleUseTemplate = () => {
     navigate(`/care-plans/from-template/${template.id}`);
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center p-6 border-b">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-card text-card-foreground rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center p-6 border-b border-border">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="text-xl font-semibold">
               {template.name}
             </h2>
             <span
@@ -57,32 +58,34 @@ export const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
           </div>
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={onClose}
-            leftIcon={<X className="h-4 w-4" />}
-          />
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
 
         <div className="p-6 space-y-6">
           {/* Template Information */}
           <div className="space-y-4">
             <div>
-              <h3 className="font-medium text-gray-900 mb-2">Description</h3>
-              <p className="text-gray-600">{template.description}</p>
+              <h3 className="font-medium mb-2">Description</h3>
+              <p className="text-muted-foreground">{template.description}</p>
             </div>
 
-            <div className="flex items-center gap-6 text-sm text-gray-500">
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
                 <span>
-                  <span className="font-medium">Duration:</span>{' '}
+                  <span className="font-medium text-foreground">Duration:</span>{' '}
                   {template.typical_duration_days} days
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckSquare className="h-4 w-4" />
                 <span>
-                  <span className="font-medium">Tasks:</span>{' '}
+                  <span className="font-medium text-foreground">Tasks:</span>{' '}
                   {template.tasks.length} tasks
                 </span>
               </div>
@@ -91,43 +94,43 @@ export const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
 
           {/* Goals */}
           <Card>
-            <div className="border-b px-6 py-4">
+            <div className="border-b border-border px-6 py-4">
               <div className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-gray-700" />
-                <h3 className="text-lg font-semibold text-gray-900">Care Goals</h3>
+                <Target className="h-5 w-5 text-muted-foreground" />
+                <h3 className="text-lg font-semibold">Care Goals</h3>
               </div>
             </div>
-            <CardContent>
-              <p className="text-gray-700">{template.goals}</p>
+            <CardContent className="pt-4">
+              <p className="text-card-foreground">{template.goals}</p>
             </CardContent>
           </Card>
 
           {/* Tasks */}
           <Card>
-            <div className="border-b px-6 py-4">
-              <h3 className="text-lg font-semibold text-gray-900">Task Templates</h3>
-              <p className="text-sm text-gray-600 mt-1">{template.tasks.length} tasks included</p>
+            <div className="border-b border-border px-6 py-4">
+              <h3 className="text-lg font-semibold">Task Templates</h3>
+              <p className="text-sm text-muted-foreground mt-1">{template.tasks.length} tasks included</p>
             </div>
-            <CardContent>
+            <CardContent className="pt-4">
               <div className="space-y-3">
                 {template.tasks.map((task, index) => {
                   const priorityColor = priorityColors[task.priority];
                   return (
                     <div
                       key={index}
-                      className="border border-gray-200 rounded-md p-4 hover:bg-gray-50"
+                      className="border border-border rounded-md p-4 hover:bg-muted/50 transition-colors"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">
+                          <h4 className="font-medium">
                             {task.description}
                           </h4>
                           {task.instructions && (
-                            <p className="text-sm text-gray-600 mt-1">
+                            <p className="text-sm text-muted-foreground mt-1">
                               {task.instructions}
                             </p>
                           )}
-                          <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                             <span className="capitalize">{task.frequency}</span>
                             {task.scheduled_time && (
                               <span>⏰ {task.scheduled_time}</span>
@@ -150,7 +153,7 @@ export const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 p-6 border-t bg-gray-50">
+        <div className="flex justify-end gap-3 p-6 border-t border-border bg-muted/20">
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>

@@ -1,5 +1,7 @@
 import React from 'react';
 import { Search, X } from 'lucide-react';
+import { Input } from '@/components/ui/input.js';
+import { Button } from '@/components/ui/button.js';
 import {
   FilterDropdown,
   FilterCheckboxSection,
@@ -21,7 +23,6 @@ const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: 'CANCELLED', label: 'Cancelled' },
   { value: 'ISSUE_REPORTED', label: 'Issue Reported' },
 ];
-
 
 const CATEGORY_OPTIONS: { value: TaskCategory; label: string }[] = [
   { value: 'PERSONAL_HYGIENE', label: 'Personal Hygiene' },
@@ -118,27 +119,30 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm space-y-3">
+    <div className="bg-card text-card-foreground rounded-xl border border-border p-4 shadow-sm space-y-3">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         {/* Search Bar */}
         <div className="relative flex-1 max-w-lg">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Input
+            id="task-filters-search-input"
             type="text"
             placeholder="Search tasks by description..."
             value={queryInput}
             onChange={(e) => setQueryInput(e.target.value)}
-            className="w-full pl-10 pr-9 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            className="pl-10 pr-9"
           />
           {queryInput && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setQueryInput('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground"
               aria-label="Clear search"
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           )}
         </div>
 

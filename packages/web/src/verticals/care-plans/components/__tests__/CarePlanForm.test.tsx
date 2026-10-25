@@ -5,7 +5,7 @@ import { describe, test, expect, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithQueryClient as render } from '@/test/renderWithQueryClient';
-import { CarePlanForm } from '../CarePlanForm';
+import { CarePlanForm } from '../CarePlanForm.js';
 
 vi.mock('@/core/hooks', () => ({
   useAuth: () => ({
@@ -69,10 +69,11 @@ describe('CarePlanForm Dropdown Selectors', () => {
     expect(screen.getByLabelText(/Branch/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Coordinator/i)).toBeInTheDocument();
 
-    // Verify option contents
-    expect(screen.getByText(/Margaret Thompson/i)).toBeInTheDocument();
-    expect(screen.getByText(/Main Branch/i)).toBeInTheDocument();
-    expect(screen.getByText(/Current Organization/i)).toBeInTheDocument();
+    // Verify combobox triggers
+    expect(screen.getByRole('combobox', { name: /Client/i })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /Organization/i })).toHaveTextContent(/Current Organization/i);
+    expect(screen.getByRole('combobox', { name: /Branch/i })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /Coordinator/i })).toBeInTheDocument();
   });
 
   test('allows selecting client and branch from dropdowns', async () => {
@@ -80,11 +81,15 @@ describe('CarePlanForm Dropdown Selectors', () => {
     render(<CarePlanForm onSubmit={vi.fn()} />);
 
     const clientSelect = screen.getByLabelText(/Client/i);
-    await user.selectOptions(clientSelect, 'client-1');
-    expect((clientSelect as HTMLSelectElement).value).toBe('client-1');
+    await user.click(clientSelect);
+    const clientOption = await screen.findByRole('option', { name: /Margaret Thompson/i });
+    await user.click(clientOption);
+    expect(clientSelect).toHaveTextContent(/Margaret Thompson/i);
 
     const branchSelect = screen.getByLabelText(/Branch/i);
-    await user.selectOptions(branchSelect, 'branch-test-2');
-    expect((branchSelect as HTMLSelectElement).value).toBe('branch-test-2');
+    await user.click(branchSelect);
+    const branchOption = await screen.findByRole('option', { name: /North Branch/i });
+    await user.click(branchOption);
+    expect(branchSelect).toHaveTextContent(/North Branch/i);
   });
 });

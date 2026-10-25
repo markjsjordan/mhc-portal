@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback } from 'react';
-import { Button } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
 
 export interface SignaturePadProps {
   onCapture: (dataUrl: string) => void;
@@ -111,7 +111,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         style={{ touchAction: 'none' }}
-        className="border-2 border-gray-300 rounded-md bg-white w-full cursor-crosshair"
+        className="border-2 border-border rounded-md bg-white w-full cursor-crosshair"
       />
       <div className="flex justify-end gap-2">
         <Button variant="outline" size="sm" onClick={handleClear}>
