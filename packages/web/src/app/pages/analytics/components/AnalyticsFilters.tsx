@@ -5,7 +5,10 @@
 
 import { useState } from 'react';
 import { Calendar, Filter, X } from 'lucide-react';
-import { Button } from '@/core/components';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import type { DateRange } from '@/types/analytics-types';
 
 interface AnalyticsFiltersProps {
@@ -134,17 +137,15 @@ export function AnalyticsFilters({
             <div className="flex flex-wrap gap-2 mb-3">
               {(['today', 'week', 'month', 'quarter', 'custom'] as DatePreset[]).map(
                 (preset) => (
-                  <button
+                  <Button
                     key={preset}
+                    type="button"
+                    variant={datePreset === preset ? 'default' : 'outline'}
+                    size="sm"
                     onClick={() => handlePresetChange(preset)}
-                    className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
-                      datePreset === preset
-                        ? 'bg-primary-600 text-white border-primary-600'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    }`}
                   >
                     {preset.charAt(0).toUpperCase() + preset.slice(1)}
-                  </button>
+                  </Button>
                 )
               )}
             </div>
@@ -153,29 +154,29 @@ export function AnalyticsFilters({
             {datePreset === 'custom' && (
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <label className="block text-xs text-gray-600 mb-1">
+                  <Label className="block text-xs text-gray-600 mb-1">
                     Start Date
-                  </label>
-                  <input
+                  </Label>
+                  <Input
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    className="w-full text-sm"
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="block text-xs text-gray-600 mb-1">
+                  <Label className="block text-xs text-gray-600 mb-1">
                     End Date
-                  </label>
-                  <input
+                  </Label>
+                  <Input
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    className="w-full text-sm"
                   />
                 </div>
                 <div className="flex items-end">
-                  <Button onClick={handleCustomDateChange} size="sm">
+                  <Button type="button" onClick={handleCustomDateChange} size="sm">
                     Apply
                   </Button>
                 </div>
@@ -186,75 +187,99 @@ export function AnalyticsFilters({
           {/* Additional Filters (placeholder structure) */}
           {showClientFilter && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Label className="block text-sm font-medium text-gray-700 mb-2">
                 Clients
-              </label>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
-                <option value="">All Clients</option>
-                {/* Client options would be populated dynamically */}
-              </select>
+              </Label>
+              <Select defaultValue="all">
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All Clients" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Clients</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
 
           {showCaregiverFilter && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Label className="block text-sm font-medium text-gray-700 mb-2">
                 Caregivers
-              </label>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
-                <option value="">All Caregivers</option>
-                {/* Caregiver options would be populated dynamically */}
-              </select>
+              </Label>
+              <Select defaultValue="all">
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All Caregivers" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Caregivers</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
 
           {showServiceTypeFilter && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Label className="block text-sm font-medium text-gray-700 mb-2">
                 Service Type
-              </label>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
-                <option value="">All Services</option>
-                <option value="personal-care">Personal Care</option>
-                <option value="companion">Companion</option>
-                <option value="skilled-nursing">Skilled Nursing</option>
-              </select>
+              </Label>
+              <Select defaultValue="all">
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All Services" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Services</SelectItem>
+                  <SelectItem value="personal-care">Personal Care</SelectItem>
+                  <SelectItem value="companion">Companion</SelectItem>
+                  <SelectItem value="skilled-nursing">Skilled Nursing</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
 
           {showStatusFilter && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Label className="block text-sm font-medium text-gray-700 mb-2">
                 Status
-              </label>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
-                <option value="">All Statuses</option>
-                <option value="completed">Completed</option>
-                <option value="pending">Pending</option>
-                <option value="missed">Missed</option>
-              </select>
+              </Label>
+              <Select defaultValue="all">
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="missed">Missed</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
 
           {showBranchFilter && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Label className="block text-sm font-medium text-gray-700 mb-2">
                 Branch
-              </label>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
-                <option value="">All Branches</option>
-                {/* Branch options would be populated dynamically */}
-              </select>
+              </Label>
+              <Select defaultValue="all">
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All Branches" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Branches</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
 
           <div className="flex justify-end pt-2 border-t border-gray-200">
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={handleClearFilters}
-              leftIcon={<X className="h-4 w-4" />}
+              className="gap-1"
             >
+              <X className="h-4 w-4" />
               Clear All
             </Button>
           </div>
