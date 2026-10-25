@@ -26,6 +26,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@base-ui/react": "^1.9.0",
     "@folkcare/care-plans-tasks": "^0.1.0",
     "@folkcare/family-engagement": "^0.1.0",
     "@folkcare/shared-components": "^0.1.0",
