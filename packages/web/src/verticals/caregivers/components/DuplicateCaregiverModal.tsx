@@ -6,7 +6,8 @@
  */
 import React, { useState } from 'react';
 import type { CaregiverStatus } from '../types/index.js';
-import { Button, Modal, Checkbox, Input, Select } from '@/core/components';
+import { Button } from '@/components/ui/button';
+import { Modal, Checkbox, Input, Select } from '@/core/components';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -215,8 +216,9 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
         </div>
 
         {/* Action buttons */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        <div className="flex justify-end gap-3 pt-4 border-t border-border">
           <Button
+            type="button"
             onClick={handleClose}
             variant="outline"
             disabled={duplicateMutation.isPending}
@@ -224,12 +226,12 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
             Cancel
           </Button>
           <Button
+            type="button"
             onClick={handleDuplicate}
-            variant="primary"
+            variant="default"
             disabled={duplicateMutation.isPending}
-            isLoading={duplicateMutation.isPending}
           >
-            Create Duplicate
+            {duplicateMutation.isPending ? 'Creating...' : 'Create Duplicate'}
           </Button>
         </div>
       </div>
