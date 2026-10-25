@@ -29,7 +29,7 @@ function tryLocalStorage<T>(operation: (storage: Storage) => T, fallback: () => 
   }
 }
 
-const safeStorage = createJSONStorage<AuthStore>(() => ({
+const safeStorage = createJSONStorage<Pick<AuthStore, 'user'>>(() => ({
   getItem: (key: string) =>
     tryLocalStorage(
       (storage) => storage.getItem(key),
@@ -65,6 +65,7 @@ export const useAuthStore = create<AuthStore>()(
     {
       name: 'auth-storage',
       storage: safeStorage,
+      partialize: (state) => ({ user: state.user }), // Only persist user, keep token in memory
     }
   )
 );

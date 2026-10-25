@@ -318,40 +318,44 @@ export class AuthService {
    * @returns New access token
    * @throws AuthenticationError if token invalid or user not found
    */
-  async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
-    const accessToken = await JWTUtils.refreshAccessToken(
-      refreshToken,
-      async (userId, tokenVersion) => {
-        const user = await this.findUserById(userId);
+  async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+    // Verify refresh token and get payload
+    const decoded = JWTUtils.verifyRefreshToken(refreshToken);
+    
+    const user = await this.findUserById(decoded.userId);
 
-        if (user === null) {
-          throw new NotFoundError('User not found');
-        }
+    if (user === null) {
+      throw new NotFoundError('User not found');
+    }
 
-        if (user.status !== 'ACTIVE') {
-          throw new AuthenticationError('Account is not active');
-        }
+    if (user.status !== 'ACTIVE') {
+      throw new AuthenticationError('Account is not active');
+    }
 
-        if (user.token_version !== tokenVersion) {
-          throw new AuthenticationError(
-            'Token version mismatch - please login again',
-            { expectedVersion: user.token_version, receivedVersion: tokenVersion }
-          );
-        }
+    if (user.token_version !== decoded.tokenVersion) {
+      throw new AuthenticationError(
+        'Token version mismatch - please login again',
+        { expectedVersion: user.token_version, receivedVersion: decoded.tokenVersion }
+      );
+    }
 
-        return {
-          userId: user.id,
-          email: user.email,
-          organizationId: user.organization_id,
-          branchIds: user.branch_ids,
-          roles: user.roles,
-          permissions: user.permissions,
-          tokenVersion: user.token_version
-        };
-      }
-    );
+    const payload: TokenPayload = {
+      userId: user.id,
+      email: user.email,
+      organizationId: user.organization_id,
+      branchIds: user.branch_ids,
+      roles: user.roles,
+      permissions: user.permissions,
+      tokenVersion: user.token_version
+    };
 
-    return { accessToken };
+    // Generate new token pair (rotation)
+    const tokens = JWTUtils.generateTokenPair(payload);
+
+    return { 
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken
+    };
   }
 
   /**

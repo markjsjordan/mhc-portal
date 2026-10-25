@@ -8,6 +8,7 @@
 import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../../core/hooks/auth';
 
 export interface NoteSummarizerProps {
   noteId: string;
@@ -44,11 +45,12 @@ export const NoteSummarizer: React.FC<NoteSummarizerProps> = ({
 
   const summarizeMutation = useMutation({
     mutationFn: async () => {
+      const token = useAuthStore.getState().token;
       const response = await fetch('/api/ai/summarize-note', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           noteId,

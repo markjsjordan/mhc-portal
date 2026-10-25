@@ -7,7 +7,7 @@
 
 
 import type { ApiProvider } from './api-provider.interface';
-import type { ApiClient } from '../services/api-client';
+import type { ApiClient, ApiClientOptions } from '../services/api-client';
 import type { AuthResponse, LoginCredentials, User } from '../types/auth';
 import { createApiClient } from '../services/api-client';
 
@@ -20,12 +20,13 @@ export class ProductionApiProvider implements ApiProvider {
   constructor(
     baseUrl: string, 
     getAuthToken: () => string | null,
-    getUserContext: () => { userId?: string; organizationId?: string; roles?: string[]; permissions?: string[] } | null
+    getUserContext: () => { userId?: string; organizationId?: string; roles?: string[]; permissions?: string[] } | null,
+    options?: ApiClientOptions
   ) {
     this.baseUrl = baseUrl;
     this.getAuthToken = getAuthToken;
     this.getUserContext = getUserContext;
-    this.apiClient = createApiClient(baseUrl, getAuthToken, getUserContext);
+    this.apiClient = createApiClient(baseUrl, getAuthToken, getUserContext, options);
   }
 
   async initialize(): Promise<void> {

@@ -86,8 +86,8 @@ export const InviteAcceptance: React.FC = () => {
         acceptPrivacyPolicy: formData.acceptPrivacy,
       }) as any;
 
-      localStorage.setItem('accessToken', response.data.data.tokens.accessToken);
-      localStorage.setItem('refreshToken', response.data.data.tokens.refreshToken);
+      // Tokens are managed via HttpOnly cookies on the server
+      // No need to manually persist them
 
       setStep('success');
       setTimeout(() => {

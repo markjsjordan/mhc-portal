@@ -9,34 +9,9 @@ export interface UserContextHeaders {
   permissions?: string[];
 }
 
-/**
- * Global 401 handler, registered once by the app shell (see App.tsx).
- *
- * The server rejects an expired/invalid/revoked token with 401 on any
- * request. Before this existed, nothing reacted to that: the SPA's
- * `isAuthenticated` flag (persisted in localStorage/zustand) stayed
- * true, `ProtectedRoute` kept rendering the authenticated shell, and
- * every query/mutation on the page just failed silently or showed a
- * generic error — the user was never redirected to /login even though
- * their session was no longer valid server-side.
- *
- * Login/refresh/logout calls are intentionally excluded (see the
- * `isAuthEndpoint` check below) since a 401 there is an expected,
- * normal outcome (bad credentials, expired refresh token) handled by
- * the calling form/flow, not a "your session died mid-use" event.
- */
-let onUnauthorized: (() => void) | null = null;
-
-export function registerUnauthorizedHandler(handler: () => void): void {
-  onUnauthorized = handler;
-}
-
-function isAuthEndpoint(url: string): boolean {
-  return (
-    url.includes('/api/auth/login') ||
-    url.includes('/api/auth/refresh') ||
-    url.includes('/api/auth/logout')
-  );
+export interface ApiClientOptions {
+  onRefresh?: () => Promise<{ token: string }>;
+  onAuthFailure?: () => void;
 }
 
 export interface ApiClient {
@@ -51,20 +26,92 @@ class ApiClientImpl implements ApiClient {
   private baseUrl: string;
   private getAuthToken: () => string | null;
   private getUserContext: () => UserContextHeaders | null;
+  private onRefresh?: () => Promise<{ token: string }>;
+  private onAuthFailure?: () => void;
+  private refreshPromise: Promise<{ token: string }> | null = null;
 
   constructor(
     baseUrl: string, 
     getAuthToken: () => string | null,
-    getUserContext: () => UserContextHeaders | null
+    getUserContext: () => UserContextHeaders | null,
+    options?: ApiClientOptions
   ) {
     this.baseUrl = baseUrl;
     this.getAuthToken = getAuthToken;
     this.getUserContext = getUserContext;
+    this.onRefresh = options?.onRefresh;
+    this.onAuthFailure = options?.onAuthFailure;
+  }
+
+  /**
+   * Core fetch logic without retry/throttle wrappers.
+   * Used by the retry logic to avoid infinite nesting.
+   */
+  private async coreFetch<T>(
+    url: string,
+    fetchOptions: RequestInit,
+    config?: RequestConfig
+  ): Promise<T> {
+    const token = this.getAuthToken();
+    const userContext = this.getUserContext();
+    const responseType = config?.responseType ?? 'json';
+
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...config?.headers,
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    // Add user context headers for backend filtering
+    if (userContext) {
+      if (userContext.userId) {
+        headers['X-User-Id'] = userContext.userId;
+      }
+      if (userContext.organizationId) {
+        headers['X-Organization-Id'] = userContext.organizationId;
+      }
+      if (userContext.roles && userContext.roles.length > 0) {
+        headers['X-User-Roles'] = userContext.roles.join(',');
+      }
+      if (userContext.permissions && userContext.permissions.length > 0) {
+        headers['X-User-Permissions'] = userContext.permissions.join(',');
+      }
+    }
+
+    const response = await fetch(`${this.baseUrl}${url}`, {
+      ...fetchOptions,
+      headers,
+      credentials: config?.credentials ?? 'same-origin',
+      ...(config?.signal !== undefined && { signal: config.signal }),
+    });
+
+    if (!response.ok) {
+      const error: ApiError = await response.json().catch(() => ({
+        message: response.statusText,
+        code: response.status.toString(),
+        status: response.status,
+      }));
+
+      // Attach response data to error for better error handling
+      const errorMessage = extractApiErrorMessage(error, response.statusText);
+      const enhancedError = new Error(errorMessage) as Error & { response?: { data: ApiError }; status?: number };
+      enhancedError.response = { data: error };
+      enhancedError.status = response.status;
+      throw enhancedError;
+    }
+
+    if (responseType === 'text') return response.text() as Promise<T>;
+    if (responseType === 'blob') return response.blob() as Promise<T>;
+    return response.json();
   }
 
   private async request<T>(
     url: string,
-    options: RequestInit & { config?: RequestConfig } = {}
+    options: RequestInit & { config?: RequestConfig } = {},
+    isRetry = false
   ): Promise<T> {
     const { config, ...fetchOptions } = options;
     const method = fetchOptions.method ?? 'GET';
@@ -83,89 +130,62 @@ class ApiClientImpl implements ApiClient {
       return requestThrottler.throttle(
         url,
         async () => {
-          // Apply retry logic with exponential backoff
-          return retryWithBackoff(
-            async () => {
-              const token = this.getAuthToken();
-              const userContext = this.getUserContext();
-
-              const headers: HeadersInit = {
-                'Content-Type': 'application/json',
-                ...config?.headers,
-              };
-
-              if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
+          // Handle 401 with refresh/retry BEFORE wrapping in retryWithBackoff
+          // to avoid infinite nesting when refresh succeeds
+          try {
+            return await retryWithBackoff(
+              async () => this.coreFetch<T>(url, fetchOptions, config),
+              {
+                maxRetries: 3,
+                initialDelayMs: 1000,
+                maxDelayMs: 10000,
+                maxJitterMs: 1000,
+                // Don't retry 401 for auth endpoints - user should see immediate feedback
+                retryableStatuses: url.includes('/auth/') ? [500, 502, 503, 504] : [429, 500, 502, 503, 504],
+                onRetry: (attempt, delayMs, error) => {
+                  console.warn(
+                    'Request failed, retrying...',
+                    'url:', url,
+                    'attempt:', attempt,
+                    'delay:', delayMs + 'ms',
+                    error
+                  );
+                },
               }
+            );
+          } catch (error) {
+            // Check if it's a 401 error that should trigger refresh
+            const err = error as { status?: number };
+            if (
+              err.status === 401 &&
+              !isRetry &&
+              !url.startsWith('/api/auth/') &&
+              this.onRefresh
+            ) {
+              try {
+                // Single-flight refresh: reuse existing promise if one is in flight
+                if (!this.refreshPromise) {
+                  this.refreshPromise = this.onRefresh();
+                }
+                await this.refreshPromise;
+                this.refreshPromise = null;
 
-              // Add user context headers for backend filtering
-              if (userContext) {
-                if (userContext.userId) {
-                  headers['X-User-Id'] = userContext.userId;
+                // Retry the original request exactly once with new token
+                // Use coreFetch directly to avoid infinite nesting
+                return await this.coreFetch<T>(url, fetchOptions, config);
+              } catch (refreshError) {
+                // Refresh failed - clear auth and redirect
+                this.refreshPromise = null;
+                if (this.onAuthFailure) {
+                  this.onAuthFailure();
                 }
-                if (userContext.organizationId) {
-                  headers['X-Organization-Id'] = userContext.organizationId;
-                }
-                if (userContext.roles && userContext.roles.length > 0) {
-                  headers['X-User-Roles'] = userContext.roles.join(',');
-                }
-                if (userContext.permissions && userContext.permissions.length > 0) {
-                  headers['X-User-Permissions'] = userContext.permissions.join(',');
-                }
+                throw refreshError;
               }
-
-              const response = await fetch(`${this.baseUrl}${url}`, {
-                ...fetchOptions,
-                headers,
-                ...(config?.signal !== undefined && { signal: config.signal }),
-              });
-
-              if (!response.ok) {
-                const error: ApiError = await response.json().catch(() => ({
-                  message: response.statusText,
-                  code: response.status.toString(),
-                  status: response.status,
-                }));
-
-                // Fire the global "session died" handler on 401s outside
-                // the auth flow itself. Fire-and-continue: still throw
-                // below so the calling query/mutation also sees the
-                // rejection and can show its own error state briefly
-                // before the redirect takes effect.
-                if (response.status === 401 && !isAuthEndpoint(url) && onUnauthorized) {
-                  onUnauthorized();
-                }
-
-                // Attach response data to error for better error handling
-                const errorMessage = extractApiErrorMessage(error, response.statusText);
-                const enhancedError = new Error(errorMessage) as Error & { response?: { data: ApiError }; status?: number };
-                enhancedError.response = { data: error };
-                enhancedError.status = response.status;
-                throw enhancedError;
-              }
-
-              if (responseType === 'text') return response.text();
-              if (responseType === 'blob') return response.blob();
-              return response.json();
-            },
-            {
-              maxRetries: 3,
-              initialDelayMs: 1000,
-              maxDelayMs: 10000,
-              maxJitterMs: 1000,
-              // Don't retry 429 for auth endpoints - user should see immediate feedback
-              retryableStatuses: url.includes('/auth/') ? [500, 502, 503, 504] : [429, 500, 502, 503, 504],
-              onRetry: (attempt, delayMs, error) => {
-                console.warn(
-                  'Request failed, retrying...',
-                  'url:', url,
-                  'attempt:', attempt,
-                  'delay:', delayMs + 'ms',
-                  error
-                );
-              },
             }
-          );
+
+            // Not a 401 or already retried or auth endpoint - rethrow
+            throw error;
+          }
         },
         { minIntervalMs: 500 }
       );
@@ -221,7 +241,8 @@ class ApiClientImpl implements ApiClient {
 export const createApiClient = (
   baseUrl: string,
   getAuthToken: () => string | null,
-  getUserContext?: () => UserContextHeaders | null
+  getUserContext?: () => UserContextHeaders | null,
+  options?: ApiClientOptions
 ): ApiClient => {
-  return new ApiClientImpl(baseUrl, getAuthToken, getUserContext || (() => null));
+  return new ApiClientImpl(baseUrl, getAuthToken, getUserContext || (() => null), options);
 };

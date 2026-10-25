@@ -77,8 +77,9 @@ describe('Auth Hooks', () => {
 
       const parsed = JSON.parse(stored!);
       expect(parsed.state.user).toEqual(mockUser);
-      expect(parsed.state.token).toBe(mockToken);
-      expect(parsed.state.isAuthenticated).toBe(true);
+      // Token should NOT be persisted (security: keep in memory only)
+      expect(parsed.state.token).toBeUndefined();
+      // isAuthenticated is derived from user/token, not persisted
     });
 
     it('should share state across multiple hook instances', () => {
