@@ -18,7 +18,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, AlertCircle, Clock } from 'lucide-react';
-import { Button } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
 
 export interface DataFreshnessProps {
   /** When the data was last updated */
@@ -122,15 +122,17 @@ export const DataFreshness: React.FC<DataFreshnessProps> = ({
           {relativeTime}
         </span>
         {onRefresh && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-xs"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="text-primary-600 hover:text-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-4 w-4 p-0 text-muted-foreground hover:text-foreground"
             aria-label="Refresh data"
           >
             <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-          </button>
+          </Button>
         )}
       </div>
     );
