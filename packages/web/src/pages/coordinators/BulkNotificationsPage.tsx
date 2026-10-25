@@ -1,4 +1,10 @@
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Caregiver {
   id: string;
@@ -164,13 +170,26 @@ export default function BulkNotificationsPage() {
   const getUrgencyColor = (level: UrgencyLevel) => {
     switch (level) {
       case 'emergency':
-        return '#dc2626';
+        return 'border-red-600';
       case 'urgent':
-        return '#ea580c';
+        return 'border-orange-600';
       case 'important':
-        return '#f59e0b';
+        return 'border-amber-500';
       default:
-        return '#3b82f6';
+        return 'border-blue-500';
+    }
+  };
+
+  const getUrgencyBgColor = (level: UrgencyLevel) => {
+    switch (level) {
+      case 'emergency':
+        return 'bg-red-600';
+      case 'urgent':
+        return 'bg-orange-600';
+      case 'important':
+        return 'bg-amber-500';
+      default:
+        return 'bg-blue-500';
     }
   };
 
@@ -188,480 +207,195 @@ export default function BulkNotificationsPage() {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <div>
-          <h1 style={styles.title}>Bulk Caregiver Notifications</h1>
-          <p style={styles.subtitle}>
-            Send messages to multiple caregivers with delivery tracking
-          </p>
-        </div>
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-1">Bulk Caregiver Notifications</h1>
+        <p className="text-sm text-gray-600">
+          Send messages to multiple caregivers with delivery tracking
+        </p>
       </div>
 
-      <div style={styles.content}>
+      <div className="flex gap-6">
         {/* Left column: Recipients */}
-        <div style={styles.leftColumn}>
-          <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>Select Recipients ({selectedCount})</h2>
+        <div className="w-[400px]">
+          <Card>
+            <CardHeader>
+              <CardTitle>Select Recipients ({selectedCount})</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleSelectAll} className="flex-1">
+                  Select All
+                </Button>
+                <Button variant="outline" onClick={handleDeselectAll} className="flex-1">
+                  Deselect All
+                </Button>
+              </div>
 
-            <div style={styles.recipientActions}>
-              <button style={styles.secondaryButton} onClick={handleSelectAll}>
-                Select All
-              </button>
-              <button style={styles.secondaryButton} onClick={handleDeselectAll}>
-                Deselect All
-              </button>
-            </div>
-
-            <div style={styles.filterSection}>
-              <label style={styles.filterLabel}>Filter by Client:</label>
-              <select
-                style={styles.select}
-                value={filterClient}
-                onChange={e => handleFilterByClient(e.target.value)}
-              >
-                <option value="">All Clients</option>
-                {allClients.map(client => (
-                  <option key={client} value={client}>
-                    {client}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={styles.caregiverList}>
-              {caregivers.map(cg => (
-                <div
-                  key={cg.id}
-                  style={{
-                    ...styles.caregiverItem,
-                    ...(cg.selected ? styles.caregiverItemSelected : {}),
-                  }}
-                  onClick={() => handleToggleCaregiver(cg.id)}
+              <div>
+                <Label htmlFor="filterClient">Filter by Client:</Label>
+                <Select
+                  value={filterClient}
+                  onValueChange={handleFilterByClient}
                 >
-                  <div style={styles.checkbox}>
-                    {cg.selected && <div style={styles.checkmark}>✓</div>}
-                  </div>
-                  <div style={styles.caregiverInfo}>
-                    <div style={styles.caregiverName}>{cg.name}</div>
-                    <div style={styles.caregiverContact}>
-                      {cg.phone} • {cg.email}
+                  <SelectTrigger id="filterClient">
+                    <SelectValue placeholder="All Clients" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Clients</SelectItem>
+                    {allClients.map(client => (
+                      <SelectItem key={client} value={client}>
+                        {client}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="max-h-[500px] overflow-y-auto space-y-2">
+                {caregivers.map(cg => (
+                  <div
+                    key={cg.id}
+                    className={`p-3 rounded-md border cursor-pointer transition-all ${
+                      cg.selected
+                        ? 'bg-blue-50 border-blue-500'
+                        : 'border-gray-200 hover:bg-gray-50'
+                    }`}
+                    onClick={() => handleToggleCaregiver(cg.id)}
+                  >
+                    <div className="flex gap-3 items-start">
+                      <Checkbox
+                        checked={cg.selected}
+                        onCheckedChange={() => handleToggleCaregiver(cg.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm">{cg.name}</div>
+                        <div className="text-xs text-gray-600">
+                          {cg.phone} • {cg.email}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          Clients: {cg.clients.join(', ')}
+                        </div>
+                      </div>
                     </div>
-                    <div style={styles.caregiverClients}>
-                      Clients: {cg.clients.join(', ')}
-                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Right column: Message */}
-        <div style={styles.rightColumn}>
-          <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>Message</h2>
-
-            <div style={styles.templatesSection}>
-              <label style={styles.label}>Templates:</label>
-              <div style={styles.templateGrid}>
-                {MESSAGE_TEMPLATES.map(template => (
-                  <button
-                    key={template.id}
-                    style={{
-                      ...styles.templateButton,
-                      ...(selectedTemplate?.id === template.id
-                        ? styles.templateButtonSelected
-                        : {}),
-                    }}
-                    onClick={() => handleSelectTemplate(template)}
-                  >
-                    {template.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div style={styles.urgencySection}>
-              <label style={styles.label}>Urgency Level:</label>
-              <div style={styles.urgencyButtons}>
-                {(['normal', 'important', 'urgent', 'emergency'] as UrgencyLevel[]).map(
-                  level => (
-                    <button
-                      key={level}
-                      style={{
-                        ...styles.urgencyButton,
-                        ...(urgency === level ? styles.urgencyButtonSelected : {}),
-                        borderColor: getUrgencyColor(level),
-                        ...(urgency === level
-                          ? { backgroundColor: getUrgencyColor(level) }
-                          : {}),
-                      }}
-                      onClick={() => setUrgency(level)}
-                    >
-                      {getUrgencyLabel(level)}
-                    </button>
-                  )
-                )}
-              </div>
-            </div>
-
-            <div style={styles.messageSection}>
-              <label style={styles.label}>Message:</label>
-              <textarea
-                style={styles.textarea}
-                placeholder="Type your message here..."
-                value={message}
-                onChange={e => setMessage(e.target.value)}
-                rows={8}
-              />
-              <div style={styles.charCount}>{message.length} characters</div>
-            </div>
-
-            <div style={styles.previewSection}>
-              <label style={styles.label}>Preview:</label>
-              <div
-                style={{
-                  ...styles.preview,
-                  borderLeftColor: getUrgencyColor(urgency),
-                }}
-              >
-                <div style={styles.previewHeader}>
-                  <strong>{getUrgencyLabel(urgency)}</strong>
-                  <span style={styles.previewTime}>Just now</span>
-                </div>
-                <div style={styles.previewMessage}>{message || '(No message)'}</div>
-                <div style={styles.previewFooter}>
-                  To: {selectedCount} caregiver{selectedCount !== 1 ? 's' : ''}
-                </div>
-              </div>
-            </div>
-
-            <div style={styles.deliveryInfo}>
-              <div style={styles.infoIcon}>ℹ️</div>
+        <div className="flex-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Message</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
               <div>
-                <div style={styles.infoTitle}>Multi-Channel Delivery</div>
-                <div style={styles.infoText}>
-                  Messages will be sent via:
-                  <ul style={styles.deliveryList}>
-                    <li>📱 Push notification (instant, if app installed)</li>
-                    <li>💬 SMS text message (backup, within 1 minute)</li>
-                    <li>📧 Email (backup, for record-keeping)</li>
-                  </ul>
-                  {urgency === 'emergency' && (
-                    <div style={styles.emergencyNote}>
-                      <strong>Emergency alerts</strong> will also trigger phone calls to
-                      caregivers who don't acknowledge within 5 minutes.
-                    </div>
+                <Label>Templates:</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {MESSAGE_TEMPLATES.map(template => (
+                    <Button
+                      key={template.id}
+                      variant={selectedTemplate?.id === template.id ? "default" : "outline"}
+                      className="justify-start text-left h-auto py-2.5"
+                      onClick={() => handleSelectTemplate(template)}
+                    >
+                      {template.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label>Urgency Level:</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {(['normal', 'important', 'urgent', 'emergency'] as UrgencyLevel[]).map(
+                    level => (
+                      <Button
+                        key={level}
+                        variant={urgency === level ? "default" : "outline"}
+                        className={`justify-start ${
+                          urgency === level ? getUrgencyBgColor(level) : ''
+                        } border-2 ${getUrgencyColor(level)}`}
+                        onClick={() => setUrgency(level)}
+                      >
+                        {getUrgencyLabel(level)}
+                      </Button>
+                    )
                   )}
                 </div>
               </div>
-            </div>
 
-            <button
-              style={{
-                ...styles.sendButton,
-                ...(selectedCount === 0 || !message.trim()
-                  ? styles.sendButtonDisabled
-                  : {}),
-              }}
-              onClick={handleSend}
-              disabled={selectedCount === 0 || !message.trim()}
-            >
-              Send to {selectedCount} Caregiver{selectedCount !== 1 ? 's' : ''}
-            </button>
-          </div>
+              <div>
+                <Label htmlFor="message">Message:</Label>
+                <Textarea
+                  id="message"
+                  placeholder="Type your message here..."
+                  value={message}
+                  onChange={e => setMessage(e.target.value)}
+                  rows={8}
+                  className="mt-2"
+                />
+                <div className="text-xs text-gray-500 mt-1 text-right">
+                  {message.length} characters
+                </div>
+              </div>
+
+              <div>
+                <Label>Preview:</Label>
+                <div
+                  className={`p-4 bg-gray-50 rounded-md border-l-4 mt-2 ${getUrgencyColor(urgency)}`}
+                >
+                  <div className="flex justify-between mb-2 text-sm">
+                    <strong>{getUrgencyLabel(urgency)}</strong>
+                    <span className="text-gray-500">Just now</span>
+                  </div>
+                  <div className="text-sm mb-2 whitespace-pre-wrap">
+                    {message || '(No message)'}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    To: {selectedCount} caregiver{selectedCount !== 1 ? 's' : ''}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-blue-50 rounded-md flex gap-3">
+                <div className="text-xl">ℹ️</div>
+                <div>
+                  <div className="text-sm font-semibold text-blue-900 mb-1">
+                    Multi-Channel Delivery
+                  </div>
+                  <div className="text-sm text-blue-900">
+                    Messages will be sent via:
+                    <ul className="my-2 pl-5 list-none">
+                      <li>📱 Push notification (instant, if app installed)</li>
+                      <li>💬 SMS text message (backup, within 1 minute)</li>
+                      <li>📧 Email (backup, for record-keeping)</li>
+                    </ul>
+                    {urgency === 'emergency' && (
+                      <div className="mt-2 p-2 bg-red-100 rounded text-red-900">
+                        <strong>Emergency alerts</strong> will also trigger phone calls to
+                        caregivers who don't acknowledge within 5 minutes.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                onClick={handleSend}
+                disabled={selectedCount === 0 || !message.trim()}
+                className="w-full py-4 text-base"
+              >
+                Send to {selectedCount} Caregiver{selectedCount !== 1 ? 's' : ''}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
   );
 }
-
-const styles: { [key: string]: React.CSSProperties } = {
-  container: {
-    padding: '24px',
-    maxWidth: '1400px',
-    margin: '0 auto',
-  },
-  header: {
-    marginBottom: '24px',
-  },
-  title: {
-    fontSize: '28px',
-    fontWeight: 'bold',
-    marginBottom: '4px',
-  },
-  subtitle: {
-    fontSize: '14px',
-    color: '#6b7280',
-  },
-  successBanner: {
-    padding: '16px',
-    backgroundColor: '#d1fae5',
-    border: '1px solid: #10b981',
-    borderRadius: '8px',
-    marginBottom: '24px',
-    display: 'flex',
-    gap: '12px',
-    alignItems: 'flex-start',
-  },
-  successIcon: {
-    fontSize: '24px',
-    color: '#059669',
-  },
-  successTitle: {
-    fontSize: '16px',
-    fontWeight: '600',
-    color: '#065f46',
-    marginBottom: '4px',
-  },
-  successText: {
-    fontSize: '14px',
-    color: '#065f46',
-  },
-  content: {
-    display: 'flex',
-    gap: '24px',
-  },
-  leftColumn: {
-    width: '400px',
-  },
-  rightColumn: {
-    flex: 1,
-  },
-  section: {
-    backgroundColor: 'white',
-    borderRadius: '8px',
-    border: '1px solid #e5e7eb',
-    padding: '20px',
-  },
-  sectionTitle: {
-    fontSize: '18px',
-    fontWeight: '600',
-    marginBottom: '16px',
-  },
-  recipientActions: {
-    display: 'flex',
-    gap: '8px',
-    marginBottom: '16px',
-  },
-  secondaryButton: {
-    padding: '8px 16px',
-    backgroundColor: 'white',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '14px',
-    cursor: 'pointer',
-    fontWeight: '500',
-  },
-  filterSection: {
-    marginBottom: '16px',
-  },
-  filterLabel: {
-    fontSize: '14px',
-    fontWeight: '500',
-    marginBottom: '8px',
-    display: 'block',
-  },
-  select: {
-    width: '100%',
-    padding: '8px 12px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '14px',
-  },
-  caregiverList: {
-    maxHeight: '500px',
-    overflowY: 'auto',
-  },
-  caregiverItem: {
-    padding: '12px',
-    borderRadius: '6px',
-    border: '1px solid #e5e7eb',
-    marginBottom: '8px',
-    cursor: 'pointer',
-    display: 'flex',
-    gap: '12px',
-    alignItems: 'flex-start',
-    transition: 'all 0.2s',
-  },
-  caregiverItemSelected: {
-    backgroundColor: '#eff6ff',
-    borderColor: '#3b82f6',
-  },
-  checkbox: {
-    width: '20px',
-    height: '20px',
-    borderRadius: '4px',
-    border: '2px solid #d1d5db',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  checkmark: {
-    color: '#3b82f6',
-    fontSize: '14px',
-    fontWeight: 'bold',
-  },
-  caregiverInfo: {
-    flex: 1,
-  },
-  caregiverName: {
-    fontSize: '14px',
-    fontWeight: '600',
-    marginBottom: '4px',
-  },
-  caregiverContact: {
-    fontSize: '12px',
-    color: '#6b7280',
-    marginBottom: '4px',
-  },
-  caregiverClients: {
-    fontSize: '12px',
-    color: '#6b7280',
-  },
-  templatesSection: {
-    marginBottom: '20px',
-  },
-  label: {
-    fontSize: '14px',
-    fontWeight: '500',
-    marginBottom: '8px',
-    display: 'block',
-  },
-  templateGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: '8px',
-  },
-  templateButton: {
-    padding: '10px',
-    backgroundColor: 'white',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '13px',
-    cursor: 'pointer',
-    textAlign: 'left',
-    transition: 'all 0.2s',
-  },
-  templateButtonSelected: {
-    backgroundColor: '#eff6ff',
-    borderColor: '#3b82f6',
-    fontWeight: '500',
-  },
-  urgencySection: {
-    marginBottom: '20px',
-  },
-  urgencyButtons: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: '8px',
-  },
-  urgencyButton: {
-    padding: '10px',
-    backgroundColor: 'white',
-    border: '2px solid',
-    borderRadius: '6px',
-    fontSize: '13px',
-    cursor: 'pointer',
-    fontWeight: '500',
-    transition: 'all 0.2s',
-  },
-  urgencyButtonSelected: {
-    color: 'white',
-  },
-  messageSection: {
-    marginBottom: '20px',
-  },
-  textarea: {
-    width: '100%',
-    padding: '12px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontFamily: 'inherit',
-    resize: 'vertical',
-  },
-  charCount: {
-    fontSize: '12px',
-    color: '#6b7280',
-    marginTop: '4px',
-    textAlign: 'right',
-  },
-  previewSection: {
-    marginBottom: '20px',
-  },
-  preview: {
-    padding: '16px',
-    backgroundColor: '#f9fafb',
-    borderRadius: '6px',
-    borderLeft: '4px solid',
-  },
-  previewHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: '8px',
-    fontSize: '13px',
-  },
-  previewTime: {
-    color: '#6b7280',
-  },
-  previewMessage: {
-    fontSize: '14px',
-    marginBottom: '8px',
-    whiteSpace: 'pre-wrap',
-  },
-  previewFooter: {
-    fontSize: '12px',
-    color: '#6b7280',
-  },
-  deliveryInfo: {
-    padding: '16px',
-    backgroundColor: '#eff6ff',
-    borderRadius: '6px',
-    marginBottom: '20px',
-    display: 'flex',
-    gap: '12px',
-    alignItems: 'flex-start',
-  },
-  infoIcon: {
-    fontSize: '20px',
-  },
-  infoTitle: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#1e40af',
-    marginBottom: '4px',
-  },
-  infoText: {
-    fontSize: '13px',
-    color: '#1e40af',
-  },
-  deliveryList: {
-    margin: '8px 0',
-    paddingLeft: '20px',
-  },
-  emergencyNote: {
-    marginTop: '8px',
-    padding: '8px',
-    backgroundColor: '#fee2e2',
-    borderRadius: '4px',
-    color: '#991b1b',
-  },
-  sendButton: {
-    width: '100%',
-    padding: '16px',
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '16px',
-    fontWeight: '600',
-    cursor: 'pointer',
-  },
-  sendButtonDisabled: {
-    backgroundColor: '#9ca3af',
-    cursor: 'not-allowed',
-  },
-};
