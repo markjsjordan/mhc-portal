@@ -269,36 +269,30 @@ export const BillingDashboard: React.FC = () => {
       )}
 
       {/* Primary Section Tabs: Claims Queue vs Invoices */}
-      <div className="flex border-b border-gray-200">
-        <button
+      <div className="flex border-b border-gray-200 pb-2 gap-2">
+        <Button
+          variant={activeViewTab === 'claims' ? 'secondary' : 'ghost'}
           onClick={() => setActiveViewTab('claims')}
-          className={`pb-3 px-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${
-            activeViewTab === 'claims'
-              ? 'border-blue-600 text-blue-700'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
+          className="gap-2"
         >
           <Layers className="h-4 w-4" />
           <span>Claims Queue & EVV Verification</span>
-          <Badge variant="secondary" className="px-1.5 py-0.2 text-[10px] font-bold bg-blue-100 text-blue-800">
+          <Badge variant="secondary">
             {claims.length}
           </Badge>
-        </button>
+        </Button>
 
-        <button
+        <Button
+          variant={activeViewTab === 'invoices' ? 'secondary' : 'ghost'}
           onClick={() => setActiveViewTab('invoices')}
-          className={`pb-3 px-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${
-            activeViewTab === 'invoices'
-              ? 'border-blue-600 text-blue-700'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
+          className="gap-2"
         >
           <Receipt className="h-4 w-4" />
           <span>Generated Invoices</span>
-          <Badge variant="secondary" className="px-1.5 py-0.2 text-[10px] font-bold bg-gray-100 text-gray-700">
+          <Badge variant="secondary">
             {invoiceData?.total ?? 0}
           </Badge>
-        </button>
+        </Button>
       </div>
 
       {/* TAB 1: CLAIMS QUEUE & EVV VERIFICATION */}

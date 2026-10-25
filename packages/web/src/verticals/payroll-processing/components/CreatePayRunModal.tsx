@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { X } from 'lucide-react';
-import { FormField, Select } from '@/core/components';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button.js';
+import { Label } from '@/components/ui/label.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 import { useAuth } from '@/core/hooks';
 import { useCreatePayRun, usePayPeriods } from '../hooks';
 
@@ -74,22 +81,47 @@ export const CreatePayRunModal: React.FC<CreatePayRunModalProps> = ({
 
         <form onSubmit={(e) => { handleSubmit(e).catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to submit'); }); }}>
           <div className="p-6 space-y-4">
-            <FormField label="Pay Period" required>
+            <div className="space-y-2">
+              <Label htmlFor="pay-run-period">
+                Pay Period <span className="text-destructive">*</span>
+              </Label>
               <Select
                 value={payPeriodId}
-                onChange={(e) => setPayPeriodId(e.target.value)}
-                options={payPeriodOptions}
-                placeholder="Select an open pay period"
-              />
-            </FormField>
+                onValueChange={setPayPeriodId}
+              >
+                <SelectTrigger id="pay-run-period">
+                  <SelectValue placeholder="Select an open pay period" />
+                </SelectTrigger>
+                <SelectContent>
+                  {payPeriodOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <FormField label="Run Type" required>
+            <div className="space-y-2">
+              <Label htmlFor="pay-run-type">
+                Run Type <span className="text-destructive">*</span>
+              </Label>
               <Select
                 value={runType}
-                onChange={(e) => setRunType(e.target.value)}
-                options={runTypeOptions}
-              />
-            </FormField>
+                onValueChange={setRunType}
+              >
+                <SelectTrigger id="pay-run-type">
+                  <SelectValue placeholder="Select run type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {runTypeOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             {payPeriodOptions.length === 0 && (
               <p className="text-sm text-gray-500">

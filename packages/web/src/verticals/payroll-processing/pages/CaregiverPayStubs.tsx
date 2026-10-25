@@ -73,11 +73,14 @@ export const CaregiverPayStubs: React.FC = () => {
           </p>
         </div>
         <div className="w-40">
+          <Label htmlFor="caregiver-year-select" className="sr-only">
+            Select year
+          </Label>
           <Select
             value={String(selectedYear)}
             onValueChange={(val) => setSelectedYear(parseInt(val))}
           >
-            <SelectTrigger aria-label="Select year">
+            <SelectTrigger id="caregiver-year-select" aria-label="Select year">
               <SelectValue placeholder="Select Year" />
             </SelectTrigger>
             <SelectContent>
