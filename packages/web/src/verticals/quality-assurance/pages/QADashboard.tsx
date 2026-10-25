@@ -8,7 +8,9 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AlertTriangle, CheckCircle, Clock, TrendingUp, Plus } from 'lucide-react';
-import { Button, Card, LoadingSpinner } from '@/core/components';
+import { LoadingSpinner } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent } from '@/components/ui/card.js';
 import { useAuditDashboard } from '../hooks';
 import { AuditCard, FindingCard, CorrectiveActionCard } from '../components';
 import toast from 'react-hot-toast';
@@ -61,7 +63,7 @@ export const QADashboard: React.FC = () => {
       {/* Key Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <div className="p-4">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total Audits</p>
@@ -73,11 +75,11 @@ export const QADashboard: React.FC = () => {
                 <CheckCircle className="h-6 w-6 text-blue-600" />
               </div>
             </div>
-          </div>
+          </CardContent>
         </Card>
 
         <Card>
-          <div className="p-4">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total Findings</p>
@@ -89,11 +91,11 @@ export const QADashboard: React.FC = () => {
                 <AlertTriangle className="h-6 w-6 text-yellow-600" />
               </div>
             </div>
-          </div>
+          </CardContent>
         </Card>
 
         <Card>
-          <div className="p-4">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Open Corrective Actions</p>
@@ -105,11 +107,11 @@ export const QADashboard: React.FC = () => {
                 <Clock className="h-6 w-6 text-purple-600" />
               </div>
             </div>
-          </div>
+          </CardContent>
         </Card>
 
         <Card>
-          <div className="p-4">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Avg Compliance Score</p>
@@ -121,7 +123,7 @@ export const QADashboard: React.FC = () => {
                 <TrendingUp className="h-6 w-6 text-green-600" />
               </div>
             </div>
-          </div>
+          </CardContent>
         </Card>
       </div>
 
@@ -132,7 +134,9 @@ export const QADashboard: React.FC = () => {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Upcoming Audits</h2>
             <Link to="/quality-assurance/audits?status=SCHEDULED">
-              <Button variant="ghost" size="sm">View All</Button>
+              <Button variant="ghost" size="sm">
+                View All
+              </Button>
             </Link>
           </div>
           <div className="space-y-3">
@@ -142,9 +146,9 @@ export const QADashboard: React.FC = () => {
               ))
             ) : (
               <Card>
-                <div className="p-4 text-center text-gray-600 text-sm">
+                <CardContent className="p-4 text-center text-gray-600 text-sm">
                   No upcoming audits
-                </div>
+                </CardContent>
               </Card>
             )}
           </div>
@@ -155,7 +159,9 @@ export const QADashboard: React.FC = () => {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">In Progress</h2>
             <Link to="/quality-assurance/audits?status=IN_PROGRESS">
-              <Button variant="ghost" size="sm">View All</Button>
+              <Button variant="ghost" size="sm">
+                View All
+              </Button>
             </Link>
           </div>
           <div className="space-y-3">
@@ -165,9 +171,9 @@ export const QADashboard: React.FC = () => {
               ))
             ) : (
               <Card>
-                <div className="p-4 text-center text-gray-600 text-sm">
+                <CardContent className="p-4 text-center text-gray-600 text-sm">
                   No audits in progress
-                </div>
+                </CardContent>
               </Card>
             )}
           </div>
@@ -178,7 +184,9 @@ export const QADashboard: React.FC = () => {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Recently Completed</h2>
             <Link to="/quality-assurance/audits?status=COMPLETED">
-              <Button variant="ghost" size="sm">View All</Button>
+              <Button variant="ghost" size="sm">
+                View All
+              </Button>
             </Link>
           </div>
           <div className="space-y-3">
@@ -188,9 +196,9 @@ export const QADashboard: React.FC = () => {
               ))
             ) : (
               <Card>
-                <div className="p-4 text-center text-gray-600 text-sm">
+                <CardContent className="p-4 text-center text-gray-600 text-sm">
                   No recently completed audits
-                </div>
+                </CardContent>
               </Card>
             )}
           </div>
@@ -206,31 +214,25 @@ export const QADashboard: React.FC = () => {
               <AlertTriangle className="h-5 w-5 text-red-600" />
               Critical Findings
             </h2>
-            {/* No dedicated findings-list page exists yet (tracked as a follow-up ticket).
-                A link here would fall through to /quality-assurance/audits/:id with
-                id="findings" and 500 (backend tries to parse "findings" as a UUID) —
-                removed rather than ship a broken "View All" per QA finding during GATE-2. */}
           </div>
           <div className="space-y-3">
             {dashboard.criticalFindings.length > 0 ? (
               dashboard.criticalFindings.map((finding) => (
-                // No dedicated FindingDetailPage exists yet; navigate to the parent audit's
-                // detail page as a stand-in until a finding detail view is built.
                 <FindingCard
                   key={finding.id}
                   finding={finding}
                   onClick={() => {
-                  Promise.resolve(navigate(`/quality-assurance/audits/${finding.auditId}`)).catch((err: unknown) => {
-                    toast.error(err instanceof Error ? err.message : 'Navigation failed');
-                  });
-                }}
+                    Promise.resolve(navigate(`/quality-assurance/audits/${finding.auditId}`)).catch((err: unknown) => {
+                      toast.error(err instanceof Error ? err.message : 'Navigation failed');
+                    });
+                  }}
                 />
               ))
             ) : (
               <Card>
-                <div className="p-4 text-center text-gray-600 text-sm">
+                <CardContent className="p-4 text-center text-gray-600 text-sm">
                   No critical findings
-                </div>
+                </CardContent>
               </Card>
             )}
           </div>
@@ -244,29 +246,29 @@ export const QADashboard: React.FC = () => {
               Overdue Corrective Actions
             </h2>
             <Link to="/quality-assurance/corrective-actions?overdue=true">
-              <Button variant="ghost" size="sm">View All</Button>
+              <Button variant="ghost" size="sm">
+                View All
+              </Button>
             </Link>
           </div>
           <div className="space-y-3">
             {dashboard.overdueCorrectiveActions.length > 0 ? (
               dashboard.overdueCorrectiveActions.map((action) => (
-                // No dedicated CorrectiveActionDetailPage exists yet; navigate to the parent
-                // audit's detail page as a stand-in until an action detail view is built.
                 <CorrectiveActionCard
                   key={action.id}
                   action={action}
                   onClick={() => {
-                  Promise.resolve(navigate(`/quality-assurance/audits/${action.auditId}`)).catch((err: unknown) => {
-                    toast.error(err instanceof Error ? err.message : 'Navigation failed');
-                  });
-                }}
+                    Promise.resolve(navigate(`/quality-assurance/audits/${action.auditId}`)).catch((err: unknown) => {
+                      toast.error(err instanceof Error ? err.message : 'Navigation failed');
+                    });
+                  }}
                 />
               ))
             ) : (
               <Card>
-                <div className="p-4 text-center text-gray-600 text-sm">
+                <CardContent className="p-4 text-center text-gray-600 text-sm">
                   No overdue corrective actions
-                </div>
+                </CardContent>
               </Card>
             )}
           </div>

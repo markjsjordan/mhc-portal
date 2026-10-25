@@ -10,17 +10,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft } from 'lucide-react';
-import {
-  Button,
-  Card,
-  CardHeader,
-  CardContent,
-  Input,
-  Select,
-  FormField,
-  LoadingSpinner,
-  ErrorMessage,
-} from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.js';
+import { Input } from '@/components/ui/input.js';
+import { Textarea } from '@/components/ui/textarea.js';
+import { FormField, LoadingSpinner, ErrorMessage } from '@/core/components';
 import { useCreateAudit } from '../hooks';
 import type { CreateAuditInput } from '../types';
 import toast from 'react-hot-toast';
@@ -126,7 +120,8 @@ export const CreateAuditPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link to="/quality-assurance/audits">
-          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Audits
           </Button>
         </Link>
@@ -142,7 +137,9 @@ export const CreateAuditPage: React.FC = () => {
 
       {/* Form */}
       <Card>
-        <CardHeader title="Audit Details" />
+        <CardHeader>
+          <CardTitle>Audit Details</CardTitle>
+        </CardHeader>
         <CardContent>
           <form onSubmit={(e) => { handleSubmit(onFormSubmit)(e).catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to submit audit'); }); }} className="space-y-6">
             <FormField label="Title" error={errors.title?.message} required>
@@ -150,25 +147,45 @@ export const CreateAuditPage: React.FC = () => {
             </FormField>
 
             <FormField label="Description" error={errors.description?.message} required>
-              <textarea
+              <Textarea
                 {...register('description')}
                 rows={4}
                 placeholder="Describe the purpose and scope of this audit"
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
               />
             </FormField>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <FormField label="Audit Type" error={errors.auditType?.message} required>
-                <Select {...register('auditType')} options={auditTypeOptions} />
+                <select
+                  {...register('auditType')}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {auditTypeOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
               </FormField>
 
               <FormField label="Priority" error={errors.priority?.message} required>
-                <Select {...register('priority')} options={priorityOptions} />
+                <select
+                  {...register('priority')}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {priorityOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
               </FormField>
 
               <FormField label="Scope" error={errors.scope?.message} required>
-                <Select {...register('scope')} options={scopeOptions} />
+                <select
+                  {...register('scope')}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {scopeOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
               </FormField>
             </div>
 

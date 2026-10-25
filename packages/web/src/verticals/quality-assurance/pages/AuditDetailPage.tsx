@@ -7,7 +7,10 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, User, FileText, AlertTriangle } from 'lucide-react';
-import { Button, Card, LoadingSpinner } from '@/core/components';
+import { LoadingSpinner } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.js';
+import { Badge } from '@/components/ui/badge.js';
 import { useAuditDetail } from '../hooks';
 import { FindingCard, CorrectiveActionCard } from '../components';
 import toast from 'react-hot-toast';
@@ -38,19 +41,23 @@ export const AuditDetailPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={() => {
-          Promise.resolve(navigate('/quality-assurance/audits')).catch((err: unknown) => {
-            toast.error(err instanceof Error ? err.message : 'Navigation failed');
-          });
-        }}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            Promise.resolve(navigate('/quality-assurance/audits')).catch((err: unknown) => {
+              toast.error(err instanceof Error ? err.message : 'Navigation failed');
+            });
+          }}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-900">{audit.title}</h1>
-            <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
               {audit.status.replace('_', ' ')}
-            </span>
+            </Badge>
           </div>
           <p className="text-sm text-gray-600 mt-1">{audit.auditNumber}</p>
         </div>
@@ -58,9 +65,10 @@ export const AuditDetailPage: React.FC = () => {
 
       {/* Audit Details Card */}
       <Card>
-        <div className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Audit Details</h2>
-
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-900">Audit Details</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <p className="text-sm text-gray-600 mb-1">Description</p>
@@ -133,34 +141,34 @@ export const AuditDetailPage: React.FC = () => {
               <p className="text-gray-700 whitespace-pre-wrap">{audit.recommendations}</p>
             </div>
           )}
-        </div>
+        </CardContent>
       </Card>
 
       {/* Findings Summary */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <div className="p-4">
+          <CardContent className="p-4">
             <p className="text-sm text-gray-600">Total Findings</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">{audit.totalFindings}</p>
-          </div>
+          </CardContent>
         </Card>
         <Card>
-          <div className="p-4">
+          <CardContent className="p-4">
             <p className="text-sm text-gray-600">Critical</p>
             <p className="text-2xl font-bold text-red-600 mt-1">{audit.criticalFindings}</p>
-          </div>
+          </CardContent>
         </Card>
         <Card>
-          <div className="p-4">
+          <CardContent className="p-4">
             <p className="text-sm text-gray-600">Major</p>
             <p className="text-2xl font-bold text-orange-600 mt-1">{audit.majorFindings}</p>
-          </div>
+          </CardContent>
         </Card>
         <Card>
-          <div className="p-4">
+          <CardContent className="p-4">
             <p className="text-sm text-gray-600">Minor</p>
             <p className="text-2xl font-bold text-yellow-600 mt-1">{audit.minorFindings}</p>
-          </div>
+          </CardContent>
         </Card>
       </div>
 
@@ -180,9 +188,9 @@ export const AuditDetailPage: React.FC = () => {
           </div>
         ) : (
           <Card>
-            <div className="p-6 text-center text-gray-600">
+            <CardContent className="p-6 text-center text-gray-600">
               No findings recorded
-            </div>
+            </CardContent>
           </Card>
         )}
       </div>
@@ -202,9 +210,9 @@ export const AuditDetailPage: React.FC = () => {
           </div>
         ) : (
           <Card>
-            <div className="p-6 text-center text-gray-600">
+            <CardContent className="p-6 text-center text-gray-600">
               No corrective actions created
-            </div>
+            </CardContent>
           </Card>
         )}
       </div>
