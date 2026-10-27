@@ -1,7 +1,7 @@
 import React from 'react';
 import { Database, Plus, Sparkles } from 'lucide-react';
-import { EmptyState } from '../feedback/EmptyState';
-import { Button } from '../Button';
+import { EmptyState } from '../feedback/EmptyState.js';
+import { Button } from '@/components/ui/button.js';
 
 export interface OnboardingEmptyStateProps {
   /**
@@ -74,22 +74,22 @@ export const OnboardingEmptyState: React.FC<OnboardingEmptyStateProps> = ({
       action={
         showDemoDataOption && onLoadDemoData ? (
           <Button
-            leftIcon={<Sparkles className="h-4 w-4" />}
             onClick={onLoadDemoData}
-            isLoading={isLoadingDemoData}
+            disabled={isLoadingDemoData}
             size="lg"
-            variant="primary"
+            variant="default"
           >
-            Load Sample Data
+            <Sparkles className="h-4 w-4 mr-2" />
+            {isLoadingDemoData ? 'Loading...' : 'Load Sample Data'}
           </Button>
         ) : canAdd && onAddResource ? (
           <Button
-            leftIcon={<Plus className="h-4 w-4" />}
             onClick={onAddResource}
             size="lg"
             disabled={!canAdd}
             title={!canAdd ? `You do not have permission to create ${resourceType}` : undefined}
           >
+            <Plus className="h-4 w-4 mr-2" />
             Add {resourceSingular.charAt(0).toUpperCase() + resourceSingular.slice(1)}
           </Button>
         ) : null
@@ -98,23 +98,23 @@ export const OnboardingEmptyState: React.FC<OnboardingEmptyStateProps> = ({
         showDemoDataOption && onLoadDemoData && canAdd && onAddResource ? (
           <Button
             variant="outline"
-            leftIcon={<Plus className="h-4 w-4" />}
             onClick={onAddResource}
             disabled={!canAdd || isLoadingDemoData}
             title={!canAdd ? `You do not have permission to create ${resourceType}` : undefined}
           >
+            <Plus className="h-4 w-4 mr-2" />
             Add {resourceSingular.charAt(0).toUpperCase() + resourceSingular.slice(1)}
           </Button>
         ) : null
       }
       metadata={
         showDemoDataOption && onLoadDemoData ? (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900 max-w-md">
+          <div className="bg-primary/10 border border-border rounded-lg p-4 text-sm text-foreground max-w-md">
             <div className="flex items-start gap-2">
-              <Database className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-600" />
+              <Database className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
               <div className="text-left">
                 <p className="font-medium mb-1">What's sample data?</p>
-                <p className="text-blue-700">
+                <p className="text-muted-foreground">
                   Sample data includes realistic {resourceType}, allowing you to explore features
                   before adding your own. You can remove it anytime.
                 </p>

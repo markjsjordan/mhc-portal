@@ -8,7 +8,9 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card } from '@folkcare/shared-components';
-import { Button } from '@folkcare/shared-components';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
 import { useApiClient } from '@/core/hooks';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { CheckCircle, XCircle, Clock, Building2, Mail, Shield } from 'lucide-react';
@@ -199,7 +201,7 @@ export function AcceptInvite() {
               This invitation link is invalid or has been removed. Please contact your administrator for a new invitation.
             </p>
             <Link to="/login">
-              <Button variant="primary">Go to Login</Button>
+              <Button>Go to Login</Button>
             </Link>
           </Card.Content>
         </Card>
@@ -219,7 +221,7 @@ export function AcceptInvite() {
               This invitation has expired. Please contact your administrator to send a new invitation.
             </p>
             <Link to="/login">
-              <Button variant="primary">Go to Login</Button>
+              <Button>Go to Login</Button>
             </Link>
           </Card.Content>
         </Card>
@@ -239,7 +241,7 @@ export function AcceptInvite() {
               This invitation has already been accepted. You can log in with your credentials.
             </p>
             <Link to="/login">
-              <Button variant="primary">Go to Login</Button>
+              <Button>Go to Login</Button>
             </Link>
           </Card.Content>
         </Card>
@@ -259,7 +261,7 @@ export function AcceptInvite() {
               This invitation has been revoked. Please contact your administrator if you believe this is an error.
             </p>
             <Link to="/login">
-              <Button variant="primary">Go to Login</Button>
+              <Button>Go to Login</Button>
             </Link>
           </Card.Content>
         </Card>
@@ -321,114 +323,102 @@ export function AcceptInvite() {
               {/* Name Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                    First Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
+                  <Label htmlFor="firstName">
+                    First Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
                     type="text"
                     id="firstName"
                     value={formData.firstName}
                     onChange={(e) => handleInputChange('firstName', e.target.value)}
-                    className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
-                      errors['firstName']
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
-                    }`}
+                    aria-invalid={Boolean(errors['firstName'])}
                     disabled={acceptMutation.isPending}
+                    className="mt-1"
                   />
                   {errors['firstName'] && (
-                    <p className="mt-1 text-sm text-red-600">{errors['firstName']}</p>
+                    <p className="mt-1 text-sm text-destructive">{errors['firstName']}</p>
                   )}
                 </div>
                 <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                    Last Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
+                  <Label htmlFor="lastName">
+                    Last Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
                     type="text"
                     id="lastName"
                     value={formData.lastName}
                     onChange={(e) => handleInputChange('lastName', e.target.value)}
-                    className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
-                      errors['lastName']
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
-                    }`}
+                    aria-invalid={Boolean(errors['lastName'])}
                     disabled={acceptMutation.isPending}
+                    className="mt-1"
                   />
                   {errors['lastName'] && (
-                    <p className="mt-1 text-sm text-red-600">{errors['lastName']}</p>
+                    <p className="mt-1 text-sm text-destructive">{errors['lastName']}</p>
                   )}
                 </div>
               </div>
 
               {/* Password */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Password <span className="text-red-500">*</span>
-                </label>
-                <input
+                <Label htmlFor="password">
+                  Password <span className="text-destructive">*</span>
+                </Label>
+                <Input
                   type="password"
                   id="password"
                   value={formData.password}
                   onChange={(e) => handleInputChange('password', e.target.value)}
-                  className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
-                    errors['password']
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
-                  }`}
+                  aria-invalid={Boolean(errors['password'])}
                   disabled={acceptMutation.isPending}
+                  className="mt-1"
                 />
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-muted-foreground">
                   At least 12 characters with uppercase, lowercase, number, and special character
                 </p>
                 {errors['password'] && (
-                  <p className="mt-1 text-sm text-red-600">{errors['password']}</p>
+                  <p className="mt-1 text-sm text-destructive">{errors['password']}</p>
                 )}
               </div>
 
               {/* Confirm Password */}
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                  Confirm Password <span className="text-red-500">*</span>
-                </label>
-                <input
+                <Label htmlFor="confirmPassword">
+                  Confirm Password <span className="text-destructive">*</span>
+                </Label>
+                <Input
                   type="password"
                   id="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                  className={`mt-1 block w-full rounded-md shadow-sm sm:text-sm ${
-                    errors['confirmPassword']
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
-                  }`}
+                  aria-invalid={Boolean(errors['confirmPassword'])}
                   disabled={acceptMutation.isPending}
+                  className="mt-1"
                 />
                 {errors['confirmPassword'] && (
-                  <p className="mt-1 text-sm text-red-600">{errors['confirmPassword']}</p>
+                  <p className="mt-1 text-sm text-destructive">{errors['confirmPassword']}</p>
                 )}
               </div>
 
               {/* Phone (Optional) */}
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                  Phone Number <span className="text-gray-400">(optional)</span>
-                </label>
-                <input
+                <Label htmlFor="phone">
+                  Phone Number <span className="text-muted-foreground">(optional)</span>
+                </Label>
+                <Input
                   type="tel"
                   id="phone"
                   value={formData.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   placeholder="(555) 123-4567"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                   disabled={acceptMutation.isPending}
+                  className="mt-1"
                 />
               </div>
 
               {/* Error Message */}
               {acceptMutation.isError && (
-                <div className="rounded-md bg-red-50 p-4">
-                  <p className="text-sm text-red-800">
+                <div className="rounded-md bg-destructive/10 p-4">
+                  <p className="text-sm text-destructive">
                     {acceptMutation.error instanceof Error 
                       ? acceptMutation.error.message 
                       : 'Failed to accept invitation. Please try again.'}
@@ -440,11 +430,10 @@ export function AcceptInvite() {
               <div className="pt-4">
                 <Button
                   type="submit"
-                  variant="primary"
                   className="w-full"
-                  isLoading={acceptMutation.isPending}
+                  disabled={acceptMutation.isPending}
                 >
-                  Accept Invitation & Create Account
+                  {acceptMutation.isPending ? 'Accepting...' : 'Accept Invitation & Create Account'}
                 </Button>
               </div>
             </form>

@@ -5,11 +5,11 @@
  */
 
 import React, { useState } from 'react';
-import { Button } from '../Button';
-import { Input } from './Input';
-import { Select } from './Select';
-import { FormField } from './FormField';
-import type { CreateInviteRequest } from '../../services/organization-api';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { NativeSelect } from '@/components/ui/select.js';
+import type { CreateInviteRequest } from '../../services/organization-api.js';
 
 interface InviteMemberFormProps {
   readonly onSubmit: (data: CreateInviteRequest) => Promise<void>;
@@ -41,7 +41,7 @@ export function InviteMemberForm({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleInputChange = (field: string, value: string | string[]) => {
+  const handleInputChange = (field: string, value: string | string[] | number) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -95,65 +95,111 @@ export function InviteMemberForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <FormField label="Email Address" error={errors['email']} required>
+      <div className="space-y-1">
+        <Label htmlFor="email" className="text-sm font-medium">
+          Email Address <span className="text-destructive">*</span>
+        </Label>
         <Input
+          id="email"
           type="email"
           value={formData.email ?? ''}
           onChange={(e) => handleInputChange('email', e.target.value)}
           placeholder="colleague@example.com"
           disabled={isLoading}
+          aria-invalid={!!errors['email']}
+          className={errors['email'] ? 'border-destructive' : ''}
         />
-      </FormField>
+        {errors['email'] && (
+          <p className="text-sm text-destructive">{errors['email']}</p>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField label="First Name" error={errors['firstName']}>
+        <div className="space-y-1">
+          <Label htmlFor="firstName" className="text-sm font-medium">First Name</Label>
           <Input
+            id="firstName"
             type="text"
             value={formData.firstName ?? ''}
             onChange={(e) => handleInputChange('firstName', e.target.value)}
             placeholder="John"
             disabled={isLoading}
           />
-        </FormField>
+          {errors['firstName'] && (
+            <p className="text-sm text-destructive">{errors['firstName']}</p>
+          )}
+        </div>
 
-        <FormField label="Last Name" error={errors['lastName']}>
+        <div className="space-y-1">
+          <Label htmlFor="lastName" className="text-sm font-medium">Last Name</Label>
           <Input
+            id="lastName"
             type="text"
             value={formData.lastName ?? ''}
             onChange={(e) => handleInputChange('lastName', e.target.value)}
             placeholder="Doe"
             disabled={isLoading}
           />
-        </FormField>
+          {errors['lastName'] && (
+            <p className="text-sm text-destructive">{errors['lastName']}</p>
+          )}
+        </div>
       </div>
 
-      <FormField label="Role" error={errors['roles']} required>
-        <Select
+      <div className="space-y-1">
+        <Label htmlFor="role" className="text-sm font-medium">
+          Role <span className="text-destructive">*</span>
+        </Label>
+        <NativeSelect
+          id="role"
           value={formData.roles?.[0] ?? ''}
           onChange={(e) => handleInputChange('roles', [e.target.value])}
           disabled={isLoading}
-          options={ROLE_OPTIONS}
-          placeholder="Select a role"
-        />
-      </FormField>
+          error={!!errors['roles']}
+          aria-invalid={!!errors['roles']}
+        >
+          <option value="" disabled>Select a role</option>
+          {ROLE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </NativeSelect>
+        {errors['roles'] && (
+          <p className="text-sm text-destructive">{errors['roles']}</p>
+        )}
+      </div>
 
-      <FormField label="Invitation Expires In" error={errors['expiresInDays']}>
-        <Select
+      <div className="space-y-1">
+        <Label htmlFor="expiresInDays" className="text-sm font-medium">
+          Invitation Expires In
+        </Label>
+        <NativeSelect
+          id="expiresInDays"
           value={String(formData.expiresInDays ?? 7)}
           onChange={(e) => {
             const numValue = Number(e.target.value);
             setFormData((prev) => ({ ...prev, expiresInDays: numValue }));
           }}
           disabled={isLoading}
-          options={[
+          error={!!errors['expiresInDays']}
+        >
+          {[
             { value: '1', label: '1 day' },
             { value: '3', label: '3 days' },
             { value: '7', label: '7 days' },
             { value: '14', label: '14 days' },
             { value: '30', label: '30 days' },
-          ]}
-        />
-      </FormField>
+          ].map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </NativeSelect>
+        {errors['expiresInDays'] && (
+          <p className="text-sm text-destructive">{errors['expiresInDays']}</p>
+        )}
+      </div>
 
       <div className="flex justify-end space-x-3 pt-4">
         {onCancel && (
@@ -166,7 +212,7 @@ export function InviteMemberForm({
             Cancel
           </Button>
         )}
-        <Button type="submit" variant="primary" disabled={isLoading}>
+        <Button type="submit" disabled={isLoading}>
           {isLoading ? 'Sending Invitation...' : 'Send Invitation'}
         </Button>
       </div>

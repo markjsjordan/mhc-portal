@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { Calendar } from 'lucide-react';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
 
 export interface FilterDateRangeSectionProps {
   label: string;
@@ -24,33 +26,42 @@ export const FilterDateRangeSection: React.FC<FilterDateRangeSectionProps> = ({
   onFromChange,
   onToChange,
 }) => {
+  const fromId = useId();
+  const toId = useId();
+
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+      <Label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-muted-foreground">
         {label}
-      </label>
+      </Label>
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <span className="text-[11px] text-gray-500 block mb-1">From</span>
+          <Label htmlFor={fromId} className="text-[11px] text-muted-foreground block mb-1">
+            From
+          </Label>
           <div className="relative">
-            <Calendar className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
+            <Calendar className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+            <Input
+              id={fromId}
               type="date"
               value={formatDateValue(fromValue)}
               onChange={(e) => onFromChange(e.target.value)}
-              className="w-full pl-8 pr-2 py-1.5 text-xs rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="pl-8 text-xs h-8"
             />
           </div>
         </div>
         <div>
-          <span className="text-[11px] text-gray-500 block mb-1">To</span>
+          <Label htmlFor={toId} className="text-[11px] text-muted-foreground block mb-1">
+            To
+          </Label>
           <div className="relative">
-            <Calendar className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
+            <Calendar className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+            <Input
+              id={toId}
               type="date"
               value={formatDateValue(toValue)}
               onChange={(e) => onToChange(e.target.value)}
-              className="w-full pl-8 pr-2 py-1.5 text-xs rounded-md border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="pl-8 text-xs h-8"
             />
           </div>
         </div>
