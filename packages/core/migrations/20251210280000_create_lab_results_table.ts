@@ -111,7 +111,9 @@ export async function up(knex: Knex): Promise<void> {
   });
 
   // Seed common lab result types
-  await knex('lab_result_types').insert([
+  // Seed rows reference the base org; skip on fresh DBs with no org (seeded by seed-base.ts in dev/preview).
+  const hasOrg = await knex('organizations').first('id');
+  if (hasOrg) await knex('lab_result_types').insert([
     // Diabetes
     { code: 'HBA1C', name: 'Hemoglobin A1C', short_name: 'A1C', category: 'Diabetes', unit: '%', normal_min: 4.0, normal_max: 5.6, critical_high: 10.0, organization_id: knex.raw("(SELECT id FROM organizations LIMIT 1)"), display_order: 1 },
     { code: 'GLU_FASTING', name: 'Fasting Glucose', short_name: 'FBG', category: 'Diabetes', unit: 'mg/dL', normal_min: 70, normal_max: 100, critical_low: 50, critical_high: 400, organization_id: knex.raw("(SELECT id FROM organizations LIMIT 1)"), display_order: 2 },

@@ -209,7 +209,9 @@ export async function up(knex: Knex): Promise<void> {
   });
 
   // Seed common education topics
-  await knex('education_topics').insert([
+  // Seed rows reference the base org; skip on fresh DBs with no org (seeded by seed-base.ts in dev/preview).
+  const hasOrg = await knex('organizations').first('id');
+  if (hasOrg) await knex('education_topics').insert([
     // Disease Management
     {
       id: knex.raw('gen_random_uuid()'),
