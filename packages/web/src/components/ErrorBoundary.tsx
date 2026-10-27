@@ -1,4 +1,5 @@
 import React, { ReactNode } from 'react';
+import { Button } from '@/components/ui/button.js';
 
 interface Props {
   children: ReactNode;
@@ -44,52 +45,27 @@ export class ErrorBoundary extends React.Component<Props, State> {
       const fallback: ReactNode = this.props.fallback;
       const errorUi: ReactNode = (
         fallback || (
-          <div
-            style={{
-              padding: '20px',
-              color: '#d32f2f',
-              backgroundColor: '#ffebee',
-              border: '1px solid #d32f2f',
-              borderRadius: '4px',
-              fontFamily: 'system-ui, -apple-system, sans-serif',
-            }}
-          >
-            <h2 style={{ marginTop: 0, marginBottom: '10px' }}>Something went wrong</h2>
-            <p style={{ margin: '0 0 10px 0' }}>
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6 text-destructive">
+            <h2 className="text-lg font-semibold mb-2">Something went wrong</h2>
+            <p className="text-sm mb-4">
               {this.state.error?.message || 'An unexpected error occurred'}
             </p>
             {process.env.NODE_ENV === 'development' && (
-              <details style={{ marginTop: '10px', cursor: 'pointer' }}>
-                <summary style={{ fontWeight: 'bold' }}>Error details (dev only)</summary>
-                <pre
-                  style={{
-                    marginTop: '10px',
-                    padding: '10px',
-                    backgroundColor: '#fff3e0',
-                    overflow: 'auto',
-                    fontSize: '12px',
-                    borderRadius: '2px',
-                  }}
-                >
+              <details className="mt-3 cursor-pointer text-xs">
+                <summary className="font-semibold mb-2">Error details (dev only)</summary>
+                <pre className="p-3 bg-muted text-muted-foreground overflow-auto rounded text-xs">
                   {this.state.errorInfo?.componentStack}
                 </pre>
               </details>
             )}
-            <button
-              onClick={() => window.location.reload()}
-              style={{
-                marginTop: '15px',
-                padding: '8px 16px',
-                backgroundColor: '#d32f2f',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '14px',
-              }}
-            >
-              Reload page
-            </button>
+            <div className="mt-4">
+              <Button
+                variant="destructive"
+                onClick={() => window.location.reload()}
+              >
+                Reload page
+              </Button>
+            </div>
           </div>
         )
       );
