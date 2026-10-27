@@ -239,7 +239,6 @@ export async function up(knex: Knex): Promise<void> {
 
   // Seed infection control protocols
   // Seed rows reference the base org; skip on fresh DBs with no org (seeded by seed-base.ts in dev/preview).
-  const hasOrg = await knex('organizations').first('id');
   if (hasOrg) await knex('care_protocols').insert([
     {
       id: knex.raw('gen_random_uuid()'),
