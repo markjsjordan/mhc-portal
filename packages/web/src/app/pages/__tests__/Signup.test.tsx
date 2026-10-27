@@ -39,6 +39,13 @@ const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 describe('Signup Page', () => {
+  const selectState = async (stateName = 'Texas') => {
+  const trigger = screen.getByLabelText(/state/i);
+  fireEvent.click(trigger);
+  const option = await screen.findByRole('option', { name: stateName });
+  fireEvent.click(option);
+};
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockFetch.mockReset();
@@ -57,7 +64,7 @@ describe('Signup Page', () => {
     expect(screen.getByLabelText(/state/i)).toBeInTheDocument();
   });
 
-  it('should show all US states in the dropdown', () => {
+  it('should show all US states in the dropdown', async () => {
     render(
       <BrowserRouter>
         <Signup />
@@ -66,13 +73,11 @@ describe('Signup Page', () => {
 
     const stateSelect = screen.getByLabelText(/state/i);
     expect(stateSelect).toBeInTheDocument();
+    fireEvent.click(stateSelect);
     
-    // Check for representative states as options
-    const options = stateSelect.querySelectorAll('option');
-    const stateNames = Array.from(options).map(opt => opt.textContent);
-    expect(stateNames).toContain('Texas');
-    expect(stateNames).toContain('Florida');
-    expect(stateNames).toContain('California');
+    expect(await screen.findByRole('option', { name: 'Texas' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Florida' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'California' })).toBeInTheDocument();
   });
 
   it('should validate organization name is required', async () => {
@@ -83,8 +88,7 @@ describe('Signup Page', () => {
     );
 
     // Select a state but leave org name empty
-    const stateSelect = screen.getByLabelText(/state/i);
-    fireEvent.change(stateSelect, { target: { value: 'TX' } });
+    await selectState('Texas');
 
     // Try to proceed
     const nextButton = screen.getByRole('button', { name: /continue/i });
@@ -130,8 +134,7 @@ describe('Signup Page', () => {
       target: { value: 'Test Home Health Agency' },
     });
     
-    const stateSelect = screen.getByLabelText(/state/i);
-    fireEvent.change(stateSelect, { target: { value: 'TX' } });
+    await selectState('Texas');
 
     // Click next
     const nextButton = screen.getByRole('button', { name: /continue/i });
@@ -155,9 +158,7 @@ describe('Signup Page', () => {
     fireEvent.change(screen.getByLabelText(/organization name/i), {
       target: { value: 'Test Agency' },
     });
-    fireEvent.change(screen.getByLabelText(/state/i), {
-      target: { value: 'TX' },
-    });
+    await selectState('Texas');
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     // Wait for step 2
@@ -187,9 +188,7 @@ describe('Signup Page', () => {
     fireEvent.change(screen.getByLabelText(/organization name/i), {
       target: { value: 'Test Agency' },
     });
-    fireEvent.change(screen.getByLabelText(/state/i), {
-      target: { value: 'TX' },
-    });
+    await selectState('Texas');
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     // Wait for step 2 to be visible
@@ -228,9 +227,7 @@ describe('Signup Page', () => {
     fireEvent.change(screen.getByLabelText(/organization name/i), {
       target: { value: 'Test Agency' },
     });
-    fireEvent.change(screen.getByLabelText(/state/i), {
-      target: { value: 'TX' },
-    });
+    await selectState('Texas');
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     // Wait for step 2
@@ -267,9 +264,7 @@ describe('Signup Page', () => {
     fireEvent.change(screen.getByLabelText(/organization name/i), {
       target: { value: 'Test Agency' },
     });
-    fireEvent.change(screen.getByLabelText(/state/i), {
-      target: { value: 'TX' },
-    });
+    await selectState('Texas');
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     await waitFor(() => screen.getByText('Administrator Account'));
@@ -315,9 +310,7 @@ describe('Signup Page', () => {
     fireEvent.change(screen.getByLabelText(/organization name/i), {
       target: { value: 'Test Agency' },
     });
-    fireEvent.change(screen.getByLabelText(/state/i), {
-      target: { value: 'TX' },
-    });
+    await selectState('Texas');
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     await waitFor(() => screen.getByText('Administrator Account'));
@@ -388,9 +381,7 @@ describe('Signup Page', () => {
     fireEvent.change(screen.getByLabelText(/organization name/i), {
       target: { value: 'Test Agency' },
     });
-    fireEvent.change(screen.getByLabelText(/state/i), {
-      target: { value: 'TX' },
-    });
+    await selectState('Texas');
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     await waitFor(() => screen.getByText('Administrator Account'));
@@ -459,9 +450,7 @@ describe('Signup Page', () => {
     fireEvent.change(screen.getByLabelText(/organization name/i), {
       target: { value: 'Test Agency' },
     });
-    fireEvent.change(screen.getByLabelText(/state/i), {
-      target: { value: 'TX' },
-    });
+    await selectState('Texas');
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     await waitFor(() => screen.getByText('Administrator Account'));
@@ -506,9 +495,7 @@ describe('Signup Page', () => {
     fireEvent.change(screen.getByLabelText(/organization name/i), {
       target: { value: 'Test Agency' },
     });
-    fireEvent.change(screen.getByLabelText(/state/i), {
-      target: { value: 'TX' },
-    });
+    await selectState('Texas');
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     // Wait for step 2
