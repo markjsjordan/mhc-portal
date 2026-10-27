@@ -6,9 +6,10 @@
 
 import React from 'react';
 import { RotateCcw, Info } from 'lucide-react';
-import { useApiProvider } from '../../providers';
-import { ShowcaseApiProvider } from '../../providers/showcase-api-provider';
-import { RoleSwitcher } from './RoleSwitcher';
+import { useApiProvider } from '../../providers/index.js';
+import { ShowcaseApiProvider } from '../../providers/showcase-api-provider.js';
+import { RoleSwitcher } from './RoleSwitcher.js';
+import { Button } from '@/components/ui/button.js';
 
 export const ShowcaseControls: React.FC = () => {
   const provider = useApiProvider();
@@ -28,22 +29,24 @@ export const ShowcaseControls: React.FC = () => {
   return (
     <>
       <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
-        <button
+        <Button
           onClick={() => setShowInfo(true)}
-          className="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+          variant="ghost"
+          className="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 hover:text-white transition-colors h-auto font-normal"
           title="About"
         >
           <Info className="h-4 w-4" />
-        </button>
+        </Button>
 
-        <button
+        <Button
           onClick={handleReset}
-          className="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+          variant="ghost"
+          className="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 hover:text-white transition-colors h-auto font-normal"
           title="Reset Data"
         >
           <RotateCcw className="h-4 w-4" />
           <span className="text-sm font-medium">Reset Data</span>
-        </button>
+        </Button>
 
         <RoleSwitcher />
       </div>
@@ -65,12 +68,14 @@ export const ShowcaseControls: React.FC = () => {
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-bold text-gray-900">About</h2>
-                  <button
+                  <Button
                     onClick={() => setShowInfo(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    variant="ghost"
+                    size="icon"
+                    className="text-gray-400 hover:text-gray-600 h-8 w-8"
                   >
                     ✕
-                  </button>
+                  </Button>
                 </div>
 
                 <div className="space-y-4 text-gray-700">
@@ -95,12 +100,12 @@ export const ShowcaseControls: React.FC = () => {
                 </div>
 
                 <div className="mt-6 flex justify-end">
-                  <button
+                  <Button
                     onClick={() => setShowInfo(false)}
-                    className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                    className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors h-auto font-normal"
                   >
                     Close
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

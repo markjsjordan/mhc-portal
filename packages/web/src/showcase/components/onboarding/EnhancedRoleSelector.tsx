@@ -7,9 +7,9 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { personas } from '../../data/personas';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { personas } from '../../data/personas.js';
+import { Button } from '@/components/ui/button.js';
+import { Badge } from '@/components/ui/badge.js';
 
 interface EnhancedRoleSelectorProps {
   isOpen: boolean;
@@ -99,16 +99,17 @@ const PersonaDetailCard: React.FC<PersonaDetailCardProps> = ({
   onConfirm,
 }) => {
   return (
-    <button
+    <Button
       onClick={onConfirm}
       disabled={isCurrent}
-      className={`relative text-left p-6 rounded-lg border-2 transition-all ${
+      variant="ghost"
+      className={`relative text-left p-6 rounded-lg border-2 transition-all h-auto justify-start font-normal ${
         isCurrent
-          ? 'border-gray-900 bg-gray-50 opacity-50 cursor-not-allowed'
-          : 'border-gray-200 hover:border-gray-900'
+          ? 'border-gray-900 bg-gray-50 opacity-50 cursor-not-allowed hover:bg-gray-50'
+          : 'border-gray-200 hover:border-gray-900 hover:bg-white'
       }`}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 w-full">
         <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
           <span className="text-2xl">
             {persona.id === 'admin' && '👨‍💼'}
@@ -129,6 +130,6 @@ const PersonaDetailCard: React.FC<PersonaDetailCardProps> = ({
           </Badge>
         </div>
       )}
-    </button>
+    </Button>
   );
 };
