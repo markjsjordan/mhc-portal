@@ -1,10 +1,21 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { useApiClient } from '@/core/hooks';
-import { extractList } from '@/core/utils/list-response';
-import VisitTypeSelector from '@/verticals/scheduling-visits/components/VisitTypeSelector';
-import type { VisitType } from '@/verticals/scheduling-visits/types';
+import { useApiClient } from '@/core/hooks/index.js';
+import { extractList } from '@/core/utils/list-response.js';
+import VisitTypeSelector from '@/verticals/scheduling-visits/components/VisitTypeSelector.js';
+import type { VisitType } from '@/verticals/scheduling-visits/types/index.js';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Textarea } from '@/components/ui/textarea.js';
+import { Label } from '@/components/ui/label.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 
 interface VisitFormData {
   clientId: string;
@@ -127,7 +138,7 @@ export const VisitForm: React.FC<VisitFormProps> = ({
 
     try {
       await onSubmit(formData);
-    } catch (error) {
+    } catch {
       toast.error('Failed to create visit');
     }
   };
@@ -157,152 +168,161 @@ export const VisitForm: React.FC<VisitFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Client Selection */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Client <span className="text-red-500">*</span>
-        </label>
-        <select
+      <div className="space-y-1">
+        <Label htmlFor="visit-client" className="text-sm font-medium">
+          Client <span className="text-destructive">*</span>
+        </Label>
+        <Select
           value={formData.clientId}
-          onChange={(e) => handleChange('clientId', e.target.value)}
-          className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            errors.clientId ? 'border-red-500' : 'border-gray-300'
-          }`}
+          onValueChange={(val) => handleChange('clientId', val)}
         >
-          <option value="">Select a client</option>
-          {clients.map((client: any) => (
-            <option key={client.id} value={client.id}>
-              {client.firstName ?? client.first_name} {client.lastName ?? client.last_name}
-            </option>
-          ))}
-        </select>
-        {errors.clientId && <p className="mt-1 text-sm text-red-500">{errors.clientId}</p>}
+          <SelectTrigger
+            id="visit-client"
+            aria-invalid={!!errors.clientId}
+            className={errors.clientId ? 'border-destructive' : ''}
+          >
+            <SelectValue placeholder="Select a client" />
+          </SelectTrigger>
+          <SelectContent>
+            {clients.map((client: any) => (
+              <SelectItem key={client.id} value={client.id}>
+                {client.firstName ?? client.first_name} {client.lastName ?? client.last_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {errors.clientId && <p className="mt-1 text-sm text-destructive">{errors.clientId}</p>}
       </div>
 
       {/* Service Type Selection */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Service Type <span className="text-red-500">*</span>
-        </label>
-        <select
+      <div className="space-y-1">
+        <Label htmlFor="visit-service-type" className="text-sm font-medium">
+          Service Type <span className="text-destructive">*</span>
+        </Label>
+        <Select
           value={formData.serviceTypeId}
-          onChange={(e) => handleChange('serviceTypeId', e.target.value)}
-          className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            errors.serviceTypeId ? 'border-red-500' : 'border-gray-300'
-          }`}
+          onValueChange={(val) => handleChange('serviceTypeId', val)}
         >
-          <option value="">Select a service type</option>
-          {serviceTypes.map((type: any) => (
-            <option key={type.id} value={type.id}>
-              {type.name}
-            </option>
-          ))}
-        </select>
-        {errors.serviceTypeId && <p className="mt-1 text-sm text-red-500">{errors.serviceTypeId}</p>}
+          <SelectTrigger
+            id="visit-service-type"
+            aria-invalid={!!errors.serviceTypeId}
+            className={errors.serviceTypeId ? 'border-destructive' : ''}
+          >
+            <SelectValue placeholder="Select a service type" />
+          </SelectTrigger>
+          <SelectContent>
+            {serviceTypes.map((type: any) => (
+              <SelectItem key={type.id} value={type.id}>
+                {type.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {errors.serviceTypeId && <p className="mt-1 text-sm text-destructive">{errors.serviceTypeId}</p>}
       </div>
 
       {/* Visit Type Selection */}
-      <div>
+      <div className="space-y-1">
         <VisitTypeSelector
           value={visitType}
           onChange={(type) => handleChange('visitType', type)}
         />
-        {errors.visitType && <p className="mt-2 text-sm text-red-500">{errors.visitType}</p>}
+        {errors.visitType && <p className="mt-2 text-sm text-destructive">{errors.visitType}</p>}
       </div>
 
       {/* Date */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Date <span className="text-red-500">*</span>
-        </label>
-        <input
+      <div className="space-y-1">
+        <Label htmlFor="visit-date" className="text-sm font-medium">
+          Date <span className="text-destructive">*</span>
+        </Label>
+        <Input
+          id="visit-date"
           type="date"
           value={formData.scheduledDate}
           onChange={(e) => handleChange('scheduledDate', e.target.value)}
-          className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-            errors.scheduledDate ? 'border-red-500' : 'border-gray-300'
-          }`}
+          aria-invalid={!!errors.scheduledDate}
+          className={errors.scheduledDate ? 'border-destructive' : ''}
         />
-        {errors.scheduledDate && <p className="mt-1 text-sm text-red-500">{errors.scheduledDate}</p>}
+        {errors.scheduledDate && <p className="mt-1 text-sm text-destructive">{errors.scheduledDate}</p>}
       </div>
 
       {/* Start and End Times */}
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Start Time <span className="text-red-500">*</span>
-          </label>
-          <input
+        <div className="space-y-1">
+          <Label htmlFor="visit-start-time" className="text-sm font-medium">
+            Start Time <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="visit-start-time"
             type="time"
             value={formData.scheduledStartTime}
             onChange={(e) => handleChange('scheduledStartTime', e.target.value)}
-            className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.scheduledStartTime ? 'border-red-500' : 'border-gray-300'
-            }`}
+            aria-invalid={!!errors.scheduledStartTime}
+            className={errors.scheduledStartTime ? 'border-destructive' : ''}
           />
-          {errors.scheduledStartTime && <p className="mt-1 text-sm text-red-500">{errors.scheduledStartTime}</p>}
+          {errors.scheduledStartTime && <p className="mt-1 text-sm text-destructive">{errors.scheduledStartTime}</p>}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            End Time <span className="text-red-500">*</span>
-          </label>
-          <input
+        <div className="space-y-1">
+          <Label htmlFor="visit-end-time" className="text-sm font-medium">
+            End Time <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="visit-end-time"
             type="time"
             value={formData.scheduledEndTime}
             onChange={(e) => handleChange('scheduledEndTime', e.target.value)}
-            className={`mt-1 block w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.scheduledEndTime ? 'border-red-500' : 'border-gray-300'
-            }`}
+            aria-invalid={!!errors.scheduledEndTime}
+            className={errors.scheduledEndTime ? 'border-destructive' : ''}
           />
-          {errors.scheduledEndTime && <p className="mt-1 text-sm text-red-500">{errors.scheduledEndTime}</p>}
+          {errors.scheduledEndTime && <p className="mt-1 text-sm text-destructive">{errors.scheduledEndTime}</p>}
         </div>
       </div>
 
       {/* Address */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Address</label>
-        <input
+      <div className="space-y-1">
+        <Label htmlFor="visit-address" className="text-sm font-medium">Address</Label>
+        <Input
+          id="visit-address"
           type="text"
           value={formData.address || ''}
           onChange={(e) => handleChange('address', e.target.value)}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Service address"
         />
       </div>
 
       {/* Notes */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Internal Notes</label>
-        <textarea
+      <div className="space-y-1">
+        <Label htmlFor="visit-notes" className="text-sm font-medium">Internal Notes</Label>
+        <Textarea
+          id="visit-notes"
           value={formData.notes || ''}
           onChange={(e) => handleChange('notes', e.target.value)}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          rows={3}
           placeholder="Internal notes"
+          rows={3}
         />
       </div>
 
       {/* Client Instructions */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Client Instructions</label>
-        <textarea
+      <div className="space-y-1">
+        <Label htmlFor="visit-instructions" className="text-sm font-medium">Client Instructions</Label>
+        <Textarea
+          id="visit-instructions"
           value={formData.clientInstructions || ''}
           onChange={(e) => handleChange('clientInstructions', e.target.value)}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          rows={3}
           placeholder="Instructions for caregiver"
+          rows={3}
         />
       </div>
 
       {/* Submit Button */}
       <div className="flex justify-end gap-3 pt-4">
-        <button
+        <Button
           type="submit"
           disabled={isSubmitting}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
         >
           {isSubmitting ? 'Creating...' : 'Create Visit'}
-        </button>
+        </Button>
       </div>
     </form>
   );

@@ -8,8 +8,8 @@
  */
 import React, { useState } from 'react';
 import { Edit2, Trash2, Copy, History, MoreVertical } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/core/hooks';
+import { Button } from '@/components/ui/button.js';
+import { useAuth } from '@/core/hooks/index.js';
 import type { Caregiver } from '../types/index.js';
 
 export interface CaregiverActionButtonsProps {
@@ -66,30 +66,36 @@ const CaregiverMoreMenu: React.FC<{
           role="menu"
         >
           {canDuplicate && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 onDuplicate();
                 onOpenChange(false);
               }}
-              className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 first:rounded-t-lg transition-colors"
+              className="w-full justify-start text-left px-4 py-2 hover:bg-muted flex items-center gap-2 first:rounded-t-lg font-normal"
               role="menuitem"
             >
               <Copy className="h-4 w-4" />
               <span className="text-sm">Duplicate Caregiver</span>
-            </button>
+            </Button>
           )}
           {onViewHistory && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 onViewHistory();
                 onOpenChange(false);
               }}
-              className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+              className="w-full justify-start text-left px-4 py-2 hover:bg-muted flex items-center gap-2 font-normal"
               role="menuitem"
             >
               <History className="h-4 w-4" />
               <span className="text-sm">View Audit History</span>
-            </button>
+            </Button>
           )}
         </div>
       )}

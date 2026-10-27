@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth, useOnboarding } from '@/core/hooks';
 import toast from 'react-hot-toast';
 import type { OnboardingStepId } from '@folkcare/core';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.js';
 
 /**
  * Onboarding Wizard for new agencies
@@ -438,18 +442,19 @@ export const Onboarding: React.FC = () => {
               Click the link in the email to verify your account.
             </p>
             <div className="flex gap-3">
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => toast.success('Verification email resent!')}
-                className="px-4 py-2 text-sm font-medium text-green-600 border border-green-600 rounded-lg hover:bg-green-50"
               >
                 Resend Email
-              </button>
-              <button
+              </Button>
+              <Button
+                size="sm"
                 onClick={() => void handleMarkComplete(step.id)}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
               >
                 I&apos;ve Verified My Email
-              </button>
+              </Button>
             </div>
           </div>
         );
@@ -464,115 +469,117 @@ export const Onboarding: React.FC = () => {
             {/* Organization Profile Form */}
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="org-legalName" className="block text-sm font-medium mb-1">
                   Legal Business Name
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="org-legalName"
                   type="text"
                   value={orgProfile.legalName}
                   onChange={(e) => setOrgProfile({ ...orgProfile, legalName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="e.g., Sunshine Home Health LLC"
                 />
               </div>
 
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Street Address *
-                </label>
-                <input
+                <Label htmlFor="org-street1" className="block text-sm font-medium mb-1">
+                  Street Address <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="org-street1"
                   type="text"
                   value={orgProfile.street1}
                   onChange={(e) => setOrgProfile({ ...orgProfile, street1: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="123 Main Street"
                 />
               </div>
 
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="org-street2" className="block text-sm font-medium mb-1">
                   Suite/Unit (Optional)
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="org-street2"
                   type="text"
                   value={orgProfile.street2}
                   onChange={(e) => setOrgProfile({ ...orgProfile, street2: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Suite 100"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  City *
-                </label>
-                <input
+                <Label htmlFor="org-city" className="block text-sm font-medium mb-1">
+                  City <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="org-city"
                   type="text"
                   value={orgProfile.city}
                   onChange={(e) => setOrgProfile({ ...orgProfile, city: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Austin"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  State *
-                </label>
-                <select
+                <Label htmlFor="org-state" className="block text-sm font-medium mb-1">
+                  State <span className="text-destructive">*</span>
+                </Label>
+                <Select
                   value={orgProfile.state}
-                  onChange={(e) => setOrgProfile({ ...orgProfile, state: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                  onValueChange={(val) => setOrgProfile({ ...orgProfile, state: val })}
                 >
-                  <option value="">Select state</option>
-                  {US_STATES.map((s) => (
-                    <option key={s.code} value={s.code}>{s.name}</option>
-                  ))}
-                </select>
+                  <SelectTrigger id="org-state">
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {US_STATES.map((s) => (
+                      <SelectItem key={s.code} value={s.code}>{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ZIP Code *
-                </label>
-                <input
+                <Label htmlFor="org-zipCode" className="block text-sm font-medium mb-1">
+                  ZIP Code <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="org-zipCode"
                   type="text"
                   value={orgProfile.zipCode}
                   onChange={(e) => setOrgProfile({ ...orgProfile, zipCode: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="78701"
                   maxLength={10}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="org-phone" className="block text-sm font-medium mb-1">
                   Business Phone
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="org-phone"
                   type="tel"
                   value={orgProfile.phone}
                   onChange={(e) => setOrgProfile({ ...orgProfile, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="(512) 555-1234"
                 />
               </div>
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button
+              <Button
                 onClick={handleSaveOrgProfile}
                 disabled={isSaving || !orgProfile.street1 || !orgProfile.city || !orgProfile.state || !orgProfile.zipCode}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? 'Saving...' : 'Save & Continue'}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => void handleSkipStep(step.id)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 Skip for Now
-              </button>
+              </Button>
             </div>
           </div>
         );
@@ -585,21 +592,20 @@ export const Onboarding: React.FC = () => {
               Most agencies work with Medicaid, Medicare, and private pay clients.
             </p>
             <div className="flex gap-3">
-              <button
+              <Button
                 onClick={() => {
                   void handleMarkComplete(step.id);
                   navigate('/billing/payors');
                 }}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
               >
                 Add Payors
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => void handleSkipStep(step.id)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 Skip for Now
-              </button>
+              </Button>
             </div>
           </div>
         );
@@ -617,21 +623,20 @@ export const Onboarding: React.FC = () => {
               </p>
             </div>
             <div className="flex gap-3">
-              <button
+              <Button
                 onClick={() => {
                   void handleMarkComplete(step.id);
                   navigate('/settings/evv');
                 }}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
               >
                 Configure EVV
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => void handleSkipStep(step.id)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 Skip for Now
-              </button>
+              </Button>
             </div>
           </div>
         );
@@ -647,72 +652,71 @@ export const Onboarding: React.FC = () => {
             {/* Caregiver Form */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  First Name *
-                </label>
-                <input
+                <Label htmlFor="cg-firstName" className="block text-sm font-medium mb-1">
+                  First Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="cg-firstName"
                   type="text"
                   value={caregiverForm.firstName}
                   onChange={(e) => setCaregiverForm({ ...caregiverForm, firstName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Jane"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Last Name *
-                </label>
-                <input
+                <Label htmlFor="cg-lastName" className="block text-sm font-medium mb-1">
+                  Last Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="cg-lastName"
                   type="text"
                   value={caregiverForm.lastName}
                   onChange={(e) => setCaregiverForm({ ...caregiverForm, lastName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Smith"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email *
-                </label>
-                <input
+                <Label htmlFor="cg-email" className="block text-sm font-medium mb-1">
+                  Email <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="cg-email"
                   type="email"
                   value={caregiverForm.email}
                   onChange={(e) => setCaregiverForm({ ...caregiverForm, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="jane@example.com"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="cg-phone" className="block text-sm font-medium mb-1">
                   Phone
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="cg-phone"
                   type="tel"
                   value={caregiverForm.phone}
                   onChange={(e) => setCaregiverForm({ ...caregiverForm, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="(555) 555-1234"
                 />
               </div>
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button
+              <Button
                 onClick={handleSaveCaregiver}
                 disabled={isSaving || !caregiverForm.firstName || !caregiverForm.lastName || !caregiverForm.email}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? 'Adding...' : 'Add Caregiver'}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => void handleSkipStep(step.id)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 Skip for Now
-              </button>
+              </Button>
             </div>
           </div>
         );
@@ -728,95 +732,98 @@ export const Onboarding: React.FC = () => {
             {/* Client Form */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  First Name *
-                </label>
-                <input
+                <Label htmlFor="cl-firstName" className="block text-sm font-medium mb-1">
+                  First Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="cl-firstName"
                   type="text"
                   value={clientForm.firstName}
                   onChange={(e) => setClientForm({ ...clientForm, firstName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="John"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Last Name *
-                </label>
-                <input
+                <Label htmlFor="cl-lastName" className="block text-sm font-medium mb-1">
+                  Last Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="cl-lastName"
                   type="text"
                   value={clientForm.lastName}
                   onChange={(e) => setClientForm({ ...clientForm, lastName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Doe"
                 />
               </div>
 
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label htmlFor="cl-phone" className="block text-sm font-medium mb-1">
                   Phone
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="cl-phone"
                   type="tel"
                   value={clientForm.phone}
                   onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="(555) 555-1234"
                 />
               </div>
 
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Street Address *
-                </label>
-                <input
+                <Label htmlFor="cl-street1" className="block text-sm font-medium mb-1">
+                  Street Address <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="cl-street1"
                   type="text"
                   value={clientForm.street1}
                   onChange={(e) => setClientForm({ ...clientForm, street1: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="456 Oak Street"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  City *
-                </label>
-                <input
+                <Label htmlFor="cl-city" className="block text-sm font-medium mb-1">
+                  City <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="cl-city"
                   type="text"
                   value={clientForm.city}
                   onChange={(e) => setClientForm({ ...clientForm, city: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Austin"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  State *
-                </label>
-                <select
+                <Label htmlFor="cl-state" className="block text-sm font-medium mb-1">
+                  State <span className="text-destructive">*</span>
+                </Label>
+                <Select
                   value={clientForm.state}
-                  onChange={(e) => setClientForm({ ...clientForm, state: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                  onValueChange={(val) => setClientForm({ ...clientForm, state: val })}
                 >
-                  <option value="">Select state</option>
-                  {US_STATES.map((s) => (
-                    <option key={s.code} value={s.code}>{s.name}</option>
-                  ))}
-                </select>
+                  <SelectTrigger id="cl-state">
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {US_STATES.map((s) => (
+                      <SelectItem key={s.code} value={s.code}>{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ZIP Code *
-                </label>
-                <input
+                <Label htmlFor="cl-zipCode" className="block text-sm font-medium mb-1">
+                  ZIP Code <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="cl-zipCode"
                   type="text"
                   value={clientForm.zipCode}
                   onChange={(e) => setClientForm({ ...clientForm, zipCode: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="78701"
                   maxLength={10}
                 />
@@ -824,19 +831,18 @@ export const Onboarding: React.FC = () => {
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button
+              <Button
                 onClick={handleSaveClient}
                 disabled={isSaving || !clientForm.firstName || !clientForm.lastName || !clientForm.street1 || !clientForm.city || !clientForm.state || !clientForm.zipCode}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? 'Adding...' : 'Add Client'}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => void handleSkipStep(step.id)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 Skip for Now
-              </button>
+              </Button>
             </div>
           </div>
         );
@@ -849,21 +855,20 @@ export const Onboarding: React.FC = () => {
               through EVV clock-in/out and documentation.
             </p>
             <div className="flex gap-3">
-              <button
+              <Button
                 onClick={() => {
                   void handleMarkComplete(step.id);
                   navigate('/schedule');
                 }}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
               >
                 Schedule Visit
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => void handleSkipStep(step.id)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 Skip for Now
-              </button>
+              </Button>
             </div>
           </div>
         );
@@ -876,21 +881,20 @@ export const Onboarding: React.FC = () => {
               You can assign different roles like Coordinator, Scheduler, or Billing.
             </p>
             <div className="flex gap-3">
-              <button
+              <Button
                 onClick={() => {
                   void handleMarkComplete(step.id);
                   navigate('/settings/team');
                 }}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
               >
                 Invite Team
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => void handleSkipStep(step.id)}
-                className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 Skip for Now
-              </button>
+              </Button>
             </div>
           </div>
         );
@@ -916,12 +920,11 @@ export const Onboarding: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
-          <button
+          <Button
             onClick={() => navigate('/dashboard')}
-            className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
           >
             Go to Dashboard
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -937,12 +940,13 @@ export const Onboarding: React.FC = () => {
               <h1 className="text-2xl font-bold text-gray-900">Welcome to MHC Portal</h1>
               <p className="text-gray-600 mt-1">Let&apos;s get your agency set up</p>
             </div>
-            <button
+            <Button
+              variant="link"
               onClick={handleSkipOnboarding}
-              className="text-sm text-gray-500 hover:text-gray-700 underline"
+              className="text-sm text-muted-foreground hover:text-foreground p-0 h-auto underline font-normal"
             >
               Skip setup, go to dashboard
-            </button>
+            </Button>
           </div>
           
           {/* Progress bar */}
@@ -977,9 +981,10 @@ export const Onboarding: React.FC = () => {
                   : 'border-gray-200'
               }`}
             >
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => handleStepClick(step.id)}
-                className="w-full px-6 py-4 flex items-center gap-4 text-left"
+                className="w-full px-6 py-4 flex items-center justify-between gap-4 text-left h-auto font-normal rounded-xl hover:bg-transparent"
               >
                 {/* Step number or check */}
                 <div
@@ -1032,7 +1037,7 @@ export const Onboarding: React.FC = () => {
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
-              </button>
+              </Button>
 
               {/* Expanded content */}
               {expandedStep === step.id && !step.isComplete && (
@@ -1064,12 +1069,13 @@ export const Onboarding: React.FC = () => {
                 Your agency is configured and ready to start serving clients.
               </p>
             </div>
-            <button
+            <Button
+              size="lg"
               onClick={handleCompleteOnboarding}
-              className="px-8 py-3 text-lg font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 shadow-lg hover:shadow-xl transition-all"
+              className="px-8 py-3 text-lg font-semibold shadow-lg hover:shadow-xl transition-all h-auto"
             >
               Go to Dashboard
-            </button>
+            </Button>
           </div>
         )}
       </div>

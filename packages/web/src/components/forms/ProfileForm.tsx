@@ -3,8 +3,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Card } from '@folkcare/shared-components';
-import { Button } from '@folkcare/shared-components';
-import { FormField } from '@/components/forms/FormField';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
 import { UserProfile } from '@/hooks/useUserProfile';
 import { AlertCircle, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 
@@ -113,6 +114,7 @@ function ConflictDialog({ isOpen, currentValues, userChanges, onResolve, onCance
 
           <div className="flex gap-3 pt-4">
             <Button
+              type="button"
               onClick={() => onResolve('replace')}
               variant="secondary"
               className="flex-1"
@@ -120,13 +122,14 @@ function ConflictDialog({ isOpen, currentValues, userChanges, onResolve, onCance
               Use Current Values
             </Button>
             <Button
+              type="button"
               onClick={() => onResolve('merge')}
-              variant="primary"
               className="flex-1"
             >
               Keep My Changes
             </Button>
             <Button
+              type="button"
               onClick={onCancel}
               variant="outline"
               className="flex-1"
@@ -308,50 +311,73 @@ export function ProfileForm({
             )}
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <FormField
-                name="firstName"
-                label="First Name"
-                type="text"
-                register={register}
-                errors={errors}
-                required
-                disabled={isUpdating}
-              />
-              <FormField
-                name="lastName"
-                label="Last Name"
-                type="text"
-                register={register}
-                errors={errors}
-                required
-                disabled={isUpdating}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="firstName">
+                  First Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  {...register('firstName')}
+                  disabled={isUpdating}
+                  aria-invalid={Boolean(errors.firstName)}
+                />
+                {errors.firstName && (
+                  <p className="text-destructive text-sm">{errors.firstName.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">
+                  Last Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  {...register('lastName')}
+                  disabled={isUpdating}
+                  aria-invalid={Boolean(errors.lastName)}
+                />
+                {errors.lastName && (
+                  <p className="text-destructive text-sm">{errors.lastName.message}</p>
+                )}
+              </div>
             </div>
 
-            <FormField
-              name="email"
-              label="Email"
-              type="email"
-              register={register}
-              errors={errors}
-              required
-              disabled={isUpdating}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="email">
+                Email <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                {...register('email')}
+                disabled={isUpdating}
+                aria-invalid={Boolean(errors.email)}
+              />
+              {errors.email && (
+                <p className="text-destructive text-sm">{errors.email.message}</p>
+              )}
+            </div>
             {watch('email') !== profile?.email && (
               <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
                 ℹ️ We'll send a verification link to your new email address
               </div>
             )}
 
-            <FormField
-              name="phone"
-              label="Phone (Optional)"
-              type="tel"
-              register={register}
-              errors={errors}
-              disabled={isUpdating}
-              placeholder="(555) 123-4567"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone (Optional)</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="(555) 123-4567"
+                {...register('phone')}
+                disabled={isUpdating}
+                aria-invalid={Boolean(errors.phone)}
+              />
+              {errors.phone && (
+                <p className="text-destructive text-sm">{errors.phone.message}</p>
+              )}
+            </div>
 
             {/* Last synced timestamp */}
             {syncedAt && (
@@ -369,7 +395,6 @@ export function ProfileForm({
             <div className="flex gap-3 pt-6 border-t">
               <Button
                 type="submit"
-                variant="primary"
                 disabled={!isDirty || isUpdating}
               >
                 {isUpdating ? 'Saving...' : 'Save Changes'}
