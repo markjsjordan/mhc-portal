@@ -292,7 +292,7 @@ jobs:
     needs: build
     if: |
       (github.event_name == 'push' && github.ref == 'refs/heads/production') ||
-      (github.event_name == 'workflow_dispatch')
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
     environment:
       name: production
       url: ${{ steps.deploy.outputs.url }}
