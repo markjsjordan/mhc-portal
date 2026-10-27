@@ -5,10 +5,10 @@
 
 import { useState } from 'react';
 import { Calendar, Filter, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.js';
+import { Label } from '@/components/ui/label.js';
 import type { DateRange } from '@/types/analytics-types';
 
 interface AnalyticsFiltersProps {

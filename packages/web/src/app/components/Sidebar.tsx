@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/core/utils';
 import { useAuth, usePermissions } from '@/core/hooks';
-import { Button } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
 
 export interface SidebarProps {
   isOpen: boolean;
@@ -240,16 +240,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <Settings className="h-5 w-5" />
               Settings
             </NavLink>
-            <button
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 px-3 py-2 h-auto text-sm font-medium text-gray-700 hover:bg-gray-100 font-normal"
               onClick={() => {
                 logout();
                 onClose();
               }}
-              className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 w-full transition-colors"
             >
               <LogOut className="h-5 w-5" />
               Logout
-            </button>
+            </Button>
           </div>
         </div>
       </aside>

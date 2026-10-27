@@ -7,6 +7,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button.js';
 
 // Types matching the backend
 type ChecklistItemStatus = 'not_started' | 'in_progress' | 'completed' | 'skipped';
@@ -224,10 +225,12 @@ export function GoLiveChecklist({
               <span className="font-medium">Live</span>
             </div>
           ) : (
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={handleRunVerification}
               disabled={isVerifying || isLoading}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="gap-2"
             >
               {isVerifying ? (
                 <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -240,7 +243,7 @@ export function GoLiveChecklist({
                 </svg>
               )}
               Verify Progress
-            </button>
+            </Button>
           )}
         </div>
 
@@ -288,9 +291,10 @@ export function GoLiveChecklist({
         return (
           <div key={category} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             {/* Category Header */}
-            <button
+            <Button
+              variant="ghost"
               onClick={() => toggleCategory(category)}
-              className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between p-4 h-auto rounded-none font-normal"
             >
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-lg ${
@@ -328,7 +332,7 @@ export function GoLiveChecklist({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
-            </button>
+            </Button>
 
             {/* Category Items */}
             {isExpanded && (
@@ -340,12 +344,12 @@ export function GoLiveChecklist({
                       item.status === 'completed' ? 'bg-green-50/50' : ''
                     }`}
                   >
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleItemToggle(item)}
                       disabled={updatingItems.has(item.id) || isLoading || item.autoVerifiable}
-                      className={`mt-0.5 ${
-                        item.autoVerifiable ? 'cursor-default' : 'cursor-pointer hover:opacity-80'
-                      }`}
+                      className="mt-0.5 h-6 w-6 p-0 hover:bg-transparent"
                       title={item.autoVerifiable ? 'This item is verified automatically' : 'Click to toggle'}
                     >
                       {updatingItems.has(item.id) ? (
@@ -358,7 +362,7 @@ export function GoLiveChecklist({
                       ) : (
                         getStatusIcon(item.status, item.required)
                       )}
-                    </button>
+                    </Button>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className={`font-medium ${
@@ -384,12 +388,14 @@ export function GoLiveChecklist({
                       </div>
                       <p className="text-sm text-gray-500 mt-0.5">{item.description}</p>
                       {item.actionUrl && item.status !== 'completed' && (
-                        <button
+                        <Button
+                          variant="link"
+                          size="sm"
                           onClick={() => navigate(item.actionUrl!)}
-                          className="mt-2 text-sm font-medium text-green-600 hover:text-green-700"
+                          className="mt-2 p-0 h-auto font-medium"
                         >
                           Complete this step &rarr;
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -412,14 +418,12 @@ export function GoLiveChecklist({
                   : `Complete ${progress.requiredItemsTotal - progress.requiredItemsComplete} more required item(s) to go live.`}
               </p>
             </div>
-            <button
+            <Button
+              variant={isGoLiveReady ? 'secondary' : 'outline'}
+              size="lg"
               onClick={handleApproveGoLive}
               disabled={!isGoLiveReady || isApproving || isLoading}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
-                isGoLiveReady
-                  ? 'bg-white text-green-700 hover:bg-green-50 shadow-lg'
-                  : 'bg-green-500/50 text-green-200 cursor-not-allowed'
-              }`}
+              className="flex items-center gap-2 font-semibold"
             >
               {isApproving ? (
                 <>
@@ -437,7 +441,7 @@ export function GoLiveChecklist({
                   Launch Agency
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </div>
       )}

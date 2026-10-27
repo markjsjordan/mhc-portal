@@ -12,9 +12,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { Badge } from '@/components/ui/badge.js';
 
 interface Medication {
   id: string;
@@ -159,25 +159,23 @@ export function MedicationListPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="mb-6 border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+      <div className="mb-6 border-b border-gray-200 pb-2">
+        <nav className="flex space-x-2">
           {(['ACTIVE', 'ALL', 'DISCONTINUED'] as const).map((status) => (
-            <button
+            <Button
               key={status}
+              variant={filterStatus === status ? 'default' : 'ghost'}
+              size="sm"
               onClick={() => setFilterStatus(status)}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                filterStatus === status
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+              className="gap-2"
             >
               {status.replace('_', ' ')}
               {status === 'ACTIVE' && (
-                <span className="ml-2 py-0.5 px-2 rounded-full bg-blue-100 text-blue-600 text-xs">
+                <Badge variant="secondary" className="ml-2 text-xs">
                   {medications.filter((m) => m.status === 'ACTIVE').length}
-                </span>
+                </Badge>
               )}
-            </button>
+            </Button>
           ))}
         </nav>
       </div>
