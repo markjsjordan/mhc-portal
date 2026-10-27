@@ -1,6 +1,8 @@
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
-import { cn } from '../../utils/classnames';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert.js';
+import { Button } from '@/components/ui/button.js';
+import { cn } from '@/lib/utils.js';
 
 export interface ErrorMessageProps {
   title?: string;
@@ -18,37 +20,26 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({
   className,
 }) => {
   return (
-    <div
-      className={cn(
-        'rounded-md bg-red-50 p-4 border border-red-200',
-        className
-      )}
-    >
-      <div className="flex">
-        <div className="flex-shrink-0">
-          <AlertCircle className="h-5 w-5 text-red-400" />
-        </div>
-        <div className="ml-3 flex-1">
-          <h3 className="text-sm font-medium text-red-800">{title}</h3>
-          <div className="mt-2 text-sm text-red-700">{message}</div>
-          {retry && (
-            <div className="mt-4">
-              <button
-                type="button"
-                onClick={retry}
-                className="text-sm font-medium text-red-800 hover:text-red-700 underline"
-              >
-                Try again
-              </button>
-            </div>
-          )}
-          {action && (
-            <div className="mt-4">
-              {action}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+    <Alert variant="destructive" className={cn(className)}>
+      <AlertCircle className="h-4 w-4" />
+      <AlertTitle>{title}</AlertTitle>
+      <AlertDescription>
+        <div>{message}</div>
+        {retry && (
+          <div className="mt-4">
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              onClick={retry}
+              className="h-auto p-0 text-destructive underline"
+            >
+              Try again
+            </Button>
+          </div>
+        )}
+        {action && <div className="mt-4">{action}</div>}
+      </AlertDescription>
+    </Alert>
   );
 };

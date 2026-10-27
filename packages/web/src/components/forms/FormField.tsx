@@ -4,6 +4,12 @@
  */
 
 import { UseFormRegister, FieldErrors, FieldValues, Path } from 'react-hook-form';
+import { Input } from '@/components/ui/input.js';
+import { Textarea } from '@/components/ui/textarea.js';
+import { Label } from '@/components/ui/label.js';
+import { Checkbox } from '@/components/ui/checkbox.js';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group.js';
+import { NativeSelect } from '@/components/ui/select.js';
 
 export interface FormFieldProps<T extends FieldValues> {
   name: Path<T>;
@@ -41,63 +47,59 @@ export function FormField<T extends FieldValues>({
   const error = errors?.[name];
   const errorMessage = error?.message as string | undefined;
 
-  const baseInputClass = `
-    w-full px-3 py-2 border rounded-lg
-    focus:outline-none focus:ring-2 focus:ring-blue-500
-    disabled:bg-gray-100 disabled:cursor-not-allowed
-    ${error ? 'border-red-500' : 'border-gray-300'}
-  `.trim();
-
   return (
-    <div className={`mb-4 ${className}`}>
-      <label
+    <div className={`mb-4 space-y-1 ${className}`}>
+      <Label
         htmlFor={name}
-        className="block text-sm font-medium text-gray-700 mb-1"
+        className="block text-sm font-medium"
       >
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
+        {required && <span className="text-destructive ml-1">*</span>}
+      </Label>
 
       {type === 'select' ? (
-        <select
+        <NativeSelect
           id={name}
-          {...register(name)}
           disabled={disabled}
-          className={baseInputClass}
+          error={!!error}
+          aria-invalid={error ? 'true' : 'false'}
+          {...register(name)}
         >
-          <option value="">Select...</option>
+          {placeholder && <option value="">{placeholder}</option>}
           {options?.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       ) : type === 'textarea' ? (
-        <textarea
+        <Textarea
           id={name}
           {...register(name)}
           disabled={disabled}
           rows={rows}
           placeholder={placeholder}
-          className={baseInputClass}
+          className={error ? 'border-destructive focus-visible:ring-destructive' : ''}
+          aria-invalid={error ? 'true' : 'false'}
         />
       ) : (
-        <input
+        <Input
           id={name}
           type={type}
           {...register(name)}
           disabled={disabled}
           placeholder={placeholder}
-          className={baseInputClass}
+          className={error ? 'border-destructive focus-visible:ring-destructive' : ''}
+          aria-invalid={error ? 'true' : 'false'}
         />
       )}
 
       {helperText && !error && (
-        <p className="text-sm text-gray-500 mt-1">{helperText}</p>
+        <p className="text-sm text-muted-foreground mt-1">{helperText}</p>
       )}
 
       {errorMessage && (
-        <p className="text-sm text-red-600 mt-1" role="alert">
+        <p className="text-sm text-destructive mt-1" role="alert">
           {errorMessage}
         </p>
       )}
@@ -129,28 +131,31 @@ export function CheckboxField<T extends FieldValues>({
 }: CheckboxFieldProps<T>) {
   const error = errors?.[name];
   const errorMessage = error?.message as string | undefined;
+  const { onChange, onBlur, ref } = register(name);
 
   return (
     <div className={`mb-4 ${className}`}>
-      <div className="flex items-start">
-        <input
+      <div className="flex items-center gap-2">
+        <Checkbox
           id={name}
-          type="checkbox"
-          {...register(name)}
+          ref={ref}
           disabled={disabled}
-          className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          onCheckedChange={(checked) => {
+            void onChange({ target: { name, value: checked } });
+          }}
+          onBlur={onBlur}
         />
-        <label htmlFor={name} className="ml-2 block text-sm text-gray-700">
+        <Label htmlFor={name} className="text-sm font-normal cursor-pointer">
           {label}
-        </label>
+        </Label>
       </div>
 
       {helperText && !error && (
-        <p className="text-sm text-gray-500 mt-1 ml-6">{helperText}</p>
+        <p className="text-sm text-muted-foreground mt-1 ml-6">{helperText}</p>
       )}
 
       {errorMessage && (
-        <p className="text-sm text-red-600 mt-1 ml-6" role="alert">
+        <p className="text-sm text-destructive mt-1 ml-6" role="alert">
           {errorMessage}
         </p>
       )}
@@ -184,42 +189,45 @@ export function RadioField<T extends FieldValues>({
 }: RadioFieldProps<T>) {
   const error = errors?.[name];
   const errorMessage = error?.message as string | undefined;
+  const { onChange } = register(name);
 
   return (
     <div className={`mb-4 ${className}`}>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+      <Label className="block text-sm font-medium mb-2">
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
+        {required && <span className="text-destructive ml-1">*</span>}
+      </Label>
 
-      <div className="space-y-2">
+      <RadioGroup
+        disabled={disabled}
+        onValueChange={(val) => {
+          void onChange({ target: { name, value: val } });
+        }}
+        className="space-y-2"
+      >
         {options.map((option) => (
-          <div key={option.value} className="flex items-start">
-            <input
-              id={`${name}-${option.value}`}
-              type="radio"
+          <div key={option.value} className="flex items-start gap-2">
+            <RadioGroupItem
               value={option.value}
-              {...register(name)}
-              disabled={disabled}
-              className="mt-1 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+              id={`${name}-${option.value}`}
             />
-            <label
+            <Label
               htmlFor={`${name}-${option.value}`}
-              className="ml-2 block text-sm"
+              className="text-sm font-normal cursor-pointer"
             >
-              <span className="text-gray-700">{option.label}</span>
+              <span className="text-foreground">{option.label}</span>
               {option.description && (
-                <span className="block text-gray-500 text-xs mt-0.5">
+                <span className="block text-muted-foreground text-xs mt-0.5">
                   {option.description}
                 </span>
               )}
-            </label>
+            </Label>
           </div>
         ))}
-      </div>
+      </RadioGroup>
 
       {errorMessage && (
-        <p className="text-sm text-red-600 mt-1" role="alert">
+        <p className="text-sm text-destructive mt-1" role="alert">
           {errorMessage}
         </p>
       )}

@@ -5,10 +5,10 @@
  */
 
 import React, { useState } from 'react';
-import { Button } from '../Button';
-import { Input } from './Input';
-import { FormField } from './FormField';
-import type { AcceptInviteRequest, InviteDetails } from '../../services/organization-api';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import type { AcceptInviteRequest, InviteDetails } from '../../services/organization-api.js';
 
 interface AcceptInviteFormProps {
   readonly inviteDetails: InviteDetails;
@@ -118,77 +118,118 @@ export function AcceptInviteForm({
   return (
     <div className="space-y-6">
       {/* Invitation Details */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-blue-900 mb-2">
+      <div className="bg-primary/10 border border-border rounded-lg p-4">
+        <h3 className="text-sm font-medium text-foreground mb-2">
           You've been invited to join
         </h3>
-        <p className="text-lg font-semibold text-blue-900">
+        <p className="text-lg font-semibold text-foreground">
           {inviteDetails.organizationName}
         </p>
-        <p className="text-sm text-blue-700 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Role: {inviteDetails.roles.join(', ')}
         </p>
-        <p className="text-sm text-blue-700">Email: {inviteDetails.email}</p>
+        <p className="text-sm text-muted-foreground">Email: {inviteDetails.email}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="First Name" error={errors['firstName']} required>
+          <div className="space-y-1">
+            <Label htmlFor="firstName" className="text-sm font-medium">
+              First Name <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="firstName"
               type="text"
               value={formData.firstName}
               onChange={(e) => handleInputChange('firstName', e.target.value)}
               placeholder="John"
               disabled={isLoading}
+              aria-invalid={!!errors['firstName']}
+              className={errors['firstName'] ? 'border-destructive' : ''}
             />
-          </FormField>
+            {errors['firstName'] && (
+              <p className="text-sm text-destructive">{errors['firstName']}</p>
+            )}
+          </div>
 
-          <FormField label="Last Name" error={errors['lastName']} required>
+          <div className="space-y-1">
+            <Label htmlFor="lastName" className="text-sm font-medium">
+              Last Name <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="lastName"
               type="text"
               value={formData.lastName}
               onChange={(e) => handleInputChange('lastName', e.target.value)}
               placeholder="Doe"
               disabled={isLoading}
+              aria-invalid={!!errors['lastName']}
+              className={errors['lastName'] ? 'border-destructive' : ''}
             />
-          </FormField>
+            {errors['lastName'] && (
+              <p className="text-sm text-destructive">{errors['lastName']}</p>
+            )}
+          </div>
         </div>
 
-        <FormField label="Password" error={errors[PWD_FIELD]} required>
+        <div className="space-y-1">
+          <Label htmlFor={PWD_FIELD} className="text-sm font-medium">
+            Password <span className="text-destructive">*</span>
+          </Label>
           <Input
+            id={PWD_FIELD}
             type="password"
             value={formData[PWD_FIELD]}
             onChange={(e) => handleInputChange(PWD_FIELD, e.target.value)}
             placeholder="Minimum 8 characters"
             disabled={isLoading}
+            aria-invalid={!!errors[PWD_FIELD]}
+            className={errors[PWD_FIELD] ? 'border-destructive' : ''}
           />
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="text-xs text-muted-foreground">
             Must contain uppercase, lowercase, number, and special character
           </p>
-        </FormField>
+          {errors[PWD_FIELD] && (
+            <p className="text-sm text-destructive">{errors[PWD_FIELD]}</p>
+          )}
+        </div>
 
-        <FormField label="Confirm Password" error={errors[CONFIRM_PWD_FIELD]} required>
+        <div className="space-y-1">
+          <Label htmlFor={CONFIRM_PWD_FIELD} className="text-sm font-medium">
+            Confirm Password <span className="text-destructive">*</span>
+          </Label>
           <Input
+            id={CONFIRM_PWD_FIELD}
             type="password"
             value={formData[CONFIRM_PWD_FIELD]}
             onChange={(e) => handleInputChange(CONFIRM_PWD_FIELD, e.target.value)}
             placeholder="Re-enter password"
             disabled={isLoading}
+            aria-invalid={!!errors[CONFIRM_PWD_FIELD]}
+            className={errors[CONFIRM_PWD_FIELD] ? 'border-destructive' : ''}
           />
-        </FormField>
+          {errors[CONFIRM_PWD_FIELD] && (
+            <p className="text-sm text-destructive">{errors[CONFIRM_PWD_FIELD]}</p>
+          )}
+        </div>
 
-        <FormField label="Phone" error={errors['phone']}>
+        <div className="space-y-1">
+          <Label htmlFor="phone" className="text-sm font-medium">Phone</Label>
           <Input
+            id="phone"
             type="tel"
             value={formData.phone}
             onChange={(e) => handleInputChange('phone', e.target.value)}
             placeholder="(555) 123-4567"
             disabled={isLoading}
           />
-        </FormField>
+          {errors['phone'] && (
+            <p className="text-sm text-destructive">{errors['phone']}</p>
+          )}
+        </div>
 
         <div className="pt-4">
-          <Button type="submit" variant="primary" disabled={isLoading} className="w-full">
+          <Button type="submit" disabled={isLoading} className="w-full">
             {isLoading ? 'Creating Account...' : 'Accept Invitation & Create Account'}
           </Button>
         </div>
