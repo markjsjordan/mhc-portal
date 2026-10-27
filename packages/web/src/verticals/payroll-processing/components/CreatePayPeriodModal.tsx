@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { X } from 'lucide-react';
-import { FormField, Select } from '@/core/components';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 import { useAuth } from '@/core/hooks';
 import { useCreatePayPeriod, useOpenPayPeriod } from '../hooks';
 import type { PayPeriodType } from '../types';
@@ -77,40 +84,65 @@ export const CreatePayPeriodModal: React.FC<CreatePayPeriodModalProps> = ({
 
         <form onSubmit={(e) => { handleSubmit(e).catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to submit'); }); }}>
           <div className="p-6 space-y-4">
-            <FormField label="Period Type" required>
+            <div className="space-y-2">
+              <Label htmlFor="create-period-type">
+                Period Type <span className="text-destructive">*</span>
+              </Label>
               <Select
                 value={periodType}
-                onChange={(e) => setPeriodType(e.target.value as PayPeriodType)}
-                options={periodTypeOptions}
-              />
-            </FormField>
+                onValueChange={(val) => setPeriodType(val as PayPeriodType)}
+              >
+                <SelectTrigger id="create-period-type">
+                  <SelectValue placeholder="Select period type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {periodTypeOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <FormField label="Start Date" required>
+            <div className="space-y-2">
+              <Label htmlFor="create-period-start-date">
+                Start Date <span className="text-destructive">*</span>
+              </Label>
               <Input
+                id="create-period-start-date"
                 type="date"
                 required
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
-            </FormField>
+            </div>
 
-            <FormField label="End Date" required>
+            <div className="space-y-2">
+              <Label htmlFor="create-period-end-date">
+                End Date <span className="text-destructive">*</span>
+              </Label>
               <Input
+                id="create-period-end-date"
                 type="date"
                 required
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
-            </FormField>
+            </div>
 
-            <FormField label="Pay Date" required>
+            <div className="space-y-2">
+              <Label htmlFor="create-period-pay-date">
+                Pay Date <span className="text-destructive">*</span>
+              </Label>
               <Input
+                id="create-period-pay-date"
                 type="date"
                 required
                 value={payDate}
                 onChange={(e) => setPayDate(e.target.value)}
               />
-            </FormField>
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 p-6 border-t bg-muted/30">

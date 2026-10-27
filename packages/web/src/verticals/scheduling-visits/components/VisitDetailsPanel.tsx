@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import moment from 'moment';
 import { useQueryClient } from '@tanstack/react-query';
 import { X, ChevronLeft, ChevronRight, Clock, MapPin, Phone, User, AlertCircle, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button.js';
 import { useVisit } from '../hooks/useVisits';
 import { VisitTypeBadge } from './VisitTypeBadge';
 
@@ -77,11 +78,12 @@ export const VisitDetailsPanel: React.FC<VisitDetailsPanelProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end" data-testid="visit-details-panel">
-      <button
+      <Button
         type="button"
+        variant="ghost"
         aria-label="Close visit details"
         tabIndex={-1}
-        className="hidden md:block flex-1 bg-black/30 cursor-default"
+        className="hidden md:block flex-1 bg-black/30 hover:bg-black/30 cursor-default rounded-none h-full p-0"
         onClick={onClose}
       />
       <aside
@@ -92,35 +94,39 @@ export const VisitDetailsPanel: React.FC<VisitDetailsPanelProps> = ({
       >
         <header className="flex items-center justify-between gap-2 px-4 py-3 border-b">
           <div className="flex items-center gap-1">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={onPrevious}
               disabled={!onPrevious}
               aria-label="Previous visit"
-              className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
             {positionLabel && <span className="text-xs text-gray-500 tabular-nums">{positionLabel}</span>}
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={onNext}
               disabled={!onNext}
               aria-label="Next visit"
-              className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <ChevronRight className="h-5 w-5" />
-            </button>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
-          <button
+          <Button
             ref={closeButtonRef}
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
             aria-label="Close"
-            className="p-2 rounded-md hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="min-h-[44px] min-w-[44px]"
           >
-            <X className="h-6 w-6" />
-          </button>
+            <X className="h-5 w-5" />
+          </Button>
         </header>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">

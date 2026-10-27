@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Clock, MapPin, AlertTriangle, CheckCircle2, LogIn, LogOut, WifiOff } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Button } from '@/core/components/Button.js';
+import { Button } from '@/components/ui/button.js';
+import { Textarea } from '@/components/ui/textarea.js';
+import { Label } from '@/components/ui/label.js';
 import { useAuth } from '@/core/hooks/auth.js';
 import { usePermissions } from '@/core/hooks/permissions.js';
 import { useClockIn, useClockOut, useEVVRecord } from '@/verticals/time-tracking-evv/hooks/index.js';
@@ -120,12 +122,13 @@ const GeofenceOverrideModal: React.FC<GeofenceOverrideModalProps> = ({ onConfirm
             Your current GPS location is outside the expected service address boundary. Per EVV
             compliance requirements, a documented reason is required to proceed.
           </p>
-          <label className="block">
-            <span className="text-sm font-semibold text-gray-800">
+          <div className="space-y-2">
+            <Label htmlFor="manual-override-reason" className="block text-sm font-semibold text-gray-800">
               Manual Override Reason <span className="text-red-600">*</span>
-            </span>
-            <textarea
-              className="mt-1 w-full rounded-lg border border-gray-300 p-2 text-sm focus:ring-2 focus:ring-amber-400 focus:border-amber-400 resize-none"
+            </Label>
+            <Textarea
+              id="manual-override-reason"
+              className="mt-1 resize-none"
               rows={3}
               placeholder="e.g. Client temporarily relocated, GPS accuracy issue, approved alternative site…"
               value={reason}
@@ -133,14 +136,14 @@ const GeofenceOverrideModal: React.FC<GeofenceOverrideModalProps> = ({ onConfirm
               maxLength={500}
             />
             <span className="text-xs text-gray-500 mt-0.5 block">{reason.length}/500</span>
-          </label>
+          </div>
         </div>
         <div className="p-4 border-t border-gray-200 bg-gray-50 flex items-center justify-end gap-3">
           <Button variant="ghost" size="sm" onClick={onCancel}>
             Cancel
           </Button>
           <Button
-            variant="primary"
+            variant="default"
             size="sm"
             disabled={reason.trim().length < 10}
             onClick={() => onConfirm(reason.trim())}
@@ -490,11 +493,10 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
 
         {!isClockedIn && !isComplete && (
           <Button
-            variant="primary"
+            variant="default"
             size="sm"
             disabled={!clockInEnabled || busy}
             onClick={handleClockIn}
-            leftIcon={<LogIn className="h-4 w-4" />}
             className="min-h-[44px] w-full sm:w-auto whitespace-nowrap"
             title={
               !withinWindow && !isAdmin
@@ -502,6 +504,7 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
                 : undefined
             }
           >
+            <LogIn className="h-4 w-4" />
             {busy ? 'Locating…' : isAdmin ? 'Clock In (Admin)' : 'Clock In'}
           </Button>
         )}
@@ -512,9 +515,9 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
             size="sm"
             disabled={!clockOutEnabled || busy}
             onClick={handleClockOut}
-            leftIcon={<LogOut className="h-4 w-4" />}
             className="min-h-[44px] w-full sm:w-auto whitespace-nowrap"
           >
+            <LogOut className="h-4 w-4" />
             {busy ? 'Locating…' : isAdmin ? 'Clock Out (Admin)' : 'Clock Out'}
           </Button>
         )}

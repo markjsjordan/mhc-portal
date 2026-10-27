@@ -115,7 +115,6 @@ describe('DuplicateCaregiverModal', () => {
   });
 
   test('defaults new status to PENDING_ONBOARDING', async () => {
-    const user = userEvent.setup();
     render(
       <DuplicateCaregiverModal
         isOpen={true}
@@ -125,8 +124,7 @@ describe('DuplicateCaregiverModal', () => {
     );
 
     // The select should have PENDING_ONBOARDING as default
-    const statusSelect = screen.getByDisplayValue('Pending Onboarding');
-    expect(statusSelect).toBeInTheDocument();
+    expect(screen.getByText('Pending Onboarding')).toBeInTheDocument();
   });
 
   test('has default field checkboxes', () => {
@@ -348,7 +346,6 @@ describe('DuplicateCaregiverModal', () => {
   });
 
   test('allows changing status dropdown', async () => {
-    const user = userEvent.setup();
     render(
       <DuplicateCaregiverModal
         isOpen={true}
@@ -357,11 +354,13 @@ describe('DuplicateCaregiverModal', () => {
       />
     );
 
-    const statusSelect = screen.getByDisplayValue('Pending Onboarding');
+    const statusSelect = screen.getByRole('combobox', { name: /new status/i });
+    expect(screen.getByText('Pending Onboarding')).toBeInTheDocument();
 
-    // Native <select>: change the value the way a user does
-    await user.selectOptions(statusSelect, 'ACTIVE');
+    fireEvent.keyDown(statusSelect, { key: 'ArrowDown' });
+    const option = await screen.findByRole('option', { name: /^Active$/ });
+    fireEvent.click(option);
 
-    expect(screen.getByDisplayValue('Active')).toBeInTheDocument();
+    expect(screen.getByText('Active')).toBeInTheDocument();
   });
 });

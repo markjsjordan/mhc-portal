@@ -1,5 +1,6 @@
 import React, { useId } from 'react';
-import { cn } from '../../utils/classnames';
+import { Label } from '@/components/ui/label.js';
+import { cn } from '@/lib/utils.js';
 
 export interface FormFieldProps {
   label: string;
@@ -28,13 +29,13 @@ export const FormField: React.FC<FormFieldProps> = ({
 
   return (
     <div className={cn('space-y-1', className)}>
-      <label htmlFor={controlId} className="block text-sm font-medium text-gray-700">
+      <Label htmlFor={controlId} className="block text-sm font-medium">
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
+        {required && <span className="text-destructive ml-1">*</span>}
+      </Label>
       {control}
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {helperText && !error && <p className="text-sm text-gray-500">{helperText}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      {helperText && !error && <p className="text-sm text-muted-foreground">{helperText}</p>}
     </div>
   );
 };

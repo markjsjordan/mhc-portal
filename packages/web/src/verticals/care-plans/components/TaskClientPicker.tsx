@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Button, LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
+import { LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
 import { useClients, ClientSearch } from '@/verticals/client-demographics';
 import type { ClientSearchFilters } from '@/verticals/client-demographics';
 
@@ -64,13 +65,13 @@ export const TaskClientPicker: React.FC<TaskClientPickerProps> = ({ onSelectClie
                 }
               }}
               aria-label={client.preferredName ?? `${client.firstName} ${client.lastName}`}
-              className="w-full flex items-center justify-between gap-4 py-4 px-4 bg-white border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full flex items-center justify-between gap-4 py-4 px-4 bg-card border border-border rounded-md cursor-pointer hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <div>
-                <p className="text-base font-medium text-gray-900">
+                <p className="text-base font-medium">
                   {client.preferredName ?? `${client.firstName} ${client.lastName}`}
                 </p>
-                <p className="text-sm text-gray-500">{client.clientNumber}</p>
+                <p className="text-sm text-muted-foreground">{client.clientNumber}</p>
               </div>
             </div>
           ))}

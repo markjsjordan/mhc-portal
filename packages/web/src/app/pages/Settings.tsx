@@ -3,7 +3,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Card } from '@folkcare/shared-components';
-import { Button } from '@folkcare/shared-components';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { Checkbox } from '@/components/ui/checkbox.js';
 import { FormField } from '@/components/forms/FormField';
 import { useApiClient } from '@/core/hooks';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -108,21 +111,22 @@ export function Settings() {
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
-              <button
+              <Button
                 key={tab.id}
+                variant="ghost"
                 onClick={() => setActiveTab(tab.id)}
                 className={`
-                  flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm
+                  flex items-center gap-2 py-4 px-1 rounded-none border-b-2 font-medium text-sm h-auto
                   ${
                     activeTab === tab.id
-                      ? 'border-primary-500 text-primary-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                   }
                 `}
               >
                 <Icon className="w-5 h-5" />
                 {tab.label}
-              </button>
+              </Button>
             );
           })}
         </nav>
@@ -264,10 +268,9 @@ function ProfileSettings({ userProfile, isLoading, onSuccess, onError }: Setting
           <div className="flex items-center gap-4 pt-4">
             <Button
               type="submit"
-              variant="primary"
-              isLoading={updateProfileMutation.isPending}
+              disabled={updateProfileMutation.isPending}
             >
-              Save Changes
+              {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
             <Button
               type="button"
@@ -360,10 +363,9 @@ function AccountSettings({ onSuccess, onError }: Readonly<Omit<SettingsSectionPr
           <div className="flex items-center gap-4 pt-4">
             <Button
               type="submit"
-              variant="primary"
-              isLoading={changePasswordMutation.isPending}
+              disabled={changePasswordMutation.isPending}
             >
-              Change Password
+              {changePasswordMutation.isPending ? 'Changing...' : 'Change Password'}
             </Button>
             <Button
               type="button"
@@ -392,9 +394,10 @@ function PreferencesSettings({ onSuccess, onError }: Readonly<Omit<SettingsSecti
   });
 
   const {
-    register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
   } = useForm<PreferencesFormData>({
     resolver: zodResolver(preferencesSchema as any),
     defaultValues: {
@@ -452,37 +455,38 @@ function PreferencesSettings({ onSuccess, onError }: Readonly<Omit<SettingsSecti
             <h3 className="text-sm font-medium text-gray-900">Notifications</h3>
 
             <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="emailNotifications"
-                {...register('emailNotifications')}
-                className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                checked={watch('emailNotifications')}
+                onCheckedChange={(checked) =>
+                  setValue('emailNotifications', Boolean(checked), { shouldDirty: true })
+                }
               />
-              <label htmlFor="emailNotifications" className="text-sm text-gray-700">
+              <Label htmlFor="emailNotifications" className="text-sm font-normal cursor-pointer">
                 Email notifications
-              </label>
+              </Label>
             </div>
 
             <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="pushNotifications"
-                {...register('pushNotifications')}
-                className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                checked={watch('pushNotifications')}
+                onCheckedChange={(checked) =>
+                  setValue('pushNotifications', Boolean(checked), { shouldDirty: true })
+                }
               />
-              <label htmlFor="pushNotifications" className="text-sm text-gray-700">
+              <Label htmlFor="pushNotifications" className="text-sm font-normal cursor-pointer">
                 Push notifications
-              </label>
+              </Label>
             </div>
           </div>
 
           <div className="flex items-center gap-4 pt-4">
             <Button
               type="submit"
-              variant="primary"
-              isLoading={updatePreferencesMutation.isPending}
+              disabled={updatePreferencesMutation.isPending}
             >
-              Save Preferences
+              {updatePreferencesMutation.isPending ? 'Saving...' : 'Save Preferences'}
             </Button>
             <Button
               type="button"
@@ -606,15 +610,17 @@ function EditMemberModal({
             <h3 id="edit-member-modal-title" className="text-lg font-medium text-gray-900">
               Edit Team Member
             </h3>
-            <button
+            <Button
               type="button"
-              className="text-gray-400 hover:text-gray-500"
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-foreground h-8 w-8"
               onClick={onClose}
               aria-label="Close modal"
             >
               <span className="sr-only">Close</span>
               &times;
-            </button>
+            </Button>
           </div>
 
           <div className="mt-4 text-gray-900">
@@ -678,10 +684,9 @@ function EditMemberModal({
                 </Button>
                 <Button
                   type="submit"
-                  variant="primary"
-                  isLoading={isLoading}
+                  disabled={isLoading}
                 >
-                  Save Changes
+                  {isLoading ? 'Saving...' : 'Save Changes'}
                 </Button>
               </div>
             </form>
@@ -883,7 +888,6 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
           subtitle="Manage your organization's team"
           action={
             <Button
-              variant="primary"
               size="sm"
               onClick={() => setShowInviteModal(true)}
             >
@@ -939,9 +943,11 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                         {member.status}
                       </span>
                     </div>
-                    <button
+                    <Button
                       type="button"
-                      className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 shrink-0"
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-primary shrink-0"
                       onClick={() => {
                         setEditMemberError(null);
                         setEditingMember(member);
@@ -950,7 +956,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                       aria-label={`Edit ${member.firstName} ${member.lastName}`}
                     >
                       <Pencil className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -963,7 +969,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                 Invite team members to start collaborating.
               </p>
               <div className="mt-6">
-                <Button variant="primary" onClick={() => setShowInviteModal(true)}>
+                <Button onClick={() => setShowInviteModal(true)}>
                   <UserPlus className="h-4 w-4 mr-2" />
                   Invite your first team member
                 </Button>
@@ -1076,17 +1082,16 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                       Copy this link and send it directly to the new team member. The link is valid for 7 days.
                     </p>
                     <div className="flex items-center gap-2">
-                      <input
+                      <Input
                         type="text"
                         readOnly
                         value={generatedInviteUrl}
-                        className="flex-1 text-xs font-mono bg-white border border-green-300 rounded px-2 py-1.5 text-gray-700 truncate"
+                        className="flex-1 text-xs font-mono truncate"
                         onFocus={(e) => e.target.select()}
                         aria-label="Generated invite URL"
                       />
                       <Button
                         type="button"
-                        variant="primary"
                         size="sm"
                         onClick={handleCopyInviteUrl}
                       >
@@ -1167,11 +1172,10 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                     </Button>
                     <Button
                       type="submit"
-                      variant="primary"
-                      isLoading={createInvitationMutation.isPending}
+                      disabled={createInvitationMutation.isPending}
                     >
                       <Copy className="h-4 w-4 mr-2" />
-                      Generate Invite URL
+                      {createInvitationMutation.isPending ? 'Generating...' : 'Generate Invite URL'}
                     </Button>
                   </div>
                 </form>

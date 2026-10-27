@@ -12,10 +12,10 @@ import React, { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Phone, Calendar, Briefcase, GraduationCap, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { StatusBadge, LoadingSpinner, ErrorMessage } from '@/core/components';
-import { formatDate, formatPhone } from '@/core/utils';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
+import { Button } from '@/components/ui/button.js';
+import { StatusBadge, LoadingSpinner, ErrorMessage } from '@/core/components/index.js';
+import { formatDate, formatPhone } from '@/core/utils/index.js';
 import { useCaregiver } from '../hooks/index.js';
 import {
   CaregiverActionButtons,

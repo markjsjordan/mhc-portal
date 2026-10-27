@@ -10,9 +10,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { useAuth } from '@/core/hooks';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { useAuth } from '@/core/hooks/index.js';
 import { CaregiverForm, EMPTY_CAREGIVER_FORM } from '../components/CaregiverForm.js';
 import type { CaregiverFormValues } from '../components/CaregiverForm.js';
 import { useCaregiverApi } from '../hooks/index.js';
