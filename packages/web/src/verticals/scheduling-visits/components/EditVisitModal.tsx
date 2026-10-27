@@ -10,10 +10,21 @@ import {
   CheckCircle2,
   ShieldAlert,
 } from 'lucide-react';
-import { useApiClient } from '@/core/hooks';
-import { useVisitApi, useUpdateVisit } from '../hooks/useVisits';
-import { VISIT_TYPES } from '../config/visitTypeConfig';
-import type { Visit, VisitType } from '../types';
+import { useApiClient } from '@/core/hooks/index.js';
+import { useVisitApi, useUpdateVisit } from '../hooks/useVisits.js';
+import { VISIT_TYPES } from '../config/visitTypeConfig.js';
+import type { Visit, VisitType } from '../types/index.js';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { Textarea } from '@/components/ui/textarea.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 
 export interface EditVisitModalProps {
   visit: Visit;
@@ -215,26 +226,28 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
       aria-labelledby="edit-visit-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto"
     >
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full my-8 max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150">
+      <div className="bg-card text-card-foreground rounded-2xl shadow-2xl max-w-2xl w-full my-8 max-h-[92vh] flex flex-col overflow-hidden border border-border animate-in fade-in-0 zoom-in-95 duration-150">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 bg-gray-50/60">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4 bg-muted/40">
           <div>
-            <h2 id="edit-visit-title" className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-600" />
+            <h2 id="edit-visit-title" className="text-lg font-bold text-foreground flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-primary" />
               Edit Scheduled Visit
             </h2>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Visit ID: <span className="font-mono text-gray-700">{visit?.id?.slice(0, 8)}...</span>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Visit ID: <span className="font-mono text-foreground">{visit?.id?.slice(0, 8)}...</span>
             </p>
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="rounded-full p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200/60 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="min-h-[44px] min-w-[44px]"
             aria-label="Close dialog"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Locked Compliance Notice */}
@@ -258,51 +271,49 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-6">
           {/* Section: Date & Time */}
           <div className="space-y-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Schedule & Timing
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Date */}
               <div>
-                <label htmlFor="edit-scheduled-date" className="block text-sm font-medium text-gray-700 mb-1">
-                  Scheduled Date <span className="text-red-500">*</span>
-                </label>
+                <Label htmlFor="edit-scheduled-date" className="block text-sm font-medium mb-1">
+                  Scheduled Date <span className="text-destructive">*</span>
+                </Label>
                 <div className="relative">
-                  <input
+                  <Input
                     id="edit-scheduled-date"
                     type="date"
                     value={scheduledDate}
                     onChange={(e) => setScheduledDate(e.target.value)}
                     disabled={isLocked}
-                    className={`block w-full px-3.5 py-2.5 rounded-lg border text-sm focus:ring-2 focus:ring-blue-500 min-h-[44px] ${
-                      errors.scheduledDate ? 'border-red-500' : 'border-gray-300'
-                    } ${isLocked ? 'bg-gray-100 cursor-not-allowed text-gray-500' : 'bg-white'}`}
+                    className="min-h-[44px]"
+                    aria-invalid={!!errors.scheduledDate}
                   />
                 </div>
                 {errors.scheduledDate && (
-                  <p className="text-xs text-red-600 mt-1">{errors.scheduledDate}</p>
+                  <p className="text-xs text-destructive mt-1">{errors.scheduledDate}</p>
                 )}
               </div>
 
               {/* Start Time */}
               <div>
-                <label htmlFor="edit-scheduled-start" className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Time <span className="text-red-500">*</span>
-                </label>
+                <Label htmlFor="edit-scheduled-start" className="block text-sm font-medium mb-1">
+                  Start Time <span className="text-destructive">*</span>
+                </Label>
                 <div className="relative">
-                  <input
+                  <Input
                     id="edit-scheduled-start"
                     type="time"
                     value={scheduledStartTime}
                     onChange={(e) => setScheduledStartTime(e.target.value)}
                     disabled={isLocked}
-                    className={`block w-full px-3.5 py-2.5 rounded-lg border text-sm focus:ring-2 focus:ring-blue-500 min-h-[44px] ${
-                      errors.scheduledStartTime ? 'border-red-500' : 'border-gray-300'
-                    } ${isLocked ? 'bg-gray-100 cursor-not-allowed text-gray-500' : 'bg-white'}`}
+                    className="min-h-[44px]"
+                    aria-invalid={!!errors.scheduledStartTime}
                   />
                 </div>
                 {errors.scheduledStartTime && (
-                  <p className="text-xs text-red-600 mt-1">{errors.scheduledStartTime}</p>
+                  <p className="text-xs text-destructive mt-1">{errors.scheduledStartTime}</p>
                 )}
               </div>
             </div>
@@ -310,43 +321,44 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Duration */}
               <div>
-                <label htmlFor="edit-scheduled-duration" className="block text-sm font-medium text-gray-700 mb-1">
-                  Duration (Minutes) <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="edit-scheduled-duration"
-                  value={duration}
-                  onChange={(e) => setDuration(Number(e.target.value))}
+                <Label htmlFor="edit-scheduled-duration" className="block text-sm font-medium mb-1">
+                  Duration (Minutes) <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={String(duration)}
+                  onValueChange={(val) => setDuration(Number(val))}
                   disabled={isLocked}
-                  className={`block w-full px-3.5 py-2.5 rounded-lg border text-sm focus:ring-2 focus:ring-blue-500 min-h-[44px] ${
-                    errors.duration ? 'border-red-500' : 'border-gray-300'
-                  } ${isLocked ? 'bg-gray-100 cursor-not-allowed text-gray-500' : 'bg-white'}`}
                 >
-                  <option value={30}>30 minutes (0.5 hr)</option>
-                  <option value={45}>45 minutes (0.75 hr)</option>
-                  <option value={60}>60 minutes (1 hr)</option>
-                  <option value={90}>90 minutes (1.5 hr)</option>
-                  <option value={120}>120 minutes (2 hr)</option>
-                  <option value={180}>180 minutes (3 hr)</option>
-                  <option value={240}>240 minutes (4 hr)</option>
-                  <option value={360}>360 minutes (6 hr)</option>
-                  <option value={480}>480 minutes (8 hr)</option>
-                  <option value={720}>720 minutes (12 hr)</option>
-                </select>
+                  <SelectTrigger id="edit-scheduled-duration" className="min-h-[44px] w-full">
+                    <SelectValue placeholder="Select duration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">30 minutes (0.5 hr)</SelectItem>
+                    <SelectItem value="45">45 minutes (0.75 hr)</SelectItem>
+                    <SelectItem value="60">60 minutes (1 hr)</SelectItem>
+                    <SelectItem value="90">90 minutes (1.5 hr)</SelectItem>
+                    <SelectItem value="120">120 minutes (2 hr)</SelectItem>
+                    <SelectItem value="180">180 minutes (3 hr)</SelectItem>
+                    <SelectItem value="240">240 minutes (4 hr)</SelectItem>
+                    <SelectItem value="360">360 minutes (6 hr)</SelectItem>
+                    <SelectItem value="480">480 minutes (8 hr)</SelectItem>
+                    <SelectItem value="720">720 minutes (12 hr)</SelectItem>
+                  </SelectContent>
+                </Select>
                 {errors.duration && (
-                  <p className="text-xs text-red-600 mt-1">{errors.duration}</p>
+                  <p className="text-xs text-destructive mt-1">{errors.duration}</p>
                 )}
               </div>
 
               {/* End Time (Calculated) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label className="block text-sm font-medium mb-1">
                   Calculated End Time
-                </label>
-                <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-sm min-h-[44px]">
-                  <Clock className="w-4 h-4 text-gray-400" />
+                </Label>
+                <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg border border-border bg-muted/30 text-foreground text-sm min-h-[44px]">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
                   <span className="font-semibold">{calculatedEndTime}</span>
-                  <span className="text-xs text-gray-400">({duration} mins)</span>
+                  <span className="text-xs text-muted-foreground">({duration} mins)</span>
                 </div>
               </div>
             </div>
@@ -354,26 +366,27 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
 
           {/* Section: Visit Type */}
           <div className="space-y-2">
-            <label htmlFor="edit-visit-type" className="block text-sm font-medium text-gray-700">
-              Visit Type <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="edit-visit-type"
+            <Label htmlFor="edit-visit-type" className="block text-sm font-medium">
+              Visit Type <span className="text-destructive">*</span>
+            </Label>
+            <Select
               value={visitType}
-              onChange={(e) => setVisitType(e.target.value as VisitType)}
+              onValueChange={(val) => setVisitType(val as VisitType)}
               disabled={isLocked}
-              className={`block w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 min-h-[44px] ${
-                isLocked ? 'bg-gray-100 cursor-not-allowed text-gray-500' : 'bg-white'
-              }`}
             >
-              {Object.entries(VISIT_TYPES).map(([typeKey, config]) => (
-                <option key={typeKey} value={typeKey}>
-                  {config.label} ({config.description})
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="edit-visit-type" className="min-h-[44px] w-full">
+                <SelectValue placeholder="Select visit type" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(VISIT_TYPES).map(([typeKey, config]) => (
+                  <SelectItem key={typeKey} value={typeKey}>
+                    {config.label} ({config.description})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {VISIT_TYPES[visitType]?.requiredCertifications?.length > 0 && (
-              <p className="text-xs text-blue-700 bg-blue-50 p-2 rounded border border-blue-200">
+              <p className="text-xs text-primary bg-primary/10 p-2 rounded border border-primary/20">
                 Requires certification: {VISIT_TYPES[visitType].requiredCertifications.join(', ')}
               </p>
             )}
@@ -381,27 +394,26 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
 
           {/* Section: Assigned Caregiver */}
           <div className="space-y-2">
-            <label htmlFor="edit-assigned-caregiver" className="block text-sm font-medium text-gray-700">
+            <Label htmlFor="edit-assigned-caregiver" className="block text-sm font-medium">
               Assigned Caregiver
-            </label>
-            <div className="relative">
-              <select
-                id="edit-assigned-caregiver"
-                value={assignedCaregiverId}
-                onChange={(e) => setAssignedCaregiverId(e.target.value)}
-                disabled={isLocked || isLoadingCaregivers}
-                className={`block w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 min-h-[44px] ${
-                  isLocked ? 'bg-gray-100 cursor-not-allowed text-gray-500' : 'bg-white'
-                }`}
-              >
-                <option value="">-- Unassigned --</option>
+            </Label>
+            <Select
+              value={assignedCaregiverId || 'UNASSIGNED'}
+              onValueChange={(val) => setAssignedCaregiverId(val === 'UNASSIGNED' ? '' : val)}
+              disabled={isLocked || isLoadingCaregivers}
+            >
+              <SelectTrigger id="edit-assigned-caregiver" className="min-h-[44px] w-full">
+                <SelectValue placeholder="-- Unassigned --" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="UNASSIGNED">-- Unassigned --</SelectItem>
                 {caregivers.map((cg: any) => (
-                  <option key={cg.id} value={cg.id}>
+                  <SelectItem key={cg.id} value={cg.id}>
                     {cg.first_name} {cg.last_name} {cg.status ? `(${cg.status})` : ''}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-            </div>
+              </SelectContent>
+            </Select>
 
             {/* Conflict Warning */}
             {conflictCheck?.hasConflicts && (
@@ -423,49 +435,49 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
 
           {/* Section: Scope & Clinical Notes */}
           <div className="space-y-2">
-            <label htmlFor="edit-visit-notes" className="block text-sm font-medium text-gray-700">
+            <Label htmlFor="edit-visit-notes" className="block text-sm font-medium">
               Care Notes & Clinical Scope
-            </label>
-            <textarea
+            </Label>
+            <Textarea
               id="edit-visit-notes"
               rows={3}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               disabled={isLocked}
               placeholder="Add specific instructions, care requirements, or notes for the caregiver..."
-              className={`block w-full px-3.5 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 min-h-[44px] ${
-                isLocked ? 'bg-gray-100 cursor-not-allowed text-gray-500' : 'bg-white'
-              }`}
+              className="min-h-[44px]"
             />
           </div>
 
           {/* Compliance & Audit Callout */}
-          <div className="rounded-xl p-3.5 bg-blue-50/70 border border-blue-200 text-blue-900 text-xs flex items-start gap-2.5">
-            <ShieldAlert className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div className="rounded-xl p-3.5 bg-primary/5 border border-primary/20 text-foreground text-xs flex items-start gap-2.5">
+            <ShieldAlert className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
             <p className="leading-relaxed">
               <strong>HIPAA & EVV Audit Trail:</strong> Modifying a scheduled visit generates an immutable revision audit log recording your identity, timestamp, and field differences.
             </p>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-4 border-t border-gray-100">
-            <button
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-4 border-t border-border">
+            <Button
               type="button"
+              variant="outline"
               onClick={onClose}
               disabled={updateVisitMutation.isPending}
-              className="px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors min-h-[44px]"
+              className="min-h-[44px]"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="default"
               disabled={isLocked || updateVisitMutation.isPending}
-              className="px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-h-[44px]"
+              className="min-h-[44px]"
               data-testid="save-visit-button"
             >
               {updateVisitMutation.isPending ? (
                 <>
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                   Saving...
                 </>
               ) : (
@@ -474,7 +486,7 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
                   Save Changes
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

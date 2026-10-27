@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Search, X, Check } from 'lucide-react';
-import type { FilterOption } from './CalendarFilterBar';
-import { STATUS_OPTIONS } from './CalendarFilterBar';
+import type { FilterOption } from './CalendarFilterBar.js';
+import { STATUS_OPTIONS } from './CalendarFilterBar.js';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
 
 export interface MobileFilterDrawerProps {
   isOpen: boolean;
@@ -73,43 +76,46 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-xs">
       <div
-        className="w-full max-w-lg bg-white rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200"
+        className="w-full max-w-lg bg-card text-card-foreground rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col overflow-hidden border-t border-x border-border animate-in slide-in-from-bottom duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Grab Handle */}
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+          <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
-          <h2 className="text-base font-bold text-gray-900">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+          <h2 className="text-base font-bold text-foreground">
             Filters ({activeCount})
           </h2>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={onClose}
-            className="text-sm font-semibold text-blue-600 hover:text-blue-800"
+            className="font-semibold text-primary hover:text-primary"
           >
             [Close]
-          </button>
+          </Button>
         </div>
 
         {/* Drawer Body */}
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* Caregiver Section */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">
+            <Label htmlFor="mobile-filter-caregiver-search" className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
               Caregiver
-            </label>
-            <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg mb-2">
-              <Search className="w-4 h-4 text-gray-400" />
-              <input
+            </Label>
+            <div className="relative mb-2">
+              <Search className="w-4 h-4 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              <Input
+                id="mobile-filter-caregiver-search"
                 type="text"
                 placeholder="Search"
                 value={caregiverSearch}
                 onChange={(e) => setCaregiverSearch(e.target.value)}
-                className="w-full text-sm bg-transparent outline-none"
+                className="w-full pl-8 text-sm"
               />
             </div>
 
@@ -121,20 +127,23 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
                   return (
                     <span
                       key={id}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-800 border border-blue-200"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20"
                     >
                       <span
                         className="w-2 h-2 rounded-full"
                         style={{ backgroundColor: cg?.color || '#3B82F6' }}
                       />
                       <span>{cg?.name || id}</span>
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-xs"
                         onClick={() => toggleCaregiver(id)}
-                        className="ml-1"
+                        className="ml-1 h-3.5 w-3.5 p-0 hover:bg-transparent text-primary hover:text-primary"
+                        aria-label={`Remove ${cg?.name || id} filter`}
                       >
                         <X className="w-3 h-3" />
-                      </button>
+                      </Button>
                     </span>
                   );
                 })}
@@ -143,17 +152,17 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
 
             {/* Caregiver search list */}
             {caregiverSearch.trim().length > 0 && (
-              <div className="max-h-36 overflow-y-auto border border-gray-200 rounded-lg p-1 space-y-0.5">
+              <div className="max-h-36 overflow-y-auto border border-border rounded-lg p-1 space-y-0.5">
                 {filteredCaregivers.slice(0, 10).map((cg) => {
                   const isSelected = selectedCaregivers.includes(cg.id);
                   return (
                     <div
                       key={cg.id}
                       onClick={() => toggleCaregiver(cg.id)}
-                      className="flex items-center justify-between p-2 rounded text-xs hover:bg-gray-100 cursor-pointer"
+                      className="flex items-center justify-between p-2 rounded text-xs hover:bg-accent hover:text-accent-foreground cursor-pointer"
                     >
                       <span>{cg.name}</span>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                      {isSelected && <Check className="w-3.5 h-3.5 text-primary" />}
                     </div>
                   );
                 })}
@@ -163,17 +172,18 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
 
           {/* Patient (Client) Section */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">
+            <Label htmlFor="mobile-filter-client-search" className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
               Patient (Client)
-            </label>
-            <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg mb-2">
-              <Search className="w-4 h-4 text-gray-400" />
-              <input
+            </Label>
+            <div className="relative mb-2">
+              <Search className="w-4 h-4 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none z-10" />
+              <Input
+                id="mobile-filter-client-search"
                 type="text"
                 placeholder="Search"
                 value={clientSearch}
                 onChange={(e) => setClientSearch(e.target.value)}
-                className="w-full text-sm bg-transparent outline-none"
+                className="w-full pl-8 text-sm"
               />
             </div>
 
@@ -185,17 +195,20 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
                   return (
                     <span
                       key={id}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-teal-50 text-teal-800 border border-teal-200"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground border border-border"
                     >
-                      <span className="w-2 h-2 rounded-full bg-teal-600" />
+                      <span className="w-2 h-2 rounded-full bg-primary" />
                       <span>{cl?.name || id}</span>
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-xs"
                         onClick={() => toggleClient(id)}
-                        className="ml-1"
+                        className="ml-1 h-3.5 w-3.5 p-0 hover:bg-transparent"
+                        aria-label={`Remove ${cl?.name || id} filter`}
                       >
                         <X className="w-3 h-3" />
-                      </button>
+                      </Button>
                     </span>
                   );
                 })}
@@ -204,17 +217,17 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
 
             {/* Client search list */}
             {clientSearch.trim().length > 0 && (
-              <div className="max-h-36 overflow-y-auto border border-gray-200 rounded-lg p-1 space-y-0.5">
+              <div className="max-h-36 overflow-y-auto border border-border rounded-lg p-1 space-y-0.5">
                 {filteredClients.slice(0, 10).map((cl) => {
                   const isSelected = selectedClients.includes(cl.id);
                   return (
                     <div
                       key={cl.id}
                       onClick={() => toggleClient(cl.id)}
-                      className="flex items-center justify-between p-2 rounded text-xs hover:bg-gray-100 cursor-pointer"
+                      className="flex items-center justify-between p-2 rounded text-xs hover:bg-accent hover:text-accent-foreground cursor-pointer"
                     >
                       <span>{cl.name}</span>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                      {isSelected && <Check className="w-3.5 h-3.5 text-primary" />}
                     </div>
                   );
                 })}
@@ -224,30 +237,29 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
 
           {/* Status Section */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">
+            <Label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
               Status
-            </label>
+            </Label>
             <div className="flex flex-wrap gap-2">
               {STATUS_OPTIONS.map((status) => {
                 const isActive = selectedStatuses.includes(status.id);
                 return (
-                  <button
+                  <Button
                     key={status.id}
                     type="button"
+                    variant={isActive ? 'default' : 'outline'}
+                    size="xs"
                     onClick={() => toggleStatus(status.id)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                      isActive
-                        ? 'border-transparent text-white ' + status.activeClass
-                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                    }`}
+                    className="rounded-full gap-1.5"
+                    aria-pressed={isActive}
                   >
                     <span
                       className={`w-2 h-2 rounded-full ${
-                        isActive ? 'bg-white' : status.dotColor
+                        isActive ? 'bg-primary-foreground' : status.dotColor
                       }`}
                     />
                     <span>{status.label}</span>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -255,21 +267,23 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-gray-100 flex items-center justify-between bg-white">
-          <button
+        <div className="p-4 border-t border-border flex items-center justify-between bg-card">
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={onReset}
-            className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900"
           >
             Reset
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="default"
+            size="default"
             onClick={onClose}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-md transition-colors"
           >
             Apply Filters ({activeCount})
-          </button>
+          </Button>
         </div>
       </div>
     </div>

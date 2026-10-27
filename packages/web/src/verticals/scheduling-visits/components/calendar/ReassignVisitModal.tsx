@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, Clock } from 'lucide-react';
-import type { Visit } from '../../types';
+import type { Visit } from '../../types/index.js';
+import { Button } from '@/components/ui/button.js';
+import { Label } from '@/components/ui/label.js';
 
 export interface CaregiverOption {
   id: string;
@@ -52,35 +54,37 @@ export const ReassignVisitModal: React.FC<ReassignVisitModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
       <div
-        className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        className="w-full max-w-md bg-card text-card-foreground rounded-2xl shadow-xl overflow-hidden border border-border animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50">
-          <h3 className="font-bold text-gray-900 text-sm">
+        <div className="flex items-center justify-between p-4 border-b border-border bg-muted/40">
+          <h3 className="font-bold text-foreground text-sm">
             Reassign Visit Caregiver
           </h3>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+            aria-label="Close"
           >
-            <X className="w-5 h-5" />
-          </button>
+            <X className="w-4 h-4" />
+          </Button>
         </div>
 
         {/* Visit summary */}
-        <div className="p-4 bg-blue-50/50 border-b border-blue-100">
-          <div className="font-semibold text-gray-900 text-sm">{clientName}</div>
-          <div className="flex items-center gap-2 text-xs text-gray-600 mt-1">
+        <div className="p-4 bg-primary/5 border-b border-primary/20">
+          <div className="font-semibold text-foreground text-sm">{clientName}</div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
             <Clock className="w-3.5 h-3.5" />
             <span>
               {visit.scheduledStartTime} - {visit.scheduledEndTime}
             </span>
           </div>
-          <div className="text-xs text-gray-500 mt-1">
+          <div className="text-xs text-muted-foreground mt-1">
             Current Caregiver:{' '}
-            <span className="font-medium text-gray-800">
+            <span className="font-medium text-foreground">
               {currentCaregiver ? currentCaregiver.name : (visit.assignedCaregiverId ? 'Assigned' : 'Unassigned')}
             </span>
           </div>
@@ -88,10 +92,10 @@ export const ReassignVisitModal: React.FC<ReassignVisitModalProps> = ({
 
         {/* Caregiver Selection */}
         <div className="p-4 space-y-3">
-          <label className="block text-xs font-semibold text-gray-700">
+          <Label className="block text-xs font-semibold text-foreground">
             Select New Caregiver:
-          </label>
-          <div className="max-h-56 overflow-y-auto space-y-1.5 border border-gray-200 rounded-xl p-1.5">
+          </Label>
+          <div className="max-h-56 overflow-y-auto space-y-1.5 border border-border rounded-xl p-1.5">
             {caregivers.map((cg) => {
               const isSelected = selectedCaregiverId === cg.id;
               const isCurrent = visit.assignedCaregiverId === cg.id;
@@ -102,10 +106,10 @@ export const ReassignVisitModal: React.FC<ReassignVisitModalProps> = ({
                   onClick={() => setSelectedCaregiverId(cg.id)}
                   className={`flex items-center justify-between p-2.5 rounded-lg text-xs cursor-pointer transition-colors ${
                     isSelected
-                      ? 'bg-blue-600 text-white font-semibold'
+                      ? 'bg-primary text-primary-foreground font-semibold'
                       : isCurrent
-                      ? 'bg-gray-100 text-gray-500'
-                      : 'hover:bg-gray-50 text-gray-900'
+                      ? 'bg-muted text-muted-foreground'
+                      : 'hover:bg-accent hover:text-accent-foreground text-foreground'
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -116,7 +120,7 @@ export const ReassignVisitModal: React.FC<ReassignVisitModalProps> = ({
                     <span>{cg.name}</span>
                   </div>
                   {isCurrent && (
-                    <span className="text-[10px] text-gray-400">(Current)</span>
+                    <span className="text-[10px] text-muted-foreground">(Current)</span>
                   )}
                 </div>
               );
@@ -125,23 +129,25 @@ export const ReassignVisitModal: React.FC<ReassignVisitModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-100 flex items-center justify-end gap-2 bg-gray-50">
-          <button
+        <div className="p-4 border-t border-border flex items-center justify-end gap-2 bg-muted/30">
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={onClose}
             disabled={isSubmitting}
-            className="px-4 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="default"
+            size="sm"
             onClick={handleConfirm}
             disabled={!selectedCaregiverId || selectedCaregiverId === visit.assignedCaregiverId || isSubmitting}
-            className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm"
           >
             {isSubmitting ? 'Assigning...' : 'Assign Caregiver'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
