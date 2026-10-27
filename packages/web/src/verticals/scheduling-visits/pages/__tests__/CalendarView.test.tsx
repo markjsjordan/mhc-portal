@@ -323,7 +323,9 @@ describe('CalendarView', () => {
 
     // Select caregiver from dropdown
     const select = screen.getByTestId('reassign-caregiver-select');
-    await user.selectOptions(select, 'cg-1');
+    fireEvent.click(select);
+    const option = await screen.findByRole('option', { name: /Sarah Connor/i });
+    fireEvent.click(option);
 
     // Submit reassignment
     const submitBtn = screen.getByTestId('reassign-submit-button');

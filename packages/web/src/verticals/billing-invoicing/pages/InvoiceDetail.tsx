@@ -3,9 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, Send, Ban, Edit } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { LoadingSpinner, ErrorMessage } from '@/core/components';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { Badge } from '@/components/ui/badge.js';
 import { usePermissions } from '@/core/hooks';
 import { 
   useInvoice, 
@@ -14,7 +14,7 @@ import {
   useVoidInvoice,
   useDownloadInvoicePdf 
 } from '../hooks';
-import { formatCurrency, getInvoiceStatusColor } from '../utils';
+import { formatCurrency } from '../utils';
 
 export const InvoiceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -50,8 +50,6 @@ export const InvoiceDetail: React.FC = () => {
     );
   }
 
-  const statusColor = getInvoiceStatusColor(invoice.status);
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -67,7 +65,7 @@ export const InvoiceDetail: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-900">
               Invoice {invoice.invoiceNumber}
             </h1>
-            <Badge variant="outline" className={`mt-2 ${statusColor}`}>
+            <Badge variant="outline" className="mt-2">
               {invoice.status.replace(/_/g, ' ')}
             </Badge>
           </div>

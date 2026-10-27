@@ -1,4 +1,6 @@
 import React from 'react';
+import { Button } from '@/components/ui/button.js';
+import { Badge } from '@/components/ui/badge.js';
 import type { PayorTypeFilter } from '../types';
 
 interface PayorFilterTabsProps {
@@ -21,36 +23,31 @@ export const PayorFilterTabs: React.FC<PayorFilterTabsProps> = ({
   ];
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 p-1 bg-gray-100 rounded-lg border border-gray-200">
+    <div className="flex flex-wrap items-center gap-1.5 p-1 bg-muted/50 rounded-lg border">
       {tabs.map((tab) => {
         const isSelected = selectedPayor === tab.key;
         const count = counts[tab.key];
 
         return (
-          <button
+          <Button
             key={tab.key}
             type="button"
+            variant={isSelected ? 'secondary' : 'ghost'}
+            size="sm"
             onClick={() => onChange(tab.key)}
-            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-md transition-all ${
-              isSelected
-                ? 'bg-white text-blue-700 shadow-sm font-semibold border border-gray-200/80'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/60'
-            }`}
+            className="gap-2"
             title={tab.description}
           >
             <span>{tab.label}</span>
             {count !== undefined && (
-              <span
-                className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${
-                  isSelected
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-gray-200 text-gray-700'
-                }`}
+              <Badge
+                variant={isSelected ? 'default' : 'outline'}
+                className="text-[10px] px-1.5 py-0"
               >
                 {count}
-              </span>
+              </Badge>
             )}
-          </button>
+          </Button>
         );
       })}
     </div>

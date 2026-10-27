@@ -1,10 +1,17 @@
 import React from 'react';
 import { Search, Filter, X, RotateCcw } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Select } from '@/core/components';
-import type { CaregiverSearchFilters } from '../types';
+import { Input } from '@/components/ui/input.js';
+import { Button } from '@/components/ui/button.js';
+import { Badge } from '@/components/ui/badge.js';
+import { Label } from '@/components/ui/label.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
+import type { CaregiverSearchFilters } from '../types/index.js';
 
 export interface CaregiverSearchProps {
   filters: CaregiverSearchFilters;
@@ -12,7 +19,7 @@ export interface CaregiverSearchProps {
 }
 
 const statusOptions = [
-  { value: '', label: 'All Statuses' },
+  { value: 'ALL', label: 'All Statuses' },
   { value: 'APPLICATION', label: 'Application' },
   { value: 'INTERVIEWING', label: 'Interviewing' },
   { value: 'PENDING_ONBOARDING', label: 'Pending Onboarding' },
@@ -26,7 +33,7 @@ const statusOptions = [
 ];
 
 const roleOptions = [
-  { value: '', label: 'All Roles' },
+  { value: 'ALL', label: 'All Roles' },
   { value: 'RN', label: 'Registered Nurse' },
   { value: 'LPN', label: 'Licensed Practical Nurse' },
   { value: 'CNA', label: 'Certified Nursing Assistant' },
@@ -38,7 +45,7 @@ const roleOptions = [
 ];
 
 const complianceStatusOptions = [
-  { value: '', label: 'All Compliance Status' },
+  { value: 'ALL', label: 'All Compliance Status' },
   { value: 'COMPLIANT', label: 'Compliant' },
   { value: 'PENDING_VERIFICATION', label: 'Pending Verification' },
   { value: 'EXPIRING_SOON', label: 'Expiring Soon' },
@@ -86,17 +93,17 @@ export const CaregiverSearch: React.FC<CaregiverSearchProps> = ({ filters, onFil
 
   // Get current status value
   const currentStatusValue = React.useMemo(() => {
-    return filters.status && filters.status.length > 0 ? filters.status[0] : '';
+    return filters.status && filters.status.length > 0 ? filters.status[0] : 'ALL';
   }, [filters.status]);
 
   // Get current role value
   const currentRoleValue = React.useMemo(() => {
-    return filters.role && filters.role.length > 0 ? filters.role[0] : '';
+    return filters.role && filters.role.length > 0 ? filters.role[0] : 'ALL';
   }, [filters.role]);
 
   // Get current compliance status value
   const currentComplianceStatusValue = React.useMemo(() => {
-    return filters.complianceStatus && filters.complianceStatus.length > 0 ? filters.complianceStatus[0] : '';
+    return filters.complianceStatus && filters.complianceStatus.length > 0 ? filters.complianceStatus[0] : 'ALL';
   }, [filters.complianceStatus]);
 
   return (
@@ -113,14 +120,16 @@ export const CaregiverSearch: React.FC<CaregiverSearchProps> = ({ filters, onFil
             className="pl-9 pr-9"
           />
           {queryInput && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setQueryInput('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground"
               aria-label="Clear search"
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           )}
         </div>
 
@@ -159,39 +168,77 @@ export const CaregiverSearch: React.FC<CaregiverSearchProps> = ({ filters, onFil
 
       {showAdvanced && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-border">
-          <Select
-            label="Status"
-            options={statusOptions}
-            value={currentStatusValue}
-            onChange={(e) =>
-              onFiltersChange({
-                ...filters,
-                status: e.target.value ? [e.target.value as any] : undefined,
-              })
-            }
-          />
-          <Select
-            label="Role"
-            options={roleOptions}
-            value={currentRoleValue}
-            onChange={(e) =>
-              onFiltersChange({
-                ...filters,
-                role: e.target.value ? [e.target.value as any] : undefined,
-              })
-            }
-          />
-          <Select
-            label="Compliance Status"
-            options={complianceStatusOptions}
-            value={currentComplianceStatusValue}
-            onChange={(e) =>
-              onFiltersChange({
-                ...filters,
-                complianceStatus: e.target.value ? [e.target.value as any] : undefined,
-              })
-            }
-          />
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-search-status">Status</Label>
+            <Select
+              value={currentStatusValue}
+              onValueChange={(val) =>
+                onFiltersChange({
+                  ...filters,
+                  status: val === 'ALL' ? undefined : [val as any],
+                })
+              }
+            >
+              <SelectTrigger id="caregiver-search-status">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-search-role">Role</Label>
+            <Select
+              value={currentRoleValue}
+              onValueChange={(val) =>
+                onFiltersChange({
+                  ...filters,
+                  role: val === 'ALL' ? undefined : [val as any],
+                })
+              }
+            >
+              <SelectTrigger id="caregiver-search-role">
+                <SelectValue placeholder="All Roles" />
+              </SelectTrigger>
+              <SelectContent>
+                {roleOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-search-compliance">Compliance Status</Label>
+            <Select
+              value={currentComplianceStatusValue}
+              onValueChange={(val) =>
+                onFiltersChange({
+                  ...filters,
+                  complianceStatus: val === 'ALL' ? undefined : [val as any],
+                })
+              }
+            >
+              <SelectTrigger id="caregiver-search-compliance">
+                <SelectValue placeholder="All Compliance Status" />
+              </SelectTrigger>
+              <SelectContent>
+                {complianceStatusOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       )}
     </div>

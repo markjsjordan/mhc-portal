@@ -1,6 +1,6 @@
 import React from 'react';
 import { Clock, CheckSquare } from 'lucide-react';
-import { Button } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
 import type { CarePlanTemplate } from '@folkcare/care-plans-tasks/browser';
 
 interface TemplateCardProps {

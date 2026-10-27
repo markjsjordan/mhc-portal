@@ -11,7 +11,10 @@ import {
   MapPin,
   User,
   Calendar,
+  X,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button.js';
+import { Checkbox } from '@/components/ui/checkbox.js';
 import type { ClaimsQueueItem, ClaimStatus } from '../types';
 import { formatCurrency, formatDate } from '../utils';
 
@@ -133,13 +136,13 @@ export const ClaimsQueueTable: React.FC<ClaimsQueueTableProps> = ({
             <thead className="bg-gray-50 text-gray-600 font-semibold uppercase tracking-wider text-[11px]">
               <tr>
                 <th scope="col" className="w-10 px-4 py-3.5 text-center">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={(e) => onSelectAll(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    aria-label="Select all claims"
-                  />
+                  <div className="flex items-center justify-center">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={(checked) => onSelectAll(Boolean(checked))}
+                      aria-label="Select all claims"
+                    />
+                  </div>
                 </th>
                 <th scope="col" className="px-4 py-3.5">Claim # / DOS</th>
                 <th scope="col" className="px-4 py-3.5">Client (Patient)</th>
@@ -176,13 +179,13 @@ export const ClaimsQueueTable: React.FC<ClaimsQueueTableProps> = ({
                     >
                       {/* Checkbox */}
                       <td className="px-4 py-3.5 text-center">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={(e) => onSelectClaim(claim.id, e.target.checked)}
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          aria-label={`Select claim ${claim.claimNumber}`}
-                        />
+                        <div className="flex items-center justify-center">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={(checked) => onSelectClaim(claim.id, Boolean(checked))}
+                            aria-label={`Select claim ${claim.claimNumber}`}
+                          />
+                        </div>
                       </td>
 
                       {/* Claim # and DOS */}
@@ -236,14 +239,12 @@ export const ClaimsQueueTable: React.FC<ClaimsQueueTableProps> = ({
 
                       {/* EVV Gate Checklist */}
                       <td className="px-4 py-3.5 whitespace-nowrap">
-                        <button
+                        <Button
                           type="button"
+                          variant="outline"
+                          size="sm"
                           onClick={() => setActiveEvvModal(claim)}
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium border transition-colors ${
-                            claim.evvValidation.isValid
-                              ? 'bg-green-50 text-green-800 border-green-200 hover:bg-green-100'
-                              : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
-                          }`}
+                          className="h-auto py-1 px-2 text-[11px] gap-1 font-medium"
                         >
                           {claim.evvValidation.isValid ? (
                             <>
@@ -261,7 +262,7 @@ export const ClaimsQueueTable: React.FC<ClaimsQueueTableProps> = ({
                             </>
                           )}
                           <Info className="h-3 w-3 ml-0.5 opacity-70" />
-                        </button>
+                        </Button>
                       </td>
 
                       {/* Status Badge */}
@@ -271,24 +272,22 @@ export const ClaimsQueueTable: React.FC<ClaimsQueueTableProps> = ({
 
                       {/* Action buttons */}
                       <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                        <button
+                        <Button
                           type="button"
+                          variant="outline"
+                          size="sm"
                           onClick={() => onViewExport(claim)}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded border transition-colors ${
-                            claim.status === 'EVV_INCOMPLETE'
-                              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                              : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50 shadow-sm'
-                          }`}
+                          disabled={claim.status === 'EVV_INCOMPLETE'}
                           title={
                             claim.status === 'EVV_INCOMPLETE'
                               ? 'Export blocked: Resolve EVV verification first'
                               : 'Preview 837P / CMS-1500 claim'
                           }
-                          disabled={claim.status === 'EVV_INCOMPLETE'}
+                          className="gap-1"
                         >
                           <Eye className="h-3.5 w-3.5" />
                           Preview
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   );
@@ -313,12 +312,14 @@ export const ClaimsQueueTable: React.FC<ClaimsQueueTableProps> = ({
                   21st Century Cures Act § 12006 (42 CFR § 440.387)
                 </p>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => setActiveEvvModal(null)}
-                className="text-gray-400 hover:text-gray-600 text-lg leading-none"
+                aria-label="Close diagnostic"
               >
-                ✕
-              </button>
+                <X className="h-4 w-4" />
+              </Button>
             </div>
 
             <div className="py-4 space-y-4 text-xs">
@@ -414,12 +415,12 @@ export const ClaimsQueueTable: React.FC<ClaimsQueueTableProps> = ({
             </div>
 
             <div className="pt-3 border-t border-gray-200 flex justify-end">
-              <button
+              <Button
+                variant="outline"
                 onClick={() => setActiveEvvModal(null)}
-                className="px-4 py-2 text-xs font-semibold bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
               >
                 Close Diagnostic
-              </button>
+              </Button>
             </div>
           </div>
         </div>

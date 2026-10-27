@@ -5,10 +5,11 @@
  * Requires name confirmation and checkbox confirmation.
  */
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Modal, Checkbox } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { Checkbox } from '@/components/ui/checkbox.js';
+import { Modal } from '@/core/components/index.js';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { caregiverApi } from '../api/index.js';
@@ -128,8 +129,9 @@ export const DeleteCaregiverConfirmation: React.FC<DeleteCaregiverConfirmationPr
         {/* Checkbox confirmation */}
         <div className="flex items-start gap-2">
           <Checkbox
+            id="understand-permanent"
             checked={understandsConfirm}
-            onCheckedChange={(checked) => setUnderstandsConfirm(checked)}
+            onCheckedChange={(checked) => setUnderstandsConfirm(checked === true)}
             disabled={deleteMutation.isPending}
           />
           <Label

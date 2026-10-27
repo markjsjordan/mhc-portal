@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertCircle, X } from 'lucide-react';
-import { Button } from '../Button';
+import { Button } from '@/components/ui/button.js';
 
 export interface DemoDataBannerProps {
   onRemoveDemoData: () => void;
@@ -14,16 +14,16 @@ export const DemoDataBanner: React.FC<DemoDataBannerProps> = ({
   isRemoving = false,
 }) => {
   return (
-    <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-6 rounded-r-lg">
+    <div className="bg-amber-500/10 border-l-4 border-amber-500 p-4 mb-6 rounded-r-lg">
       <div className="flex items-start">
         <div className="flex-shrink-0">
-          <AlertCircle className="h-5 w-5 text-amber-400" />
+          <AlertCircle className="h-5 w-5 text-amber-500" />
         </div>
         <div className="ml-3 flex-1">
-          <h3 className="text-sm font-medium text-amber-800">
+          <h3 className="text-sm font-medium text-foreground">
             You're viewing sample data
           </h3>
-          <div className="mt-2 text-sm text-amber-700">
+          <div className="mt-2 text-sm text-muted-foreground">
             <p>
               This is demo data to help you explore the platform. When you're ready to add your
               own clients, caregivers, and visits, you can remove this sample data.
@@ -34,17 +34,15 @@ export const DemoDataBanner: React.FC<DemoDataBannerProps> = ({
               variant="outline"
               size="sm"
               onClick={onRemoveDemoData}
-              isLoading={isRemoving}
-              className="text-amber-800 border-amber-300 hover:bg-amber-100"
+              disabled={isRemoving}
             >
-              Remove Sample Data
+              {isRemoving ? 'Removing...' : 'Remove Sample Data'}
             </Button>
             {onDismiss && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onDismiss}
-                className="text-amber-700"
               >
                 Dismiss
               </Button>
@@ -53,13 +51,16 @@ export const DemoDataBanner: React.FC<DemoDataBannerProps> = ({
         </div>
         {onDismiss && (
           <div className="ml-auto pl-3">
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={onDismiss}
-              className="inline-flex text-amber-400 hover:text-amber-500 focus:outline-none"
+              aria-label="Dismiss banner"
             >
               <span className="sr-only">Dismiss</span>
               <X className="h-5 w-5" />
-            </button>
+            </Button>
           </div>
         )}
       </div>

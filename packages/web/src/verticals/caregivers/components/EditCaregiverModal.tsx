@@ -5,8 +5,8 @@
  * Pre-populates with existing caregiver data and handles PATCH requests.
  */
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Modal, LoadingSpinner } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Modal, LoadingSpinner } from '@/core/components/index.js';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { caregiverApi } from '../api/index.js';

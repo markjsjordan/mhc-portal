@@ -10,9 +10,9 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../../core/hooks';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { Badge } from '@/components/ui/badge.js';
 import { PayrollSummaryCard } from '../components/PayrollSummaryCard';
 import { CreatePayPeriodModal } from '../components/CreatePayPeriodModal';
 import { CreatePayRunModal } from '../components/CreatePayRunModal';
@@ -135,7 +135,11 @@ export const PayrollDashboard: React.FC = () => {
             link="/payroll/runs"
             icon="📋"
           />
-          <button onClick={() => setIsCreateRunOpen(true)} className="block text-left w-full">
+          <Button
+            variant="ghost"
+            onClick={() => setIsCreateRunOpen(true)}
+            className="block text-left w-full h-auto p-0 hover:bg-transparent font-normal"
+          >
             <Card className="hover:shadow-lg transition-shadow duration-200 h-full">
               <CardContent className="p-6">
                 <div className="text-4xl mb-4">💰</div>
@@ -143,7 +147,7 @@ export const PayrollDashboard: React.FC = () => {
                 <p className="text-sm text-gray-600">Process payroll for current period</p>
               </CardContent>
             </Card>
-          </button>
+          </Button>
           <QuickActionCard
             title="View Reports"
             description="Access payroll reports and analytics"
