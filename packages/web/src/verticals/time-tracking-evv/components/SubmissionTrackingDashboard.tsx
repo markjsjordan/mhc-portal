@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button.js';
 
 interface StateAggregatorSubmission {
   id: string;
@@ -142,17 +143,16 @@ export const SubmissionTrackingDashboard: React.FC = () => {
         <h2 className="text-2xl font-bold text-gray-900">
           EVV Aggregator Submissions
         </h2>
-        <button
+        <Button
           onClick={() => {
               handleRetryAll().catch((err: unknown) => {
                 alert(err instanceof Error ? err.message : 'Failed to trigger retry process');
               });
             }}
           disabled={retrying === 'all' || pendingSubmissions.length === 0}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {retrying === 'all' ? 'Retrying...' : 'Retry All Pending'}
-        </button>
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -254,7 +254,10 @@ export const SubmissionTrackingDashboard: React.FC = () => {
                       {submission.errorMessage ?? '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
                         onClick={() => {
                             handleRetry(submission.id).catch((err: unknown) => {
                               alert(err instanceof Error ? err.message : 'Failed to retry submission');
@@ -264,10 +267,10 @@ export const SubmissionTrackingDashboard: React.FC = () => {
                           retrying === submission.id ||
                           submission.retryCount >= submission.maxRetries
                         }
-                        className="text-blue-600 hover:text-blue-900 disabled:text-gray-400 disabled:cursor-not-allowed"
+                        className="p-0 h-auto text-blue-600 hover:text-blue-900"
                       >
                         {retrying === submission.id ? 'Retrying...' : 'Retry'}
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 ))

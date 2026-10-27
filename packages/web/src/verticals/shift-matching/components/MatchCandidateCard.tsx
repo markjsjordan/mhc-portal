@@ -1,6 +1,6 @@
 import React from 'react';
 import { User, MapPin, Star, TrendingUp, AlertTriangle } from 'lucide-react';
-import { Button } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
 import type { MatchCandidate } from '../types';
 import { getMatchQualityColor, getMatchScoreColor, formatDistance } from '../utils';
 

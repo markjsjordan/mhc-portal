@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Clock, Grid, List } from 'lucide-react';
 import { LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
 import { useEVVRecords } from '../hooks';
 import { EVVRecordCard, EVVRecordSearch } from '../components';
 import type { EVVSearchFilters } from '../types';
@@ -44,27 +45,25 @@ export const EVVRecordList: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <div className="flex border border-gray-300 rounded-md">
-            <button
+          <div className="flex border border-border rounded-md p-0.5 bg-muted/40">
+            <Button
+              type="button"
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="icon-sm"
               onClick={() => setViewMode('grid')}
-              className={`p-2 ${
-                viewMode === 'grid' ? 'bg-gray-100' : 'hover:bg-gray-50'
-              }`}
               aria-label="Grid view"
             >
-              {/* @ts-ignore */}
-              <Grid className="h-5 w-5" />
-            </button>
-            <button
+              <Grid className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="icon-sm"
               onClick={() => setViewMode('list')}
-              className={`p-2 ${
-                viewMode === 'list' ? 'bg-gray-100' : 'hover:bg-gray-50'
-              }`}
               aria-label="List view"
             >
-              {/* @ts-ignore */}
-              <List className="h-5 w-5" />
-            </button>
+              <List className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>

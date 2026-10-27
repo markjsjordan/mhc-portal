@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Calendar } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card.js';
 import { StatusBadge, DemoBadge } from '@/core/components';
 import { formatDate, formatPhone } from '@/core/utils';
 import type { Client } from '../types';

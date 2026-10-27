@@ -8,6 +8,7 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { Home, Settings, LogOut, X, Menu, MessageCircle, Calendar, ClipboardList, Heart, Bell } from 'lucide-react';
 import { useAuth } from '@/core/hooks';
+import { Button } from '@/components/ui/button.js';
 
 interface NavItem {
   label: string;
@@ -56,12 +57,16 @@ export const FamilyPortalLayout: React.FC = () => {
           {/* Header */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Family Portal</h2>
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setIsSidebarOpen(false)}
-              className="lg:hidden rounded-md p-2 text-gray-600 hover:bg-gray-100"
+              className="lg:hidden text-gray-600"
+              aria-label="Close sidebar"
             >
               <X className="h-5 w-5" />
-            </button>
+            </Button>
           </div>
 
           {/* Navigation */}
@@ -102,16 +107,18 @@ export const FamilyPortalLayout: React.FC = () => {
               <Settings className="h-5 w-5" />
               Settings
             </NavLink>
-            <button
+            <Button
+              type="button"
+              variant="ghost"
               onClick={() => {
                 handleLogout();
                 setIsSidebarOpen(false);
               }}
-              className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 w-full transition-colors"
+              className="flex items-center justify-start gap-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 w-full h-auto"
             >
               <LogOut className="h-5 w-5" />
               Logout
-            </button>
+            </Button>
           </div>
         </div>
       </aside>
@@ -121,12 +128,16 @@ export const FamilyPortalLayout: React.FC = () => {
         {/* Top header bar for mobile menu button */}
         <header className="bg-white border-b border-gray-200 lg:hidden">
           <div className="flex items-center justify-between h-16 px-4">
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setIsSidebarOpen(true)}
-              className="rounded-md p-2 text-gray-600 hover:bg-gray-100"
+              className="text-gray-600"
+              aria-label="Open sidebar"
             >
               <Menu className="h-6 w-6" />
-            </button>
+            </Button>
             <h1 className="text-lg font-semibold text-gray-900">Family Portal</h1>
             <div className="w-10" /> {/* Spacer for centering */}
           </div>

@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Button, Input } from '@folkcare/shared-components';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Checkbox } from '@/components/ui/checkbox.js';
+import { Label } from '@/components/ui/label.js';
 import { useApiClient } from '@/core/hooks';
 import './InvitePanel.css';
 
@@ -91,8 +94,9 @@ export function InvitePanel({ organizationId }: InvitePanelProps): React.JSX.Ele
       
       <form onSubmit={handleGenerateInvite}>
         <div className="form-group">
-          <label>Email *</label>
+          <Label htmlFor="invite-email">Email *</Label>
           <Input
+            id="invite-email"
             type="email"
             value={formData.email}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, email: e.target.value })}
@@ -102,16 +106,18 @@ export function InvitePanel({ organizationId }: InvitePanelProps): React.JSX.Ele
 
         <div className="form-row">
           <div className="form-group">
-            <label>First Name *</label>
+            <Label htmlFor="invite-first-name">First Name *</Label>
             <Input
+              id="invite-first-name"
               value={formData.firstName}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, firstName: e.target.value })}
               disabled={isLoading}
             />
           </div>
           <div className="form-group">
-            <label>Last Name *</label>
+            <Label htmlFor="invite-last-name">Last Name *</Label>
             <Input
+              id="invite-last-name"
               value={formData.lastName}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, lastName: e.target.value })}
               disabled={isLoading}
@@ -120,23 +126,23 @@ export function InvitePanel({ organizationId }: InvitePanelProps): React.JSX.Ele
         </div>
 
         <div className="form-group">
-          <label>Permissions *</label>
+          <Label className="block mb-2">Permissions *</Label>
           <div className="permissions-grid">
             {availablePermissions.map((p) => (
-              <div key={p}>
-              <input
-                type="checkbox"
-                checked={formData.permissions.includes(p)}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  if (e.target.checked) {
-                    setFormData({ ...formData, permissions: [...formData.permissions, p] });
-                  } else {
-                    setFormData({ ...formData, permissions: formData.permissions.filter(x => x !== p) });
-                  }
-                }}
-                disabled={isLoading}
-              />
-                <label>{p}</label>
+              <div key={p} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`perm-${p}`}
+                  checked={formData.permissions.includes(p)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setFormData({ ...formData, permissions: [...formData.permissions, p] });
+                    } else {
+                      setFormData({ ...formData, permissions: formData.permissions.filter(x => x !== p) });
+                    }
+                  }}
+                  disabled={isLoading}
+                />
+                <Label htmlFor={`perm-${p}`} className="cursor-pointer font-normal text-sm">{p}</Label>
               </div>
             ))}
           </div>

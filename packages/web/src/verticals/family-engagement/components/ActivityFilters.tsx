@@ -10,6 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.j
 import { Button } from '@/components/ui/button.js';
 import { Input } from '@/components/ui/input.js';
 import { Label } from '@/components/ui/label.js';
+import { Checkbox } from '@/components/ui/checkbox.js';
 
 interface ActivityFiltersProps {
   selectedTypes: ActivityType[];
@@ -118,15 +119,19 @@ export const ActivityFilters: React.FC<ActivityFiltersProps> = ({
           <Label className="block text-xs font-medium text-gray-700 mb-2">Activity Types</Label>
           <div className="space-y-2">
             {activityTypes.map((type) => (
-              <label key={type.value} className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
+              <div key={type.value} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`activity-type-${type.value}`}
                   checked={selectedTypes.includes(type.value)}
-                  onChange={() => handleTypeToggle(type.value)}
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  onCheckedChange={() => handleTypeToggle(type.value)}
                 />
-                <span className="ml-2 text-sm text-gray-700">{type.label}</span>
-              </label>
+                <Label
+                  htmlFor={`activity-type-${type.value}`}
+                  className="text-sm font-normal text-gray-700 cursor-pointer"
+                >
+                  {type.label}
+                </Label>
+              </div>
             ))}
           </div>
         </div>

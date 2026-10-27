@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button.js';
 
 interface RiskFactor {
   factor: string;
@@ -128,12 +129,12 @@ export function BurnoutDashboard() {
               AI-powered early warning system to protect your caregivers
             </p>
           </div>
-          <button
+          <Button
+            type="button"
             onClick={loadAssessments}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Refresh
-          </button>
+          </Button>
         </div>
 
         {/* Stats Banner */}
@@ -163,14 +164,11 @@ export function BurnoutDashboard() {
         {/* Filter Tabs */}
         <div className="flex gap-2 mt-6">
           {(['ALL', 'CRITICAL', 'HIGH', 'MODERATE'] as const).map(level => (
-            <button
+            <Button
               key={level}
+              type="button"
+              variant={filterLevel === level ? 'default' : 'outline'}
               onClick={() => setFilterLevel(level)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filterLevel === level
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
             >
               {level}
               {level !== 'ALL' && (
@@ -178,7 +176,7 @@ export function BurnoutDashboard() {
                   ({assessments.filter(a => a.riskLevel === level).length})
                 </span>
               )}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -392,15 +390,18 @@ export function BurnoutDashboard() {
 
                 {/* View Details Button */}
                 {selectedCaregiver?.caregiverId !== assessment.caregiverId && (
-                  <button
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedCaregiver(assessment);
                     }}
-                    className="mt-3 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    className="mt-3 p-0 h-auto font-medium"
                   >
                     View Full Details →
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>

@@ -7,6 +7,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApiClient } from '../../core/hooks/api';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { Button } from '@/components/ui/button.js';
 
 interface SearchResult {
   type: 'client' | 'caregiver' | 'visit' | 'care_plan' | 'organization' | 'user';
@@ -144,10 +147,12 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
           </svg>
-          <input
+          <Label htmlFor="global-search-modal-input" className="sr-only">Search</Label>
+          <Input
+            id="global-search-modal-input"
             ref={inputRef}
             type="text"
-            className="flex-1 outline-none text-lg"
+            className="flex-1 text-lg border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-auto"
             placeholder="Search clients, caregivers, visits..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -187,9 +192,11 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
           )}
 
           {results.map((result, index) => (
-            <button
+            <Button
               key={`${result.type}-${result.id}`}
-              className={`w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+              type="button"
+              variant="ghost"
+              className={`w-full h-auto text-left justify-start px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors rounded-none font-normal ${
                 index === selectedIndex ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
               }`}
               onClick={() => {
@@ -235,7 +242,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                   </svg>
                 )}
               </div>
-            </button>
+            </Button>
           ))}
         </div>
 

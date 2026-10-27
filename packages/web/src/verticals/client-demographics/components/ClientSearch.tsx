@@ -1,9 +1,16 @@
 import React from 'react';
 import { Search, Filter, X, RotateCcw } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Select } from '@/core/components';
+import { Input } from '@/components/ui/input.js';
+import { Button } from '@/components/ui/button.js';
+import { Badge } from '@/components/ui/badge.js';
+import { Label } from '@/components/ui/label.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 import type { ClientSearchFilters, ClientStatus } from '../types';
 
 export interface ClientSearchProps {
@@ -77,14 +84,16 @@ export const ClientSearch: React.FC<ClientSearchProps> = ({ filters, onFiltersCh
             className="pl-9 pr-9"
           />
           {queryInput && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setQueryInput('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground"
               aria-label="Clear search"
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           )}
         </div>
 
@@ -123,28 +132,42 @@ export const ClientSearch: React.FC<ClientSearchProps> = ({ filters, onFiltersCh
 
       {showAdvanced && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-border">
-          <Select
-            label="Status"
-            options={statusOptions}
-            value={currentStatusValue}
-            onChange={(e) =>
-              onFiltersChange({
-                ...filters,
-                status: e.target.value ? [e.target.value as ClientStatus] : undefined,
-              })
-            }
-          />
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">City</label>
+            <Label htmlFor="client-search-status" className="text-sm font-medium text-foreground">Status</Label>
+            <Select
+              value={currentStatusValue || 'ALL'}
+              onValueChange={(val) =>
+                onFiltersChange({
+                  ...filters,
+                  status: val === 'ALL' ? undefined : [val as ClientStatus],
+                })
+              }
+            >
+              <SelectTrigger id="client-search-status" className="w-full">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((opt) => (
+                  <SelectItem key={opt.value || 'ALL'} value={opt.value || 'ALL'}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="client-search-city" className="text-sm font-medium text-foreground">City</Label>
             <Input
+              id="client-search-city"
               value={filters.city || ''}
               onChange={(e) => onFiltersChange({ ...filters, city: e.target.value })}
               placeholder="Filter by city..."
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">State</label>
+            <Label htmlFor="client-search-state" className="text-sm font-medium text-foreground">State</Label>
             <Input
+              id="client-search-state"
               value={filters.state || ''}
               onChange={(e) => onFiltersChange({ ...filters, state: e.target.value })}
               placeholder="Filter by state..."

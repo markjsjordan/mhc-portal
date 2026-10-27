@@ -14,6 +14,7 @@
 import { useState, useEffect } from 'react';
 import { Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import { Popover } from '@headlessui/react';
+import { Button } from '@/components/ui/button.js';
 import { useNoteAutofill, type AutofillSuggestions } from '../../hooks/useNoteAutofill';
 
 export interface NoteAutofillButtonProps {
@@ -86,13 +87,16 @@ export function NoteAutofillButton({
                   <h3 className="text-sm font-semibold text-gray-900">
                     AI Suggestions
                   </h3>
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
                     onClick={handleRefresh}
-                    className="text-purple-600 hover:text-purple-800 text-xs font-medium"
                     disabled={loading}
+                    className="text-xs font-medium"
                   >
                     Refresh
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Content */}
@@ -172,24 +176,30 @@ function SuggestionsContent({
           title="Suggested Note Starter"
           icon={<Sparkles className="h-4 w-4" />}
         >
-          <button
+          <Button
+            type="button"
+            variant="outline"
             onClick={() => onApplyNoteStarter(suggestions.noteStarter!)}
-            className="w-full text-left p-3 bg-purple-50 hover:bg-purple-100 rounded-md transition-colors text-sm text-gray-700 border border-purple-200"
+            className="w-full h-auto text-left justify-start p-3 whitespace-normal font-normal text-sm"
           >
             {suggestions.noteStarter}
-          </button>
+          </Button>
         </SuggestionSection>
       )}
 
       {/* Suggested Mood */}
       {suggestions.suggestedMood && onApplyMood && (
         <SuggestionSection title="Typical Client Mood">
-          <button
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             onClick={() => onApplyMood(suggestions.suggestedMood!)}
-            className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors text-sm text-blue-700 border border-blue-200"
+            className="inline-flex items-center gap-2"
           >
-            {formatMood(suggestions.suggestedMood)}
-          </button>
+            <span className="font-medium">{formatMood(suggestions.suggestedMood)}</span>
+            <span className="text-xs text-muted-foreground">• Apply</span>
+          </Button>
         </SuggestionSection>
       )}
 
@@ -198,13 +208,16 @@ function SuggestionsContent({
         <SuggestionSection title="Common Activities">
           <div className="flex flex-wrap gap-2">
             {suggestions.suggestedActivities.slice(0, 8).map((activity, index) => (
-              <button
+              <Button
                 key={index}
+                type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => onApplyActivity(activity)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 hover:bg-green-100 rounded-md transition-colors text-sm text-green-700 border border-green-200"
+                className="inline-flex items-center gap-1.5"
               >
                 <span>{activity}</span>
-              </button>
+              </Button>
             ))}
           </div>
         </SuggestionSection>
@@ -215,13 +228,16 @@ function SuggestionsContent({
         <SuggestionSection title="Common Phrases">
           <div className="space-y-2">
             {suggestions.commonPhrases.map((phrase, index) => (
-              <button
+              <Button
                 key={index}
+                type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => onApplyPhrase(phrase)}
-                className="w-full text-left p-2 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors text-sm text-gray-700 border border-gray-200"
+                className="w-full h-auto text-left justify-start p-2 whitespace-normal font-normal text-sm"
               >
                 "{phrase}"
-              </button>
+              </Button>
             ))}
           </div>
         </SuggestionSection>
