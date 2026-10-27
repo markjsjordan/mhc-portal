@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/button.js';
 
 export interface CaregiverCardItem {
   id: string;
@@ -66,15 +67,16 @@ export const CaregiverAvailabilityRail: React.FC<CaregiverAvailabilityRailProps>
         <h3 className="font-semibold text-gray-900 text-sm">
           Caregiver Availability
         </h3>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={onClose}
-          className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-900 px-2 py-1 rounded hover:bg-gray-200 transition-colors"
           title="Collapse Availability Panel"
         >
           <span>Collapse</span>
           <ChevronRight className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
 
       {/* Content */}
@@ -160,18 +162,20 @@ export const CaregiverAvailabilityRail: React.FC<CaregiverAvailabilityRailProps>
         {/* Collapsible Accordion for Caregivers with No Visits */}
         {!isLoading && inactiveCaregivers.length > 0 && (
           <div className="pt-2 border-t border-gray-100">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setInactiveExpanded((prev) => !prev)}
-              className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 rounded hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-between w-full h-auto py-1.5 font-normal text-muted-foreground hover:text-foreground"
             >
               <span>No visits in range ({inactiveCaregivers.length})</span>
               {inactiveExpanded ? (
-                <ChevronDown className="w-4 h-4 text-gray-400" />
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
               ) : (
-                <ChevronRight className="w-4 h-4 text-gray-400" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
               )}
-            </button>
+            </Button>
 
             {inactiveExpanded && (
               <div className="mt-2 space-y-1.5 pl-1">

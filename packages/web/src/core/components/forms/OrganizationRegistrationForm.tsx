@@ -5,13 +5,19 @@
  * Designed to scale from 2 states (TX, FL) to 50 states
  */
 
-import { useState } from 'react';
-import { Button } from '../Button';
-import { Input } from './Input';
-import { Select } from './Select';
-import { FormField } from './FormField';
-import type { CreateOrganizationRequest, Address } from '../../services/organization-api';
-import { US_STATES } from '../../constants/us-states';
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
+import type { CreateOrganizationRequest, Address } from '../../services/organization-api.js';
+import { US_STATES } from '../../constants/us-states.js';
 
 interface OrganizationRegistrationFormProps {
   readonly onSubmit: (data: CreateOrganizationRequest) => Promise<void>;
@@ -178,183 +184,303 @@ export function OrganizationRegistrationForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Organization Information */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Organization Information</h3>
+        <h3 className="text-lg font-semibold text-foreground">Organization Information</h3>
 
-        <FormField label="Organization Name" error={errors['name']} required>
+        <div className="space-y-1">
+          <Label htmlFor="org-name" className="text-sm font-medium">
+            Organization Name <span className="text-destructive">*</span>
+          </Label>
           <Input
+            id="org-name"
             type="text"
             value={formData.name ?? ''}
             onChange={(e) => handleInputChange('name', e.target.value)}
             placeholder="Your Organization Name"
             disabled={isLoading}
+            aria-invalid={!!errors['name']}
+            className={errors['name'] ? 'border-destructive' : ''}
           />
-        </FormField>
+          {errors['name'] && (
+            <p className="text-sm text-destructive">{errors['name']}</p>
+          )}
+        </div>
 
-        <FormField label="Legal Name" error={errors['legalName']}>
+        <div className="space-y-1">
+          <Label htmlFor="legal-name" className="text-sm font-medium">Legal Name</Label>
           <Input
+            id="legal-name"
             type="text"
             value={formData.legalName ?? ''}
             onChange={(e) => handleInputChange('legalName', e.target.value)}
             placeholder="Legal Business Name (if different)"
             disabled={isLoading}
           />
-        </FormField>
+          {errors['legalName'] && (
+            <p className="text-sm text-destructive">{errors['legalName']}</p>
+          )}
+        </div>
 
-        <FormField label="State" error={errors['stateCode']} required>
+        <div className="space-y-1">
+          <Label htmlFor="org-state" className="text-sm font-medium">
+            State <span className="text-destructive">*</span>
+          </Label>
           <Select
             value={formData.stateCode ?? 'TX'}
-            onChange={(e) => {
-              const newState = e.target.value;
+            onValueChange={(newState) => {
               handleInputChange('stateCode', newState);
               handleAddressChange('state', newState);
             }}
             disabled={isLoading}
-            options={US_STATES.map((state) => ({
-              value: state.code,
-              label: state.name,
-            }))}
-            placeholder="Select a state"
-          />
-        </FormField>
+          >
+            <SelectTrigger
+              id="org-state"
+              aria-invalid={!!errors['stateCode']}
+              className={errors['stateCode'] ? 'border-destructive' : ''}
+            >
+              <SelectValue placeholder="Select a state" />
+            </SelectTrigger>
+            <SelectContent>
+              {US_STATES.map((state) => (
+                <SelectItem key={state.code} value={state.code}>
+                  {state.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors['stateCode'] && (
+            <p className="text-sm text-destructive">{errors['stateCode']}</p>
+          )}
+        </div>
 
-        <FormField label="Organization Email" error={errors['email']} required>
+        <div className="space-y-1">
+          <Label htmlFor="org-email" className="text-sm font-medium">
+            Organization Email <span className="text-destructive">*</span>
+          </Label>
           <Input
+            id="org-email"
             type="email"
             value={formData.email ?? ''}
             onChange={(e) => handleInputChange('email', e.target.value)}
             placeholder="contact@organization.com"
             disabled={isLoading}
+            aria-invalid={!!errors['email']}
+            className={errors['email'] ? 'border-destructive' : ''}
           />
-        </FormField>
+          {errors['email'] && (
+            <p className="text-sm text-destructive">{errors['email']}</p>
+          )}
+        </div>
 
-        <FormField label="Phone" error={errors['phone']}>
+        <div className="space-y-1">
+          <Label htmlFor="org-phone" className="text-sm font-medium">Phone</Label>
           <Input
+            id="org-phone"
             type="tel"
             value={formData.phone ?? ''}
             onChange={(e) => handleInputChange('phone', e.target.value)}
             placeholder="(555) 123-4567"
             disabled={isLoading}
           />
-        </FormField>
+          {errors['phone'] && (
+            <p className="text-sm text-destructive">{errors['phone']}</p>
+          )}
+        </div>
       </div>
 
       {/* Primary Address */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Primary Address</h3>
+        <h3 className="text-lg font-semibold text-foreground">Primary Address</h3>
 
-        <FormField label="Street Address" error={errors['primaryAddress.street1']} required>
+        <div className="space-y-1">
+          <Label htmlFor="street1" className="text-sm font-medium">
+            Street Address <span className="text-destructive">*</span>
+          </Label>
           <Input
+            id="street1"
             type="text"
             value={formData.primaryAddress?.street1 ?? ''}
             onChange={(e) => handleAddressChange('street1', e.target.value)}
             placeholder="123 Main Street"
             disabled={isLoading}
+            aria-invalid={!!errors['primaryAddress.street1']}
+            className={errors['primaryAddress.street1'] ? 'border-destructive' : ''}
           />
-        </FormField>
+          {errors['primaryAddress.street1'] && (
+            <p className="text-sm text-destructive">{errors['primaryAddress.street1']}</p>
+          )}
+        </div>
 
-        <FormField label="Street Address Line 2" error={errors['primaryAddress.street2']}>
+        <div className="space-y-1">
+          <Label htmlFor="street2" className="text-sm font-medium">Street Address Line 2</Label>
           <Input
+            id="street2"
             type="text"
             value={formData.primaryAddress?.street2 ?? ''}
             onChange={(e) => handleAddressChange('street2', e.target.value)}
             placeholder="Suite 100 (optional)"
             disabled={isLoading}
           />
-        </FormField>
+          {errors['primaryAddress.street2'] && (
+            <p className="text-sm text-destructive">{errors['primaryAddress.street2']}</p>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FormField label="City" error={errors['primaryAddress.city']} required>
+          <div className="space-y-1">
+            <Label htmlFor="city" className="text-sm font-medium">
+              City <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="city"
               type="text"
               value={formData.primaryAddress?.city ?? ''}
               onChange={(e) => handleAddressChange('city', e.target.value)}
               placeholder="City"
               disabled={isLoading}
+              aria-invalid={!!errors['primaryAddress.city']}
+              className={errors['primaryAddress.city'] ? 'border-destructive' : ''}
             />
-          </FormField>
+            {errors['primaryAddress.city'] && (
+              <p className="text-sm text-destructive">{errors['primaryAddress.city']}</p>
+            )}
+          </div>
 
-          <FormField label="State" error={errors['primaryAddress.state']} required>
+          <div className="space-y-1">
+            <Label htmlFor="addr-state" className="text-sm font-medium">
+              State <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="addr-state"
               type="text"
               value={formData.primaryAddress?.state ?? formData.stateCode ?? ''}
               disabled
             />
-          </FormField>
+          </div>
 
-          <FormField label="ZIP Code" error={errors['primaryAddress.zipCode']} required>
+          <div className="space-y-1">
+            <Label htmlFor="zipCode" className="text-sm font-medium">
+              ZIP Code <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="zipCode"
               type="text"
               value={formData.primaryAddress?.zipCode ?? ''}
               onChange={(e) => handleAddressChange('zipCode', e.target.value)}
               placeholder="12345"
               disabled={isLoading}
+              aria-invalid={!!errors['primaryAddress.zipCode']}
+              className={errors['primaryAddress.zipCode'] ? 'border-destructive' : ''}
             />
-          </FormField>
+            {errors['primaryAddress.zipCode'] && (
+              <p className="text-sm text-destructive">{errors['primaryAddress.zipCode']}</p>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Admin User */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Administrator Account</h3>
+        <h3 className="text-lg font-semibold text-foreground">Administrator Account</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="First Name" error={errors['adminUser.firstName']} required>
+          <div className="space-y-1">
+            <Label htmlFor="admin-firstName" className="text-sm font-medium">
+              First Name <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="admin-firstName"
               type="text"
               value={formData.adminUser?.firstName ?? ''}
               onChange={(e) => handleAdminUserChange('firstName', e.target.value)}
               placeholder="John"
               disabled={isLoading}
+              aria-invalid={!!errors['adminUser.firstName']}
+              className={errors['adminUser.firstName'] ? 'border-destructive' : ''}
             />
-          </FormField>
+            {errors['adminUser.firstName'] && (
+              <p className="text-sm text-destructive">{errors['adminUser.firstName']}</p>
+            )}
+          </div>
 
-          <FormField label="Last Name" error={errors['adminUser.lastName']} required>
+          <div className="space-y-1">
+            <Label htmlFor="admin-lastName" className="text-sm font-medium">
+              Last Name <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="admin-lastName"
               type="text"
               value={formData.adminUser?.lastName ?? ''}
               onChange={(e) => handleAdminUserChange('lastName', e.target.value)}
               placeholder="Doe"
               disabled={isLoading}
+              aria-invalid={!!errors['adminUser.lastName']}
+              className={errors['adminUser.lastName'] ? 'border-destructive' : ''}
             />
-          </FormField>
+            {errors['adminUser.lastName'] && (
+              <p className="text-sm text-destructive">{errors['adminUser.lastName']}</p>
+            )}
+          </div>
         </div>
 
-        <FormField label="Admin Email" error={errors['adminUser.email']} required>
+        <div className="space-y-1">
+          <Label htmlFor="admin-email" className="text-sm font-medium">
+            Admin Email <span className="text-destructive">*</span>
+          </Label>
           <Input
+            id="admin-email"
             type="email"
             value={formData.adminUser?.email ?? ''}
             onChange={(e) => handleAdminUserChange('email', e.target.value)}
             placeholder="admin@organization.com"
             disabled={isLoading}
+            aria-invalid={!!errors['adminUser.email']}
+            className={errors['adminUser.email'] ? 'border-destructive' : ''}
           />
-        </FormField>
+          {errors['adminUser.email'] && (
+            <p className="text-sm text-destructive">{errors['adminUser.email']}</p>
+          )}
+        </div>
 
-        <FormField label="Password" error={errors['adminUser.password']} required>
+        <div className="space-y-1">
+          <Label htmlFor="admin-password" className="text-sm font-medium">
+            Password <span className="text-destructive">*</span>
+          </Label>
           <Input
+            id="admin-password"
             type="password"
             value={formData.adminUser?.password ?? ''}
             onChange={(e) => handleAdminUserChange('password', e.target.value)}
             placeholder="Minimum 8 characters"
             disabled={isLoading}
+            aria-invalid={!!errors['adminUser.password']}
+            className={errors['adminUser.password'] ? 'border-destructive' : ''}
           />
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="text-xs text-muted-foreground">
             Must contain uppercase, lowercase, number, and special character
           </p>
-        </FormField>
+          {errors['adminUser.password'] && (
+            <p className="text-sm text-destructive">{errors['adminUser.password']}</p>
+          )}
+        </div>
 
-        <FormField label="Phone" error={errors['adminUser.phone']}>
+        <div className="space-y-1">
+          <Label htmlFor="admin-phone" className="text-sm font-medium">Phone</Label>
           <Input
+            id="admin-phone"
             type="tel"
             value={formData.adminUser?.phone ?? ''}
             onChange={(e) => handleAdminUserChange('phone', e.target.value)}
             placeholder="(555) 123-4567"
             disabled={isLoading}
           />
-        </FormField>
+          {errors['adminUser.phone'] && (
+            <p className="text-sm text-destructive">{errors['adminUser.phone']}</p>
+          )}
+        </div>
       </div>
 
       {/* Form Actions */}
-      <div className="flex justify-end space-x-3 pt-4 border-t">
+      <div className="flex justify-end space-x-3 pt-4 border-t border-border">
         {onCancel && (
           <Button
             type="button"
@@ -365,7 +491,7 @@ export function OrganizationRegistrationForm({
             Cancel
           </Button>
         )}
-        <Button type="submit" variant="primary" disabled={isLoading}>
+        <Button type="submit" disabled={isLoading}>
           {isLoading ? 'Creating Organization...' : 'Create Organization'}
         </Button>
       </div>

@@ -1,4 +1,10 @@
 import React, { ReactNode } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog.js';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -11,25 +17,29 @@ export interface ModalProps {
 
 /**
  * Modal Component
- * Stub implementation for modal dialogs
+ * Re-implemented using shadcn Dialog primitive
  */
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, icon, size: _size, children }) => {
-  if (!isOpen) return null;
-
+export const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  icon,
+  size: _size,
+  children,
+}) => {
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="sm:max-w-lg">
         {title && (
-          <div className="modal-header flex items-center gap-2">
-            {icon}
-            <h2>{title}</h2>
-            <button onClick={onClose} className="modal-close">×</button>
-          </div>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {icon}
+              <span>{title}</span>
+            </DialogTitle>
+          </DialogHeader>
         )}
-        <div className="modal-body">
-          {children}
-        </div>
-      </div>
-    </div>
+        <div className="modal-body">{children}</div>
+      </DialogContent>
+    </Dialog>
   );
 };
