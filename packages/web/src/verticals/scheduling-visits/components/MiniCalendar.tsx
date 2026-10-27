@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import moment from 'moment';
+import { Button } from '@/components/ui/button.js';
 
 export interface MiniCalendarProps {
   currentDate: Date;
@@ -16,16 +17,22 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
   onMonthChange,
 }) => {
   const currentMoment = moment(currentDate);
-  
+
   const calendarDays = useMemo(() => {
     const startOfMonth = currentMoment.clone().startOf('month');
     const endOfMonth = currentMoment.clone().endOf('month');
     const startDate = startOfMonth.clone().startOf('week');
     const endDate = endOfMonth.clone().endOf('week');
-    
-    const days: Array<{ date: moment.Moment; isCurrentMonth: boolean; hasVisits: boolean; isToday: boolean; isSelected: boolean }> = [];
+
+    const days: Array<{
+      date: moment.Moment;
+      isCurrentMonth: boolean;
+      hasVisits: boolean;
+      isToday: boolean;
+      isSelected: boolean;
+    }> = [];
     const current = startDate.clone();
-    
+
     while (current.isSameOrBefore(endDate)) {
       const dateKey = current.format('YYYY-MM-DD');
       days.push({
@@ -37,7 +44,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
       });
       current.add(1, 'day');
     }
-    
+
     return days;
   }, [currentMoment, daysWithVisits]);
 
@@ -54,26 +61,30 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
   const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
   return (
-    <div className="bg-white border rounded-lg p-4 shadow-sm">
+    <div className="bg-card text-card-foreground border rounded-lg p-4 shadow-sm">
       {/* Month Navigation */}
       <div className="flex items-center justify-between mb-4">
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={handlePrevMonth}
-          className="p-1 hover:bg-gray-100 rounded transition-colors"
           aria-label="Previous month"
         >
-          <ChevronLeft className="h-5 w-5 text-gray-600" />
-        </button>
-        <h3 className="text-sm font-semibold text-gray-900">
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <h3 className="text-sm font-semibold text-foreground">
           {currentMoment.format('MMMM YYYY')}
         </h3>
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={handleNextMonth}
-          className="p-1 hover:bg-gray-100 rounded transition-colors"
           aria-label="Next month"
         >
-          <ChevronRight className="h-5 w-5 text-gray-600" />
-        </button>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Week Day Headers */}
@@ -81,7 +92,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
         {weekDays.map((day) => (
           <div
             key={day}
-            className="text-xs font-medium text-gray-500 text-center"
+            className="text-xs font-medium text-muted-foreground text-center"
           >
             {day}
           </div>
@@ -91,31 +102,30 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
       {/* Calendar Days */}
       <div className="grid grid-cols-7 gap-1">
         {calendarDays.map((day, index) => {
-          const dayClasses = [
-            'h-8 w-8 flex items-center justify-center text-xs rounded-full cursor-pointer transition-colors relative',
-          ];
-
-          if (!day.isCurrentMonth) {
-            dayClasses.push('text-gray-300');
-          } else if (day.isSelected) {
-            dayClasses.push('bg-primary-600 text-white font-semibold');
-          } else if (day.isToday) {
-            dayClasses.push('bg-primary-100 text-primary-700 font-semibold');
-          } else {
-            dayClasses.push('text-gray-700 hover:bg-gray-100');
-          }
+          const variant = !day.isCurrentMonth
+            ? 'ghost'
+            : day.isSelected
+            ? 'default'
+            : day.isToday
+            ? 'secondary'
+            : 'ghost';
 
           return (
-            <div key={index} className="relative">
-              <button
+            <div key={index} className="relative flex items-center justify-center">
+              <Button
+                type="button"
+                variant={variant}
+                size="icon"
+                className={`rounded-full text-xs font-normal ${
+                  !day.isCurrentMonth ? 'text-muted-foreground/40' : ''
+                } ${day.isSelected || day.isToday ? 'font-semibold' : ''}`}
                 onClick={() => onDateSelect(day.date.toDate())}
-                className={dayClasses.join(' ')}
                 disabled={!day.isCurrentMonth}
               >
                 {day.date.format('D')}
-              </button>
+              </Button>
               {day.hasVisits && day.isCurrentMonth && (
-                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary-600 rounded-full"></div>
+                <div className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full pointer-events-none" />
               )}
             </div>
           );
@@ -123,9 +133,9 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
       </div>
 
       {/* Legend */}
-      <div className="mt-4 pt-3 border-t border-gray-200 space-y-2">
-        <div className="flex items-center gap-2 text-xs text-gray-600">
-          <div className="w-3 h-1 bg-primary-600 rounded-full"></div>
+      <div className="mt-4 pt-3 border-t border-border space-y-2">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="w-3 h-1 bg-primary rounded-full" />
           <span>Has scheduled visits</span>
         </div>
       </div>

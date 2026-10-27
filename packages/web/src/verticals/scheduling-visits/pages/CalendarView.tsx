@@ -31,6 +31,14 @@ import { useAuth } from '@/core/hooks';
 import { CreateVisitModal } from '@/core/components/forms/CreateVisitModal';
 import { Button } from '@/components/ui/button.js';
 import { Badge } from '@/components/ui/badge.js';
+import { Label } from '@/components/ui/label.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 import {
   MiniCalendar,
   VisitStatusLegend,
@@ -891,14 +899,16 @@ export const CalendarView: React.FC = () => {
                       <Info className="h-4 w-4 text-blue-600" />
                       <h3 className="text-sm font-bold text-gray-900">Visit Status Legend</h3>
                     </div>
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon-xs"
                       onClick={() => setShowLegendPopover(false)}
-                      className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 min-h-[36px] min-w-[36px] flex items-center justify-center"
+                      className="min-h-[36px] min-w-[36px]"
                       aria-label="Close legend"
                     >
                       <X className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </div>
                   <VisitStatusLegend compact={false} showTitle={false} />
                 </div>
@@ -941,134 +951,126 @@ export const CalendarView: React.FC = () => {
           className="flex items-center gap-2 overflow-x-auto pt-3 pb-1 sm:pb-0 sm:flex-wrap text-xs"
         >
           {/* Total / Weekly Visits */}
-          <button
+          <Button
             type="button"
+            variant={statusFilter === null && !isAnyFilterActive ? 'default' : 'outline'}
+            size="sm"
             onClick={() => setStatusFilter(null)}
-            className={`min-h-[44px] px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-2 whitespace-nowrap border ${
-              statusFilter === null && !isAnyFilterActive
-                ? 'bg-gray-900 text-white border-gray-900 shadow-xs'
-                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-            }`}
+            className="min-h-[44px] gap-2 whitespace-nowrap"
             title="Click to view all visits"
           >
             <CalendarIcon className="h-3.5 w-3.5" />
             <span>{metrics.weekly} Visits This Week</span>
-          </button>
+          </Button>
 
           {/* Unassigned: Amber Dashed Token */}
-          <button
+          <Button
             type="button"
+            variant={statusFilter === 'UNASSIGNED' ? 'default' : 'outline'}
+            size="sm"
             onClick={() =>
               setStatusFilter((prev) => (prev === 'UNASSIGNED' ? null : 'UNASSIGNED'))
             }
-            className={`min-h-[44px] px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-2 whitespace-nowrap border-2 border-dashed ${
-              statusFilter === 'UNASSIGNED'
-                ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
-                : 'bg-amber-50 text-amber-900 border-amber-500 hover:bg-amber-100'
-            }`}
+            className="min-h-[44px] gap-2 whitespace-nowrap border-dashed"
             title="Filter: Unassigned visits"
             data-testid="kpi-unassigned"
           >
-            <div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
             <span>{metrics.unassigned} Unassigned</span>
-          </button>
+          </Button>
 
           {/* In Progress: Cyan Token */}
-          <button
+          <Button
             type="button"
+            variant={statusFilter === 'IN_PROGRESS' ? 'default' : 'outline'}
+            size="sm"
             onClick={() =>
               setStatusFilter((prev) => (prev === 'IN_PROGRESS' ? null : 'IN_PROGRESS'))
             }
-            className={`min-h-[44px] px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-2 whitespace-nowrap border ${
-              statusFilter === 'IN_PROGRESS'
-                ? 'bg-cyan-600 text-white border-cyan-600 shadow-xs'
-                : 'bg-cyan-50 text-cyan-900 border-cyan-400 hover:bg-cyan-100'
-            }`}
+            className="min-h-[44px] gap-2 whitespace-nowrap"
             title="Filter: In Progress visits"
             data-testid="kpi-in-progress"
           >
-            <div className="w-2.5 h-2.5 rounded-full bg-cyan-500"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-cyan-500" />
             <span>{metrics.inProgress} In Progress</span>
-          </button>
+          </Button>
 
           {/* Completed: Green Token */}
-          <button
+          <Button
             type="button"
+            variant={statusFilter === 'COMPLETED' ? 'default' : 'outline'}
+            size="sm"
             onClick={() =>
               setStatusFilter((prev) => (prev === 'COMPLETED' ? null : 'COMPLETED'))
             }
-            className={`min-h-[44px] px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-2 whitespace-nowrap border ${
-              statusFilter === 'COMPLETED'
-                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                : 'bg-emerald-50 text-emerald-900 border-emerald-400 hover:bg-emerald-100'
-            }`}
+            className="min-h-[44px] gap-2 whitespace-nowrap"
             title="Filter: Completed visits"
             data-testid="kpi-completed"
           >
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
             <span>{metrics.completed} Completed</span>
-          </button>
+          </Button>
 
           {/* Needs Review: Purple Token */}
-          <button
+          <Button
             type="button"
+            variant={statusFilter === 'NEEDS_REVIEW' ? 'default' : 'outline'}
+            size="sm"
             onClick={() =>
               setStatusFilter((prev) => (prev === 'NEEDS_REVIEW' ? null : 'NEEDS_REVIEW'))
             }
-            className={`min-h-[44px] px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-2 whitespace-nowrap border ${
-              statusFilter === 'NEEDS_REVIEW'
-                ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
-                : 'bg-purple-50 text-purple-900 border-purple-400 hover:bg-purple-100'
-            }`}
+            className="min-h-[44px] gap-2 whitespace-nowrap"
             title="Filter: Needs Review visits"
             data-testid="kpi-needs-review"
           >
-            <div className="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
             <span>{metrics.needsReview} Needs Review</span>
-          </button>
+          </Button>
 
           {/* Cancelled Token (if any) */}
           {metrics.cancelled > 0 && (
-            <button
+            <Button
               type="button"
+              variant={statusFilter === 'CANCELLED' ? 'default' : 'outline'}
+              size="sm"
               onClick={() =>
                 setStatusFilter((prev) => (prev === 'CANCELLED' ? null : 'CANCELLED'))
               }
-              className={`min-h-[44px] px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-2 whitespace-nowrap border ${
-                statusFilter === 'CANCELLED'
-                  ? 'bg-gray-700 text-white border-gray-700 shadow-xs'
-                  : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-              }`}
+              className="min-h-[44px] gap-2 whitespace-nowrap"
               title="Filter: Cancelled visits"
             >
-              <div className="w-2.5 h-2.5 rounded-full bg-gray-400 opacity-60"></div>
+              <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground opacity-60" />
               <span>{metrics.cancelled} Cancelled</span>
-            </button>
+            </Button>
           )}
 
           {/* "Show all" — only shown while the caregiver default filter is
               active; clears just the caregiver filter (distinct from
               "Clear filters", which also resets status/client). */}
           {isDefaultedToSelf && (
-            <button
+            <Button
               type="button"
+              variant="link"
+              size="sm"
               onClick={handleShowAllCaregivers}
-              className="min-h-[44px] px-2.5 py-1 text-xs text-blue-600 hover:text-blue-800 font-semibold underline flex items-center gap-1"
+              className="min-h-[44px] px-2.5 py-1 text-xs font-semibold underline flex items-center gap-1"
               title="Show visits for all caregivers"
             >
               Show all
-            </button>
+            </Button>
           )}
 
           {/* Clear filters button */}
           {isAnyFilterActive && (
-            <button
+            <Button
               type="button"
+              variant="link"
+              size="sm"
               onClick={handleClearAllFilters}
-              className="min-h-[44px] px-2.5 py-1 text-xs text-blue-600 hover:text-blue-800 font-semibold underline flex items-center gap-1"
+              className="min-h-[44px] px-2.5 py-1 text-xs font-semibold underline flex items-center gap-1"
             >
               Clear filters
-            </button>
+            </Button>
           )}
         </div>
       </header>
@@ -1076,69 +1078,79 @@ export const CalendarView: React.FC = () => {
       {/* Subheader Toolbar: View Switcher, Date Navigation, and Filters */}
       <div className="bg-white border-b border-gray-200 px-4 py-2.5 flex-shrink-0">
         {/* Mobile Tab bar (< 768px) */}
-        <div className="flex md:hidden items-center border-b border-gray-200 mb-2">
-          <button
+        <div className="flex md:hidden items-center border-b border-border mb-2">
+          <Button
             type="button"
+            variant={mobileTab === 'grid' ? 'secondary' : 'ghost'}
+            size="sm"
             onClick={() => setMobileTab('grid')}
-            className={`flex-1 py-2 text-center text-xs font-bold border-b-2 transition-colors ${
+            className={`flex-1 rounded-none border-b-2 ${
               mobileTab === 'grid'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-primary text-primary font-bold'
+                : 'border-transparent text-muted-foreground'
             }`}
           >
             Schedule Grid*
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant={mobileTab === 'caregivers' ? 'secondary' : 'ghost'}
+            size="sm"
             onClick={() => setMobileTab('caregivers')}
-            className={`flex-1 py-2 text-center text-xs font-bold border-b-2 transition-colors ${
+            className={`flex-1 rounded-none border-b-2 ${
               mobileTab === 'caregivers'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-primary text-primary font-bold'
+                : 'border-transparent text-muted-foreground'
             }`}
           >
             Caregivers ({allCaregivers.length})
-          </button>
+          </Button>
         </div>
 
         {/* Date navigation and View switches */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             {/* Prev / Next / Title */}
-            <div className="flex items-center bg-gray-100 rounded-lg p-0.5 border border-gray-200">
-              <button
+            <div className="flex items-center bg-muted/50 rounded-lg p-0.5 border border-border">
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => {
                   const unit = view === 'month' ? 'month' : view === 'day' ? 'day' : 'week';
                   setCurrentDate(moment(currentDate).subtract(1, unit).toDate());
                 }}
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-md hover:bg-white text-gray-700 transition-colors"
+                className="min-h-[44px] min-w-[44px]"
                 aria-label="Previous period"
               >
                 <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setCurrentDate(new Date())}
-                className="min-h-[44px] px-3 py-1.5 rounded-md hover:bg-white text-xs sm:text-sm font-semibold text-gray-800 transition-colors"
+                className="min-h-[44px] px-3 font-semibold"
                 aria-label="Jump to today"
               >
                 Today
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => {
                   const unit = view === 'month' ? 'month' : view === 'day' ? 'day' : 'week';
                   setCurrentDate(moment(currentDate).add(1, unit).toDate());
                 }}
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-md hover:bg-white text-gray-700 transition-colors"
+                className="min-h-[44px] min-w-[44px]"
                 aria-label="Next period"
               >
                 <ChevronRight className="h-5 w-5" />
-              </button>
+              </Button>
             </div>
 
-            <span className="text-sm sm:text-base font-bold text-gray-900 ml-1">
+            <span className="text-sm sm:text-base font-bold text-foreground ml-1">
               {view === 'month'
                 ? moment(currentDate).format('MMMM YYYY')
                 : view === 'day'
@@ -1156,127 +1168,125 @@ export const CalendarView: React.FC = () => {
             <div
               role="group"
               aria-label="Calendar view selector"
-              className="inline-flex bg-gray-100 p-1 rounded-lg border border-gray-200"
+              className="inline-flex bg-muted p-1 rounded-lg border border-border"
             >
-              <button
+              <Button
                 type="button"
+                variant={view === 'day' ? 'secondary' : 'ghost'}
+                size="sm"
                 onClick={() => setView('day')}
-                className={`min-h-[44px] px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all flex items-center justify-center ${
-                  view === 'day'
-                    ? 'bg-white text-blue-700 shadow-xs'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className="min-h-[44px] px-4 font-semibold"
                 data-testid="view-day"
               >
                 Day
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant={view === 'week' ? 'secondary' : 'ghost'}
+                size="sm"
                 onClick={() => setView('week')}
-                className={`min-h-[44px] px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all flex items-center justify-center ${
-                  view === 'week'
-                    ? 'bg-white text-blue-700 shadow-xs'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className="min-h-[44px] px-4 font-semibold"
                 data-testid="view-week"
               >
                 Week
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant={view === 'month' ? 'secondary' : 'ghost'}
+                size="sm"
                 onClick={() => setView('month')}
-                className={`min-h-[44px] px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all flex items-center justify-center ${
-                  view === 'month'
-                    ? 'bg-white text-blue-700 shadow-xs'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className="min-h-[44px] px-4 font-semibold"
                 data-testid="view-month"
               >
                 Month
-              </button>
+              </Button>
             </div>
 
             {/* Density & Time range controls */}
             {(view === 'week' || view === 'day') && (
-              <div className="hidden lg:flex items-center gap-2 border-l border-gray-200 pl-3">
-                <div className="flex items-center gap-1 text-xs text-gray-500">
+              <div className="hidden lg:flex items-center gap-2 border-l border-border pl-3">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <ZoomOut className="w-3.5 h-3.5" />
-                  <select
+                  <Select
                     value={densityMode}
-                    onChange={(e) => setDensityMode(e.target.value as DensityMode)}
-                    className="text-xs border-gray-300 rounded focus:ring-blue-500 py-1 min-h-[44px]"
-                    title="Density Mode"
+                    onValueChange={(val) => setDensityMode(val as DensityMode)}
                   >
-                    <option value="comfortable">Comfortable</option>
-                    <option value="compact">Compact</option>
-                    <option value="ultra-compact">Ultra-Compact</option>
-                  </select>
+                    <SelectTrigger className="text-xs min-h-[44px] h-9 w-[130px]" title="Density Mode">
+                      <SelectValue placeholder="Density" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="comfortable">Comfortable</SelectItem>
+                      <SelectItem value="compact">Compact</SelectItem>
+                      <SelectItem value="ultra-compact">Ultra-Compact</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <ZoomIn className="w-3.5 h-3.5" />
                 </div>
-                <div className="flex items-center gap-1 text-xs text-gray-500">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Clock className="w-3.5 h-3.5" />
-                  <select
+                  <Select
                     value={timeRange}
-                    onChange={(e) => setTimeRange(e.target.value as TimeRange)}
-                    className="text-xs border-gray-300 rounded focus:ring-blue-500 py-1 min-h-[44px]"
-                    title="Time Range"
+                    onValueChange={(val) => setTimeRange(val as TimeRange)}
                   >
-                    <option value="business">Business (8am-6pm)</option>
-                    <option value="full">Full Day (6am-10pm)</option>
-                    <option value="extended">Extended (5am-11pm)</option>
-                  </select>
+                    <SelectTrigger className="text-xs min-h-[44px] h-9 w-[160px]" title="Time Range">
+                      <SelectValue placeholder="Time Range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="business">Business (8am-6pm)</SelectItem>
+                      <SelectItem value="full">Full Day (6am-10pm)</SelectItem>
+                      <SelectItem value="extended">Extended (5am-11pm)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             )}
 
             {/* Mobile Filter Button (< 768px) */}
             <div className="flex md:hidden items-center gap-2">
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => setIsMobileFilterDrawerOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-xs font-bold text-blue-700 shadow-2xs min-h-[44px]"
+                className="gap-1.5 min-h-[44px]"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
                 <span>Filters</span>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
 
         {/* Row 4 (Mobile Only): 7-Day Quick Date Strip */}
-        <div className="md:hidden pt-2 border-t border-gray-100">
+        <div className="md:hidden pt-2 border-t border-border">
           <div className="grid grid-cols-7 gap-1 w-full">
             {weekStripDays.map((dayItem) => (
-              <button
+              <Button
                 key={dayItem.key}
                 type="button"
+                variant={
+                  dayItem.isSelected ? 'default' : dayItem.isToday ? 'secondary' : 'outline'
+                }
+                size="sm"
                 onClick={() => {
                   setCurrentDate(dayItem.date.toDate());
                   setView('day');
                 }}
-                className={`min-h-[44px] py-1 px-1 rounded-lg flex flex-col items-center justify-center transition-all ${
-                  dayItem.isSelected
-                    ? 'bg-blue-600 text-white font-bold shadow-xs'
-                    : dayItem.isToday
-                    ? 'bg-blue-50 text-blue-700 border border-blue-200 font-semibold'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                }`}
+                className="min-h-[44px] py-1 px-1 h-auto flex flex-col items-center justify-center rounded-lg"
                 aria-label={`Select date ${dayItem.date.format('MMM D')}`}
               >
                 <span className="text-[10px] uppercase tracking-wider opacity-80">
                   {dayItem.dayName}
                 </span>
                 <span className="text-sm font-semibold">{dayItem.dayNum}</span>
-                <span
-                  className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
-                    dayItem.hasVisits
-                      ? dayItem.isSelected
-                        ? 'bg-white'
-                        : 'bg-blue-600'
-                      : 'opacity-0'
-                  }`}
-                />
-              </button>
+                {dayItem.hasVisits && (
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
+                      dayItem.isSelected ? 'bg-primary-foreground' : 'bg-primary'
+                    }`}
+                  />
+                )}
+              </Button>
             ))}
           </div>
         </div>
@@ -1350,14 +1360,15 @@ export const CalendarView: React.FC = () => {
                     <CalendarDays className="h-4 w-4 text-blue-600" />
                     Mini Calendar & Filters
                   </span>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => setShowSidebar(false)}
-                    className="text-gray-400 hover:text-gray-600 p-1 rounded-md"
                     aria-label="Collapse sidebar"
                   >
                     <X className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </div>
                 <MiniCalendar
                   currentDate={currentDate}
@@ -1371,60 +1382,68 @@ export const CalendarView: React.FC = () => {
 
                 {/* Filter by Caregiver in sidebar */}
                 <div className="pt-3">
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  <Label htmlFor="sidebar-caregiver-filter" className="block text-xs font-semibold text-foreground mb-1.5">
                     Filter by Caregiver
-                  </label>
-                  <select
-                    value={selectedCaregiverFilter ?? ''}
-                    onChange={(e) => setSelectedCaregiverFilter(e.target.value || null)}
-                    className="w-full text-xs border-gray-300 rounded-lg focus:ring-blue-500 py-2 min-h-[44px]"
+                  </Label>
+                  <Select
+                    value={selectedCaregiverFilter ?? 'ALL'}
+                    onValueChange={(val) => setSelectedCaregiverFilter(val === 'ALL' ? null : val)}
                   >
-                    <option value="">All Caregivers</option>
-                    {caregiversList.map((cg) => (
-                      <option key={cg.id} value={cg.id}>
-                        {cg.firstName} {cg.lastName}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger id="sidebar-caregiver-filter" className="w-full text-xs min-h-[44px]">
+                      <SelectValue placeholder="All Caregivers" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All Caregivers</SelectItem>
+                      {caregiversList.map((cg) => (
+                        <SelectItem key={cg.id} value={cg.id}>
+                          {cg.firstName} {cg.lastName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-gray-100">
+              <div className="pt-3 border-t border-border">
                 <VisitStatusLegend compact={false} />
               </div>
             </aside>
           ) : (
-            <div className="flex flex-col items-center py-2 px-1 border-r border-gray-200 bg-gray-50">
-              <button
+            <div className="flex flex-col items-center py-2 px-1 border-r border-border bg-muted/30">
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowSidebar(true)}
-                className="p-1 text-xs text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded min-h-[44px] min-w-[32px] flex items-center justify-center"
+                className="min-h-[44px] min-w-[32px] p-1 text-xs"
                 title="Expand Left Rail"
                 aria-label="Expand Left Rail"
               >
                 &gt;
-              </button>
+              </Button>
             </div>
           )}
 
           {/* Center Zone: Schedule Grid */}
-          <main className="flex-1 min-w-0 h-full p-4 overflow-auto bg-gray-50 flex flex-col">
+          <main className="flex-1 min-w-0 h-full p-4 overflow-auto bg-muted/30 flex flex-col">
             {!isLoading && filteredVisits.length === 0 ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center my-auto max-w-lg mx-auto shadow-sm">
-                <CalendarDays className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <h3 className="text-base font-bold text-gray-900 mb-1">
+              <div className="bg-card text-card-foreground rounded-xl border border-border p-8 text-center my-auto max-w-lg mx-auto shadow-sm">
+                <CalendarDays className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <h3 className="text-base font-bold text-foreground mb-1">
                   No visits match these filters
                 </h3>
-                <p className="text-sm text-gray-500 mb-4">
+                <p className="text-sm text-muted-foreground mb-4">
                   No visits found for the selected caregiver, client, or status combination.
                 </p>
-                <button
+                <Button
                   type="button"
+                  variant="default"
+                  size="sm"
                   onClick={handleClearAllFilters}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors min-h-[44px]"
+                  className="min-h-[44px]"
                 >
                   Clear all filters
-                </button>
+                </Button>
               </div>
             ) : (
               <div
@@ -1554,14 +1573,16 @@ export const CalendarView: React.FC = () => {
                   {selectedVisitForAction.serviceTypeName}
                 </p>
               </div>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => setSelectedVisitForAction(null)}
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg"
+                className="min-h-[44px] min-w-[44px]"
                 aria-label="Close modal"
               >
                 <X className="h-5 w-5" />
-              </button>
+              </Button>
             </div>
 
             {/* Visit Details */}
@@ -1604,30 +1625,39 @@ export const CalendarView: React.FC = () => {
               </div>
 
               {/* Reassign Caregiver Form */}
-              <div className="pt-3 border-t border-gray-100">
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+              <div className="pt-3 border-t border-border">
+                <Label htmlFor="reassign-caregiver-select" className="block text-xs font-semibold text-foreground mb-1.5">
                   Reassign Caregiver
-                </label>
-                <select
-                  value={reassignCaregiverId}
-                  onChange={(e) => setReassignCaregiverId(e.target.value)}
-                  className="w-full text-sm border-gray-300 rounded-lg p-2.5 min-h-[44px] focus:ring-blue-500 focus:border-blue-500"
-                  data-testid="reassign-caregiver-select"
+                </Label>
+                <Select
+                  value={reassignCaregiverId || 'UNASSIGNED'}
+                  onValueChange={(val) => setReassignCaregiverId(val === 'UNASSIGNED' ? '' : val)}
                 >
-                  <option value="">Unassigned (No Caregiver)</option>
-                  {caregiversList.map((cg) => (
-                    <option key={cg.id} value={cg.id}>
-                      {cg.firstName} {cg.lastName} ({cg.status || 'Active'})
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger
+                    id="reassign-caregiver-select"
+                    className="w-full text-sm min-h-[44px]"
+                    data-testid="reassign-caregiver-select"
+                  >
+                    <SelectValue placeholder="Unassigned (No Caregiver)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="UNASSIGNED">Unassigned (No Caregiver)</SelectItem>
+                    {caregiversList.map((cg) => (
+                      <SelectItem key={cg.id} value={cg.id}>
+                        {cg.firstName} {cg.lastName} ({cg.status || 'Active'})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="pt-3 border-t border-gray-100 flex flex-col sm:flex-row gap-2">
-              <button
+            <div className="pt-3 border-t border-border flex flex-col sm:flex-row gap-2">
+              <Button
                 type="button"
+                variant="default"
+                size="default"
                 disabled={
                   isReassigning ||
                   reassignCaregiverId === (selectedVisitForAction.assignedCaregiverId ?? '')
@@ -1650,21 +1680,23 @@ export const CalendarView: React.FC = () => {
                     setIsReassigning(false);
                   }
                 }}
-                className="min-h-[44px] flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="min-h-[44px] flex-1 font-semibold"
                 data-testid="reassign-submit-button"
               >
                 {isReassigning ? 'Reassigning...' : 'Save Reassignment'}
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="default"
                 onClick={() => {
                   navigate(`/visits/${selectedVisitForAction.id}`);
                 }}
-                className="min-h-[44px] px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-1.5"
+                className="min-h-[44px] font-medium"
               >
                 Full Details
-              </button>
+              </Button>
             </div>
           </div>
         </div>

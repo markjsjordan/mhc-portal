@@ -15,6 +15,7 @@ import {
   PlusCircle,
   Edit3,
   Lock,
+  X,
 } from 'lucide-react';
 import { LoadingSpinner, ErrorMessage } from '@/core/components';
 import { Button } from '@/components/ui/button.js';
@@ -659,12 +660,15 @@ export const VisitDetail: React.FC = () => {
                   Draft Care Plan Tasks ({convertedTasks.length} Synthesized)
                 </h3>
               </div>
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => setIsTaskModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 text-lg font-bold p-1"
+                aria-label="Close dialog"
               >
-                ✕
-              </button>
+                <X className="h-4 w-4" />
+              </Button>
             </div>
 
             <div className="p-6 overflow-y-auto space-y-4 flex-1">

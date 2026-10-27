@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Filter, X, RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button.js';
 
 export interface FilterDropdownProps {
   title: string;
@@ -54,59 +55,65 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = ({
   return (
     <div className="relative" ref={containerRef}>
       {/* Trigger Button */}
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="sm"
         onClick={() => setIsOpen(!isOpen)}
-        className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border text-sm font-medium transition-colors ${
+        className={
           isOpen || activeCount > 0
-            ? 'border-blue-500 bg-blue-50/50 text-blue-700'
-            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-        }`}
+            ? 'border-primary bg-primary/10 text-primary'
+            : ''
+        }
         aria-expanded={isOpen}
       >
-        <Filter className="w-4 h-4" />
+        <Filter className="w-4 h-4 mr-2" />
         <span>Filters</span>
         {activeCount > 0 && (
-          <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold bg-blue-600 text-white rounded-full min-w-5 h-5">
+          <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-semibold bg-primary text-primary-foreground rounded-full min-w-5 h-5">
             {activeCount}
           </span>
         )}
-      </button>
+      </Button>
 
       {/* Dropdown Panel */}
       {isOpen && (
         <div
-          className={`absolute right-0 mt-2 ${widthClasses[width]} bg-white rounded-xl shadow-xl border border-gray-200 p-5 z-30`}
+          className={`absolute right-0 mt-2 ${widthClasses[width]} bg-card text-card-foreground rounded-xl shadow-xl border border-border p-5 z-30`}
         >
           {/* Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+          <div className="flex items-center justify-between pb-3 border-b border-border">
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-blue-600" />
-              <h3 className="font-semibold text-gray-900 text-sm">{title}</h3>
+              <Filter className="w-4 h-4 text-primary" />
+              <h3 className="font-semibold text-foreground text-sm">{title}</h3>
               {activeCount > 0 && (
-                <span className="text-xs text-gray-500">({activeCount} active)</span>
+                <span className="text-xs text-muted-foreground">({activeCount} active)</span>
               )}
             </div>
             <div className="flex items-center gap-2">
               {activeCount > 0 && (
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={onClearAll}
-                  className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                  className="text-xs h-auto p-0 text-primary hover:text-primary/80 hover:bg-transparent flex items-center gap-1"
                   aria-label="Clear all filters"
                 >
                   <RotateCcw className="w-3 h-3" />
                   Clear All
-                </button>
+                </Button>
               )}
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => setIsOpen(false)}
-                className="text-gray-400 hover:text-gray-600 p-1 rounded"
+                className="text-muted-foreground hover:text-foreground"
                 aria-label="Close filters"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -116,17 +123,17 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="pt-3 border-t border-gray-200 flex justify-between items-center">
-            <span className="text-xs text-gray-500">
+          <div className="pt-3 border-t border-border flex justify-between items-center">
+            <span className="text-xs text-muted-foreground">
               {activeCount === 0 ? 'No filters applied' : `${activeCount} filter${activeCount > 1 ? 's' : ''} applied`}
             </span>
-            <button
+            <Button
               type="button"
+              size="sm"
               onClick={() => setIsOpen(false)}
-              className="px-3 py-1.5 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700 transition-colors"
             >
               Apply
-            </button>
+            </Button>
           </div>
         </div>
       )}

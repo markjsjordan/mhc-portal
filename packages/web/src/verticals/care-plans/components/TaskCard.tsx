@@ -1,7 +1,9 @@
 import React from 'react';
 import toast from 'react-hot-toast';
 import { CheckCircle, Clock, AlertTriangle, User, Calendar } from 'lucide-react';
-import { Card, StatusBadge, Button } from '@/core/components';
+import { StatusBadge } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card } from '@/components/ui/card.js';
 import { formatDate, formatTime } from '@/core/utils';
 import { useCompleteTask } from '../hooks';
 import type { TaskInstance } from '../types';
@@ -51,10 +53,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const isOverdue = new Date(task.scheduledDate) < new Date() && 
     task.status === 'SCHEDULED';
 
-
-
   return (
-    <Card padding="md" className="h-full">
+    <Card className="h-full p-5">
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900">
@@ -68,7 +68,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         <div className="flex flex-col items-end gap-2">
           <StatusBadge status={task.status} />
           {isOverdue && (
-            <div className="flex items-center gap-1 text-xs text-red-600">
+            <div className="flex items-center gap-1 text-xs text-destructive">
               <AlertTriangle className="h-3 w-3" />
               Overdue
             </div>
@@ -115,9 +115,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         </div>
 
         {task.instructions && (
-          <div className="mt-3 p-3 bg-gray-50 rounded-md">
-            <p className="text-sm text-gray-700 font-medium mb-1">Instructions:</p>
-            <p className="text-sm text-gray-600">{task.instructions}</p>
+          <div className="mt-3 p-3 bg-muted/50 rounded-md">
+            <p className="text-sm font-medium mb-1">Instructions:</p>
+            <p className="text-sm text-muted-foreground">{task.instructions}</p>
           </div>
         )}
 
@@ -125,22 +125,22 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <div className="mt-4">
             <Button
               size="sm"
-              leftIcon={<CheckCircle className="h-4 w-4" />}
               onClick={handleComplete}
-              isLoading={completeTask.isPending}
+              disabled={completeTask.isPending}
               className="w-full"
             >
+              <CheckCircle className="h-4 w-4 mr-2" />
               Complete Task
             </Button>
           </div>
         )}
 
         {task.completionNote && (
-          <div className="mt-3 p-3 bg-green-50 rounded-md">
-            <p className="text-sm text-green-700 font-medium mb-1">Completion Note:</p>
-            <p className="text-sm text-green-600">{task.completionNote}</p>
+          <div className="mt-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-md">
+            <p className="text-sm text-green-700 dark:text-green-300 font-medium mb-1">Completion Note:</p>
+            <p className="text-sm text-green-600 dark:text-green-400">{task.completionNote}</p>
             {task.completedAt && (
-              <p className="text-xs text-green-500 mt-1">
+              <p className="text-xs text-green-500 dark:text-green-400 mt-1">
                 Completed on {formatDate(task.completedAt)}
               </p>
             )}

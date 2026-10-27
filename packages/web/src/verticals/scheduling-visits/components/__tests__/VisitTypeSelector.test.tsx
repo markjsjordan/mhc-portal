@@ -24,7 +24,7 @@ describe('VisitTypeSelector', () => {
     const onChange = vi.fn();
     const { container } = render(<VisitTypeSelector value={null} onChange={onChange} />);
 
-    const regularOption = container.querySelector('input[value="REGULAR"]') as HTMLInputElement;
+    const regularOption = container.querySelector('[value="REGULAR"]') as HTMLElement;
     fireEvent.click(regularOption);
 
     expect(onChange).toHaveBeenCalledWith('REGULAR');
@@ -90,7 +90,7 @@ describe('VisitTypeSelector', () => {
 
     visitTypes.forEach(type => {
       const { container, unmount } = render(<VisitTypeSelector value={null} onChange={onChange} />);
-      const typeRadio = container.querySelector(`input[value="${type}"]`) as HTMLInputElement;
+      const typeRadio = container.querySelector(`[value="${type}"]`) as HTMLElement;
       expect(typeRadio).not.toBeNull();
       fireEvent.click(typeRadio);
       unmount();
