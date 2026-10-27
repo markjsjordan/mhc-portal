@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import { X, RotateCw, Smartphone, Tablet } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button.js';
 
 export interface DeviceConfig {
   id: string;
@@ -120,11 +120,12 @@ export const DeviceSimulator: React.FC<DeviceSimulatorProps> = ({
               <div className="absolute top-full left-0 mt-2 w-64 bg-gray-700 rounded-lg shadow-xl border border-gray-600 overflow-hidden">
                 <div className="p-2">
                   {DEVICE_CONFIGS.map((device) => (
-                    <button
+                    <Button
                       key={device.id}
                       onClick={() => handleDeviceChange(device)}
-                      className={`w-full text-left px-3 py-2 rounded hover:bg-gray-600 transition-colors ${
-                        currentDevice.id === device.id ? 'bg-gray-600 text-white' : 'text-gray-300'
+                      variant="ghost"
+                      className={`w-full justify-start px-3 py-2 rounded hover:bg-gray-600 transition-colors h-auto font-normal ${
+                        currentDevice.id === device.id ? 'bg-gray-600 text-white hover:bg-gray-600 hover:text-white' : 'text-gray-300 hover:text-white'
                       }`}
                     >
                       <div className="flex items-center gap-2">
@@ -133,14 +134,14 @@ export const DeviceSimulator: React.FC<DeviceSimulatorProps> = ({
                         ) : (
                           <Tablet className="h-4 w-4" />
                         )}
-                        <div>
+                        <div className="text-left">
                           <div className="font-medium">{device.name}</div>
                           <div className="text-xs text-gray-400">
                             {device.width} × {device.height}
                           </div>
                         </div>
                       </div>
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>

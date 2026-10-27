@@ -6,8 +6,9 @@
 
 import React from 'react';
 import { Users } from 'lucide-react';
-import { useApiProvider } from '../../providers';
-import { ShowcaseApiProvider } from '../../providers/showcase-api-provider';
+import { useApiProvider } from '../../providers/index.js';
+import { ShowcaseApiProvider } from '../../providers/showcase-api-provider.js';
+import { Button } from '@/components/ui/button.js';
 
 const ROLES = [
   { id: 'ADMIN', label: 'Admin' },
@@ -35,16 +36,17 @@ export const RoleSwitcher: React.FC = () => {
 
   return (
     <div className="relative">
-      <button
+      <Button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+        variant="ghost"
+        className="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 hover:text-white transition-colors h-auto font-normal"
         title="Switch Role"
       >
         <Users className="h-4 w-4" />
         <span className="text-sm font-medium">
           {ROLES.find(r => r.id === currentRole)?.label || 'Care Coordinator'}
         </span>
-      </button>
+      </Button>
 
       {isOpen && (
         <>
@@ -55,15 +57,16 @@ export const RoleSwitcher: React.FC = () => {
           <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
             <div className="p-2">
               {ROLES.map(role => (
-                <button
+                <Button
                   key={role.id}
                   onClick={() => handleRoleSwitch(role.id)}
-                  className={`w-full text-left px-3 py-2 rounded hover:bg-gray-100 transition-colors ${
-                    currentRole === role.id ? 'bg-gray-900 text-white' : 'text-gray-700'
+                  variant="ghost"
+                  className={`w-full justify-start px-3 py-2 rounded hover:bg-gray-100 transition-colors h-auto font-normal ${
+                    currentRole === role.id ? 'bg-gray-900 text-white hover:bg-gray-800 hover:text-white' : 'text-gray-700'
                   }`}
                 >
                   {role.label}
-                </button>
+                </Button>
               ))}
             </div>
           </div>

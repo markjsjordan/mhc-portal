@@ -10,6 +10,7 @@ import { Compass, X, Play } from 'lucide-react';
 import { useTour } from '../../tours/TourContext';
 import { allTours, getRecommendedTour } from '../../tours';
 import { PersonaRole } from '../../types';
+import { Button } from '@/components/ui/button';
 
 interface TourButtonProps {
   currentRole?: PersonaRole;
@@ -53,12 +54,14 @@ export const TourButton: React.FC<TourButtonProps> = ({ currentRole }) => {
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-bold text-gray-900">Start a Tour</h3>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setShowMenu(false)}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <X className="h-5 w-5" />
-              </button>
+              </Button>
             </div>
 
             <p className="text-sm text-gray-600 mb-4">
@@ -67,16 +70,17 @@ export const TourButton: React.FC<TourButtonProps> = ({ currentRole }) => {
 
             <div className="space-y-2">
               {allTours.map((tour) => (
-                <button
+                <Button
                   key={tour.id}
+                  variant="outline"
                   onClick={() => handleStartTour(tour.id)}
-                  className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all group"
+                  className="w-full justify-start h-auto p-3"
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 w-full">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center flex-shrink-0">
                       <Play className="h-5 w-5 text-purple-600" />
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 text-left">
                       <h4 className="font-semibold text-gray-900 group-hover:text-blue-600">
                         {tour.name}
                       </h4>
@@ -85,7 +89,7 @@ export const TourButton: React.FC<TourButtonProps> = ({ currentRole }) => {
                       </p>
                     </div>
                   </div>
-                </button>
+                </Button>
               ))}
             </div>
           </motion.div>
@@ -93,28 +97,26 @@ export const TourButton: React.FC<TourButtonProps> = ({ currentRole }) => {
       </AnimatePresence>
 
       {/* Main FAB */}
-      <motion.button
+      <Button
+        size="icon"
         onClick={handleQuickStart}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        className="w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full shadow-xl hover:shadow-2xl transition-shadow flex items-center justify-center"
+        className="w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full shadow-xl"
         title="Start Interactive Tour"
       >
         <Compass className="h-7 w-7" />
-      </motion.button>
+      </Button>
 
       {/* Expand Menu Button (shows when there's a recommended tour) */}
       {currentRole && (
-        <motion.button
+        <Button
+          size="icon"
+          variant="outline"
           onClick={() => setShowMenu(!showMenu)}
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.2 }}
-          className="absolute -top-2 -left-2 w-8 h-8 bg-white border-2 border-purple-600 text-purple-600 rounded-full shadow-lg flex items-center justify-center text-xs font-bold"
+          className="absolute -top-2 -left-2 w-8 h-8 border-2 border-purple-600 text-purple-600 rounded-full shadow-lg text-xs font-bold"
           title="See all tours"
         >
           {allTours.length}
-        </motion.button>
+        </Button>
       )}
     </div>
   );

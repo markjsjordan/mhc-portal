@@ -11,6 +11,7 @@ import { DollarSign, Clock, AlertTriangle, CheckCircle, FileText, Download } fro
 import { Scenario } from '../types';
 import { NarrationBox } from './components/NarrationBox';
 import { ActionButtons } from './components/ActionButtons';
+import { Button } from '@/components/ui/button';
 
 // Step Components
 
@@ -375,22 +376,22 @@ const GenerateReport: React.FC = () => (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h4 className="font-semibold text-blue-900 mb-2">📊 Export Options</h4>
           <div className="space-y-2 text-sm">
-            <button className="w-full text-left px-3 py-2 bg-white hover:bg-blue-50 border border-blue-200 rounded flex items-center justify-between group">
+            <Button variant="outline" className="w-full justify-between">
               <span>QuickBooks Desktop (.IIF)</span>
-              <Download className="h-4 w-4 text-blue-600 group-hover:translate-y-1 transition-transform" />
-            </button>
-            <button className="w-full text-left px-3 py-2 bg-white hover:bg-blue-50 border border-blue-200 rounded flex items-center justify-between group">
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" className="w-full justify-between">
               <span>QuickBooks Online (Direct Sync)</span>
-              <Download className="h-4 w-4 text-blue-600 group-hover:translate-y-1 transition-transform" />
-            </button>
-            <button className="w-full text-left px-3 py-2 bg-white hover:bg-blue-50 border border-blue-200 rounded flex items-center justify-between group">
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" className="w-full justify-between">
               <span>ADP Payroll (.CSV)</span>
-              <Download className="h-4 w-4 text-blue-600 group-hover:translate-y-1 transition-transform" />
-            </button>
-            <button className="w-full text-left px-3 py-2 bg-white hover:bg-blue-50 border border-blue-200 rounded flex items-center justify-between group">
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" className="w-full justify-between">
               <span>Generic CSV Export</span>
-              <Download className="h-4 w-4 text-blue-600 group-hover:translate-y-1 transition-transform" />
-            </button>
+              <Download className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>

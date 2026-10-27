@@ -11,6 +11,7 @@
  */
 
 import React from 'react';
+import { Button } from '@/components/ui/button.js';
 
 export interface DemoModeBannerProps {
   /** Whether demo mode is active */
@@ -124,54 +125,24 @@ export function DemoModeBanner({
         {/* Right section: Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {onSwitchPersona && (
-            <button
+            <Button
               onClick={onSwitchPersona}
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                color: '#000',
-                border: '1px solid rgba(0, 0, 0, 0.3)',
-                padding: '0.375rem 0.75rem',
-                borderRadius: '4px',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-              }}
-              type="button"
+              variant="ghost"
+              size="sm"
+              className="bg-white/20 hover:bg-white/30 text-black border border-black/30 h-auto px-3 py-1.5 text-xs font-semibold"
             >
               Switch Persona
-            </button>
+            </Button>
           )}
           {onReset && (
-            <button
+            <Button
               onClick={onReset}
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                color: '#000',
-                border: '1px solid rgba(0, 0, 0, 0.3)',
-                padding: '0.375rem 0.75rem',
-                borderRadius: '4px',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-              }}
-              type="button"
+              variant="ghost"
+              size="sm"
+              className="bg-white/20 hover:bg-white/30 text-black border border-black/30 h-auto px-3 py-1.5 text-xs font-semibold"
             >
               Reset Demo
-            </button>
+            </Button>
           )}
         </div>
       </div>
