@@ -347,7 +347,8 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/folkcare_seed_test
           NODE_ENV: test
         run: |
-          echo "🌱 Seeding database with demo data..."
+          echo "🌱 Seeding base org, then demo data..."
+          npm run db:seed:base
           npm run db:seed:demo
 
       - name: Verify seed data
