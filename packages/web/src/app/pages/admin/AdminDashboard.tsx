@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button.js';
 import {
   Card,
   CardContent,
-} from '@/components/ui/card';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+} from '@/components/ui/card.js';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert.js';
 import { useAuth } from '@/core/hooks/auth';
 import {
   OperationsCenter,
@@ -146,23 +146,17 @@ export const AdminDashboard: React.FC = () => {
       <div className="border-b border-gray-200">
         <nav className="flex -mb-px space-x-4" aria-label="Tabs">
           {tabs.map((tab) => (
-            <button
+            <Button
               key={tab.id}
+              variant={activeTab === tab.id ? 'secondary' : 'ghost'}
+              size="sm"
               onClick={() => setActiveTab(tab.id)}
-              className={`
-                group inline-flex items-center gap-2 py-4 px-3 border-b-2 font-medium text-sm
-                transition-colors duration-200
-                ${
-                  activeTab === tab.id
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }
-              `}
               aria-current={activeTab === tab.id ? 'page' : undefined}
+              className="gap-2"
             >
               <span>{tab.icon}</span>
               <span className="hidden sm:inline">{tab.label}</span>
-            </button>
+            </Button>
           ))}
         </nav>
       </div>

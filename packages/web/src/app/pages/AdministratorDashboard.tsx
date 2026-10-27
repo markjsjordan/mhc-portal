@@ -142,20 +142,21 @@ interface QuickActionProps {
 
 const QuickAction: React.FC<QuickActionProps> = ({ title, description, icon, onClick }) => {
   return (
-    <button
+    <Button
+      variant="outline"
       onClick={onClick}
-      className="w-full p-4 text-left rounded-lg border-2 border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all group"
+      className="w-full h-auto p-4 text-left justify-start group"
     >
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center group-hover:bg-primary-200 transition-colors">
-          <div className="text-primary-600">{icon}</div>
+        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+          <div className="text-primary">{icon}</div>
         </div>
         <div>
-          <h4 className="font-semibold text-gray-900">{title}</h4>
-          <p className="text-sm text-gray-600">{description}</p>
+          <h4 className="font-semibold text-foreground">{title}</h4>
+          <p className="text-sm text-muted-foreground">{description}</p>
         </div>
       </div>
-    </button>
+    </Button>
   );
 };
 
@@ -383,16 +384,18 @@ export const AdministratorDashboard: React.FC = () => {
               This is an impersonation session. Your actions are being audited for compliance.
             </p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => {
               localStorage.removeItem('auth-storage');
               window.location.href = '/login';
             }}
-            className="text-yellow-600 hover:text-yellow-800 flex-shrink-0"
+            className="flex-shrink-0"
             aria-label="End impersonation"
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
       )}
 

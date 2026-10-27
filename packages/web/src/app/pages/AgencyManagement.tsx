@@ -5,10 +5,10 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button.js';
+import { Badge } from '@/components/ui/badge.js';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert.js';
+import { Card } from '@/components/ui/card.js';
 
 interface Organization {
   id: string;

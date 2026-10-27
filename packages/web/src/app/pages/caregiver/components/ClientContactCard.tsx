@@ -10,9 +10,10 @@
 
 import React from 'react';
 import { useIsMobile } from '@/core/hooks';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { Badge } from '@/components/ui/badge.js';
+import { Button } from '@/components/ui/button.js';
+import { cn } from '@/lib/utils.js';
 import {
   Phone,
   MapPin,
@@ -84,69 +85,69 @@ export const ClientContactCard: React.FC<ClientContactCardProps> = ({
         <div className="space-y-3">
           {/* Phone */}
           {contact.clientPhone && (
-            <button
+            <Button
+              variant="outline"
               onClick={() => handleCall(contact.clientPhone!)}
-              className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-colors ${
-                isMobile ? 'min-h-[52px]' : ''
-              }`}
+              className={cn(
+                'w-full h-auto flex items-center justify-between p-3 text-left font-normal',
+                isMobile && 'min-h-[52px]'
+              )}
             >
-              <div className="flex-shrink-0">
-                <Phone className={`${isMobile ? 'h-5 w-5' : 'h-4 w-4'} text-primary-600`} />
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <Phone className={cn(isMobile ? 'h-5 w-5' : 'h-4 w-4', 'text-primary shrink-0')} />
+                <div className="min-w-0 flex-1 text-left">
+                  <p className="text-sm text-muted-foreground">Phone</p>
+                  <p className={cn('font-medium text-foreground', isMobile ? 'text-base' : 'text-sm')}>
+                    {contact.clientPhone}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 text-left">
-                <p className="text-sm text-gray-600">Phone</p>
-                <p className={`font-medium text-gray-900 ${isMobile ? 'text-base' : 'text-sm'}`}>
-                  {contact.clientPhone}
-                </p>
-              </div>
-              <div className="flex-shrink-0">
-                <Badge variant="secondary" className="text-xs font-medium text-primary">
-                  TAP TO CALL
-                </Badge>
-              </div>
-            </button>
+              <Badge variant="secondary" className="text-xs font-medium text-primary shrink-0">
+                TAP TO CALL
+              </Badge>
+            </Button>
           )}
 
           {/* Email */}
           {contact.clientEmail && (
-            <button
+            <Button
+              variant="outline"
               onClick={() => handleEmail(contact.clientEmail!)}
-              className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-colors ${
-                isMobile ? 'min-h-[52px]' : ''
-              }`}
+              className={cn(
+                'w-full h-auto flex items-center gap-3 p-3 text-left font-normal justify-start',
+                isMobile && 'min-h-[52px]'
+              )}
             >
-              <div className="flex-shrink-0">
-                <Mail className={`${isMobile ? 'h-5 w-5' : 'h-4 w-4'} text-primary-600`} />
-              </div>
+              <Mail className={cn(isMobile ? 'h-5 w-5' : 'h-4 w-4', 'text-primary shrink-0')} />
               <div className="flex-1 text-left">
-                <p className="text-sm text-gray-600">Email</p>
-                <p className={`font-medium text-gray-900 ${isMobile ? 'text-base' : 'text-sm'}`}>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className={cn('font-medium text-foreground', isMobile ? 'text-base' : 'text-sm')}>
                   {contact.clientEmail}
                 </p>
               </div>
-            </button>
+            </Button>
           )}
 
           {/* Address */}
-          <button
+          <Button
+            variant="outline"
             onClick={() => handleNavigate(contact.address)}
-            className={`w-full flex items-start gap-3 p-3 rounded-lg border-2 border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-colors ${
-              isMobile ? 'min-h-[52px]' : ''
-            }`}
+            className={cn(
+              'w-full h-auto flex items-start gap-3 p-3 text-left font-normal justify-between',
+              isMobile && 'min-h-[52px]'
+            )}
           >
-            <div className="flex-shrink-0 mt-0.5">
-              <MapPin className={`${isMobile ? 'h-5 w-5' : 'h-4 w-4'} text-primary-600`} />
+            <div className="flex items-start gap-3 min-w-0 flex-1">
+              <MapPin className={cn(isMobile ? 'h-5 w-5' : 'h-4 w-4', 'text-primary shrink-0 mt-0.5')} />
+              <div className="flex-1 text-left">
+                <p className="text-sm text-muted-foreground">Address</p>
+                <p className={cn('font-medium text-foreground', isMobile ? 'text-base' : 'text-sm')}>
+                  {contact.address}
+                </p>
+              </div>
             </div>
-            <div className="flex-1 text-left">
-              <p className="text-sm text-gray-600">Address</p>
-              <p className={`font-medium text-gray-900 ${isMobile ? 'text-base' : 'text-sm'}`}>
-                {contact.address}
-              </p>
-            </div>
-            <div className="flex-shrink-0 mt-0.5">
-              <Navigation className={`${isMobile ? 'h-5 w-5' : 'h-4 w-4'} text-gray-400`} />
-            </div>
-          </button>
+            <Navigation className={cn(isMobile ? 'h-5 w-5' : 'h-4 w-4', 'text-muted-foreground shrink-0 mt-0.5')} />
+          </Button>
         </div>
 
         {/* Emergency Contacts */}
@@ -160,29 +161,29 @@ export const ClientContactCard: React.FC<ClientContactCardProps> = ({
             </div>
             <div className="space-y-2">
               {contact.emergencyContacts.map((emergency, index) => (
-                <button
+                <Button
                   key={index}
+                  variant="outline"
                   onClick={() => handleCall(emergency.phone)}
-                  className={`w-full flex items-start gap-3 p-3 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 transition-colors ${
-                    isMobile ? 'min-h-[52px]' : ''
-                  }`}
+                  className={cn(
+                    'w-full h-auto flex items-start gap-3 p-3 text-left font-normal justify-between',
+                    isMobile && 'min-h-[52px]'
+                  )}
                 >
-                  <div className="flex-shrink-0">
-                    <User className={`${isMobile ? 'h-5 w-5' : 'h-4 w-4'} text-red-600`} />
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <User className={cn(isMobile ? 'h-5 w-5' : 'h-4 w-4', 'text-destructive shrink-0 mt-0.5')} />
+                    <div className="flex-1 text-left">
+                      <p className={cn('font-medium text-foreground', isMobile ? 'text-base' : 'text-sm')}>
+                        {emergency.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{emergency.relationship}</p>
+                      <p className={cn('font-medium text-destructive mt-1', isMobile ? 'text-sm' : 'text-xs')}>
+                        {emergency.phone}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 text-left">
-                    <p className={`font-medium text-gray-900 ${isMobile ? 'text-base' : 'text-sm'}`}>
-                      {emergency.name}
-                    </p>
-                    <p className="text-xs text-gray-600">{emergency.relationship}</p>
-                    <p className={`font-medium text-red-700 mt-1 ${isMobile ? 'text-sm' : 'text-xs'}`}>
-                      {emergency.phone}
-                    </p>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <Phone className={`${isMobile ? 'h-5 w-5' : 'h-4 w-4'} text-red-600`} />
-                  </div>
-                </button>
+                  <Phone className={cn(isMobile ? 'h-5 w-5' : 'h-4 w-4', 'text-destructive shrink-0 mt-0.5')} />
+                </Button>
               ))}
             </div>
           </div>
