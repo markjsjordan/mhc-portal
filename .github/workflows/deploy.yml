@@ -1,10 +1,9 @@
 name: Deploy
 
 on:
-  push:
-    branches:
-      - production  # Production deployments
-      - preview     # Preview deployments (preview branch uses Vercel preview environment)
+  # Deploys are on-demand only (no push trigger). Run when you decide:
+  #   gh workflow run deploy.yml --ref preview -f environment=preview
+  # Production requires an explicit dispatch with environment=production.
   workflow_dispatch:
     inputs:
       environment:
