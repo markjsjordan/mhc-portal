@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, Calendar } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { StatusBadge, DemoBadge } from '@/core/components';
-import { formatDate, formatPhone } from '@/core/utils';
-import type { CaregiverListItem } from '../types';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { StatusBadge, DemoBadge } from '@/core/components/index.js';
+import { formatDate, formatPhone } from '@/core/utils/index.js';
+import type { CaregiverListItem } from '../types/index.js';
 
 export interface CaregiverCardProps {
   caregiver: CaregiverListItem;

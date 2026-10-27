@@ -15,8 +15,16 @@
  * create flow would never actually succeed for a real user.
  */
 import React, { useState, useEffect, useRef } from 'react';
-import { Input, Select, FormField } from '@/core/components';
-import type { SelectOption } from '@/core/components/forms/Select';
+import { Input } from '@/components/ui/input.js';
+import { Button } from '@/components/ui/button.js';
+import { Label } from '@/components/ui/label.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 import { useBranches } from '@/verticals/client-demographics/hooks/index.js';
 import { Search, ChevronDown, Check, X } from 'lucide-react';
 
@@ -75,6 +83,11 @@ export const EMPTY_CAREGIVER_FORM: CaregiverFormValues = {
   emergencyContactRelationship: '',
   emergencyContactPhone: '',
 };
+
+export interface SelectOption {
+  value: string;
+  label: string;
+}
 
 const roleOptions: SelectOption[] = [
   { value: 'CAREGIVER', label: 'Caregiver' },
@@ -232,216 +245,367 @@ export const CaregiverForm: React.FC<CaregiverFormProps> = ({
     <div className="space-y-8">
       {/* Identity */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Identity</h2>
+        <h2 className="text-lg font-semibold text-foreground">Identity</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="First Name" required error={errors.firstName}>
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-first-name">
+              First Name <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="caregiver-first-name"
               value={values.firstName}
               onChange={(e) => set('firstName', e.target.value)}
               disabled={disabled}
               placeholder="Jane"
             />
-          </FormField>
-          <FormField label="Last Name" required error={errors.lastName}>
+            {errors.firstName && <p className="text-sm text-destructive">{errors.firstName}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-last-name">
+              Last Name <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="caregiver-last-name"
               value={values.lastName}
               onChange={(e) => set('lastName', e.target.value)}
               disabled={disabled}
               placeholder="Doe"
             />
-          </FormField>
-          <FormField label="Middle Name" error={errors.middleName}>
+            {errors.lastName && <p className="text-sm text-destructive">{errors.lastName}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-middle-name">Middle Name</Label>
             <Input
+              id="caregiver-middle-name"
               value={values.middleName}
               onChange={(e) => set('middleName', e.target.value)}
               disabled={disabled}
             />
-          </FormField>
-          <FormField label="Preferred Name" error={errors.preferredName}>
+            {errors.middleName && <p className="text-sm text-destructive">{errors.middleName}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-preferred-name">Preferred Name</Label>
             <Input
+              id="caregiver-preferred-name"
               value={values.preferredName}
               onChange={(e) => set('preferredName', e.target.value)}
               disabled={disabled}
             />
-          </FormField>
-          <FormField label="Date of Birth" required error={errors.dateOfBirth}>
+            {errors.preferredName && <p className="text-sm text-destructive">{errors.preferredName}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-date-of-birth">
+              Date of Birth <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="caregiver-date-of-birth"
               type="date"
               value={values.dateOfBirth}
               onChange={(e) => set('dateOfBirth', e.target.value)}
               disabled={disabled}
             />
-          </FormField>
+            {errors.dateOfBirth && <p className="text-sm text-destructive">{errors.dateOfBirth}</p>}
+          </div>
         </div>
       </section>
 
       {/* Contact */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Contact</h2>
+        <h2 className="text-lg font-semibold text-foreground">Contact</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="Email" required error={errors.email}>
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-email">
+              Email <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="caregiver-email"
               type="email"
               value={values.email}
               onChange={(e) => set('email', e.target.value)}
               disabled={disabled}
               placeholder="jane@example.com"
             />
-          </FormField>
-          <FormField label="Phone Number" required error={errors.phoneNumber}>
+            {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-phone-number">
+              Phone Number <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="caregiver-phone-number"
               type="tel"
               value={values.phoneNumber}
               onChange={(e) => set('phoneNumber', e.target.value)}
               disabled={disabled}
               placeholder="5551234567"
             />
-          </FormField>
-          <Select
-            label="Phone Type"
-            required
-            options={phoneTypeOptions}
-            value={values.phoneType}
-            onChange={(e) => set('phoneType', e.target.value as CaregiverFormValues['phoneType'])}
-            disabled={disabled}
-          />
+            {errors.phoneNumber && <p className="text-sm text-destructive">{errors.phoneNumber}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-phone-type">
+              Phone Type <span className="text-destructive">*</span>
+            </Label>
+            <Select
+              value={values.phoneType}
+              onValueChange={(val) => set('phoneType', val as CaregiverFormValues['phoneType'])}
+              disabled={disabled}
+            >
+              <SelectTrigger id="caregiver-phone-type">
+                <SelectValue placeholder="Select phone type" />
+              </SelectTrigger>
+              <SelectContent>
+                {phoneTypeOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </section>
 
       {/* Home Address (required by backend validator) */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Home Address</h2>
+        <h2 className="text-lg font-semibold text-foreground">Home Address</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="Street Address" required error={errors.addressLine1} className="md:col-span-2">
+          <div className="space-y-1.5 md:col-span-2">
+            <Label htmlFor="caregiver-address-line1">
+              Street Address <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="caregiver-address-line1"
               value={values.addressLine1}
               onChange={(e) => set('addressLine1', e.target.value)}
               disabled={disabled}
               placeholder="123 Main St"
             />
-          </FormField>
-          <FormField label="Apt / Suite" error={errors.addressLine2} className="md:col-span-2">
+            {errors.addressLine1 && <p className="text-sm text-destructive">{errors.addressLine1}</p>}
+          </div>
+
+          <div className="space-y-1.5 md:col-span-2">
+            <Label htmlFor="caregiver-address-line2">Apt / Suite</Label>
             <Input
+              id="caregiver-address-line2"
               value={values.addressLine2}
               onChange={(e) => set('addressLine2', e.target.value)}
               disabled={disabled}
             />
-          </FormField>
-          <FormField label="City" required error={errors.addressCity}>
+            {errors.addressLine2 && <p className="text-sm text-destructive">{errors.addressLine2}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-address-city">
+              City <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="caregiver-address-city"
               value={values.addressCity}
               onChange={(e) => set('addressCity', e.target.value)}
               disabled={disabled}
             />
-          </FormField>
-          <FormField label="State (2-letter)" required error={errors.addressState}>
+            {errors.addressCity && <p className="text-sm text-destructive">{errors.addressCity}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-address-state">
+              State (2-letter) <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="caregiver-address-state"
               value={values.addressState}
               onChange={(e) => set('addressState', e.target.value.toUpperCase())}
               maxLength={2}
               disabled={disabled}
               placeholder="TX"
             />
-          </FormField>
-          <FormField label="ZIP Code" required error={errors.addressPostalCode}>
+            {errors.addressState && <p className="text-sm text-destructive">{errors.addressState}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-address-postal-code">
+              ZIP Code <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="caregiver-address-postal-code"
               value={values.addressPostalCode}
               onChange={(e) => set('addressPostalCode', e.target.value)}
               disabled={disabled}
               placeholder="78701"
             />
-          </FormField>
+            {errors.addressPostalCode && (
+              <p className="text-sm text-destructive">{errors.addressPostalCode}</p>
+            )}
+          </div>
         </div>
       </section>
 
       {/* Emergency Contact (required by backend validator: min 1) */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Emergency Contact</h2>
+        <h2 className="text-lg font-semibold text-foreground">Emergency Contact</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="Name" required error={errors.emergencyContactName}>
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-emergency-contact-name">
+              Name <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="caregiver-emergency-contact-name"
               value={values.emergencyContactName}
               onChange={(e) => set('emergencyContactName', e.target.value)}
               disabled={disabled}
             />
-          </FormField>
-          <FormField label="Relationship" required error={errors.emergencyContactRelationship}>
+            {errors.emergencyContactName && (
+              <p className="text-sm text-destructive">{errors.emergencyContactName}</p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-emergency-contact-relationship">
+              Relationship <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="caregiver-emergency-contact-relationship"
               value={values.emergencyContactRelationship}
               onChange={(e) => set('emergencyContactRelationship', e.target.value)}
               disabled={disabled}
               placeholder="Spouse, Parent, Sibling..."
             />
-          </FormField>
-          <FormField label="Phone Number" required error={errors.emergencyContactPhone}>
+            {errors.emergencyContactRelationship && (
+              <p className="text-sm text-destructive">{errors.emergencyContactRelationship}</p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-emergency-contact-phone">
+              Phone Number <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="caregiver-emergency-contact-phone"
               type="tel"
               value={values.emergencyContactPhone}
               onChange={(e) => set('emergencyContactPhone', e.target.value)}
               disabled={disabled}
               placeholder="5559876543"
             />
-          </FormField>
+            {errors.emergencyContactPhone && (
+              <p className="text-sm text-destructive">{errors.emergencyContactPhone}</p>
+            )}
+          </div>
         </div>
       </section>
 
       {/* Employment */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Employment</h2>
+        <h2 className="text-lg font-semibold text-foreground">Employment</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Select
-            label="Role"
-            required
-            options={roleOptions}
-            value={values.role}
-            onChange={(e) => set('role', e.target.value)}
-            disabled={disabled}
-          />
-          <Select
-            label="Employment Type"
-            required
-            options={employmentTypeOptions}
-            value={values.employmentType}
-            onChange={(e) => set('employmentType', e.target.value as CaregiverFormValues['employmentType'])}
-            disabled={disabled}
-          />
-          <Select
-            label="Status"
-            options={statusOptions}
-            value={values.status}
-            onChange={(e) => set('status', e.target.value)}
-            disabled={disabled}
-          />
-          <FormField label="Hire Date" required error={errors.hireDate}>
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-role">
+              Role <span className="text-destructive">*</span>
+            </Label>
+            <Select
+              value={values.role}
+              onValueChange={(val) => set('role', val)}
+              disabled={disabled}
+            >
+              <SelectTrigger id="caregiver-role">
+                <SelectValue placeholder="Select role" />
+              </SelectTrigger>
+              <SelectContent>
+                {roleOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-employment-type">
+              Employment Type <span className="text-destructive">*</span>
+            </Label>
+            <Select
+              value={values.employmentType}
+              onValueChange={(val) => set('employmentType', val as CaregiverFormValues['employmentType'])}
+              disabled={disabled}
+            >
+              <SelectTrigger id="caregiver-employment-type">
+                <SelectValue placeholder="Select employment type" />
+              </SelectTrigger>
+              <SelectContent>
+                {employmentTypeOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-status">Status</Label>
+            <Select
+              value={values.status}
+              onValueChange={(val) => set('status', val)}
+              disabled={disabled}
+            >
+              <SelectTrigger id="caregiver-status">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-hire-date">
+              Hire Date <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="caregiver-hire-date"
               type="date"
               value={values.hireDate}
               onChange={(e) => set('hireDate', e.target.value)}
               disabled={disabled}
             />
-          </FormField>
+            {errors.hireDate && <p className="text-sm text-destructive">{errors.hireDate}</p>}
+          </div>
         </div>
       </section>
 
       {/* Branches */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Branch Assignment</h2>
+        <h2 className="text-lg font-semibold text-foreground">Branch Assignment</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Branch Selector Dropdown */}
-          <div className="space-y-1 relative" ref={dropdownRef}>
-            <label className="block text-sm font-medium text-gray-700">
-              Assigned Branches <span className="text-red-500">*</span>
-            </label>
+          <div className="space-y-1.5 relative" ref={dropdownRef}>
+            <Label htmlFor="branch-dropdown-toggle">
+              Assigned Branches <span className="text-destructive">*</span>
+            </Label>
             <div
+              id="branch-dropdown-toggle"
               className={`min-h-[38px] w-full rounded-md border bg-white px-3 py-2 text-sm shadow-sm cursor-pointer flex flex-wrap items-center justify-between gap-1.5 ${
-                errors.branchIdsRaw ? 'border-red-300 ring-1 ring-red-500' : 'border-gray-300 focus-within:border-primary-500'
-              } ${disabled ? 'bg-gray-50 cursor-not-allowed opacity-75' : ''}`}
+                errors.branchIdsRaw ? 'border-destructive ring-1 ring-destructive' : 'border-input focus-within:border-ring'
+              } ${disabled ? 'bg-muted cursor-not-allowed opacity-75' : ''}`}
               onClick={() => !disabled && setDropdownOpen(!dropdownOpen)}
               data-testid="branch-dropdown-toggle"
+              tabIndex={0}
+              role="button"
             >
               <div className="flex flex-wrap items-center gap-1 flex-1">
                 {selectedBranchIds.length === 0 ? (
-                  <span className="text-gray-400">Select branches...</span>
+                  <span className="text-muted-foreground">Select branches...</span>
                 ) : (
                   selectedBranchIds.map((branchId) => {
                     const branch = availableBranches.find((b) => b.id === branchId);
@@ -452,40 +616,42 @@ export const CaregiverForm: React.FC<CaregiverFormProps> = ({
                         key={branchId}
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
                           isPrimary
-                            ? 'bg-blue-100 text-blue-800 border border-blue-300'
-                            : 'bg-gray-100 text-gray-800'
+                            ? 'bg-secondary text-secondary-foreground border border-border'
+                            : 'bg-muted text-muted-foreground'
                         }`}
                       >
                         {name} {isPrimary && '(Primary)'}
                         {!disabled && (
-                          <button
+                          <Button
                             type="button"
-                            className="text-gray-400 hover:text-gray-600 focus:outline-none ml-0.5"
+                            variant="ghost"
+                            size="icon"
+                            className="h-3.5 w-3.5 p-0 ml-0.5 text-muted-foreground hover:text-foreground"
                             onClick={(e) => {
                               e.stopPropagation();
                               toggleBranchSelection(branchId);
                             }}
                           >
                             <X className="w-3 h-3" />
-                          </button>
+                          </Button>
                         )}
                       </span>
                     );
                   })
                 )}
               </div>
-              <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
+              <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
             </div>
 
             {/* Dropdown popup */}
             {dropdownOpen && (
-              <div className="absolute z-20 mt-1 w-full rounded-md bg-white shadow-lg border border-gray-200 py-1 max-h-60 overflow-hidden flex flex-col">
-                <div className="p-2 border-b border-gray-100">
+              <div className="absolute z-20 mt-1 w-full rounded-md bg-white shadow-lg border border-border py-1 max-h-60 overflow-hidden flex flex-col">
+                <div className="p-2 border-b border-border">
                   <div className="relative">
-                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-gray-400" />
-                    <input
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
+                    <Input
                       type="text"
-                      className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500"
+                      className="w-full pl-8 pr-3 h-8 text-xs"
                       placeholder="Search branches..."
                       value={branchSearch}
                       onChange={(e) => setBranchSearch(e.target.value)}
@@ -496,26 +662,26 @@ export const CaregiverForm: React.FC<CaregiverFormProps> = ({
 
                 <div className="overflow-y-auto max-h-44 py-1">
                   {filteredBranches.length === 0 ? (
-                    <div className="px-3 py-2 text-xs text-gray-500 text-center">No branches found</div>
+                    <div className="px-3 py-2 text-xs text-muted-foreground text-center">No branches found</div>
                   ) : (
                     filteredBranches.map((branch) => {
                       const isSelected = selectedBranchIds.includes(branch.id);
                       return (
                         <div
                           key={branch.id}
-                          className="px-3 py-2 hover:bg-gray-50 cursor-pointer flex items-center justify-between text-sm"
+                          className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center justify-between text-sm"
                           onClick={() => toggleBranchSelection(branch.id)}
                         >
                           <div className="flex items-center gap-2">
                             <div
                               className={`w-4 h-4 rounded border flex items-center justify-center ${
-                                isSelected ? 'bg-primary-600 border-primary-600 text-white' : 'border-gray-300'
+                                isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-input'
                               }`}
                             >
                               {isSelected && <Check className="w-3 h-3" />}
                             </div>
-                            <span className="font-medium text-gray-900">{branch.name}</span>
-                            {branch.code && <span className="text-xs text-gray-400">({branch.code})</span>}
+                            <span className="font-medium text-foreground">{branch.name}</span>
+                            {branch.code && <span className="text-xs text-muted-foreground">({branch.code})</span>}
                           </div>
                         </div>
                       );
@@ -524,51 +690,55 @@ export const CaregiverForm: React.FC<CaregiverFormProps> = ({
                 </div>
               </div>
             )}
-            {errors.branchIdsRaw && <p className="text-xs text-red-600 mt-1">{errors.branchIdsRaw}</p>}
-            <p className="text-xs text-gray-500 mt-1">Select one or more branches assigned to this caregiver.</p>
+            {errors.branchIdsRaw && <p className="text-sm text-destructive mt-1">{errors.branchIdsRaw}</p>}
+            <p className="text-xs text-muted-foreground mt-1">Select one or more branches assigned to this caregiver.</p>
           </div>
 
           {/* Primary Branch Dropdown */}
-          <FormField
-            label="Primary Branch"
-            required
-            error={errors.primaryBranchId}
-            helperText="The primary location for this caregiver's employment records and scheduling"
-          >
-            <select
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm disabled:bg-gray-50 disabled:text-gray-500"
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-primary-branch">
+              Primary Branch <span className="text-destructive">*</span>
+            </Label>
+            <Select
               value={values.primaryBranchId}
-              onChange={(e) => setPrimaryBranch(e.target.value)}
+              onValueChange={(val) => setPrimaryBranch(val)}
               disabled={disabled || selectedBranchIds.length === 0}
             >
-              {selectedBranchIds.length === 0 ? (
-                <option value="">Select an assigned branch first</option>
-              ) : (
-                selectedBranchIds.map((branchId) => {
+              <SelectTrigger id="caregiver-primary-branch">
+                <SelectValue placeholder={selectedBranchIds.length === 0 ? "Select an assigned branch first" : "Select primary branch"} />
+              </SelectTrigger>
+              <SelectContent>
+                {selectedBranchIds.map((branchId) => {
                   const b = availableBranches.find((item) => item.id === branchId);
                   const name = b ? `${b.name}${b.code ? ` (${b.code})` : ''}` : branchId;
                   return (
-                    <option key={branchId} value={branchId}>
+                    <SelectItem key={branchId} value={branchId}>
                       {name}
-                    </option>
+                    </SelectItem>
                   );
-                })
-              )}
-            </select>
-          </FormField>
+                })}
+              </SelectContent>
+            </Select>
+            {errors.primaryBranchId && <p className="text-sm text-destructive">{errors.primaryBranchId}</p>}
+            <p className="text-xs text-muted-foreground">The primary location for this caregiver's employment records and scheduling</p>
+          </div>
         </div>
       </section>
 
       {/* Pay Rate */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Pay Rate</h2>
-        <p className="text-sm text-gray-500">
+        <h2 className="text-lg font-semibold text-foreground">Pay Rate</h2>
+        <p className="text-sm text-muted-foreground">
           Required so the create request always carries a complete payRate.effectiveDate
           (the backend throws a 500 if this is missing).
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FormField label="Amount ($)" required error={errors.payRateAmount}>
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-pay-rate-amount">
+              Amount ($) <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="caregiver-pay-rate-amount"
               type="number"
               min="0"
               step="0.01"
@@ -577,23 +747,46 @@ export const CaregiverForm: React.FC<CaregiverFormProps> = ({
               disabled={disabled}
               placeholder="20.00"
             />
-          </FormField>
-          <Select
-            label="Unit"
-            required
-            options={payUnitOptions}
-            value={values.payRateUnit}
-            onChange={(e) => set('payRateUnit', e.target.value as CaregiverFormValues['payRateUnit'])}
-            disabled={disabled}
-          />
-          <FormField label="Effective Date" required error={errors.payRateEffectiveDate}>
+            {errors.payRateAmount && <p className="text-sm text-destructive">{errors.payRateAmount}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-pay-rate-unit">
+              Unit <span className="text-destructive">*</span>
+            </Label>
+            <Select
+              value={values.payRateUnit}
+              onValueChange={(val) => set('payRateUnit', val as CaregiverFormValues['payRateUnit'])}
+              disabled={disabled}
+            >
+              <SelectTrigger id="caregiver-pay-rate-unit">
+                <SelectValue placeholder="Select unit" />
+              </SelectTrigger>
+              <SelectContent>
+                {payUnitOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="caregiver-pay-rate-effective-date">
+              Effective Date <span className="text-destructive">*</span>
+            </Label>
             <Input
+              id="caregiver-pay-rate-effective-date"
               type="date"
               value={values.payRateEffectiveDate}
               onChange={(e) => set('payRateEffectiveDate', e.target.value)}
               disabled={disabled}
             />
-          </FormField>
+            {errors.payRateEffectiveDate && (
+              <p className="text-sm text-destructive">{errors.payRateEffectiveDate}</p>
+            )}
+          </div>
         </div>
       </section>
     </div>
