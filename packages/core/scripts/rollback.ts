@@ -15,19 +15,25 @@ async function rollbackMigrations() {
   // Determine environment
   const environment = process.env.NODE_ENV || 'development';
 
-  // Build Knex config inline to avoid tsconfig issues
+  // Build connection config. Prefer DATABASE_URL (matches migrate.ts) so the
+  // rollback targets the same database as the migration it reverses.
+  const connection = process.env.DATABASE_URL
+    ? process.env.DATABASE_URL
+    : {
+        host: process.env.DB_HOST || 'localhost',
+        port: parseInt(process.env.DB_PORT || '5432'),
+        database: environment === 'test'
+          ? (process.env.DB_NAME || 'folkcare') + '_test'
+          : process.env.DB_NAME || 'folkcare',
+        user: process.env.DB_USER || 'postgres',
+        password: process.env.DB_PASSWORD || 'postgres',
+        ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+      };
+
   const config: Knex.Config = {
     client: 'postgresql',
-    connection: {
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      database: environment === 'test' 
-        ? (process.env.DB_NAME || 'folkcare') + '_test'
-        : process.env.DB_NAME || 'folkcare',
-      user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || 'postgres',
-      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
-    },
+    connection,
+
     migrations: {
       directory: './packages/core/migrations',
       tableName: 'knex_migrations',
