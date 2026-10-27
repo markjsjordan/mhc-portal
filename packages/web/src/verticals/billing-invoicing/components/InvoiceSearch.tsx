@@ -1,4 +1,13 @@
 import React from 'react';
+import { Label } from '@/components/ui/label.js';
+import { Input } from '@/components/ui/input.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 import type { BillingSearchFilters, InvoiceStatus } from '../types';
 
 interface InvoiceSearchProps {
@@ -18,66 +27,77 @@ export const InvoiceSearch: React.FC<InvoiceSearchProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 space-y-4">
+    <div className="bg-card text-card-foreground rounded-lg border shadow-sm p-6 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="space-y-2">
+          <Label htmlFor="invoice-status-filter">
             Status
-          </label>
-          <select
-            value={filters.status || ''}
-            onChange={(e) => handleFilterChange('status', e.target.value as InvoiceStatus)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          </Label>
+          <Select
+            value={filters.status ?? 'ALL'}
+            onValueChange={(val) =>
+              handleFilterChange('status', val === 'ALL' ? '' : (val as InvoiceStatus))
+            }
           >
-            <option value="">All Statuses</option>
-            <option value="DRAFT">Draft</option>
-            <option value="PENDING_REVIEW">Pending Review</option>
-            <option value="APPROVED">Approved</option>
-            <option value="SENT">Sent</option>
-            <option value="SUBMITTED">Submitted</option>
-            <option value="PARTIALLY_PAID">Partially Paid</option>
-            <option value="PAID">Paid</option>
-            <option value="PAST_DUE">Past Due</option>
-            <option value="DISPUTED">Disputed</option>
-            <option value="CANCELLED">Cancelled</option>
-            <option value="VOIDED">Voided</option>
-          </select>
+            <SelectTrigger id="invoice-status-filter">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Statuses</SelectItem>
+              <SelectItem value="DRAFT">Draft</SelectItem>
+              <SelectItem value="PENDING_REVIEW">Pending Review</SelectItem>
+              <SelectItem value="APPROVED">Approved</SelectItem>
+              <SelectItem value="SENT">Sent</SelectItem>
+              <SelectItem value="SUBMITTED">Submitted</SelectItem>
+              <SelectItem value="PARTIALLY_PAID">Partially Paid</SelectItem>
+              <SelectItem value="PAID">Paid</SelectItem>
+              <SelectItem value="PAST_DUE">Past Due</SelectItem>
+              <SelectItem value="DISPUTED">Disputed</SelectItem>
+              <SelectItem value="CANCELLED">Cancelled</SelectItem>
+              <SelectItem value="VOIDED">Voided</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="space-y-2">
+          <Label htmlFor="invoice-start-date">
             Start Date
-          </label>
-          <input
+          </Label>
+          <Input
+            id="invoice-start-date"
             type="date"
             value={filters.startDate || ''}
             onChange={(e) => handleFilterChange('startDate', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="space-y-2">
+          <Label htmlFor="invoice-end-date">
             End Date
-          </label>
-          <input
+          </Label>
+          <Input
+            id="invoice-end-date"
             type="date"
             value={filters.endDate || ''}
             onChange={(e) => handleFilterChange('endDate', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="space-y-2">
+          <Label htmlFor="invoice-min-amount">
             Min Amount
-          </label>
-          <input
+          </Label>
+          <Input
+            id="invoice-min-amount"
             type="number"
             value={filters.minAmount || ''}
-            onChange={(e) => handleFilterChange('minAmount', parseFloat(e.target.value))}
+            onChange={(e) =>
+              handleFilterChange(
+                'minAmount',
+                e.target.value ? parseFloat(e.target.value) : '',
+              )
+            }
             placeholder="0.00"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
       </div>
