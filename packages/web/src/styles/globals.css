@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+  /* ── Brand scale (numeric utilities: bg-primary-500, text-primary-700, etc.) ── */
   --color-primary-50: #eff6ff;
   --color-primary-100: #dbeafe;
   --color-primary-200: #bfdbfe;
@@ -13,7 +14,33 @@
   --color-primary-900: #1e3a8a;
   --color-primary-950: #172554;
 
-  /* shadcn/ui CSS variables - Slate theme */
+  /* ── shadcn/ui semantic tokens (bare utilities: bg-primary, text-foreground, etc.) ─
+   *  Tailwind v4 resolves `bg-primary` → `--color-primary`, NOT legacy `--primary`.
+   *  Every shadcn component variant depends on these being defined here.
+   * ────────────────────────────────────────────────────────────────────────────────── */
+  --color-primary: #2563eb;
+  --color-primary-foreground: #f8fafc;
+  --color-secondary: #f1f5f9;
+  --color-secondary-foreground: #0f172a;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+  --color-accent: #f1f5f9;
+  --color-accent-foreground: #0f172a;
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
+  --color-border: #e2e8f0;
+  --color-input: #e2e8f0;
+  --color-ring: #2563eb;
+
+  --radius: 0.5rem;
+
+  /* Legacy HSL variables (kept for any non-Tailwind consumers) */
   --background: 0 0% 100%;
   --foreground: 222.2 84% 4.9%;
   --card: 0 0% 100%;
@@ -33,7 +60,6 @@
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
   --ring: 222.2 84% 4.9%;
-  --radius: 0.5rem;
   --chart-1: 12 76% 61%;
   --chart-2: 173 58% 39%;
   --chart-3: 197 37% 24%;
