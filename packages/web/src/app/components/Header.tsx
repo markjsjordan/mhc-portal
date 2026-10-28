@@ -41,7 +41,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             variant="ghost"
             size="sm"
             onClick={onMenuClick}
-            className="lg:hidden min-w-[44px] min-h-[44px] h-11 w-11 p-0 flex items-center justify-center shrink-0"
+            className="min-w-[44px] min-h-[44px] h-11 w-11 p-0 flex items-center justify-center shrink-0"
             aria-label="Open navigation menu"
           >
             <Menu className="h-6 w-6" />

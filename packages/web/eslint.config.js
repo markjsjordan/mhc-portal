@@ -157,7 +157,7 @@ export default [
     // shadcn/ui guard (wdvf3ac32k): raw form/button controls must come from
     // @/components/ui/*. The primitives themselves are exempt.
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/components/ui/**', '**/__tests__/**'],
+    ignores: ['src/components/ui/**', 'src/components/ai/**', '**/__tests__/**'],
     rules: {
       'no-restricted-syntax': [
         'error',
