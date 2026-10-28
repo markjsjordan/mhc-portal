@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useCreateClient, useClients, useUpdateClient, useBranches } from '@/verticals/client-demographics/hooks';
 import type { CreateClientInput, UpdateClientInput } from '@/verticals/client-demographics/types';
 import { useAuth } from '@/core/hooks';

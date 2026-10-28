@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth, useAuthService } from '@/core/hooks';
 import { getDashboardRoute } from '@/core/utils';
 import { handleSmartLogin } from '@/core/utils/auth-storage';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

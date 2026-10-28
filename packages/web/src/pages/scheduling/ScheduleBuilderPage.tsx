@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useIsMobile } from '@/core/hooks';
 import { useCaregivers } from '@/verticals/caregivers/hooks/useCaregivers';
 import { useCalendarVisits, useVisitApi, useCaregiverAvailability } from '@/verticals/scheduling-visits/hooks/useVisits';

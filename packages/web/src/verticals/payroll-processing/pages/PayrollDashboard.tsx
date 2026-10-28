@@ -5,7 +5,7 @@
  * Shows current pay period, recent periods, and quick actions
  */
 
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';

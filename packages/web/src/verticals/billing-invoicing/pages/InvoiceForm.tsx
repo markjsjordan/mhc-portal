@@ -10,7 +10,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import {
   LoadingSpinner,
   ErrorMessage,

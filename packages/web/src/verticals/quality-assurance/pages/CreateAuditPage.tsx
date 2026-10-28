@@ -25,7 +25,7 @@ import {
 import { LoadingSpinner, ErrorMessage } from '@/core/components';
 import { useCreateAudit } from '../hooks';
 import type { CreateAuditInput } from '../types';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 const auditSchema = z.object({
   title: z.string().min(1, 'Title is required'),

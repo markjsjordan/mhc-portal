@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button.js';
 import { Card, CardContent } from '@/components/ui/card.js';
 import { useAuditDashboard } from '../hooks';
 import { AuditCard, FindingCard, CorrectiveActionCard } from '../components';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export const QADashboard: React.FC = () => {
   const navigate = useNavigate();

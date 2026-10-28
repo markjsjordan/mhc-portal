@@ -1,5 +1,5 @@
 import React from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { CheckCircle, Clock, AlertTriangle, User, Calendar } from 'lucide-react';
 import { StatusBadge } from '@/core/components';
 import { Button } from '@/components/ui/button.js';

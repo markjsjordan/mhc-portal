@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button.js';
 import { Input } from '@/components/ui/input.js';

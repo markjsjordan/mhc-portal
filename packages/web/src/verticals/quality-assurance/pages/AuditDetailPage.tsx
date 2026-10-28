@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.j
 import { Badge } from '@/components/ui/badge.js';
 import { useAuditDetail } from '../hooks';
 import { FindingCard, CorrectiveActionCard } from '../components';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export const AuditDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();

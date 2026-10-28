@@ -63,7 +63,7 @@ export const VisitNotifications: React.FC<VisitNotificationsProps> = ({}) => {
       }
 
       // For now, we'll use console.log as a placeholder
-      // In a real implementation, this would integrate with react-hot-toast or similar
+      // In a real implementation, this would integrate with sonner or similar
       console.log(`[NOTIFICATION] ${icon} ${notification.title}: ${notification.message}`);
 
       // Show browser notification if permission granted
@@ -75,7 +75,7 @@ export const VisitNotifications: React.FC<VisitNotificationsProps> = ({}) => {
         });
       }
 
-      // If react-hot-toast is available, you could do:
+      // If sonner is available, you could do:
       // toast(notification.message, {
       //   icon: icon,
       //   duration: 5000,
