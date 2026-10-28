@@ -9,6 +9,8 @@ import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../core/hooks/auth';
+import { Button } from '@/components/ui/button.js';
+import { Checkbox } from '@/components/ui/checkbox.js';
 
 export interface NoteSummarizerProps {
   noteId: string;
@@ -132,45 +134,53 @@ export const NoteSummarizer: React.FC<NoteSummarizerProps> = ({
           <label className="block text-xs font-medium text-gray-700 mb-1">Summary Length</label>
           <div className="grid grid-cols-4 gap-2">
             {['BRIEF', 'STANDARD', 'DETAILED', 'BULLET_POINTS'].map((s) => (
-              <button
+              <Button
                 key={s}
+                type="button"
+                size="sm"
+                variant={strategy === s ? 'default' : 'outline'}
                 onClick={() => setStrategy(s as any)}
                 className={`px-2 py-1 text-xs rounded border transition-colors ${
                   strategy === s
-                    ? 'bg-purple-600 text-white border-purple-600'
+                    ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
                     : 'bg-white text-gray-700 border-gray-300 hover:border-purple-400'
                 }`}
               >
                 {s === 'BULLET_POINTS' ? 'Bullets' : s.charAt(0) + s.slice(1).toLowerCase()}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
 
         {/* Options */}
         <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 text-xs text-gray-700">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-2 text-xs text-gray-700">
+            <Checkbox
+              id="summarizer-sentiment"
               checked={showSentiment}
-              onChange={(e) => setShowSentiment(e.target.checked)}
+              onCheckedChange={(val) => setShowSentiment(val === true)}
               className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
             />
-            Include sentiment
-          </label>
-          <label className="flex items-center gap-2 text-xs text-gray-700">
-            <input
-              type="checkbox"
+            <label htmlFor="summarizer-sentiment" className="cursor-pointer">
+              Include sentiment
+            </label>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-gray-700">
+            <Checkbox
+              id="summarizer-keywords"
               checked={showKeywords}
-              onChange={(e) => setShowKeywords(e.target.checked)}
+              onCheckedChange={(val) => setShowKeywords(val === true)}
               className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
             />
-            Extract keywords
-          </label>
+            <label htmlFor="summarizer-keywords" className="cursor-pointer">
+              Extract keywords
+            </label>
+          </div>
         </div>
 
         {/* Generate Button */}
-        <button
+        <Button
+          type="button"
           onClick={handleSummarize}
           disabled={summarizeMutation.isPending}
           className="w-full px-4 py-2 text-sm font-semibold text-white bg-purple-600 rounded-md hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
@@ -186,7 +196,7 @@ export const NoteSummarizer: React.FC<NoteSummarizerProps> = ({
           ) : (
             'Generate AI Summary'
           )}
-        </button>
+        </Button>
       </div>
 
       {/* Summary Output */}

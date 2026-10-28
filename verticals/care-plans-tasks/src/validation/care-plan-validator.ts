@@ -9,8 +9,18 @@ import { CreateProgressNoteInput, GoalProgress, Observation } from '../types/car
 import { ValidationError } from '@folkcare/core';
 
 // Base schemas
-const UUIDSchema = z.string().uuid();
+// Accepts any standard 128-bit hex UUID format (RFC 4122 or system/seed UUIDs like 00000000-0000-0000-0000-000000000001)
+export const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+export const UUIDSchema = z.string().regex(UUID_REGEX, 'Invalid UUID');
+export const OptionalUUIDSchema = z.preprocess(
+  (val) => (typeof val === 'string' && (val.trim() === '' || val.trim() === '__none__') ? undefined : val),
+  UUIDSchema.optional()
+);
 const DateSchema = z.coerce.date();
+export const OptionalDateSchema = z.preprocess(
+  (val) => (typeof val === 'string' && val.trim() === '' ? undefined : val),
+  DateSchema.optional()
+);
 const TimeSchema = z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/);
 
 // Enums
@@ -204,7 +214,7 @@ const CarePlanGoalSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().min(1).max(2000),
   category: GoalCategorySchema,
-  targetDate: DateSchema.optional(),
+  targetDate: OptionalDateSchema,
   status: GoalStatusSchema,
   priority: PrioritySchema,
   measurementType: z.enum(['QUANTITATIVE', 'QUALITATIVE', 'BINARY']).optional(),
@@ -213,10 +223,10 @@ const CarePlanGoalSchema = z.object({
   unit: z.string().max(50).optional(),
   milestones: z.array(MilestoneSchema).optional(),
   progressPercentage: z.number().min(0).max(100).optional(),
-  lastAssessedDate: DateSchema.optional(),
+  lastAssessedDate: OptionalDateSchema,
   interventionIds: z.array(UUIDSchema).optional(),
   taskIds: z.array(UUIDSchema).optional(),
-  achievedDate: DateSchema.optional(),
+  achievedDate: OptionalDateSchema,
   outcome: z.string().max(1000).optional(),
   notes: z.string().max(2000).optional(),
 });
@@ -376,17 +386,20 @@ const QualityCheckResponseSchema = z.object({
 export const CreateCarePlanInputSchema = z.object({
   clientId: UUIDSchema,
   organizationId: UUIDSchema,
-  branchId: UUIDSchema.optional(),
+  branchId: OptionalUUIDSchema,
   name: z.string().min(1).max(255),
   planType: CarePlanTypeSchema,
   effectiveDate: DateSchema,
-  expirationDate: DateSchema.optional(),
+  expirationDate: OptionalDateSchema,
   goals: z.array(CarePlanGoalSchema.omit({ id: true })).default([]),
   interventions: z.array(InterventionSchema.omit({ id: true })).default([]),
   taskTemplates: z.array(TaskTemplateSchema.omit({ id: true })).optional(),
   serviceFrequency: ServiceFrequencySchema.optional(),
-  coordinatorId: UUIDSchema.optional(),
-  notes: z.string().max(5000).optional(),
+  coordinatorId: OptionalUUIDSchema,
+  notes: z.preprocess(
+    (val) => (typeof val === 'string' && val.trim() === '' ? undefined : val),
+    z.string().max(5000).optional()
+  ),
 }).refine(
   (data) => !data.expirationDate || data.expirationDate > data.effectiveDate,
   {
@@ -477,12 +490,12 @@ export const CreateProgressNoteInputSchema = z.object({
 
 export const CarePlanSearchFiltersSchema = z.object({
   query: z.string().max(200).optional(),
-  clientId: UUIDSchema.optional(),
-  organizationId: UUIDSchema.optional(),
-  branchId: UUIDSchema.optional(),
+  clientId: OptionalUUIDSchema,
+  organizationId: OptionalUUIDSchema,
+  branchId: OptionalUUIDSchema,
   status: z.array(CarePlanStatusSchema).optional(),
   planType: z.array(CarePlanTypeSchema).optional(),
-  coordinatorId: UUIDSchema.optional(),
+  coordinatorId: OptionalUUIDSchema,
   expiringWithinDays: z.number().int().positive().optional(),
   needsReview: z.boolean().optional(),
   complianceStatus: z.array(z.enum([
@@ -494,14 +507,14 @@ export const CarePlanSearchFiltersSchema = z.object({
 });
 
 export const TaskInstanceSearchFiltersSchema = z.object({
-  carePlanId: UUIDSchema.optional(),
-  clientId: UUIDSchema.optional(),
-  assignedCaregiverId: UUIDSchema.optional(),
-  visitId: UUIDSchema.optional(),
+  carePlanId: OptionalUUIDSchema,
+  clientId: OptionalUUIDSchema,
+  assignedCaregiverId: OptionalUUIDSchema,
+  visitId: OptionalUUIDSchema,
   status: z.array(TaskStatusSchema).optional(),
   category: z.array(TaskCategorySchema).optional(),
-  scheduledDateFrom: DateSchema.optional(),
-  scheduledDateTo: DateSchema.optional(),
+  scheduledDateFrom: OptionalDateSchema,
+  scheduledDateTo: OptionalDateSchema,
   overdue: z.boolean().optional(),
   requiresSignature: z.boolean().optional(),
 });
