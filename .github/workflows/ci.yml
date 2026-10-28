@@ -200,6 +200,7 @@ jobs:
           NODE_ENV: test
         run: |
           npm run db:migrate
+          npm run db:seed:base
           npm run db:seed
 
       - name: Run tests with coverage (Turbo)

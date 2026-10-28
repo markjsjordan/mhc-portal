@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Button } from '@/components/ui/button.js';
 
 /**
  * Caregiver Training & Certification Dashboard
@@ -264,17 +265,16 @@ export default function CaregiverTrainingDashboard() {
           { id: 'training' as const, label: 'My Training', icon: '📚' },
           { id: 'catalog' as const, label: 'Course Catalog', icon: '📖' },
         ].map((tab) => (
-          <button
+          <Button
             key={tab.id}
-            style={{
-              ...styles.tab,
-              ...(activeTab === tab.id ? styles.tabActive : {}),
-            }}
+            variant={activeTab === tab.id ? 'default' : 'ghost'}
+            size="sm"
             onClick={() => setActiveTab(tab.id)}
+            className="gap-2"
           >
-            <span style={styles.tabIcon}>{tab.icon}</span>
+            <span>{tab.icon}</span>
             {tab.label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -316,7 +316,7 @@ export default function CaregiverTrainingDashboard() {
                       You have {certStats.expired} expired certification(s). Renew immediately to continue working.
                     </div>
                   </div>
-                  <button style={styles.actionButton}>Renew Now</button>
+                  <Button variant="destructive" size="sm">Renew Now</Button>
                 </div>
               )}
               {certStats.expiringSoon > 0 && (
@@ -328,7 +328,7 @@ export default function CaregiverTrainingDashboard() {
                       {certStats.expiringSoon} certification(s) expire within 90 days. Schedule renewals now.
                     </div>
                   </div>
-                  <button style={styles.actionButton}>View Details</button>
+                  <Button variant="outline" size="sm">View Details</Button>
                 </div>
               )}
               {trainingStats.inProgress > 0 && (
@@ -340,7 +340,7 @@ export default function CaregiverTrainingDashboard() {
                       Finish your {trainingStats.inProgress} pending training course(s) to earn certifications.
                     </div>
                   </div>
-                  <button style={styles.actionButton}>Continue</button>
+                  <Button variant="secondary" size="sm">Continue</Button>
                 </div>
               )}
             </div>
@@ -381,7 +381,7 @@ export default function CaregiverTrainingDashboard() {
                       {session.spotsLeft} spots left
                     </div>
                     {!session.isEnrolled && (
-                      <button style={styles.enrollButton}>Enroll Now</button>
+                      <Button size="sm">Enroll Now</Button>
                     )}
                   </div>
                 </div>
@@ -397,7 +397,7 @@ export default function CaregiverTrainingDashboard() {
           <div style={styles.section}>
             <div style={styles.sectionHeader}>
               <h2 style={styles.sectionTitle}>My Certifications</h2>
-              <button style={styles.uploadButton}>+ Upload Certificate</button>
+              <Button variant="outline" size="sm">+ Upload Certificate</Button>
             </div>
 
             <div style={styles.certsGrid}>
@@ -451,9 +451,9 @@ export default function CaregiverTrainingDashboard() {
                     )}
                   </div>
                   {cert.status === 'expiring-soon' || cert.status === 'expired' ? (
-                    <button style={styles.renewButton}>Renew Now</button>
+                    <Button variant="destructive" size="sm">Renew Now</Button>
                   ) : (
-                    <button style={styles.viewButton}>View Certificate</button>
+                    <Button variant="outline" size="sm">View Certificate</Button>
                   )}
                 </div>
               ))}
@@ -507,11 +507,12 @@ export default function CaregiverTrainingDashboard() {
                     </div>
                   )}
 
-                  <button
-                    style={training.status === 'not-started' ? styles.startButton : styles.continueButton}
+                  <Button
+                    variant={training.status === 'completed' ? 'outline' : 'default'}
+                    size="sm"
                   >
                     {training.status === 'not-started' ? 'Start Course' : training.status === 'in-progress' ? 'Continue' : 'View Certificate'}
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>
@@ -544,7 +545,7 @@ export default function CaregiverTrainingDashboard() {
                         <span>•</span>
                         <span>{course.format}</span>
                       </div>
-                      <button style={styles.enrollCatalogButton}>Enroll</button>
+                      <Button variant="outline" size="sm">Enroll</Button>
                     </div>
                   ))}
                 </div>

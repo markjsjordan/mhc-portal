@@ -45,7 +45,7 @@ describe('DataGridPanel', () => {
     
     // Core tables might not be visible (depends on implementation)
     // Just verify the filter works by checking category is selected
-    expect(evvButton).toHaveClass(/bg-primary-600/);
+    expect(evvButton).toHaveClass(/bg-primary/);
   });
 
   it('should search tables by name', () => {

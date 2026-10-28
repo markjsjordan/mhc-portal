@@ -365,7 +365,7 @@ export class ClientImportService implements ImportService<ClientImportRow, Clien
               if (nameMatches.items.length > 0) {
                 const dobMatch = nameMatches.items.find((c: Client) => {
                   const recordDob = this.parseDate(record.date_of_birth);
-                  return recordDob && c.dateOfBirth.getTime() === recordDob.getTime();
+                  return recordDob?.getTime() === c.dateOfBirth?.getTime() && recordDob !== undefined;
                 });
                 if (dobMatch) {
                   existingClient = dobMatch;
@@ -650,7 +650,7 @@ export class ClientImportService implements ImportService<ClientImportRow, Clien
     if (dotIndex === -1 || dotIndex < atIndex || dotIndex === email.length - 1) return false;
 
     // Check for valid characters (simple check, no complex regex)
-    // eslint-disable-next-line unicorn/better-regex
+     
     return /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/.test(email);
   }
 

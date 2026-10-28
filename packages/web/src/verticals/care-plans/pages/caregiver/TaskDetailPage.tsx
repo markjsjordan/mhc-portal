@@ -10,7 +10,9 @@ import {
   AlertTriangle,
   History
 } from 'lucide-react';
-import { Button, Card, CardHeader, CardContent, LoadingSpinner, ErrorMessage } from '@/core/components';
+import { LoadingSpinner, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
 import { formatDate, formatTime } from '@/core/utils';
 import { useTask } from '../../hooks';
 import {
@@ -60,7 +62,8 @@ export const TaskDetailPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link to="/caregiver/tasks">
-          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Tasks
           </Button>
         </Link>
@@ -87,10 +90,10 @@ export const TaskDetailPage: React.FC = () => {
         </div>
         {canComplete && (
           <Button
-            leftIcon={<CheckCircle className="h-4 w-4" />}
             onClick={handleComplete}
             size="lg"
           >
+            <CheckCircle className="h-4 w-4 mr-2" />
             Complete Task
           </Button>
         )}
@@ -115,7 +118,9 @@ export const TaskDetailPage: React.FC = () => {
         <div className="lg:col-span-2 space-y-6">
           {/* Task Details */}
           <Card>
-            <CardHeader title="Task Details" />
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">Task Details</CardTitle>
+            </CardHeader>
             <CardContent>
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -167,7 +172,9 @@ export const TaskDetailPage: React.FC = () => {
 
           {/* Instructions */}
           <Card>
-            <CardHeader title="Instructions" />
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">Instructions</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="prose prose-sm max-w-none">
                 <p className="text-gray-700 whitespace-pre-wrap">{task.instructions}</p>
@@ -178,7 +185,9 @@ export const TaskDetailPage: React.FC = () => {
           {/* Completion Information */}
           {task.status === 'COMPLETED' && (
             <Card>
-              <CardHeader title="Completion Information" />
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">Completion Information</CardTitle>
+              </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {task.completedAt && (
@@ -220,7 +229,9 @@ export const TaskDetailPage: React.FC = () => {
 
           {/* Requirements */}
           <Card>
-            <CardHeader title="Requirements" />
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">Requirements</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -245,7 +256,9 @@ export const TaskDetailPage: React.FC = () => {
 
           {/* Quick Links */}
           <Card>
-            <CardHeader title="Related" />
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">Related</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <Link to={`/care-plans/${task.carePlanId}`}>

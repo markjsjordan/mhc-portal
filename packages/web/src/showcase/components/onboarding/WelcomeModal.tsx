@@ -7,6 +7,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 
 const STORAGE_KEY = 'folkcare-showcase-visited';
 
@@ -47,13 +48,15 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
           <div className="bg-gray-900 text-white p-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold">Welcome</h2>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={handleComplete}
-                className="text-white hover:text-gray-300 transition-colors"
+                className="text-white hover:text-gray-300 hover:bg-gray-800 transition-colors h-8 w-8"
                 aria-label="Close"
               >
                 <X className="h-6 w-6" />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -63,12 +66,12 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
               This is an interactive demo of Folk care coordination software.
             </p>
 
-            <button
+            <Button
               onClick={handleComplete}
-              className="w-full px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium transition-colors"
+              className="w-full px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium transition-colors h-auto"
             >
               Start Exploring
-            </button>
+            </Button>
           </div>
         </motion.div>
       </div>

@@ -38,6 +38,8 @@ export default defineProject({
       // Map Sentry native modules to empty objects to prevent loading .node files
       '@sentry/profiling-node': path.resolve(__dirname, './src/test/empty-module.ts'),
       '@sentry-internal/node-cpu-profiler': path.resolve(__dirname, './src/test/empty-module.ts'),
+      // vite-plugin-pwa virtual module is build-time only; stub it for Vitest
+      'virtual:pwa-register/react': path.resolve(__dirname, './src/test/pwa-register-stub.ts'),
     },
   },
   define: {

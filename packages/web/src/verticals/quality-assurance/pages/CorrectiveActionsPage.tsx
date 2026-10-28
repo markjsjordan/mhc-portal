@@ -6,7 +6,16 @@
 
 import React, { useState } from 'react';
 import { Filter } from 'lucide-react';
-import { LoadingSpinner, Card } from '@/core/components';
+import { LoadingSpinner } from '@/core/components';
+import { Card, CardContent } from '@/components/ui/card.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
+import { Label } from '@/components/ui/label.js';
 import { useCorrectiveActions } from '../hooks';
 import { CorrectiveActionCard } from '../components';
 import type { CorrectiveActionStatus } from '../types';
@@ -49,28 +58,34 @@ export const CorrectiveActionsPage: React.FC = () => {
 
       {/* Filters */}
       <Card>
-        <div className="p-4">
+        <CardContent className="p-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Filter className="h-5 w-5 text-gray-400" />
-              <span className="text-sm font-medium text-gray-700">Filter by Status:</span>
+              <Label className="text-sm font-medium text-gray-700">Filter by Status:</Label>
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as CorrectiveActionStatus | '')}
-              className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+            <Select
+              value={statusFilter || 'ALL'}
+              onValueChange={(value) => {
+                setStatusFilter(value === 'ALL' ? '' : (value as CorrectiveActionStatus));
+              }}
             >
-              <option value="">All Statuses</option>
-              <option value="PLANNED">Planned</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="IMPLEMENTED">Implemented</option>
-              <option value="VERIFIED">Verified</option>
-              <option value="CLOSED">Closed</option>
-              <option value="INEFFECTIVE">Ineffective</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Statuses</SelectItem>
+                <SelectItem value="PLANNED">Planned</SelectItem>
+                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                <SelectItem value="IMPLEMENTED">Implemented</SelectItem>
+                <SelectItem value="VERIFIED">Verified</SelectItem>
+                <SelectItem value="CLOSED">Closed</SelectItem>
+                <SelectItem value="INEFFECTIVE">Ineffective</SelectItem>
+                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </div>
+        </CardContent>
       </Card>
 
       {/* Corrective Actions Grid */}
@@ -82,12 +97,12 @@ export const CorrectiveActionsPage: React.FC = () => {
         </div>
       ) : (
         <Card>
-          <div className="p-12 text-center">
+          <CardContent className="p-12 text-center">
             <p className="text-gray-600">No corrective actions found</p>
             <p className="text-sm text-gray-500 mt-1">
               Corrective actions are created from audit findings
             </p>
-          </div>
+          </CardContent>
         </Card>
       )}
     </div>

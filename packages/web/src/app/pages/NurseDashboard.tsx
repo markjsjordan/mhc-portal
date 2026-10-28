@@ -11,7 +11,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/hooks';
-import { Card, CardHeader, CardContent, Button, EmptyState, DemoBadge } from '@/core/components';
+import { EmptyState, DemoBadge } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
 import {
   Calendar,
   ClipboardList,
@@ -216,8 +218,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ label, value, icon, change, tre
 
   return (
     <Card
-      padding="md"
-      className={`${onClick ? 'cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 active:scale-95' : ''}`}
+      className={`p-6 ${onClick ? 'cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 active:scale-95' : ''}`}
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
@@ -418,7 +419,7 @@ export const NurseDashboard: React.FC = () => {
             ))
           ) : (
             <Card>
-              <CardContent>
+              <CardContent className="pt-6">
                 <EmptyState
                   title="No supervision visits due"
                   description="All supervision visits are up to date"
@@ -487,7 +488,9 @@ export const NurseDashboard: React.FC = () => {
 
       {/* Quick Actions */}
       <Card>
-        <CardHeader title="Quick Actions" />
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-900">Quick Actions</CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Button

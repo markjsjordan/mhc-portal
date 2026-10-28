@@ -1,10 +1,9 @@
 name: Deploy
 
 on:
-  push:
-    branches:
-      - production  # Production deployments
-      - preview     # Preview deployments (preview branch uses Vercel preview environment)
+  # Deploys are on-demand only (no push trigger). Run when you decide:
+  #   gh workflow run deploy.yml --ref preview -f environment=preview
+  # Production requires an explicit dispatch with environment=production.
   workflow_dispatch:
     inputs:
       environment:
@@ -236,6 +235,15 @@ jobs:
           npm run db:migrate
           echo "✅ Migrations complete"
 
+      - name: Seed Base Data (Preview)
+        continue-on-error: true  # Don't block deployment if seeding fails
+        env:
+          DATABASE_URL: ${{ secrets.PREVIEW_DATABASE_URL }}
+        run: |
+          echo "🌱 Seeding base operational data..."
+          npm run db:seed:base
+          echo "✅ Base data seeded"
+
       - name: Seed Demo Data (Preview)
         continue-on-error: true  # Don't block deployment if seeding fails
         env:
@@ -284,7 +292,7 @@ jobs:
     needs: build
     if: |
       (github.event_name == 'push' && github.ref == 'refs/heads/production') ||
-      (github.event_name == 'workflow_dispatch')
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
     environment:
       name: production
       url: ${{ steps.deploy.outputs.url }}
@@ -361,6 +369,9 @@ jobs:
           echo "✅ Database URL is configured"
 
       - name: Run Database Migrations (Production)
+        # NO SEEDING ON PRODUCTION - Migrations are schema-only (DDL)
+        # Base/demo data seeding is restricted to dev/preview environments
+        # See: https://app.clickup.com/t/wdvf3ac2zk (Oct 2026 incident)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |

@@ -28,7 +28,9 @@ export const createAuthService = (apiClient: ApiClient): AuthService => {
     },
 
     async refreshToken(): Promise<AuthResponse> {
-      return apiClient.post<AuthResponse>('/api/auth/refresh');
+      return apiClient.post<AuthResponse>('/api/auth/refresh', undefined, { 
+        credentials: 'include' 
+      });
     },
   };
 };

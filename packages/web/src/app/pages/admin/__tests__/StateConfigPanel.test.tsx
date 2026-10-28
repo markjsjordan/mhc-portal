@@ -49,7 +49,7 @@ describe('StateConfigPanel', () => {
     render(<StateConfigPanel />);
     const select = screen.getByLabelText(/evv aggregator/i);
     expect(select).toBeInTheDocument();
-    expect(select.tagName).toBe('SELECT');
+    expect(select).toHaveAttribute('role', 'combobox');
   });
 
   it('should have Save and Reset buttons disabled initially', () => {

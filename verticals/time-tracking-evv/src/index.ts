@@ -95,3 +95,12 @@ export * from './aggregators/index';
 
 // State configurations
 export * from './config/state-evv-configs';
+
+// Capture-time validation (PWA offline sync)
+export {
+  validateCaptureTimeClockEvent,
+  type StateCode,
+  type CaptureTimeValidationResult,
+  type ClockEventInput,
+} from './utils/capture-time-validator.js';
+

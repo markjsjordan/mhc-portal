@@ -10,7 +10,7 @@
 
 import React, { useState } from 'react';
 import { X, Download, Check, AlertTriangle } from 'lucide-react';
-import { Button } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
 import type { MatchCandidate } from '../types';
 import { getMatchScoreColor, formatDistance } from '../utils';
 
@@ -75,19 +75,20 @@ export const MatchComparisonView: React.FC<MatchComparisonViewProps> = ({
           <Button
             variant="outline"
             size="sm"
-            leftIcon={<Download className="h-4 w-4" />}
             onClick={() => {
               // Export comparison as PDF/CSV
               console.log('Export comparison');
             }}
           >
+            <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
           {onClose && (
             <Button
               variant="ghost"
-              size="sm"
+              size="icon-sm"
               onClick={onClose}
+              aria-label="Close"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -101,13 +102,15 @@ export const MatchComparisonView: React.FC<MatchComparisonViewProps> = ({
           <h3 className="text-sm font-medium text-blue-900 mb-2">Add More Candidates</h3>
           <div className="flex gap-2 flex-wrap">
             {availableCandidates.slice(0, 5).map(candidate => (
-              <button
+              <Button
                 key={candidate.caregiverId}
+                type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => handleAddCandidate(candidate)}
-                className="px-3 py-1 bg-white border border-blue-300 rounded-md text-sm hover:bg-blue-100 transition-colors"
               >
                 {candidate.caregiverName} ({candidate.overallScore})
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -132,12 +135,16 @@ export const MatchComparisonView: React.FC<MatchComparisonViewProps> = ({
                         {getMedal(index) && <span>{getMedal(index)}</span>}
                         <span>Candidate {index + 1}</span>
                       </div>
-                      <button
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-xs"
                         onClick={() => handleRemoveCandidate(candidate.caregiverId)}
-                        className="text-gray-400 hover:text-gray-600"
+                        className="text-muted-foreground hover:text-foreground"
+                        aria-label="Remove candidate"
                       >
                         <X className="h-4 w-4" />
-                      </button>
+                      </Button>
                     </div>
                   </th>
                 ))}
@@ -374,7 +381,7 @@ export const MatchComparisonView: React.FC<MatchComparisonViewProps> = ({
                     <td key={candidate.caregiverId} className="px-6 py-4">
                       <Button
                         onClick={() => onSelect(candidate.caregiverId)}
-                        variant={candidate.isEligible ? 'primary' : 'outline'}
+                        variant={candidate.isEligible ? 'default' : 'outline'}
                         disabled={!candidate.isEligible}
                         size="sm"
                         className="w-full"

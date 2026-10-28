@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import { Card, Button } from '@/core/components';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { Checkbox } from '@/components/ui/checkbox.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 import { Settings, Save, RotateCcw, CheckCircle2 } from 'lucide-react';
 
 type StateCode = 'TX' | 'FL' | 'OH' | 'PA' | 'GA' | 'NC' | 'AZ';
@@ -165,7 +176,7 @@ export const StateConfigPanel: React.FC = () => {
             Reset
           </Button>
           <Button
-            variant="primary"
+            variant="default"
             onClick={handleSave}
             disabled
             title="State configuration save feature coming soon"
@@ -187,199 +198,193 @@ export const StateConfigPanel: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* State Selector Sidebar */}
         <div className="lg:col-span-1">
-          <Card padding="sm">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3 px-2">
-              Select State
-            </h3>
-            <div className="space-y-1">
-              {states.map((state) => (
-                <button
-                  key={state.code}
-                  onClick={() => setSelectedState(state.code)}
-                  className={`
-                    w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium
-                    transition-colors
-                    ${
-                      selectedState === state.code
-                        ? 'bg-primary-50 text-primary-700'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }
-                  `}
-                >
-                  <span>{state.name}</span>
-                  <div className="flex items-center gap-2">
-                    {configs[state.code].enabled && (
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    )}
-                    <span className="text-xs text-gray-500">{state.code}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
+          <Card>
+            <CardContent className="p-3">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3 px-2">
+                Select State
+              </h3>
+              <div className="space-y-1">
+                {states.map((state) => (
+                  <Button
+                    key={state.code}
+                    variant={selectedState === state.code ? 'secondary' : 'ghost'}
+                    onClick={() => setSelectedState(state.code)}
+                    className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium h-auto"
+                  >
+                    <span>{state.name}</span>
+                    <div className="flex items-center gap-2">
+                      {configs[state.code].enabled && (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      )}
+                      <span className="text-xs text-muted-foreground">{state.code}</span>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
           </Card>
         </div>
 
         {/* Configuration Form */}
         <div className="lg:col-span-3">
-          <Card padding="md">
-            <div className="flex items-center gap-3 mb-6">
-              <Settings className="h-6 w-6 text-primary-600" />
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {states.find((s) => s.code === selectedState)?.name} Configuration
-                </h3>
-                <p className="text-sm text-gray-600">
-                  State-specific EVV compliance settings
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              {/* Enable/Disable State */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <Settings className="h-6 w-6 text-primary" />
                 <div>
-                  <label className="text-sm font-medium text-gray-900">
-                    Enable {selectedState} Operations
-                  </label>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Allow EVV operations and compliance tracking for this state
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {states.find((s) => s.code === selectedState)?.name} Configuration
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    State-specific EVV compliance settings
                   </p>
                 </div>
-                <button
-                  onClick={() => updateConfig('enabled', !currentConfig.enabled)}
-                  className={`
-                    relative inline-flex h-6 w-11 items-center rounded-full
-                    transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
-                    ${currentConfig.enabled ? 'bg-primary-600' : 'bg-gray-200'}
-                  `}
-                >
-                  <span
-                    className={`
-                      inline-block h-4 w-4 transform rounded-full bg-white transition-transform
-                      ${currentConfig.enabled ? 'translate-x-6' : 'translate-x-1'}
-                    `}
-                  />
-                </button>
               </div>
 
-              {/* Geofence Tolerance */}
-              <div>
-                <label htmlFor="geofence-tolerance" className="block text-sm font-medium text-gray-900 mb-2">
-                  Geofence Tolerance (meters)
-                </label>
-                <input
-                  id="geofence-tolerance"
-                  type="number"
-                  min={50}
-                  max={300}
-                  step={10}
-                  value={currentConfig.geofenceTolerance}
-                  onChange={(e) =>
-                    updateConfig('geofenceTolerance', parseInt(e.target.value))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
-                />
-                <p className="text-xs text-gray-600 mt-1">
-                  Maximum acceptable distance from client location for GPS verification
-                </p>
-              </div>
-
-              {/* Grace Period */}
-              <div>
-                <label htmlFor="grace-period" className="block text-sm font-medium text-gray-900 mb-2">
-                  Clock-In Grace Period (minutes)
-                </label>
-                <input
-                  id="grace-period"
-                  type="number"
-                  min={5}
-                  max={30}
-                  step={5}
-                  value={currentConfig.gracePeriodMinutes}
-                  onChange={(e) =>
-                    updateConfig('gracePeriodMinutes', parseInt(e.target.value))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
-                />
-                <p className="text-xs text-gray-600 mt-1">
-                  How early caregivers can clock in before scheduled visit start time
-                </p>
-              </div>
-
-              {/* GPS Accuracy Threshold */}
-              <div>
-                <label htmlFor="gps-accuracy" className="block text-sm font-medium text-gray-900 mb-2">
-                  GPS Accuracy Threshold (meters)
-                </label>
-                <input
-                  id="gps-accuracy"
-                  type="number"
-                  min={50}
-                  max={200}
-                  step={10}
-                  value={currentConfig.gpsAccuracyThreshold}
-                  onChange={(e) =>
-                    updateConfig('gpsAccuracyThreshold', parseInt(e.target.value))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
-                />
-                <p className="text-xs text-gray-600 mt-1">
-                  Minimum GPS accuracy required for location verification
-                </p>
-              </div>
-
-              {/* Aggregator Selection */}
-              <div>
-                <label htmlFor="evv-aggregator" className="block text-sm font-medium text-gray-900 mb-2">
-                  EVV Aggregator
-                </label>
-                <select
-                  id="evv-aggregator"
-                  value={currentConfig.aggregator}
-                  onChange={(e) => updateConfig('aggregator', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
-                >
-                  {AGGREGATOR_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-600 mt-1">
-                  State-mandated or preferred EVV aggregator system
-                </p>
-              </div>
-
-              {/* Required Documents */}
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                  Required Documentation
-                </label>
-                <div className="space-y-2">
-                  {DOCUMENT_OPTIONS.map((option) => (
-                    <label key={option.value} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={currentConfig.requiredDocuments.includes(option.value)}
-                        onChange={(e) => {
-                          const newDocs = e.target.checked
-                            ? [...currentConfig.requiredDocuments, option.value]
-                            : currentConfig.requiredDocuments.filter(
-                                (d) => d !== option.value
-                              );
-                          updateConfig('requiredDocuments', newDocs);
-                        }}
-                        className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                      />
-                      <span className="text-sm text-gray-700">{option.label}</span>
-                    </label>
-                  ))}
+              <div className="space-y-6">
+                {/* Enable/Disable State */}
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-900">
+                      Enable {selectedState} Operations
+                    </Label>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Allow EVV operations and compliance tracking for this state
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant={currentConfig.enabled ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => updateConfig('enabled', !currentConfig.enabled)}
+                  >
+                    {currentConfig.enabled ? 'Enabled' : 'Disabled'}
+                  </Button>
                 </div>
-                <p className="text-xs text-gray-600 mt-1">
-                  Documentation required for compliance verification
-                </p>
+
+                {/* Geofence Tolerance */}
+                <div>
+                  <Label htmlFor="geofence-tolerance" className="block text-sm font-medium text-gray-900 mb-2">
+                    Geofence Tolerance (meters)
+                  </Label>
+                  <Input
+                    id="geofence-tolerance"
+                    type="number"
+                    min={50}
+                    max={300}
+                    step={10}
+                    value={currentConfig.geofenceTolerance}
+                    onChange={(e) =>
+                      updateConfig('geofenceTolerance', parseInt(e.target.value))
+                    }
+                  />
+                  <p className="text-xs text-gray-600 mt-1">
+                    Maximum acceptable distance from client location for GPS verification
+                  </p>
+                </div>
+
+                {/* Grace Period */}
+                <div>
+                  <Label htmlFor="grace-period" className="block text-sm font-medium text-gray-900 mb-2">
+                    Clock-In Grace Period (minutes)
+                  </Label>
+                  <Input
+                    id="grace-period"
+                    type="number"
+                    min={5}
+                    max={30}
+                    step={5}
+                    value={currentConfig.gracePeriodMinutes}
+                    onChange={(e) =>
+                      updateConfig('gracePeriodMinutes', parseInt(e.target.value))
+                    }
+                  />
+                  <p className="text-xs text-gray-600 mt-1">
+                    How early caregivers can clock in before scheduled visit start time
+                  </p>
+                </div>
+
+                {/* GPS Accuracy Threshold */}
+                <div>
+                  <Label htmlFor="gps-accuracy" className="block text-sm font-medium text-gray-900 mb-2">
+                    GPS Accuracy Threshold (meters)
+                  </Label>
+                  <Input
+                    id="gps-accuracy"
+                    type="number"
+                    min={50}
+                    max={200}
+                    step={10}
+                    value={currentConfig.gpsAccuracyThreshold}
+                    onChange={(e) =>
+                      updateConfig('gpsAccuracyThreshold', parseInt(e.target.value))
+                    }
+                  />
+                  <p className="text-xs text-gray-600 mt-1">
+                    Minimum GPS accuracy required for location verification
+                  </p>
+                </div>
+
+                {/* Aggregator Selection */}
+                <div>
+                  <Label htmlFor="evv-aggregator" className="block text-sm font-medium text-gray-900 mb-2">
+                    EVV Aggregator
+                  </Label>
+                  <Select
+                    value={currentConfig.aggregator}
+                    onValueChange={(val) => updateConfig('aggregator', val)}
+                  >
+                    <SelectTrigger id="evv-aggregator" className="w-full">
+                      <SelectValue placeholder="Select EVV Aggregator" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AGGREGATOR_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-600 mt-1">
+                    State-mandated or preferred EVV aggregator system
+                  </p>
+                </div>
+
+                {/* Required Documents */}
+                <div>
+                  <Label className="block text-sm font-medium text-gray-900 mb-2">
+                    Required Documentation
+                  </Label>
+                  <div className="space-y-2">
+                    {DOCUMENT_OPTIONS.map((option) => (
+                      <div key={option.value} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`doc-${option.value}`}
+                          checked={currentConfig.requiredDocuments.includes(option.value)}
+                          onCheckedChange={(checked) => {
+                            const newDocs = checked
+                              ? [...currentConfig.requiredDocuments, option.value]
+                              : currentConfig.requiredDocuments.filter(
+                                  (d) => d !== option.value
+                                );
+                            updateConfig('requiredDocuments', newDocs);
+                          }}
+                        />
+                        <Label
+                          htmlFor={`doc-${option.value}`}
+                          className="text-sm font-normal cursor-pointer"
+                        >
+                          {option.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Documentation required for compliance verification
+                  </p>
+                </div>
               </div>
-            </div>
+            </CardContent>
           </Card>
         </div>
       </div>

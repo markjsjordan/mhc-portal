@@ -12,7 +12,7 @@ import {
   TrendingUp,
   FileText,
 } from 'lucide-react';
-import { Card } from '@/core/components';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { LoadingSpinner, ErrorMessage } from '@/core/components';
 import { KPICard } from './components/KPICard';
 import { AnalyticsFilters, type FilterValues } from './components/AnalyticsFilters';
@@ -145,13 +145,15 @@ export function AdminDashboard() {
           </div>
 
           {/* Revenue Overview Section */}
-          <Card padding="md" className="mb-6">
-            <Card.Header
-              title="Revenue Overview"
-              subtitle="Payment trends over time"
-              action={<TrendingUp className="h-6 w-6 text-green-600" />}
-            />
-            <Card.Content>
+          <Card className="mb-6">
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
+              <div>
+                <CardTitle className="text-lg font-semibold text-gray-900">Revenue Overview</CardTitle>
+                <CardDescription className="text-sm text-gray-600">Payment trends over time</CardDescription>
+              </div>
+              <TrendingUp className="h-6 w-6 text-green-600" />
+            </CardHeader>
+            <CardContent>
               {revenueTrends && revenueTrends.length > 0 ? (
                 <RevenueChart data={revenueTrends} />
               ) : (
@@ -159,17 +161,17 @@ export function AdminDashboard() {
                   No revenue data available for selected period
                 </div>
               )}
-            </Card.Content>
+            </CardContent>
           </Card>
 
           {/* Visit Metrics and EVV Compliance */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <Card padding="md">
-              <Card.Header
-                title="Visit Metrics"
-                subtitle="Visit breakdown by status"
-              />
-              <Card.Content>
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold text-gray-900">Visit Metrics</CardTitle>
+                <CardDescription className="text-sm text-gray-600">Visit breakdown by status</CardDescription>
+              </CardHeader>
+              <CardContent>
                 {kpis?.visits ? (
                   <VisitMetricsChart data={kpis.visits} />
                 ) : (
@@ -177,15 +179,15 @@ export function AdminDashboard() {
                     No visit data available
                   </div>
                 )}
-              </Card.Content>
+              </CardContent>
             </Card>
 
-            <Card padding="md">
-              <Card.Header
-                title="EVV Compliance"
-                subtitle="Electronic Visit Verification"
-              />
-              <Card.Content>
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold text-gray-900">EVV Compliance</CardTitle>
+                <CardDescription className="text-sm text-gray-600">Electronic Visit Verification</CardDescription>
+              </CardHeader>
+              <CardContent>
                 {kpis?.evvCompliance ? (
                   <ComplianceGauge
                     value={kpis.evvCompliance.complianceRate * 100}
@@ -196,17 +198,17 @@ export function AdminDashboard() {
                     No EVV data available
                   </div>
                 )}
-              </Card.Content>
+              </CardContent>
             </Card>
           </div>
 
           {/* Caregiver Performance */}
-          <Card padding="md" className="mb-6">
-            <Card.Header
-              title="Top Performers"
-              subtitle="Highest performing caregivers"
-            />
-            <Card.Content>
+          <Card className="mb-6">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-900">Top Performers</CardTitle>
+              <CardDescription className="text-sm text-gray-600">Highest performing caregivers</CardDescription>
+            </CardHeader>
+            <CardContent>
               {caregiverPerformance && caregiverPerformance.length > 0 ? (
                 <TopPerformersTable
                   caregivers={caregiverPerformance}
@@ -218,17 +220,19 @@ export function AdminDashboard() {
                   No caregiver performance data available
                 </div>
               )}
-            </Card.Content>
+            </CardContent>
           </Card>
 
           {/* Compliance Alerts */}
-          <Card padding="md">
-            <Card.Header
-              title="Compliance Alerts"
-              subtitle="Issues requiring attention"
-              action={<AlertTriangle className="h-6 w-6 text-yellow-600" />}
-            />
-            <Card.Content>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
+              <div>
+                <CardTitle className="text-lg font-semibold text-gray-900">Compliance Alerts</CardTitle>
+                <CardDescription className="text-sm text-gray-600">Issues requiring attention</CardDescription>
+              </div>
+              <AlertTriangle className="h-6 w-6 text-yellow-600" />
+            </CardHeader>
+            <CardContent>
               {alerts && alerts.length > 0 ? (
                 <AlertsList
                   alerts={alerts}
@@ -239,7 +243,7 @@ export function AdminDashboard() {
                   No compliance alerts at this time
                 </div>
               )}
-            </Card.Content>
+            </CardContent>
           </Card>
 
           {/* Staffing Metrics */}

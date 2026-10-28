@@ -11,8 +11,26 @@ import {
   Filter,
   PlusCircle,
 } from 'lucide-react';
-import { Card, Button, LoadingSpinner, ErrorMessage, Badge } from '@/core/components';
-import { AnalyticsFilters, type FilterValues } from './components/AnalyticsFilters';
+import { LoadingSpinner, ErrorMessage } from '@/core/components';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from '@/components/ui/card.js';
+import { Button } from '@/components/ui/button.js';
+import { Badge } from '@/components/ui/badge.js';
+import { Label } from '@/components/ui/label.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
+import { AnalyticsFilters, type FilterValues } from './components/AnalyticsFilters.js';
 import {
   useReports,
   useGenerateReport,
@@ -122,8 +140,8 @@ export function ReportsPage() {
           </div>
           <Button
             onClick={() => setShowGenerateModal(true)}
-            leftIcon={<PlusCircle className="h-5 w-5" />}
           >
+            <PlusCircle className="h-5 w-5 mr-2" />
             Generate Report
           </Button>
         </div>
@@ -132,48 +150,54 @@ export function ReportsPage() {
       {/* Generate Report Modal */}
       {showGenerateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <Card padding="md" className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <Card.Header
-              title="Generate Report"
-              subtitle="Select report type and configure parameters"
-              action={
-                <button
-                  onClick={() => setShowGenerateModal(false)}
-                  className="text-gray-400 hover:text-gray-600 text-2xl"
-                >
-                  ×
-                </button>
-              }
-            />
-            <Card.Content>
+          <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <div>
+                <CardTitle>Generate Report</CardTitle>
+                <CardDescription>Select report type and configure parameters</CardDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowGenerateModal(false)}
+                className="text-muted-foreground text-2xl"
+              >
+                ×
+              </Button>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-4">
                 {/* Report Type Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Label htmlFor="report-type" className="block text-sm font-medium mb-2">
                     Report Type
-                  </label>
-                  <select
+                  </Label>
+                  <Select
                     value={selectedReportType}
-                    onChange={(e) => setSelectedReportType(e.target.value as ReportType)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    onValueChange={(val) => setSelectedReportType(val as ReportType)}
                   >
-                    {REPORT_TYPES.map((type) => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-1 text-sm text-gray-600">
+                    <SelectTrigger id="report-type" className="w-full">
+                      <SelectValue placeholder="Select report type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REPORT_TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-sm text-muted-foreground">
                     {REPORT_TYPES.find((t) => t.value === selectedReportType)?.description}
                   </p>
                 </div>
 
                 {/* Filters */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Label className="block text-sm font-medium mb-2">
                     <Filter className="inline h-4 w-4 mr-1" />
                     Filters
-                  </label>
+                  </Label>
                   <AnalyticsFilters
                     onFiltersChange={setFilters}
                     showClientFilter
@@ -183,23 +207,21 @@ export function ReportsPage() {
                   />
                 </div>
               </div>
-            </Card.Content>
-            <Card.Footer>
-              <div className="flex justify-end gap-3">
-                <Button
-                  variant="secondary"
-                  onClick={() => setShowGenerateModal(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleGenerateReport}
-                  disabled={generateReport.isPending}
-                >
-                  {generateReport.isPending ? 'Generating...' : 'Generate Report'}
-                </Button>
-              </div>
-            </Card.Footer>
+            </CardContent>
+            <CardFooter className="flex justify-end gap-3 pt-4">
+              <Button
+                variant="secondary"
+                onClick={() => setShowGenerateModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleGenerateReport}
+                disabled={generateReport.isPending}
+              >
+                {generateReport.isPending ? 'Generating...' : 'Generate Report'}
+              </Button>
+            </CardFooter>
           </Card>
         </div>
       )}
@@ -213,91 +235,95 @@ export function ReportsPage() {
         <div className="space-y-4">
           {reports && reports.length > 0 ? (
             reports.map((report) => (
-              <Card key={report.id} padding="md">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4 flex-1">
-                    <FileText className="h-6 w-6 text-primary-600 mt-1" />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {report.title}
-                        </h3>
-                        <Badge variant="default">
-                          {REPORT_TYPES.find((t) => t.value === report.reportType)?.label}
-                        </Badge>
-                      </div>
-                      {report.description && (
-                        <p className="text-sm text-gray-600 mb-2">
-                          {report.description}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {formatDate(report.period.startDate)} -{' '}
-                          {formatDate(report.period.endDate)}
-                        </span>
-                        <span>
-                          Generated: {formatDate(report.generatedAt)}
-                        </span>
+              <Card key={report.id}>
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4 flex-1">
+                      <FileText className="h-6 w-6 text-primary mt-1" />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-lg font-semibold text-foreground">
+                            {report.title}
+                          </h3>
+                          <Badge variant="default">
+                            {REPORT_TYPES.find((t) => t.value === report.reportType)?.label}
+                          </Badge>
+                        </div>
+                        {report.description && (
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {report.description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            {formatDate(report.period.startDate)} -{' '}
+                            {formatDate(report.period.endDate)}
+                          </span>
+                          <span>
+                            Generated: {formatDate(report.generatedAt)}
+                          </span>
+                        </div>
                       </div>
                     </div>
+                    <div className="flex gap-2 ml-4">
+                      {report.exportFormats.includes('PDF') && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleExportReport(report.id, 'PDF')}
+                          disabled={exportReport.isPending}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          PDF
+                        </Button>
+                      )}
+                      {report.exportFormats.includes('EXCEL') && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleExportReport(report.id, 'EXCEL')}
+                          disabled={exportReport.isPending}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Excel
+                        </Button>
+                      )}
+                      {report.exportFormats.includes('CSV') && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleExportReport(report.id, 'CSV')}
+                          disabled={exportReport.isPending}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          CSV
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex gap-2 ml-4">
-                    {report.exportFormats.includes('PDF') && (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleExportReport(report.id, 'PDF')}
-                        disabled={exportReport.isPending}
-                        leftIcon={<Download className="h-4 w-4" />}
-                      >
-                        PDF
-                      </Button>
-                    )}
-                    {report.exportFormats.includes('EXCEL') && (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleExportReport(report.id, 'EXCEL')}
-                        disabled={exportReport.isPending}
-                        leftIcon={<Download className="h-4 w-4" />}
-                      >
-                        Excel
-                      </Button>
-                    )}
-                    {report.exportFormats.includes('CSV') && (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleExportReport(report.id, 'CSV')}
-                        disabled={exportReport.isPending}
-                        leftIcon={<Download className="h-4 w-4" />}
-                      >
-                        CSV
-                      </Button>
-                    )}
-                  </div>
-                </div>
+                </CardContent>
               </Card>
             ))
           ) : (
-            <Card padding="md">
-              <div className="text-center py-12">
-                <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No reports generated yet
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Click "Generate Report" to create your first report
-                </p>
-                <Button
-                  onClick={() => setShowGenerateModal(true)}
-                  leftIcon={<PlusCircle className="h-5 w-5" />}
-                >
-                  Generate Report
-                </Button>
-              </div>
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center py-12">
+                  <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">
+                    No reports generated yet
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    Click "Generate Report" to create your first report
+                  </p>
+                  <Button
+                    onClick={() => setShowGenerateModal(true)}
+                  >
+                    <PlusCircle className="h-5 w-5 mr-2" />
+                    Generate Report
+                  </Button>
+                </div>
+              </CardContent>
             </Card>
           )}
         </div>

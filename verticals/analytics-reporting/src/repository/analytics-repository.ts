@@ -275,11 +275,8 @@ export class AnalyticsRepository {
    */
   async sumOvertimeHours(
     // Parameters for future implementation:
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _orgId: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _dateRange: DateRange,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _branchId?: string
   ): Promise<number> {
     // This would require calculating hours worked per caregiver per week

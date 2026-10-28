@@ -9,6 +9,8 @@ import { UserPlus, FileCheck, CheckCircle, Shield } from 'lucide-react';
 import { Scenario } from '../types';
 import { NarrationBox } from './components/NarrationBox';
 import { ActionButtons } from './components/ActionButtons';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 // Step Components
 
@@ -73,59 +75,59 @@ const ClientRegistration: React.FC = () => (
       <div className="grid md:grid-cols-2 gap-4">
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-            <input
+            <Label htmlFor="full-name">Full Name *</Label>
+            <Input
+              id="full-name"
               type="text"
               value="Robert Martinez"
               readOnly
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth *</label>
-            <input
+            <Label htmlFor="dob">Date of Birth *</Label>
+            <Input
+              id="dob"
               type="text"
               value="03/15/1948"
               readOnly
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Medicaid ID *</label>
-            <input
+            <Label htmlFor="medicaid-id">Medicaid ID *</Label>
+            <Input
+              id="medicaid-id"
               type="text"
               value="TX-8847291635"
               readOnly
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
             />
           </div>
         </div>
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
-            <input
+            <Label htmlFor="address">Address *</Label>
+            <Input
+              id="address"
               type="text"
               value="1847 Oak Street, Austin, TX 78701"
               readOnly
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
-            <input
+            <Label htmlFor="phone">Phone *</Label>
+            <Input
+              id="phone"
               type="text"
               value="(512) 555-0198"
               readOnly
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Emergency Contact *</label>
-            <input
+            <Label htmlFor="emergency-contact">Emergency Contact *</Label>
+            <Input
+              id="emergency-contact"
               type="text"
               value="Maria Martinez (Daughter) - (512) 555-0199"
               readOnly
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
             />
           </div>
         </div>

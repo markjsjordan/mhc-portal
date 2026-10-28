@@ -20,6 +20,8 @@ import {
   X,
   Check,
 } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface ComparisonItem {
   feature: string;
@@ -125,15 +127,15 @@ const comparisonData: ComparisonCategory[] = [
 
 export const ComparisonTable: React.FC = () => {
   return (
-    <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-6">
-        <h2 className="text-2xl font-bold text-white mb-2">Showcase vs. Full Demo</h2>
-        <p className="text-purple-100">
+    <Card className="bg-white rounded-lg shadow-lg overflow-hidden border-gray-200">
+      <CardHeader className="bg-gradient-to-r from-purple-600 to-blue-600 p-6 space-y-2">
+        <CardTitle className="text-2xl font-bold text-white">Showcase vs. Full Demo</CardTitle>
+        <CardDescription className="text-purple-100 text-base">
           Understand the differences between this interactive showcase and the full production-ready demo
-        </p>
-      </div>
+        </CardDescription>
+      </CardHeader>
 
-      <div className="overflow-x-auto">
+      <CardContent className="p-0 overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -182,23 +184,19 @@ export const ComparisonTable: React.FC = () => {
             ))}
           </tbody>
         </table>
-      </div>
+      </CardContent>
 
-      <div className="bg-gray-50 p-6 border-t border-gray-200">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-gray-600">
-            Want to try the full demo with database persistence and authentication?
-          </p>
-          <a
-            href="https://folk.care"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            Visit Full Demo →
-          </a>
-        </div>
-      </div>
-    </div>
+      <CardFooter className="bg-gray-50 p-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <p className="text-sm text-gray-600">
+          Want to try the full demo with database persistence and authentication?
+        </p>
+        <Button
+          onClick={() => window.open('https://folk.care', '_blank', 'noopener,noreferrer')}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 h-auto"
+        >
+          Visit Full Demo →
+        </Button>
+      </CardFooter>
+    </Card>
   );
 };

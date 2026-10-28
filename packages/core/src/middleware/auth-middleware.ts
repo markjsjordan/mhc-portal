@@ -349,7 +349,7 @@ export class AuthMiddleware {
         return;
       }
 
-      const orgIdFromParam = req.params[paramName];
+      const orgIdFromParam = req.params[paramName] as string | undefined;
 
       if (orgIdFromParam === undefined || orgIdFromParam === '') {
         res.status(400).json({

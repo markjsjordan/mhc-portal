@@ -12,6 +12,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button.js';
 
 interface CaregiverSuggestion {
   caregiverId: string;
@@ -110,12 +111,16 @@ export function AICaregiverSuggestions({
                 For {clientName} • {visitDate} at {visitTime}
               </p>
             </div>
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
               onClick={onClose}
-              className="text-white hover:bg-blue-800 rounded-full p-2 transition-colors"
+              className="text-white hover:bg-white/20 hover:text-white"
+              aria-label="Close"
             >
               ✕
-            </button>
+            </Button>
           </div>
           {requiredSkills.length > 0 && (
             <div className="mt-3 flex gap-2 flex-wrap">
@@ -269,7 +274,8 @@ export function AICaregiverSuggestions({
                       </details>
 
                       {/* Assign Button */}
-                      <button
+                      <Button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           if (suggestion.isAvailable) {
@@ -278,15 +284,11 @@ export function AICaregiverSuggestions({
                             alert('This caregiver has conflicts. Please resolve them first or choose another caregiver.');
                           }
                         }}
-                        className={`mt-3 w-full py-2 px-4 rounded-lg font-semibold transition-colors ${
-                          suggestion.isAvailable
-                            ? 'bg-blue-600 text-white hover:bg-blue-700'
-                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        }`}
                         disabled={!suggestion.isAvailable}
+                        className="mt-3 w-full"
                       >
                         {suggestion.isAvailable ? '✓ Assign to Visit' : '⚠️ Resolve Conflicts First'}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -301,12 +303,13 @@ export function AICaregiverSuggestions({
             <p className="text-sm text-gray-600">
               AI suggestions are recommendations only. You make the final decision.
             </p>
-            <button
+            <Button
+              type="button"
+              variant="outline"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
             >
               Close
-            </button>
+            </Button>
           </div>
         </div>
       </div>

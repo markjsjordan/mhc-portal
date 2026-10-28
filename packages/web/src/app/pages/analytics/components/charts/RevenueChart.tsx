@@ -55,7 +55,7 @@ export function RevenueChart({ data, className = '' }: RevenueChartProps) {
             tickFormatter={formatCurrency}
           />
           <Tooltip
-            formatter={formatCurrency}
+            formatter={formatCurrency as (value: unknown) => string}
             contentStyle={{
               backgroundColor: '#fff',
               border: '1px solid #e5e7eb',

@@ -12,6 +12,9 @@
  */
 
 import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button.js';
+import { Textarea } from '@/components/ui/textarea.js';
+import { Label } from '@/components/ui/label.js';
 
 interface RiskFactor {
   factor: string;
@@ -117,12 +120,14 @@ export function BurnoutSelfAssessment() {
             Unable to Load Assessment
           </h2>
           <p className="text-red-700">{error || 'No assessment data available'}</p>
-          <button
+          <Button
+            type="button"
+            variant="destructive"
             onClick={loadAssessment}
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            className="mt-4"
           >
             Try Again
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -282,35 +287,39 @@ export function BurnoutSelfAssessment() {
           </p>
 
           {!showRequestHelp ? (
-            <button
+            <Button
+              type="button"
               onClick={() => setShowRequestHelp(true)}
-              className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+              className="w-full py-3 h-auto"
             >
               Request Schedule Adjustment
-            </button>
+            </Button>
           ) : (
             <div className="space-y-4">
-              <textarea
-                className="w-full border border-gray-300 rounded-lg p-3 text-sm"
+              <Label htmlFor="burnout-help-reason" className="sr-only">Schedule adjustment details</Label>
+              <Textarea
+                id="burnout-help-reason"
                 rows={4}
                 placeholder="Let your coordinator know how we can help (e.g., 'I need a few days off' or 'Can we reduce my weekend shifts?')"
               />
               <div className="flex gap-2">
-                <button
+                <Button
+                  type="button"
                   onClick={() => {
                     alert('Help request sent! Your coordinator will reach out soon.');
                     setShowRequestHelp(false);
                   }}
-                  className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                  className="flex-1"
                 >
                   Send Request
-                </button>
-                <button
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => setShowRequestHelp(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           )}

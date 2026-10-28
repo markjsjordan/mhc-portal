@@ -1,4 +1,14 @@
 import { useState } from 'react';
+import { Button } from '@/components/ui/button.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
+import { Textarea } from '@/components/ui/textarea.js';
+import { Label } from '@/components/ui/label.js';
 
 interface Caregiver {
   id: string;
@@ -205,28 +215,32 @@ export default function BulkNotificationsPage() {
             <h2 style={styles.sectionTitle}>Select Recipients ({selectedCount})</h2>
 
             <div style={styles.recipientActions}>
-              <button style={styles.secondaryButton} onClick={handleSelectAll}>
+              <Button variant="outline" size="sm" onClick={handleSelectAll}>
                 Select All
-              </button>
-              <button style={styles.secondaryButton} onClick={handleDeselectAll}>
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleDeselectAll}>
                 Deselect All
-              </button>
+              </Button>
             </div>
 
             <div style={styles.filterSection}>
-              <label style={styles.filterLabel}>Filter by Client:</label>
-              <select
-                style={styles.select}
-                value={filterClient}
-                onChange={e => handleFilterByClient(e.target.value)}
+              <Label htmlFor="filter-client" style={styles.filterLabel}>Filter by Client:</Label>
+              <Select
+                value={filterClient || '__all__'}
+                onValueChange={(val) => handleFilterByClient(val === '__all__' ? '' : val)}
               >
-                <option value="">All Clients</option>
-                {allClients.map(client => (
-                  <option key={client} value={client}>
-                    {client}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="filter-client" className="w-full">
+                  <SelectValue placeholder="All Clients" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All Clients</SelectItem>
+                  {allClients.map((client) => (
+                    <SelectItem key={client} value={client}>
+                      {client}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div style={styles.caregiverList}>
@@ -263,56 +277,54 @@ export default function BulkNotificationsPage() {
             <h2 style={styles.sectionTitle}>Message</h2>
 
             <div style={styles.templatesSection}>
-              <label style={styles.label}>Templates:</label>
+              <Label className="block text-sm font-medium mb-2">Templates:</Label>
               <div style={styles.templateGrid}>
-                {MESSAGE_TEMPLATES.map(template => (
-                  <button
+                {MESSAGE_TEMPLATES.map((template) => (
+                  <Button
                     key={template.id}
-                    style={{
-                      ...styles.templateButton,
-                      ...(selectedTemplate?.id === template.id
-                        ? styles.templateButtonSelected
-                        : {}),
-                    }}
+                    variant={selectedTemplate?.id === template.id ? 'default' : 'outline'}
+                    size="sm"
                     onClick={() => handleSelectTemplate(template)}
                   >
                     {template.name}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
 
             <div style={styles.urgencySection}>
-              <label style={styles.label}>Urgency Level:</label>
+              <Label className="block text-sm font-medium mb-2">Urgency Level:</Label>
               <div style={styles.urgencyButtons}>
                 {(['normal', 'important', 'urgent', 'emergency'] as UrgencyLevel[]).map(
-                  level => (
-                    <button
+                  (level) => (
+                    <Button
                       key={level}
-                      style={{
-                        ...styles.urgencyButton,
-                        ...(urgency === level ? styles.urgencyButtonSelected : {}),
-                        borderColor: getUrgencyColor(level),
-                        ...(urgency === level
-                          ? { backgroundColor: getUrgencyColor(level) }
-                          : {}),
-                      }}
+                      variant={
+                        urgency === level
+                          ? level === 'emergency' || level === 'urgent'
+                            ? 'destructive'
+                            : 'default'
+                          : 'outline'
+                      }
+                      size="sm"
                       onClick={() => setUrgency(level)}
                     >
                       {getUrgencyLabel(level)}
-                    </button>
+                    </Button>
                   )
                 )}
               </div>
             </div>
 
             <div style={styles.messageSection}>
-              <label style={styles.label}>Message:</label>
-              <textarea
-                style={styles.textarea}
+              <Label htmlFor="bulk-notification-message" className="block text-sm font-medium mb-2">
+                Message:
+              </Label>
+              <Textarea
+                id="bulk-notification-message"
                 placeholder="Type your message here..."
                 value={message}
-                onChange={e => setMessage(e.target.value)}
+                onChange={(e) => setMessage(e.target.value)}
                 rows={8}
               />
               <div style={styles.charCount}>{message.length} characters</div>
@@ -358,18 +370,14 @@ export default function BulkNotificationsPage() {
               </div>
             </div>
 
-            <button
-              style={{
-                ...styles.sendButton,
-                ...(selectedCount === 0 || !message.trim()
-                  ? styles.sendButtonDisabled
-                  : {}),
-              }}
+            <Button
+              size="lg"
+              className="w-full"
               onClick={handleSend}
               disabled={selectedCount === 0 || !message.trim()}
             >
               Send to {selectedCount} Caregiver{selectedCount !== 1 ? 's' : ''}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

@@ -10,6 +10,9 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../../core/hooks';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { Badge } from '@/components/ui/badge.js';
 import { PayrollSummaryCard } from '../components/PayrollSummaryCard';
 import { CreatePayPeriodModal } from '../components/CreatePayPeriodModal';
 import { CreatePayRunModal } from '../components/CreatePayRunModal';
@@ -80,12 +83,9 @@ export const PayrollDashboard: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Payroll Management</h1>
-        <button
-          onClick={() => setIsCreatePeriodOpen(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
+        <Button onClick={() => setIsCreatePeriodOpen(true)}>
           Create New Period
-        </button>
+        </Button>
       </div>
 
       <CreatePayPeriodModal
@@ -106,20 +106,22 @@ export const PayrollDashboard: React.FC = () => {
       <section className="mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Pay Period</h2>
         {isLoadingCurrent ? (
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            </div>
-          </div>
+          <Card>
+            <CardContent className="p-6">
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </CardContent>
+          </Card>
         ) : currentPeriod ? (
-          <div className="bg-white rounded-lg shadow">
-            <PayPeriodCard period={currentPeriod} isCurrent />
-          </div>
+          <PayPeriodCard period={currentPeriod} isCurrent />
         ) : (
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-gray-500">No active pay period. Create a new period to get started.</p>
-          </div>
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-gray-500">No active pay period. Create a new period to get started.</p>
+            </CardContent>
+          </Card>
         )}
       </section>
 
@@ -133,13 +135,19 @@ export const PayrollDashboard: React.FC = () => {
             link="/payroll/runs"
             icon="📋"
           />
-          <button onClick={() => setIsCreateRunOpen(true)} className="block text-left">
-            <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-200">
-              <div className="text-4xl mb-4">💰</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Run Payroll</h3>
-              <p className="text-sm text-gray-600">Process payroll for current period</p>
-            </div>
-          </button>
+          <Button
+            variant="ghost"
+            onClick={() => setIsCreateRunOpen(true)}
+            className="block text-left w-full h-auto p-0 hover:bg-transparent font-normal"
+          >
+            <Card className="hover:shadow-lg transition-shadow duration-200 h-full">
+              <CardContent className="p-6">
+                <div className="text-4xl mb-4">💰</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Run Payroll</h3>
+                <p className="text-sm text-gray-600">Process payroll for current period</p>
+              </CardContent>
+            </Card>
+          </Button>
           <QuickActionCard
             title="View Reports"
             description="Access payroll reports and analytics"
@@ -153,13 +161,15 @@ export const PayrollDashboard: React.FC = () => {
       <section className="mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Pay Periods</h2>
         {isLoadingRecent ? (
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="animate-pulse space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-            </div>
-          </div>
+          <Card>
+            <CardContent className="p-6">
+              <div className="animate-pulse space-y-4">
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              </div>
+            </CardContent>
+          </Card>
         ) : recentPeriods.length > 0 ? (
           <div className="space-y-4">
             {recentPeriods.map((period) => (
@@ -167,9 +177,11 @@ export const PayrollDashboard: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-gray-500">No pay periods found.</p>
-          </div>
+          <Card>
+            <CardContent className="p-6">
+              <p className="text-gray-500">No pay periods found.</p>
+            </CardContent>
+          </Card>
         )}
       </section>
 
@@ -219,78 +231,78 @@ const PayPeriodCard: React.FC<PayPeriodCardProps> = ({ period, isCurrent = false
   };
 
   const statusColors: Record<string, string> = {
-    DRAFT: 'bg-gray-100 text-gray-800',
-    OPEN: 'bg-green-100 text-green-800',
-    LOCKED: 'bg-yellow-100 text-yellow-800',
-    PROCESSING: 'bg-blue-100 text-blue-800',
-    APPROVED: 'bg-purple-100 text-purple-800',
-    PAID: 'bg-green-100 text-green-800',
-    CLOSED: 'bg-gray-100 text-gray-800',
+    DRAFT: 'bg-gray-100 text-gray-800 border-gray-300',
+    OPEN: 'bg-green-100 text-green-800 border-green-300',
+    LOCKED: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+    PROCESSING: 'bg-blue-100 text-blue-800 border-blue-300',
+    APPROVED: 'bg-purple-100 text-purple-800 border-purple-300',
+    PAID: 'bg-green-100 text-green-800 border-green-300',
+    CLOSED: 'bg-gray-100 text-gray-800 border-gray-300',
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow p-6 ${isCurrent ? 'border-2 border-blue-500' : ''}`}>
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            Pay Period #{period.periodNumber} - {period.periodYear}
-          </h3>
-          <p className="text-sm text-gray-600">
-            {formatDate(period.startDate)} - {formatDate(period.endDate)}
-          </p>
-        </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[period.status] ?? statusColors.DRAFT}`}>
-          {period.status}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          <p className="text-xs text-gray-500">Pay Date</p>
-          <p className="text-sm font-medium text-gray-900">{formatDate(period.payDate)}</p>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500">Period Type</p>
-          <p className="text-sm font-medium text-gray-900">{period.periodType.replace('_', ' ')}</p>
-        </div>
-      </div>
-
-      {period.totalGrossPay !== undefined && (
-        <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+    <Card className={isCurrent ? 'border-2 border-primary' : ''}>
+      <CardContent className="p-6">
+        <div className="flex justify-between items-start mb-4">
           <div>
-            <p className="text-xs text-gray-500">Caregivers</p>
-            <p className="text-sm font-medium text-gray-900">{period.totalCaregivers || 0}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Total Hours</p>
-            <p className="text-sm font-medium text-gray-900">{(period.totalHours || 0).toFixed(1)}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-500">Gross Pay</p>
-            <p className="text-sm font-medium text-gray-900">
-              ${(period.totalGrossPay || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <h3 className="text-lg font-semibold text-gray-900">
+              Pay Period #{period.periodNumber} - {period.periodYear}
+            </h3>
+            <p className="text-sm text-gray-600">
+              {formatDate(period.startDate)} - {formatDate(period.endDate)}
             </p>
           </div>
+          <Badge variant="outline" className={statusColors[period.status] ?? statusColors.DRAFT}>
+            {period.status}
+          </Badge>
         </div>
-      )}
 
-      <div className="mt-4 flex gap-2">
-        <Link
-          to={`/payroll/periods/${period.id}`}
-          className="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          View Details
-        </Link>
-        {period.status === 'OPEN' && (
-          <Link
-            to={`/payroll/runs?periodId=${period.id}`}
-            className="px-3 py-2 text-sm bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
-          >
-            View Pay Runs
-          </Link>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <p className="text-xs text-gray-500">Pay Date</p>
+            <p className="text-sm font-medium text-gray-900">{formatDate(period.payDate)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500">Period Type</p>
+            <p className="text-sm font-medium text-gray-900">{period.periodType.replace('_', ' ')}</p>
+          </div>
+        </div>
+
+        {period.totalGrossPay !== undefined && (
+          <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200">
+            <div>
+              <p className="text-xs text-gray-500">Caregivers</p>
+              <p className="text-sm font-medium text-gray-900">{period.totalCaregivers || 0}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Total Hours</p>
+              <p className="text-sm font-medium text-gray-900">{(period.totalHours || 0).toFixed(1)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Gross Pay</p>
+              <p className="text-sm font-medium text-gray-900">
+                ${(period.totalGrossPay || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+          </div>
         )}
-      </div>
-    </div>
+
+        <div className="mt-4 flex gap-2">
+          <Link to={`/payroll/periods/${period.id}`}>
+            <Button size="sm">
+              View Details
+            </Button>
+          </Link>
+          {period.status === 'OPEN' && (
+            <Link to={`/payroll/runs?periodId=${period.id}`}>
+              <Button variant="secondary" size="sm">
+                View Pay Runs
+              </Button>
+            </Link>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -307,11 +319,13 @@ interface QuickActionCardProps {
 const QuickActionCard: React.FC<QuickActionCardProps> = ({ title, description, link, icon }) => {
   return (
     <Link to={link} className="block">
-      <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-200">
-        <div className="text-4xl mb-4">{icon}</div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-        <p className="text-sm text-gray-600">{description}</p>
-      </div>
+      <Card className="hover:shadow-lg transition-shadow duration-200 h-full">
+        <CardContent className="p-6">
+          <div className="text-4xl mb-4">{icon}</div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+          <p className="text-sm text-gray-600">{description}</p>
+        </CardContent>
+      </Card>
     </Link>
   );
 };

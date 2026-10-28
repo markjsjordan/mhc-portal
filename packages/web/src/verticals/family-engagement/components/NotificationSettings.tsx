@@ -7,6 +7,18 @@
 import React, { useState } from 'react';
 import type { NotificationPreferences } from '@folkcare/family-engagement';
 import { useUpdateNotificationPreferences } from '../hooks';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { Checkbox } from '@/components/ui/checkbox.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 
 interface NotificationSettingsProps {
   familyMemberId: string;
@@ -33,176 +45,198 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
   };
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Notification Preferences</h2>
-
-      {/* Channels */}
-      <div className="mb-6">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Notification Channels</h3>
-        <div className="space-y-3">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={preferences.emailEnabled}
-              onChange={(e) =>
-                setPreferences({ ...preferences, emailEnabled: e.target.checked })
-              }
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="ml-3 text-sm text-gray-700">Email notifications</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={preferences.smsEnabled}
-              onChange={(e) => setPreferences({ ...preferences, smsEnabled: e.target.checked })}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="ml-3 text-sm text-gray-700">SMS text messages</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={preferences.pushEnabled}
-              onChange={(e) => setPreferences({ ...preferences, pushEnabled: e.target.checked })}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="ml-3 text-sm text-gray-700">Push notifications (mobile app)</span>
-          </label>
+    <Card>
+      <CardHeader className="p-6 pb-2">
+        <CardTitle className="text-lg font-semibold text-gray-900">Notification Preferences</CardTitle>
+      </CardHeader>
+      <CardContent className="p-6 pt-2">
+        {/* Channels */}
+        <div className="mb-6">
+          <Label className="block text-sm font-semibold text-gray-900 mb-3">Notification Channels</Label>
+          <div className="space-y-3">
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="channel-email"
+                checked={preferences.emailEnabled}
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, emailEnabled: Boolean(checked) })
+                }
+              />
+              <Label htmlFor="channel-email" className="text-sm font-normal text-gray-700 cursor-pointer">
+                Email notifications
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="channel-sms"
+                checked={preferences.smsEnabled}
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, smsEnabled: Boolean(checked) })
+                }
+              />
+              <Label htmlFor="channel-sms" className="text-sm font-normal text-gray-700 cursor-pointer">
+                SMS text messages
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="channel-push"
+                checked={preferences.pushEnabled}
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, pushEnabled: Boolean(checked) })
+                }
+              />
+              <Label htmlFor="channel-push" className="text-sm font-normal text-gray-700 cursor-pointer">
+                Push notifications (mobile app)
+              </Label>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Notification Types */}
-      <div className="mb-6">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">What to notify me about</h3>
-        <div className="space-y-3">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={preferences.visitReminders}
-              onChange={(e) =>
-                setPreferences({ ...preferences, visitReminders: e.target.checked })
-              }
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="ml-3 text-sm text-gray-700">Visit reminders</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={preferences.visitCompletedUpdates}
-              onChange={(e) =>
-                setPreferences({ ...preferences, visitCompletedUpdates: e.target.checked })
-              }
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="ml-3 text-sm text-gray-700">Visit completion updates</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={preferences.careplanUpdates}
-              onChange={(e) =>
-                setPreferences({ ...preferences, careplanUpdates: e.target.checked })
-              }
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="ml-3 text-sm text-gray-700">Care plan updates</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={preferences.incidentAlerts}
-              onChange={(e) =>
-                setPreferences({ ...preferences, incidentAlerts: e.target.checked })
-              }
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="ml-3 text-sm text-gray-700">Incident alerts (important)</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={preferences.appointmentReminders}
-              onChange={(e) =>
-                setPreferences({ ...preferences, appointmentReminders: e.target.checked })
-              }
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="ml-3 text-sm text-gray-700">Appointment reminders</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={preferences.messageNotifications}
-              onChange={(e) =>
-                setPreferences({ ...preferences, messageNotifications: e.target.checked })
-              }
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="ml-3 text-sm text-gray-700">New messages</span>
-          </label>
+        {/* Notification Types */}
+        <div className="mb-6">
+          <Label className="block text-sm font-semibold text-gray-900 mb-3">What to notify me about</Label>
+          <div className="space-y-3">
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="type-visit-reminders"
+                checked={preferences.visitReminders}
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, visitReminders: Boolean(checked) })
+                }
+              />
+              <Label htmlFor="type-visit-reminders" className="text-sm font-normal text-gray-700 cursor-pointer">
+                Visit reminders
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="type-visit-completed"
+                checked={preferences.visitCompletedUpdates}
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, visitCompletedUpdates: Boolean(checked) })
+                }
+              />
+              <Label htmlFor="type-visit-completed" className="text-sm font-normal text-gray-700 cursor-pointer">
+                Visit completion updates
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="type-careplan-updates"
+                checked={preferences.careplanUpdates}
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, careplanUpdates: Boolean(checked) })
+                }
+              />
+              <Label htmlFor="type-careplan-updates" className="text-sm font-normal text-gray-700 cursor-pointer">
+                Care plan updates
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="type-incident-alerts"
+                checked={preferences.incidentAlerts}
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, incidentAlerts: Boolean(checked) })
+                }
+              />
+              <Label htmlFor="type-incident-alerts" className="text-sm font-normal text-gray-700 cursor-pointer">
+                Incident alerts (important)
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="type-appointment-reminders"
+                checked={preferences.appointmentReminders}
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, appointmentReminders: Boolean(checked) })
+                }
+              />
+              <Label htmlFor="type-appointment-reminders" className="text-sm font-normal text-gray-700 cursor-pointer">
+                Appointment reminders
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id="type-message-notifications"
+                checked={preferences.messageNotifications}
+                onCheckedChange={(checked) =>
+                  setPreferences({ ...preferences, messageNotifications: Boolean(checked) })
+                }
+              />
+              <Label htmlFor="type-message-notifications" className="text-sm font-normal text-gray-700 cursor-pointer">
+                New messages
+              </Label>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Digest Frequency */}
-      <div className="mb-6">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Delivery frequency</h3>
-        <select
-          value={preferences.digestFrequency}
-          onChange={(e) =>
-            setPreferences({
-              ...preferences,
-              digestFrequency: e.target.value as NotificationPreferences['digestFrequency'],
-            })
-          }
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+        {/* Digest Frequency */}
+        <div className="mb-6">
+          <Label htmlFor="delivery-frequency" className="block text-sm font-semibold text-gray-900 mb-3">Delivery frequency</Label>
+          <Select
+            value={preferences.digestFrequency}
+            onValueChange={(val) =>
+              setPreferences({
+                ...preferences,
+                digestFrequency: val as NotificationPreferences['digestFrequency'],
+              })
+            }
+          >
+            <SelectTrigger id="delivery-frequency" className="w-full">
+              <SelectValue placeholder="Select delivery frequency" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="IMMEDIATE">Send immediately</SelectItem>
+              <SelectItem value="DAILY">Daily digest</SelectItem>
+              <SelectItem value="WEEKLY">Weekly digest</SelectItem>
+              <SelectItem value="NONE">No notifications</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Quiet Hours */}
+        <div className="mb-6">
+          <Label className="block text-sm font-semibold text-gray-900 mb-3">Quiet hours (optional)</Label>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="quiet-hours-start" className="block text-xs text-gray-600 mb-1">From</Label>
+              <Input
+                id="quiet-hours-start"
+                type="time"
+                value={preferences.quietHoursStart || ''}
+                onChange={(e) =>
+                  setPreferences({ ...preferences, quietHoursStart: e.target.value })
+                }
+                className="w-full text-sm"
+              />
+            </div>
+            <div>
+              <Label htmlFor="quiet-hours-end" className="block text-xs text-gray-600 mb-1">To</Label>
+              <Input
+                id="quiet-hours-end"
+                type="time"
+                value={preferences.quietHoursEnd || ''}
+                onChange={(e) => setPreferences({ ...preferences, quietHoursEnd: e.target.value })}
+                className="w-full text-sm"
+              />
+            </div>
+          </div>
+          <p className="mt-2 text-xs text-gray-500">
+            During quiet hours, you'll only receive urgent notifications
+          </p>
+        </div>
+
+        {/* Save Button */}
+        <Button
+          onClick={handleSave}
+          disabled={updatePreferences.isPending}
+          className="w-full"
         >
-          <option value="IMMEDIATE">Send immediately</option>
-          <option value="DAILY">Daily digest</option>
-          <option value="WEEKLY">Weekly digest</option>
-          <option value="NONE">No notifications</option>
-        </select>
-      </div>
-
-      {/* Quiet Hours */}
-      <div className="mb-6">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Quiet hours (optional)</h3>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs text-gray-600 mb-1">From</label>
-            <input
-              type="time"
-              value={preferences.quietHoursStart || ''}
-              onChange={(e) =>
-                setPreferences({ ...preferences, quietHoursStart: e.target.value })
-              }
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-600 mb-1">To</label>
-            <input
-              type="time"
-              value={preferences.quietHoursEnd || ''}
-              onChange={(e) => setPreferences({ ...preferences, quietHoursEnd: e.target.value })}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            />
-          </div>
-        </div>
-        <p className="mt-2 text-xs text-gray-500">
-          During quiet hours, you'll only receive urgent notifications
-        </p>
-      </div>
-
-      {/* Save Button */}
-      <button
-        onClick={handleSave}
-        disabled={updatePreferences.isPending}
-        className="w-full rounded-md bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      >
-        {updatePreferences.isPending ? 'Saving...' : 'Save Preferences'}
-      </button>
-    </div>
+          {updatePreferences.isPending ? 'Saving...' : 'Save Preferences'}
+        </Button>
+      </CardContent>
+    </Card>
   );
 };

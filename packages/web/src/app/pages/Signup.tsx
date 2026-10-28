@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/hooks';
 import toast from 'react-hot-toast';
 import { US_STATES } from '@/core/constants/us-states';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.js';
 
 interface SignupFormData {
   // Step 1: Organization
@@ -156,7 +160,7 @@ export const Signup: React.FC = () => {
       }
 
       toast.success(
-        `Welcome to Folk! Check your email (${formData.email}) to verify your account.`,
+        `Welcome to MHC Portal! Check your email (${formData.email}) to verify your account.`,
         { duration: 6000 }
       );
 
@@ -240,72 +244,72 @@ export const Signup: React.FC = () => {
 
       {/* Organization Name */}
       <div className="mb-4">
-        <label htmlFor="organizationName" className="block text-sm font-medium text-gray-700 mb-1">
-          Organization Name *
-        </label>
-        <input
+        <Label htmlFor="organizationName" className="block text-sm font-medium mb-1">
+          Organization Name <span className="text-destructive">*</span>
+        </Label>
+        <Input
           id="organizationName"
           name="organizationName"
           type="text"
           value={formData.organizationName}
           onChange={handleChange}
-          className={`w-full px-4 py-3 border ${
-            errors.organizationName ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+          aria-invalid={Boolean(errors.organizationName)}
           placeholder="e.g., Sunshine Home Health"
         />
         {errors.organizationName && (
-          <p className="mt-1 text-sm text-red-600">{errors.organizationName}</p>
+          <p className="mt-1 text-sm text-destructive">{errors.organizationName}</p>
         )}
       </div>
 
       {/* State Selection */}
       <div className="mb-4">
-        <label htmlFor="stateCode" className="block text-sm font-medium text-gray-700 mb-1">
-          State *
-        </label>
-        <select
-          id="stateCode"
-          name="stateCode"
+        <Label htmlFor="stateCode" className="block text-sm font-medium mb-1">
+          State <span className="text-destructive">*</span>
+        </Label>
+        <Select
           value={formData.stateCode}
-          onChange={handleChange}
-          className={`w-full px-4 py-3 border ${
-            errors.stateCode ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white`}
+          onValueChange={(val) => {
+            setFormData((prev) => ({ ...prev, stateCode: val }));
+            if (errors.stateCode) {
+              setErrors((prev) => ({ ...prev, stateCode: '' }));
+            }
+          }}
         >
-          <option value="">Select your state</option>
-          {US_STATES.map((state) => (
-            <option key={state.code} value={state.code}>
-              {state.name}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger id="stateCode" aria-invalid={Boolean(errors.stateCode)}>
+            <SelectValue placeholder="Select your state" />
+          </SelectTrigger>
+          <SelectContent>
+            {US_STATES.map((state) => (
+              <SelectItem key={state.code} value={state.code}>
+                {state.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {errors.stateCode && (
-          <p className="mt-1 text-sm text-red-600">{errors.stateCode}</p>
+          <p className="mt-1 text-sm text-destructive">{errors.stateCode}</p>
         )}
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-muted-foreground">
           Your state determines regulatory requirements and EVV settings
         </p>
       </div>
 
       {/* Organization Phone */}
       <div className="mb-4">
-        <label htmlFor="organizationPhone" className="block text-sm font-medium text-gray-700 mb-1">
+        <Label htmlFor="organizationPhone" className="block text-sm font-medium mb-1">
           Organization Phone
-        </label>
-        <input
+        </Label>
+        <Input
           id="organizationPhone"
           name="organizationPhone"
           type="tel"
           value={formData.organizationPhone}
           onChange={handlePhoneChange}
-          className={`w-full px-4 py-3 border ${
-            errors.organizationPhone ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+          aria-invalid={Boolean(errors.organizationPhone)}
           placeholder="(555) 555-5555"
         />
         {errors.organizationPhone && (
-          <p className="mt-1 text-sm text-red-600">{errors.organizationPhone}</p>
+          <p className="mt-1 text-sm text-destructive">{errors.organizationPhone}</p>
         )}
       </div>
     </>
@@ -319,84 +323,76 @@ export const Signup: React.FC = () => {
       <div className="grid grid-cols-2 gap-4 mb-4">
         {/* First Name */}
         <div>
-          <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-            First Name *
-          </label>
-          <input
+          <Label htmlFor="firstName" className="block text-sm font-medium mb-1">
+            First Name <span className="text-destructive">*</span>
+          </Label>
+          <Input
             id="firstName"
             name="firstName"
             type="text"
             value={formData.firstName}
             onChange={handleChange}
-            className={`w-full px-4 py-3 border ${
-              errors.firstName ? 'border-red-300' : 'border-gray-300'
-            } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+            aria-invalid={Boolean(errors.firstName)}
             placeholder="John"
           />
           {errors.firstName && (
-            <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
+            <p className="mt-1 text-sm text-destructive">{errors.firstName}</p>
           )}
         </div>
 
         {/* Last Name */}
         <div>
-          <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-            Last Name *
-          </label>
-          <input
+          <Label htmlFor="lastName" className="block text-sm font-medium mb-1">
+            Last Name <span className="text-destructive">*</span>
+          </Label>
+          <Input
             id="lastName"
             name="lastName"
             type="text"
             value={formData.lastName}
             onChange={handleChange}
-            className={`w-full px-4 py-3 border ${
-              errors.lastName ? 'border-red-300' : 'border-gray-300'
-            } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+            aria-invalid={Boolean(errors.lastName)}
             placeholder="Smith"
           />
           {errors.lastName && (
-            <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
+            <p className="mt-1 text-sm text-destructive">{errors.lastName}</p>
           )}
         </div>
       </div>
 
       {/* Email */}
       <div className="mb-4">
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-          Email Address *
-        </label>
-        <input
+        <Label htmlFor="email" className="block text-sm font-medium mb-1">
+          Email Address <span className="text-destructive">*</span>
+        </Label>
+        <Input
           id="email"
           name="email"
           type="email"
           autoComplete="email"
           value={formData.email}
           onChange={handleChange}
-          className={`w-full px-4 py-3 border ${
-            errors.email ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+          aria-invalid={Boolean(errors.email)}
           placeholder="you@example.com"
         />
-        {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+        {errors.email && <p className="mt-1 text-sm text-destructive">{errors.email}</p>}
       </div>
 
       {/* Phone */}
       <div className="mb-4">
-        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+        <Label htmlFor="phone" className="block text-sm font-medium mb-1">
           Phone Number
-        </label>
-        <input
+        </Label>
+        <Input
           id="phone"
           name="phone"
           type="tel"
           value={formData.phone}
           onChange={handlePhoneChange}
-          className={`w-full px-4 py-3 border ${
-            errors.phone ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+          aria-invalid={Boolean(errors.phone)}
           placeholder="(555) 555-5555"
         />
-        {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
+        {errors.phone && <p className="mt-1 text-sm text-destructive">{errors.phone}</p>}
       </div>
     </>
   );
@@ -408,22 +404,20 @@ export const Signup: React.FC = () => {
 
       {/* Password */}
       <div className="mb-4">
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-          Password *
-        </label>
-        <input
+        <Label htmlFor="password" className="block text-sm font-medium mb-1">
+          Password <span className="text-destructive">*</span>
+        </Label>
+        <Input
           id="password"
           name="password"
           type="password"
           autoComplete="new-password"
           value={formData.password}
           onChange={handleChange}
-          className={`w-full px-4 py-3 border ${
-            errors.password ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+          aria-invalid={Boolean(errors.password)}
           placeholder="At least 8 characters"
         />
-        {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+        {errors.password && <p className="mt-1 text-sm text-destructive">{errors.password}</p>}
         <div className="mt-2 space-y-1">
           <p className={`text-xs ${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
             {formData.password.length >= 8 ? '✓' : '○'} At least 8 characters
@@ -445,23 +439,21 @@ export const Signup: React.FC = () => {
 
       {/* Confirm Password */}
       <div className="mb-4">
-        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-          Confirm Password *
-        </label>
-        <input
+        <Label htmlFor="confirmPassword" className="block text-sm font-medium mb-1">
+          Confirm Password <span className="text-destructive">*</span>
+        </Label>
+        <Input
           id="confirmPassword"
           name="confirmPassword"
           type="password"
           autoComplete="new-password"
           value={formData.confirmPassword}
           onChange={handleChange}
-          className={`w-full px-4 py-3 border ${
-            errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-          } rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent`}
+          aria-invalid={Boolean(errors.confirmPassword)}
           placeholder="Re-enter your password"
         />
         {errors.confirmPassword && (
-          <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+          <p className="mt-1 text-sm text-destructive">{errors.confirmPassword}</p>
         )}
       </div>
 
@@ -503,7 +495,7 @@ export const Signup: React.FC = () => {
             CREATE ACCOUNT
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Start Your Agency</h1>
-          <p className="text-gray-600">Set up Folk in under 5 minutes</p>
+          <p className="text-gray-600">Set up MHC Portal in under 5 minutes</p>
         </div>
 
         {/* Step Indicator */}
@@ -519,29 +511,28 @@ export const Signup: React.FC = () => {
             {/* Navigation Buttons */}
             <div className="flex gap-3 mt-6">
               {step > 1 && (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={handleBack}
-                  className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1"
                 >
                   Back
-                </button>
+                </Button>
               )}
-              <button
+              <Button
                 type="submit"
                 disabled={isLoading}
-                className={`flex-1 flex justify-center items-center gap-2 py-3 px-4 border border-transparent text-base font-semibold rounded-lg text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all shadow-lg hover:shadow-xl ${
-                  isLoading ? 'opacity-75 cursor-not-allowed' : ''
-                }`}
+                className="flex-1"
               >
                 {isLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2" />
                     Creating Account...
                   </>
                 ) : step === totalSteps ? (
                   <>
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -554,12 +545,12 @@ export const Signup: React.FC = () => {
                 ) : (
                   <>
                     Continue
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-4 w-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </>
                 )}
-              </button>
+              </Button>
             </div>
           </form>
 
@@ -567,13 +558,14 @@ export const Signup: React.FC = () => {
           <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-center text-sm text-gray-600">
               Already have an account?{' '}
-              <button
+              <Button
                 type="button"
+                variant="link"
                 onClick={() => navigate('/login')}
-                className="font-semibold text-green-600 hover:text-green-700 underline"
+                className="p-0 h-auto font-semibold"
               >
                 Sign in
-              </button>
+              </Button>
             </p>
             <p className="text-center text-xs text-gray-500 mt-4">
               By creating an account, you agree to our Terms of Service and Privacy Policy
@@ -583,13 +575,13 @@ export const Signup: React.FC = () => {
 
         {/* Try Demo Link */}
         <div className="text-center mt-6">
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={() => navigate('/login')}
-            className="text-sm text-gray-600 hover:text-gray-900 underline"
           >
             ← Back to Demo
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -1,13 +1,12 @@
 // Build revision: 2026-10-08-login-chunk-fix
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster, default as toast } from 'react-hot-toast';
+import { Toaster } from 'react-hot-toast';
 import { useAuth } from './core/hooks';
-import { registerUnauthorizedHandler } from './core/services/api-client';
-import { ProtectedRoute, FamilyProtectedRoute, PublicRoute, LoadingSpinner } from './core/components';
+import { ProtectedRoute, FamilyProtectedRoute, PublicRoute, LoadingSpinner, UpdatePrompt, OnlineStatus } from './core/components';
 import { AppShell } from './app/components';
 import { initAuthStorage } from './core/utils/auth-storage';
 import { AcceptInvite } from './app/pages/AcceptInvite';
@@ -26,6 +25,7 @@ import {
   ActivityPage,
   MessagesPage,
   StaffMessagesPage,
+  CaregiverMessagesPage,
   NotificationsPage,
   SchedulePage,
   CarePlanPage,
@@ -128,32 +128,11 @@ const queryClient = new QueryClient({
 
 
 function AppRoutes() {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { isOpen, closeSearch } = useGlobalSearch();
-  const navigate = useNavigate();
 
-  // Global 401 handling: a request rejected mid-session (expired/invalid/
-  // revoked token) clears local auth state and redirects to /login,
-  // instead of leaving ProtectedRoute's stale `isAuthenticated` flag
-  // rendering a shell full of silently-failing queries. Re-registered on
-  // every render so the handler always closes over the current
-  // logout/navigate — but the registration itself is just a variable
-  // assignment (cheap), and the dedupe guard below prevents redirect spam
-  // if multiple in-flight requests 401 around the same time.
-  const hasHandledUnauthorized = React.useRef(false);
-  React.useEffect(() => {
-    hasHandledUnauthorized.current = false;
-  }, [isAuthenticated]);
-
-  React.useEffect(() => {
-    registerUnauthorizedHandler(() => {
-      if (hasHandledUnauthorized.current) return;
-      hasHandledUnauthorized.current = true;
-      logout();
-      toast.error('Your session has expired. Please log in again.');
-      navigate('/login', { replace: true });
-    });
-  }, [logout, navigate]);
+  // 401 handling is now done via onAuthFailure callback in api-provider-factory
+  // (see packages/web/src/core/providers/api-provider-factory.ts)
 
   return (
     <>
@@ -554,6 +533,26 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/caregiver/messages"
+        element={
+          <ProtectedRoute requiredRoles={['CAREGIVER']}>
+            <AppShell>
+              <CaregiverMessagesPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/caregiver/messages/:threadId"
+        element={
+          <ProtectedRoute requiredRoles={['CAREGIVER']}>
+            <AppShell>
+              <CaregiverMessagesPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/caregiver/dashboard"
         element={
           <ProtectedRoute requiredRoles={['CAREGIVER']}>
@@ -920,9 +919,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <OnlineStatus />
         <DemoModeBar />
         <AppRoutes />
         <Toaster position="top-right" />
+        <UpdatePrompt />
       </BrowserRouter>
       <Analytics />
       <SpeedInsights />

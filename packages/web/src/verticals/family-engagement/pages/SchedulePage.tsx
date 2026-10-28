@@ -5,7 +5,9 @@
  */
 
 import React, { useState } from 'react';
-import { Card } from '@/core/components';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { Button } from '@/components/ui/button.js';
+import { Badge } from '@/components/ui/badge.js';
 import { useFamilyDashboard } from '../hooks';
 import { useAuth } from '@/core/hooks';
 import { VisitCard, VisitTimeline } from '../components';
@@ -58,46 +60,40 @@ export const SchedulePage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50">
+          <Button variant="outline" size="icon" className="h-9 w-9">
             <ChevronLeft className="h-5 w-5 text-gray-600" />
-          </button>
-          <button className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 flex items-center gap-2">
+          </Button>
+          <Button variant="outline" size="sm" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            <span className="text-sm font-medium">This Week</span>
-          </button>
-          <button className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50">
+            <span>This Week</span>
+          </Button>
+          <Button variant="outline" size="icon" className="h-9 w-9">
             <ChevronRight className="h-5 w-5 text-gray-600" />
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* View Mode Toggle */}
       <div className="flex items-center gap-2">
-        <button
+        <Button
           onClick={() => setViewMode('week')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            viewMode === 'week'
-              ? 'bg-primary-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
+          variant={viewMode === 'week' ? 'default' : 'secondary'}
+          size="sm"
         >
           Week View
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => setViewMode('month')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            viewMode === 'month'
-              ? 'bg-primary-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
+          variant={viewMode === 'month' ? 'default' : 'secondary'}
+          size="sm"
         >
           Month View
-        </button>
+        </Button>
       </div>
 
       {visits.length === 0 ? (
-        <Card padding="lg">
-          <div className="text-center py-12">
+        <Card>
+          <CardContent className="text-center py-12">
             <Calendar className="h-16 w-16 mx-auto mb-4 text-gray-300" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
               No Upcoming Visits
@@ -105,7 +101,7 @@ export const SchedulePage: React.FC = () => {
             <p className="text-gray-600">
               There are no scheduled visits at this time.
             </p>
-          </div>
+          </CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -150,82 +146,84 @@ export const SchedulePage: React.FC = () => {
 
           {/* Visit Details / Timeline */}
           <div className="lg:sticky lg:top-6 lg:self-start">
-            <Card padding="lg">
-              {selectedVisit ? (
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                    Visit Details
-                  </h3>
-
-                  {/* Visit Info */}
-                  <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3 mb-3">
-                      {selectedVisit.caregiverPhotoUrl ? (
-                        <img
-                          src={selectedVisit.caregiverPhotoUrl}
-                          alt={selectedVisit.caregiverName}
-                          className="h-12 w-12 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 text-lg font-semibold text-primary-700">
-                          {selectedVisit.caregiverName.charAt(0)}
-                        </div>
-                      )}
-                      <div>
-                        <div className="font-semibold text-gray-900">
-                          {selectedVisit.caregiverName}
-                        </div>
-                        <div className="text-sm text-gray-600">Caregiver</div>
-                      </div>
-                    </div>
-                    <div className="text-sm text-gray-700">
-                      <div className="flex items-center justify-between py-2 border-t border-gray-200">
-                        <span className="text-gray-600">Date</span>
-                        <span className="font-medium">
-                          {new Date(selectedVisit.scheduledStartTime).toLocaleDateString('en-US', {
-                            weekday: 'short',
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between py-2 border-t border-gray-200">
-                        <span className="text-gray-600">Time</span>
-                        <span className="font-medium">
-                          {new Date(selectedVisit.scheduledStartTime).toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                          })}{' '}
-                          -{' '}
-                          {new Date(selectedVisit.scheduledEndTime).toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                          })}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between py-2 border-t border-gray-200">
-                        <span className="text-gray-600">Status</span>
-                        <span className="font-medium capitalize">
-                          {selectedVisit.status.replace('_', ' ').toLowerCase()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Visit Timeline */}
+            <Card>
+              <CardContent className="p-6">
+                {selectedVisit ? (
                   <div>
-                    <h4 className="font-semibold text-gray-900 mb-4">Visit Timeline</h4>
-                    <VisitTimeline visit={selectedVisit} />
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                      Visit Details
+                    </h3>
+
+                    {/* Visit Info */}
+                    <div className="mb-6 p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-3 mb-3">
+                        {selectedVisit.caregiverPhotoUrl ? (
+                          <img
+                            src={selectedVisit.caregiverPhotoUrl}
+                            alt={selectedVisit.caregiverName}
+                            className="h-12 w-12 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 text-lg font-semibold text-primary-700">
+                            {selectedVisit.caregiverName.charAt(0)}
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-semibold text-gray-900">
+                            {selectedVisit.caregiverName}
+                          </div>
+                          <div className="text-sm text-gray-600">Caregiver</div>
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-700">
+                        <div className="flex items-center justify-between py-2 border-t border-gray-200">
+                          <span className="text-gray-600">Date</span>
+                          <span className="font-medium">
+                            {new Date(selectedVisit.scheduledStartTime).toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between py-2 border-t border-gray-200">
+                          <span className="text-gray-600">Time</span>
+                          <span className="font-medium">
+                            {new Date(selectedVisit.scheduledStartTime).toLocaleTimeString('en-US', {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}{' '}
+                            -{' '}
+                            {new Date(selectedVisit.scheduledEndTime).toLocaleTimeString('en-US', {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between py-2 border-t border-gray-200">
+                          <span className="text-gray-600">Status</span>
+                          <Badge variant="outline" className="capitalize">
+                            {selectedVisit.status.replace('_', ' ').toLowerCase()}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Visit Timeline */}
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-4">Visit Timeline</h4>
+                      <VisitTimeline visit={selectedVisit} />
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                  <p className="text-gray-500">
-                    Select a visit to view details
-                  </p>
-                </div>
-              )}
+                ) : (
+                  <div className="text-center py-12">
+                    <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                    <p className="text-gray-500">
+                      Select a visit to view details
+                    </p>
+                  </div>
+                )}
+              </CardContent>
             </Card>
           </div>
         </div>

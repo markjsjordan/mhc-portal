@@ -7,6 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Shield, Globe, Zap, Users, FileCheck, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Feature {
   id: string;
@@ -153,32 +154,38 @@ export const FeatureCarousel: React.FC = () => {
         </AnimatePresence>
 
         {/* Navigation Arrows */}
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={goToPrevious}
-          className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-full backdrop-blur-sm transition-all"
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm"
           aria-label="Previous feature"
         >
           <ChevronLeft className="h-6 w-6" />
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={goToNext}
-          className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-full backdrop-blur-sm transition-all"
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm"
           aria-label="Next feature"
         >
           <ChevronRight className="h-6 w-6" />
-        </button>
+        </Button>
       </div>
 
       {/* Dots Indicator */}
       <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
         {features.map((feature, index) => (
-          <button
+          <Button
             key={feature.id}
+            variant="ghost"
+            size="icon"
             onClick={() => goToSlide(index)}
-            className={`h-2 rounded-full transition-all ${
+            className={`h-2 rounded-full transition-all p-0 ${
               index === currentIndex
-                ? 'w-8 bg-white'
-                : 'w-2 bg-white bg-opacity-50 hover:bg-opacity-75'
+                ? 'w-8 bg-white hover:bg-white'
+                : 'w-2 bg-white/50 hover:bg-white/75'
             }`}
             aria-label={`Go to ${feature.title}`}
           />

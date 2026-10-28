@@ -32,6 +32,7 @@ import {
   formatTimeString,
   type VisitTaskItem,
 } from './visitTaskUtils';
+import { Button } from '@/components/ui/button.js';
 
 const FALLBACK_SCHEDULED_DATE = new Date('2026-10-08T08:30:00.000Z');
 const FALLBACK_ACTUAL_START_TIME = new Date('2026-10-08T08:35:00.000Z');
@@ -110,7 +111,7 @@ export const VisitDetailPage: React.FC = () => {
       'SUPERVISOR',
     ]);
 
-  const visit: Visit | null = modifiedVisit || apiVisit || fallbackVisit;
+  const visit: Visit | null = modifiedVisit ?? apiVisit ?? fallbackVisit;
   const { data: client } = useClient(visit?.clientId);
   const { data: caregiver } = useCaregiver(visit?.assignedCaregiverId ?? undefined);
 
@@ -123,7 +124,7 @@ export const VisitDetailPage: React.FC = () => {
     );
   }, [visit]);
 
-  const effectiveEvvRecordId = evvRecordId || (visit as any)?.evvRecordId;
+  const effectiveEvvRecordId = evvRecordId ?? (visit as any)?.evvRecordId;
   const { data: evvRecord } = useEVVRecord(effectiveEvvRecordId);
   const evvData = (visit as any)?.evv;
 
@@ -176,9 +177,9 @@ export const VisitDetailPage: React.FC = () => {
 
   const evvMethodDisplay = useMemo(() => {
     const method =
-      (evvRecord?.clockInVerification as any)?.method ||
-      (evvRecord as any)?.verificationMethod ||
-      evvData?.verificationMethod ||
+      (evvRecord?.clockInVerification as any)?.method ??
+      (evvRecord as any)?.verificationMethod ??
+      evvData?.verificationMethod ??
       (evvRecord?.verificationLevel === 'FULL' ? 'GPS' : evvRecord?.verificationLevel);
     if (method === 'GPS' || method === 'FULL') return 'GPS Mobile App';
     if (method === 'PHONE' || method === 'TELEPHONY') return 'Telephony (IVR)';
@@ -294,14 +295,12 @@ export const VisitDetailPage: React.FC = () => {
         <p className="text-sm text-gray-500 mb-6">
           The requested visit ID <code className="bg-gray-100 px-1 py-0.5 rounded text-gray-800">{id}</code> could not be loaded.
         </p>
-        <button
-          type="button"
+        <Button
           onClick={() => navigate('/scheduling')}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Scheduling
-        </button>
+        </Button>
       </div>
     );
   }
@@ -321,7 +320,7 @@ export const VisitDetailPage: React.FC = () => {
     : visit.assignedCaregiverId
     ? 'Caregiver Assigned'
     : null;
-  const caregiverPhone = caregiver?.primaryPhone?.number || (visit.assignedCaregiverId ? '555-1001' : null);
+  const caregiverPhone = caregiver?.primaryPhone?.number ?? (visit.assignedCaregiverId ? '555-1001' : null);
 
   const completedCount = tasks.filter((t) => t.completed).length;
   const totalCount = tasks.length;
@@ -345,7 +344,7 @@ export const VisitDetailPage: React.FC = () => {
     CANCELLED: { badge: 'bg-red-100 text-red-800 border-red-200', dot: 'bg-red-600', label: 'Cancelled' },
   };
 
-  const statusStyle = statusBadges[visit.status] || {
+  const statusStyle = statusBadges[visit.status] ?? {
     badge: 'bg-gray-100 text-gray-800 border-gray-200',
     dot: 'bg-gray-600',
     label: visit.status,
@@ -355,14 +354,15 @@ export const VisitDetailPage: React.FC = () => {
     <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Navigation & Header Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => navigate('/scheduling')}
-          className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors self-start"
+          className="self-start text-gray-600 hover:text-blue-600"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Scheduling
-        </button>
+        </Button>
 
         <div className="flex items-center gap-2.5">
           {caregiverPhone && (
@@ -383,25 +383,27 @@ export const VisitDetailPage: React.FC = () => {
               Call Client
             </a>
           )}
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors min-h-[44px]"
             title="Print Summary"
+            className="min-h-[44px]"
           >
-            <Printer className="w-4 h-4 text-gray-500" />
+            <Printer className="w-4 h-4 mr-1.5 text-gray-500" />
             <span className="hidden sm:inline">Print</span>
-          </button>
+          </Button>
           {!isLocked && canEditVisit && (
-            <button
-              type="button"
+            <Button
+              variant="default"
+              size="sm"
               onClick={() => setIsEditModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-colors min-h-[44px]"
+              className="min-h-[44px]"
               data-testid="edit-visit-button"
             >
-              <Edit3 className="w-4 h-4" />
+              <Edit3 className="w-4 h-4 mr-1.5" />
               <span>Edit Visit</span>
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -568,7 +570,7 @@ export const VisitDetailPage: React.FC = () => {
                   Access & Entry Instructions
                 </div>
                 <p className="text-amber-800 leading-relaxed">
-                  {visit.address.accessInstructions ||
+                  {visit.address.accessInstructions ??
                     'Standard residential entrance. Please ring front doorbell and verify client identification upon entry.'}
                 </p>
               </div>
@@ -661,7 +663,7 @@ export const VisitDetailPage: React.FC = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-gray-500">Assignment Method:</span>
                     <span className="font-semibold text-gray-800 bg-white px-2 py-0.5 rounded border border-gray-200">
-                      {visit.assignmentMethod || 'MANUAL'}
+                      {visit.assignmentMethod ?? 'MANUAL'}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -706,13 +708,12 @@ export const VisitDetailPage: React.FC = () => {
                     This visit requires a qualified caregiver to be matched and assigned.
                   </p>
                 </div>
-                <button
-                  type="button"
+                <Button
+                  size="sm"
                   onClick={() => navigate('/shift-matching')}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors"
                 >
                   Match & Assign Caregiver
-                </button>
+                </Button>
               </div>
             )}
 
@@ -783,9 +784,9 @@ export const VisitDetailPage: React.FC = () => {
                 )}
               </div>
 
-              {(visit.actualDuration || evvRecord?.totalDuration) && (
+              {(visit.actualDuration ?? evvRecord?.totalDuration) && (
                 <p className="text-[11px] text-emerald-800 pt-1 border-t border-emerald-200/60">
-                  Logged Duration: <strong>{visit.actualDuration || evvRecord?.totalDuration} minutes</strong> (Scheduled:{' '}
+                  Logged Duration: <strong>{visit.actualDuration ?? evvRecord?.totalDuration} minutes</strong> (Scheduled:{' '}
                   {visit.scheduledDuration} min)
                 </p>
               )}

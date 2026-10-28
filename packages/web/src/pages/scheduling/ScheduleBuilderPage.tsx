@@ -9,6 +9,18 @@ import type { Visit as ApiVisit } from '@/verticals/scheduling-visits/types';
 import { useClients } from '@/verticals/client-demographics/hooks/useClients';
 import { calculateSupervisoryCadence } from '@/verticals/scheduling-visits/utils/supervisory-cadence';
 import { SupervisionAlertBanner } from '@/verticals/scheduling-visits/components/SupervisionAlertBanner';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { Checkbox } from '@/components/ui/checkbox.js';
+import { Textarea } from '@/components/ui/textarea.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 
 interface Caregiver {
   id: string;
@@ -338,6 +350,14 @@ export default function ScheduleBuilderPage() {
             width: 100% !important;
           }
         }
+        @media (max-width: 1100px) {
+          .schedule-builder-controls {
+            flex-wrap: wrap !important;
+          }
+          .schedule-builder-action-btn {
+            min-height: 40px !important;
+          }
+        }
         @media (max-width: 767px) {
           .modal-form-grid {
             grid-template-columns: 1fr !important;
@@ -371,97 +391,99 @@ export default function ScheduleBuilderPage() {
           {isMobile ? (
             <div className="schedule-builder-controls-row" style={styles.controlsRowMobile}>
               <div className="schedule-builder-toggle" style={styles.viewToggleMobile}>
-                <button
-                  style={{
-                    ...styles.viewButtonMobile,
-                    ...(viewMode === 'day' ? styles.viewButtonActive : {}),
-                  }}
+                <Button
+                  variant={viewMode === 'day' ? 'default' : 'outline'}
+                  style={styles.viewButtonMobile}
                   onClick={() => setViewMode('day')}
                 >
                   Day
-                </button>
-                <button
-                  style={{
-                    ...styles.viewButtonMobile,
-                    ...(viewMode === 'week' ? styles.viewButtonActive : {}),
-                  }}
+                </Button>
+                <Button
+                  variant={viewMode === 'week' ? 'default' : 'outline'}
+                  style={styles.viewButtonMobile}
                   onClick={() => setViewMode('week')}
                 >
                   Week
-                </button>
+                </Button>
               </div>
-              <select
-                value={selectedDate}
-                onChange={e => setSelectedDate(e.target.value)}
-                className="schedule-builder-date-select"
-                style={styles.dateSelectMobile}
-              >
-                {weekDates.map(date => (
-                  <option key={date} value={date}>
-                    {new Date(date).toLocaleDateString('en-US', {
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </option>
-                ))}
-              </select>
+              <Label htmlFor="schedule-builder-date-select-mobile" className="sr-only">
+                Select Date
+              </Label>
+              <Select value={selectedDate} onValueChange={setSelectedDate}>
+                <SelectTrigger
+                  id="schedule-builder-date-select-mobile"
+                  className="schedule-builder-date-select"
+                  style={styles.dateSelectMobile}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {weekDates.map(date => (
+                    <SelectItem key={date} value={date}>
+                      {new Date(date).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           ) : (
             <>
               <div style={styles.viewToggle}>
-                <button
-                  style={{
-                    ...styles.viewButton,
-                    ...(viewMode === 'day' ? styles.viewButtonActive : {}),
-                  }}
+                <Button
+                  variant={viewMode === 'day' ? 'default' : 'outline'}
+                  style={styles.viewButton}
                   onClick={() => setViewMode('day')}
                 >
                   Day
-                </button>
-                <button
-                  style={{
-                    ...styles.viewButton,
-                    ...(viewMode === 'week' ? styles.viewButtonActive : {}),
-                  }}
+                </Button>
+                <Button
+                  variant={viewMode === 'week' ? 'default' : 'outline'}
+                  style={styles.viewButton}
                   onClick={() => setViewMode('week')}
                 >
                   Week
-                </button>
+                </Button>
               </div>
-              <select
-                value={selectedDate}
-                onChange={e => setSelectedDate(e.target.value)}
-                style={styles.dateSelect}
-              >
-                {weekDates.map(date => (
-                  <option key={date} value={date}>
-                    {new Date(date).toLocaleDateString('en-US', {
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </option>
-                ))}
-              </select>
+              <Label htmlFor="schedule-builder-date-select-desktop" className="sr-only">
+                Select Date
+              </Label>
+              <Select value={selectedDate} onValueChange={setSelectedDate}>
+                <SelectTrigger
+                  id="schedule-builder-date-select-desktop"
+                  className="schedule-builder-date-select"
+                  style={styles.dateSelect}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {weekDates.map(date => (
+                    <SelectItem key={date} value={date}>
+                      {new Date(date).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </>
           )}
-          <button
+          <Button
             className="schedule-builder-action-btn"
             style={isMobile ? styles.patternButtonMobile : styles.patternButton}
             onClick={() => setShowPatternModal(true)}
           >
             + Recurring Schedule
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="secondary"
             className="schedule-builder-action-btn"
-            style={{
-              ...(isMobile ? styles.patternButtonMobile : styles.patternButton),
-              backgroundColor: '#059669',
-              color: '#ffffff',
-              border: 'none',
-              fontWeight: 600,
-            }}
+            style={isMobile ? styles.patternButtonMobile : styles.patternButton}
             onClick={() => {
               setCreateModalData({
                 clientId: '',
@@ -474,19 +496,15 @@ export default function ScheduleBuilderPage() {
             }}
           >
             + New Visit
-          </button>
-          <button
-            style={{
-              ...(isMobile ? styles.patternButtonMobile : styles.patternButton),
-              backgroundColor: '#1d4ed8',
-              color: '#ffffff',
-              border: 'none',
-              fontWeight: 600,
-            }}
+          </Button>
+          <Button
+            variant="outline"
+            className="schedule-builder-action-btn"
+            style={isMobile ? styles.patternButtonMobile : styles.patternButton}
             onClick={() => setShowSupervisionModal(true)}
           >
             Schedule Supervision Visit
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -625,13 +643,16 @@ export default function ScheduleBuilderPage() {
                           >
                             <div style={styles.visitBlockHeader}>
                               <strong>{visit.patternId ? '🔁 ' : ''}{visit.clientName}</strong>
-                              <button
+                              <Button
+                                variant="ghost"
+                                size="icon-xs"
                                 onClick={() => handleUnassign(visit.id)}
-                                style={styles.unassignButton}
                                 title="Unassign"
+                                aria-label="Unassign visit"
+                                className="h-5 w-5 p-0 text-white/80 hover:text-white hover:bg-white/20"
                               >
                                 ✕
-                              </button>
+                              </Button>
                             </div>
                             <div style={styles.visitBlockTime}>
                               {visit.startTime} - {visit.endTime}
@@ -763,6 +784,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     gap: '12px',
     alignItems: 'center',
+    flexWrap: 'wrap',
   },
   headerControlsMobile: {
     display: 'flex',
@@ -790,45 +812,19 @@ const styles: { [key: string]: React.CSSProperties } = {
     overflow: 'hidden',
     flexShrink: 0,
   },
-  viewButton: {
-    padding: '8px 16px',
-    border: 'none',
-    backgroundColor: 'white',
-    cursor: 'pointer',
-    fontSize: '14px',
-  },
+  viewButton: {},
   viewButtonMobile: {
-    padding: '10px 14px',
     minHeight: '44px',
     minWidth: '44px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    border: 'none',
-    backgroundColor: 'white',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: 500,
   },
-  viewButtonActive: {
-    backgroundColor: '#3b82f6',
-    color: 'white',
-  },
+  viewButtonActive: {},
   dateSelect: {
-    padding: '8px 12px',
-    border: '1px solid #e5e7eb',
-    borderRadius: '6px',
-    fontSize: '14px',
+    minWidth: '180px',
   },
   dateSelectMobile: {
-    padding: '10px 12px',
-    border: '1px solid #e5e7eb',
-    borderRadius: '6px',
-    fontSize: '14px',
     minHeight: '44px',
     flex: 1,
     minWidth: 0,
-    backgroundColor: 'white',
   },
   content: {
     display: 'flex',
@@ -1018,37 +1014,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: '#6b7280',
     marginTop: '4px',
   },
-  patternButton: {
-    padding: '8px 16px',
-    backgroundColor: '#10b981',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontWeight: 500,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-  },
+  patternButton: {},
   patternButtonMobile: {
-    padding: '10px 16px',
-    backgroundColor: '#10b981',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontWeight: 500,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '6px',
     minHeight: '44px',
     width: '100%',
-    boxSizing: 'border-box',
-    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
   },
   recurringBadge: {
     fontSize: '11px',
@@ -1245,104 +1214,125 @@ function CreateRecurringPatternModal({
               Generate concrete visits automatically across a rolling horizon
             </p>
           </div>
-          <button onClick={onClose} style={modalStyles.closeBtn}>✕</button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            aria-label="Close"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          >
+            ✕
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} style={modalStyles.form} className="modal-form">
           <div style={modalStyles.formGrid} className="modal-form-grid">
             <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Client *</label>
+              <Label htmlFor="recurring-client">Client *</Label>
               {clients.length > 0 ? (
-                <select
-                  value={clientId}
-                  onChange={(e) => setClientId(e.target.value)}
-                  style={modalStyles.input}
-                  required
+                <Select
+                  value={clientId || undefined}
+                  onValueChange={setClientId}
                 >
-                  <option value="">Select a client...</option>
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.firstName} {c.lastName}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="recurring-client">
+                    <SelectValue placeholder="Select a client..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.firstName} {c.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               ) : (
-                <input
+                <Input
+                  id="recurring-client"
                   type="text"
                   placeholder="Client name or ID"
                   value={customClientName}
                   onChange={(e) => setCustomClientName(e.target.value)}
-                  style={modalStyles.input}
                   required
                 />
               )}
             </div>
 
             <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Caregiver</label>
-              <select
-                value={caregiverId}
-                onChange={(e) => setCaregiverId(e.target.value)}
-                style={modalStyles.input}
+              <Label htmlFor="recurring-caregiver">Caregiver</Label>
+              <Select
+                value={caregiverId || 'unassigned'}
+                onValueChange={(val) => setCaregiverId(val === 'unassigned' ? '' : val)}
               >
-                <option value="">Unassigned (Auto-match)</option>
-                {caregivers.map((cg) => (
-                  <option key={cg.id} value={cg.id}>
-                    {cg.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="recurring-caregiver">
+                  <SelectValue placeholder="Unassigned (Auto-match)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Unassigned (Auto-match)</SelectItem>
+                  {caregivers.map((cg) => (
+                    <SelectItem key={cg.id} value={cg.id}>
+                      {cg.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Service Type</label>
-              <select
+              <Label htmlFor="recurring-service-type">Service Type</Label>
+              <Select
                 value={serviceTypeName}
-                onChange={(e) => setServiceTypeName(e.target.value)}
-                style={modalStyles.input}
+                onValueChange={setServiceTypeName}
               >
-                <option value="Personal Care">Personal Care</option>
-                <option value="Home Health Aide">Home Health Aide</option>
-                <option value="Skilled Nursing">Skilled Nursing</option>
-                <option value="Physical Therapy">Physical Therapy</option>
-                <option value="Companion Care">Companion Care</option>
-                <option value="Respite Care">Respite Care</option>
-              </select>
+                <SelectTrigger id="recurring-service-type">
+                  <SelectValue placeholder="Select service type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Personal Care">Personal Care</SelectItem>
+                  <SelectItem value="Home Health Aide">Home Health Aide</SelectItem>
+                  <SelectItem value="Skilled Nursing">Skilled Nursing</SelectItem>
+                  <SelectItem value="Physical Therapy">Physical Therapy</SelectItem>
+                  <SelectItem value="Companion Care">Companion Care</SelectItem>
+                  <SelectItem value="Respite Care">Respite Care</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Frequency</label>
-              <select
+              <Label htmlFor="recurring-frequency">Frequency</Label>
+              <Select
                 value={frequency}
-                onChange={(e) => setFrequency(e.target.value)}
-                style={modalStyles.input}
+                onValueChange={setFrequency}
               >
-                <option value="WEEKLY">Weekly</option>
-                <option value="DAILY">Daily</option>
-                <option value="BIWEEKLY">Bi-weekly</option>
-                <option value="MONTHLY">Monthly</option>
-              </select>
+                <SelectTrigger id="recurring-frequency">
+                  <SelectValue placeholder="Select frequency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="WEEKLY">Weekly</SelectItem>
+                  <SelectItem value="DAILY">Daily</SelectItem>
+                  <SelectItem value="BIWEEKLY">Bi-weekly</SelectItem>
+                  <SelectItem value="MONTHLY">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           {(frequency === 'WEEKLY' || frequency === 'BIWEEKLY') && (
             <div style={modalStyles.formGroupFull}>
-              <label style={modalStyles.label}>Days of Week *</label>
-              <div style={modalStyles.daysRow}>
+              <Label id="recurring-days-label">Days of Week *</Label>
+              <div style={modalStyles.daysRow} role="group" aria-labelledby="recurring-days-label">
                 {DAYS.map((day) => {
                   const active = selectedDays.includes(day.value);
                   return (
-                    <button
+                    <Button
                       key={day.value}
                       type="button"
+                      variant={active ? 'default' : 'outline'}
+                      size="sm"
                       onClick={() => toggleDay(day.value)}
-                      style={{
-                        ...modalStyles.dayPill,
-                        ...(active ? modalStyles.dayPillActive : {}),
-                      }}
                     >
                       {day.label}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -1351,93 +1341,95 @@ function CreateRecurringPatternModal({
 
           <div style={modalStyles.formGrid}>
             <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Start Time *</label>
-              <input
+              <Label htmlFor="recurring-start-time">Start Time *</Label>
+              <Input
+                id="recurring-start-time"
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                style={modalStyles.input}
                 required
               />
             </div>
 
             <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Duration *</label>
-              <select
-                value={duration}
-                onChange={(e) => setDuration(Number(e.target.value))}
-                style={modalStyles.input}
+              <Label htmlFor="recurring-duration">Duration *</Label>
+              <Select
+                value={String(duration)}
+                onValueChange={(val) => setDuration(Number(val))}
               >
-                <option value={60}>1 hour (60 min)</option>
-                <option value={120}>2 hours (120 min)</option>
-                <option value={180}>3 hours (180 min)</option>
-                <option value={240}>4 hours (240 min)</option>
-                <option value={360}>6 hours (360 min)</option>
-                <option value={480}>8 hours (480 min)</option>
-              </select>
+                <SelectTrigger id="recurring-duration">
+                  <SelectValue placeholder="Select duration" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="60">1 hour (60 min)</SelectItem>
+                  <SelectItem value="120">2 hours (120 min)</SelectItem>
+                  <SelectItem value="180">3 hours (180 min)</SelectItem>
+                  <SelectItem value="240">4 hours (240 min)</SelectItem>
+                  <SelectItem value="360">6 hours (360 min)</SelectItem>
+                  <SelectItem value="480">8 hours (480 min)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Start Date *</label>
-              <input
+              <Label htmlFor="recurring-start-date">Start Date *</Label>
+              <Input
+                id="recurring-start-date"
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                style={modalStyles.input}
                 required
               />
             </div>
 
             <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>End Date</label>
-              <input
+              <Label htmlFor="recurring-end-date">End Date</Label>
+              <Input
+                id="recurring-end-date"
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                style={modalStyles.input}
               />
             </div>
           </div>
 
-          <div style={modalStyles.checkboxRow}>
-            <label style={modalStyles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={skipHolidays}
-                onChange={(e) => setSkipHolidays(e.target.checked)}
-                style={modalStyles.checkbox}
-              />
-              <span>Skip US Federal Holidays (automated compliance)</span>
-            </label>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="recurring-skip-holidays"
+              checked={skipHolidays}
+              onCheckedChange={(checked) => setSkipHolidays(checked === true)}
+            />
+            <Label htmlFor="recurring-skip-holidays" className="text-sm font-normal cursor-pointer">
+              Skip US Federal Holidays (automated compliance)
+            </Label>
           </div>
 
           <div style={modalStyles.formGroupFull}>
-            <label style={modalStyles.label}>Care Notes / Instructions</label>
-            <textarea
+            <Label htmlFor="recurring-notes">Care Notes / Instructions</Label>
+            <Textarea
+              id="recurring-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="e.g. Assist with morning routine, medication reminders, meal preparation"
-              style={modalStyles.textarea}
               rows={2}
             />
           </div>
 
           <div style={modalStyles.footer}>
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={onClose}
               disabled={submitting}
-              style={modalStyles.cancelBtn}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={submitting}
-              style={modalStyles.submitBtn}
             >
               {submitting ? 'Generating Schedule...' : 'Generate Recurring Visits'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -1503,116 +1495,130 @@ function ScheduleSupervisionVisitModal({
               Mandated RN supervisory visit cadence for {stateCode} licensure compliance (60-day cycle)
             </p>
           </div>
-          <button style={modalStyles.closeBtn} onClick={onClose}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            aria-label="Close"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          >
             ✕
-          </button>
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} style={modalStyles.form}>
           <div style={modalStyles.formGrid}>
             <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Client *</label>
-              <select
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-                style={modalStyles.input}
-                required
+              <Label htmlFor="supervision-client">Client *</Label>
+              <Select
+                value={clientId || undefined}
+                onValueChange={setClientId}
               >
-                <option value="">Select a client...</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.firstName} {c.lastName}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="supervision-client">
+                  <SelectValue placeholder="Select a client..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.firstName} {c.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Supervising RN Caregiver</label>
-              <select
-                value={caregiverId}
-                onChange={(e) => setCaregiverId(e.target.value)}
-                style={modalStyles.input}
+              <Label htmlFor="supervision-caregiver">Supervising RN Caregiver</Label>
+              <Select
+                value={caregiverId || 'unassigned'}
+                onValueChange={(val) => setCaregiverId(val === 'unassigned' ? '' : val)}
               >
-                <option value="">Unassigned (Open for RN)</option>
-                {caregivers.map((cg) => (
-                  <option key={cg.id} value={cg.id}>
-                    {cg.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="supervision-caregiver">
+                  <SelectValue placeholder="Unassigned (Open for RN)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Unassigned (Open for RN)</SelectItem>
+                  {caregivers.map((cg) => (
+                    <SelectItem key={cg.id} value={cg.id}>
+                      {cg.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Service Type</label>
-              <input
+              <Label htmlFor="supervision-service-type">Service Type</Label>
+              <Input
+                id="supervision-service-type"
                 type="text"
                 value="RN Supervisory Visit (AHCA 59A-8 / TX §558)"
                 readOnly
-                style={{ ...modalStyles.input, backgroundColor: '#f3f4f6' }}
+                className="bg-muted"
               />
             </div>
 
             <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Visit Date *</label>
-              <input
+              <Label htmlFor="supervision-visit-date">Visit Date *</Label>
+              <Input
+                id="supervision-visit-date"
                 type="date"
                 value={visitDate}
                 onChange={(e) => setVisitDate(e.target.value)}
-                style={modalStyles.input}
                 required
               />
             </div>
 
             <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Start Time *</label>
-              <input
+              <Label htmlFor="supervision-start-time">Start Time *</Label>
+              <Input
+                id="supervision-start-time"
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                style={modalStyles.input}
                 required
               />
             </div>
 
             <div style={modalStyles.formGroup}>
-              <label style={modalStyles.label}>Duration (minutes)</label>
-              <select
-                value={duration}
-                onChange={(e) => setDuration(Number(e.target.value))}
-                style={modalStyles.input}
+              <Label htmlFor="supervision-duration">Duration (minutes)</Label>
+              <Select
+                value={String(duration)}
+                onValueChange={(val) => setDuration(Number(val))}
               >
-                <option value={45}>45 minutes</option>
-                <option value={60}>60 minutes (Standard)</option>
-                <option value={90}>90 minutes</option>
-              </select>
+                <SelectTrigger id="supervision-duration">
+                  <SelectValue placeholder="Select duration" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="45">45 minutes</SelectItem>
+                  <SelectItem value="60">60 minutes (Standard)</SelectItem>
+                  <SelectItem value="90">90 minutes</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           <div style={modalStyles.formGroupFull}>
-            <label style={modalStyles.label}>Supervisory Scope & Clinical Notes</label>
-            <textarea
+            <Label htmlFor="supervision-notes">Supervisory Scope & Clinical Notes</Label>
+            <Textarea
+              id="supervision-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              style={modalStyles.textarea}
               rows={3}
             />
           </div>
 
           <div style={modalStyles.footer}>
-            <button type="button" onClick={onClose} style={modalStyles.cancelBtn}>
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={submitting}
-              style={{
-                ...modalStyles.submitBtn,
-                backgroundColor: '#2563eb',
-              }}
             >
               {submitting ? 'Scheduling...' : 'Confirm & Schedule Supervision'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -1831,90 +1837,103 @@ function CreateAppointmentModal({
   return (
     <div style={styles.modalOverlay}>
       <div style={styles.modal} className="modal-container">
-        <button onClick={onClose} style={styles.closeBtn}>✕</button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-4 right-4 h-8 w-8 text-muted-foreground hover:text-foreground"
+        >
+          ✕
+        </Button>
         <h2 style={styles.modalTitle}>Create Appointment</h2>
 
         <div style={styles.formGroup}>
-          <label style={styles.label}>Client</label>
-          <select
-            value={data.clientId}
-            onChange={(e) => onChange({ clientId: e.target.value })}
-            style={styles.input}
+          <Label htmlFor="appointment-client">Client</Label>
+          <Select
+            value={data.clientId || undefined}
+            onValueChange={(val) => onChange({ clientId: val })}
           >
-            <option value="">Select a client...</option>
-            {clients.map(client => (
-              <option key={client.id} value={client.id}>
-                {client.firstName} {client.lastName}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id="appointment-client">
+              <SelectValue placeholder="Select a client..." />
+            </SelectTrigger>
+            <SelectContent>
+              {clients.map(client => (
+                <SelectItem key={client.id} value={client.id}>
+                  {client.firstName} {client.lastName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div style={styles.formGroup}>
-          <label style={styles.label}>Visit Type <span style={{ color: '#ef4444' }}>*</span></label>
-          <select
+          <Label htmlFor="appointment-visit-type">
+            Visit Type <span className="text-destructive">*</span>
+          </Label>
+          <Select
             value={data.visitType}
-            onChange={(e) => onChange({ visitType: e.target.value })}
-            style={styles.input}
+            onValueChange={(val) => onChange({ visitType: val })}
           >
-            <option value="REGULAR">Regular Visit</option>
-            <option value="INITIAL">Initial Visit</option>
-            <option value="ASSESSMENT">Assessment Visit</option>
-            <option value="RESPITE">Respite Care</option>
-            <option value="SUPERVISION">Supervisory Nurse Visit</option>
-            <option value="EMERGENCY">Emergency Response</option>
-            <option value="DISCHARGE">Discharge Visit</option>
-            <option value="MAKEUP">Make-up Visit</option>
-            <option value="CONCIERGE">Concierge Visit</option>
-            <option value="ONGOING_SUPPORT">Ongoing Support</option>
-          </select>
+            <SelectTrigger id="appointment-visit-type">
+              <SelectValue placeholder="Select visit type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="REGULAR">Regular Visit</SelectItem>
+              <SelectItem value="INITIAL">Initial Visit</SelectItem>
+              <SelectItem value="ASSESSMENT">Assessment Visit</SelectItem>
+              <SelectItem value="RESPITE">Respite Care</SelectItem>
+              <SelectItem value="SUPERVISION">Supervisory Nurse Visit</SelectItem>
+              <SelectItem value="EMERGENCY">Emergency Response</SelectItem>
+              <SelectItem value="DISCHARGE">Discharge Visit</SelectItem>
+              <SelectItem value="MAKEUP">Make-up Visit</SelectItem>
+              <SelectItem value="CONCIERGE">Concierge Visit</SelectItem>
+              <SelectItem value="ONGOING_SUPPORT">Ongoing Support</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div style={styles.formGroup}>
-          <label style={styles.label}>Date</label>
-          <input
+          <Label htmlFor="appointment-date">Date</Label>
+          <Input
+            id="appointment-date"
             type="date"
             value={data.date}
             onChange={(e) => onChange({ date: e.target.value })}
-            style={styles.input}
           />
         </div>
 
         <div style={styles.formGroup}>
-          <label style={styles.label}>Start Time</label>
-          <input
+          <Label htmlFor="appointment-start-time">Start Time</Label>
+          <Input
+            id="appointment-start-time"
             type="time"
             value={data.startTime}
             onChange={(e) => onChange({ startTime: e.target.value })}
-            style={styles.input}
           />
         </div>
 
         <div style={styles.formGroup}>
-          <label style={styles.label}>Duration (hours)</label>
-          <input
+          <Label htmlFor="appointment-duration">Duration (hours)</Label>
+          <Input
+            id="appointment-duration"
             type="number"
-            min="1"
-            max="8"
+            min={1}
+            max={8}
             value={data.duration}
-            onChange={(e) => onChange({ duration: parseInt(e.target.value) || 1 })}
-            style={styles.input}
+            onChange={(e) => onChange({ duration: parseInt(e.target.value, 10) || 1 })}
           />
         </div>
 
         <div style={styles.footer}>
-          <button onClick={onClose} style={styles.cancelBtn}>Cancel</button>
-          <button
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            style={{
-              ...styles.submitBtn,
-              opacity: isSubmitting ? 0.6 : 1,
-              cursor: isSubmitting ? 'not-allowed' : 'pointer',
-            }}
           >
             {isSubmitting ? 'Creating...' : 'Create'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -2,7 +2,10 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, Send, Ban, Edit } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Button, LoadingSpinner, ErrorMessage } from '@/core/components';
+import { LoadingSpinner, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { Badge } from '@/components/ui/badge.js';
 import { usePermissions } from '@/core/hooks';
 import { 
   useInvoice, 
@@ -11,7 +14,7 @@ import {
   useVoidInvoice,
   useDownloadInvoicePdf 
 } from '../hooks';
-import { formatCurrency, getInvoiceStatusColor } from '../utils';
+import { formatCurrency } from '../utils';
 
 export const InvoiceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -47,8 +50,6 @@ export const InvoiceDetail: React.FC = () => {
     );
   }
 
-  const statusColor = getInvoiceStatusColor(invoice.status);
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -56,17 +57,17 @@ export const InvoiceDetail: React.FC = () => {
           <Button
             variant="outline"
             onClick={() => goTo('/billing')}
-            leftIcon={<ArrowLeft className="h-4 w-4" />}
           >
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               Invoice {invoice.invoiceNumber}
             </h1>
-            <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium mt-2 ${statusColor}`}>
+            <Badge variant="outline" className="mt-2">
               {invoice.status.replace(/_/g, ' ')}
-            </span>
+            </Badge>
           </div>
         </div>
 
@@ -74,9 +75,9 @@ export const InvoiceDetail: React.FC = () => {
           <Button
             variant="outline"
             onClick={() => downloadPdf.mutate(invoice.id)}
-            leftIcon={<Download className="h-4 w-4" />}
             disabled={downloadPdf.isPending}
           >
+            <Download className="h-4 w-4 mr-2" />
             Download PDF
           </Button>
           {can('billing:write') && invoice.status === 'DRAFT' && (
@@ -84,15 +85,15 @@ export const InvoiceDetail: React.FC = () => {
               <Button
                 variant="outline"
                 onClick={() => goTo(`/billing/${invoice.id}/edit`)}
-                leftIcon={<Edit className="h-4 w-4" />}
               >
+                <Edit className="h-4 w-4 mr-2" />
                 Edit
               </Button>
               <Button
                 onClick={() => sendInvoice.mutate(invoice.id)}
-                leftIcon={<Send className="h-4 w-4" />}
                 disabled={sendInvoice.isPending}
               >
+                <Send className="h-4 w-4 mr-2" />
                 Send Invoice
               </Button>
             </>
@@ -105,162 +106,164 @@ export const InvoiceDetail: React.FC = () => {
                   voidInvoice.mutate(invoice.id);
                 }
               }}
-              leftIcon={<Ban className="h-4 w-4" />}
               disabled={voidInvoice.isPending}
             >
+              <Ban className="h-4 w-4 mr-2" />
               Void
             </Button>
           )}
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Payer</h3>
-            <p className="text-lg font-semibold">{invoice.payerName}</p>
-            <p className="text-sm text-gray-500">{invoice.payerType.replace(/_/g, ' ')}</p>
+      <Card>
+        <CardContent className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Payer</h3>
+              <p className="text-lg font-semibold">{invoice.payerName}</p>
+              <p className="text-sm text-gray-500">{invoice.payerType.replace(/_/g, ' ')}</p>
+            </div>
+
+            {invoice.clientName && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">Client</h3>
+                <p className="text-lg font-semibold">{invoice.clientName}</p>
+              </div>
+            )}
+
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Invoice Date</h3>
+              <p className="text-lg">{new Date(invoice.invoiceDate).toLocaleDateString()}</p>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Due Date</h3>
+              <p className="text-lg">{new Date(invoice.dueDate).toLocaleDateString()}</p>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Period</h3>
+              <p className="text-lg">
+                {new Date(invoice.periodStart).toLocaleDateString()} - {new Date(invoice.periodEnd).toLocaleDateString()}
+              </p>
+            </div>
+
+            {invoice.submittedDate && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">Submitted Date</h3>
+                <p className="text-lg">{new Date(invoice.submittedDate).toLocaleDateString()}</p>
+              </div>
+            )}
           </div>
 
-          {invoice.clientName && (
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-1">Client</h3>
-              <p className="text-lg font-semibold">{invoice.clientName}</p>
+          <div className="pt-6 border-t">
+            <h3 className="text-lg font-semibold mb-4">Line Items</h3>
+            <table className="w-full">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Service</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Date</th>
+                  <th className="px-4 py-2 text-center text-sm font-medium text-gray-700">Units</th>
+                  <th className="px-4 py-2 text-right text-sm font-medium text-gray-700">Rate</th>
+                  <th className="px-4 py-2 text-right text-sm font-medium text-gray-700">Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {invoice.lineItems.map((item) => (
+                  <tr key={item.id} className="hover:bg-muted/30">
+                    <td className="px-4 py-3">
+                      <div>
+                        <p className="font-medium">{item.serviceDescription}</p>
+                        <p className="text-sm text-gray-500">{item.serviceCode}</p>
+                        {item.clientName && (
+                          <p className="text-xs text-gray-400">{item.clientName}</p>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      {new Date(item.serviceDate).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {item.units} {item.unitType?.toLowerCase() ?? 'units'}
+                    </td>
+                    <td className="px-4 py-3 text-right">{formatCurrency(item.unitRate)}</td>
+                    <td className="px-4 py-3 text-right font-medium">{formatCurrency(item.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="border-t-2">
+                <tr>
+                  <td colSpan={4} className="px-4 py-2 text-right font-medium">Subtotal:</td>
+                  <td className="px-4 py-2 text-right">{formatCurrency(invoice.subtotal)}</td>
+                </tr>
+                {invoice.taxAmount > 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-2 text-right">Tax:</td>
+                    <td className="px-4 py-2 text-right">{formatCurrency(invoice.taxAmount)}</td>
+                  </tr>
+                )}
+                {invoice.discountAmount > 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-2 text-right">Discount:</td>
+                    <td className="px-4 py-2 text-right text-red-600">-{formatCurrency(invoice.discountAmount)}</td>
+                  </tr>
+                )}
+                {invoice.adjustmentAmount !== 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-2 text-right">Adjustments:</td>
+                    <td className="px-4 py-2 text-right">{formatCurrency(invoice.adjustmentAmount)}</td>
+                  </tr>
+                )}
+                <tr className="text-lg font-bold">
+                  <td colSpan={4} className="px-4 py-3 text-right">Total:</td>
+                  <td className="px-4 py-3 text-right">{formatCurrency(invoice.totalAmount)}</td>
+                </tr>
+                {invoice.paidAmount > 0 && (
+                  <>
+                    <tr className="text-green-600">
+                      <td colSpan={4} className="px-4 py-2 text-right">Amount Paid:</td>
+                      <td className="px-4 py-2 text-right">-{formatCurrency(invoice.paidAmount)}</td>
+                    </tr>
+                    <tr className="text-lg font-bold text-red-600">
+                      <td colSpan={4} className="px-4 py-3 text-right">Balance Due:</td>
+                      <td className="px-4 py-3 text-right">{formatCurrency(invoice.balanceDue)}</td>
+                    </tr>
+                  </>
+                )}
+              </tfoot>
+            </table>
+          </div>
+
+          {invoice.notes && (
+            <div className="pt-6 border-t">
+              <h3 className="text-sm font-medium text-gray-500 mb-2">Notes</h3>
+              <p className="text-gray-700">{invoice.notes}</p>
             </div>
           )}
 
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Invoice Date</h3>
-            <p className="text-lg">{new Date(invoice.invoiceDate).toLocaleDateString()}</p>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Due Date</h3>
-            <p className="text-lg">{new Date(invoice.dueDate).toLocaleDateString()}</p>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Period</h3>
-            <p className="text-lg">
-              {new Date(invoice.periodStart).toLocaleDateString()} - {new Date(invoice.periodEnd).toLocaleDateString()}
-            </p>
-          </div>
-
-          {invoice.submittedDate && (
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-1">Submitted Date</h3>
-              <p className="text-lg">{new Date(invoice.submittedDate).toLocaleDateString()}</p>
-            </div>
-          )}
-        </div>
-
-        <div className="pt-6 border-t">
-          <h3 className="text-lg font-semibold mb-4">Line Items</h3>
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Service</th>
-                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Date</th>
-                <th className="px-4 py-2 text-center text-sm font-medium text-gray-700">Units</th>
-                <th className="px-4 py-2 text-right text-sm font-medium text-gray-700">Rate</th>
-                <th className="px-4 py-2 text-right text-sm font-medium text-gray-700">Amount</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {invoice.lineItems.map((item) => (
-                <tr key={item.id}>
-                  <td className="px-4 py-3">
+          {payments && payments.length > 0 && (
+            <div className="pt-6 border-t">
+              <h3 className="text-lg font-semibold mb-4">Payment History</h3>
+              <div className="space-y-3">
+                {payments.map((payment) => (
+                  <div key={payment.id} className="flex justify-between items-center p-3 bg-muted/40 rounded-lg">
                     <div>
-                      <p className="font-medium">{item.serviceDescription}</p>
-                      <p className="text-sm text-gray-500">{item.serviceCode}</p>
-                      {item.clientName && (
-                        <p className="text-xs text-gray-400">{item.clientName}</p>
+                      <p className="font-medium">{formatCurrency(payment.amount)}</p>
+                      <p className="text-sm text-gray-500">
+                        {payment.paymentMethod.replace(/_/g, ' ')} • {new Date(payment.paymentDate).toLocaleDateString()}
+                      </p>
+                      {payment.referenceNumber && (
+                        <p className="text-xs text-gray-400">Ref: {payment.referenceNumber}</p>
                       )}
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    {new Date(item.serviceDate).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {item.units} {item.unitType?.toLowerCase() ?? 'units'}
-                  </td>
-                  <td className="px-4 py-3 text-right">{formatCurrency(item.unitRate)}</td>
-                  <td className="px-4 py-3 text-right font-medium">{formatCurrency(item.total)}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot className="border-t-2">
-              <tr>
-                <td colSpan={4} className="px-4 py-2 text-right font-medium">Subtotal:</td>
-                <td className="px-4 py-2 text-right">{formatCurrency(invoice.subtotal)}</td>
-              </tr>
-              {invoice.taxAmount > 0 && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-2 text-right">Tax:</td>
-                  <td className="px-4 py-2 text-right">{formatCurrency(invoice.taxAmount)}</td>
-                </tr>
-              )}
-              {invoice.discountAmount > 0 && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-2 text-right">Discount:</td>
-                  <td className="px-4 py-2 text-right text-red-600">-{formatCurrency(invoice.discountAmount)}</td>
-                </tr>
-              )}
-              {invoice.adjustmentAmount !== 0 && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-2 text-right">Adjustments:</td>
-                  <td className="px-4 py-2 text-right">{formatCurrency(invoice.adjustmentAmount)}</td>
-                </tr>
-              )}
-              <tr className="text-lg font-bold">
-                <td colSpan={4} className="px-4 py-3 text-right">Total:</td>
-                <td className="px-4 py-3 text-right">{formatCurrency(invoice.totalAmount)}</td>
-              </tr>
-              {invoice.paidAmount > 0 && (
-                <>
-                  <tr className="text-green-600">
-                    <td colSpan={4} className="px-4 py-2 text-right">Amount Paid:</td>
-                    <td className="px-4 py-2 text-right">-{formatCurrency(invoice.paidAmount)}</td>
-                  </tr>
-                  <tr className="text-lg font-bold text-red-600">
-                    <td colSpan={4} className="px-4 py-3 text-right">Balance Due:</td>
-                    <td className="px-4 py-3 text-right">{formatCurrency(invoice.balanceDue)}</td>
-                  </tr>
-                </>
-              )}
-            </tfoot>
-          </table>
-        </div>
-
-        {invoice.notes && (
-          <div className="pt-6 border-t">
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Notes</h3>
-            <p className="text-gray-700">{invoice.notes}</p>
-          </div>
-        )}
-
-        {payments && payments.length > 0 && (
-          <div className="pt-6 border-t">
-            <h3 className="text-lg font-semibold mb-4">Payment History</h3>
-            <div className="space-y-3">
-              {payments.map((payment) => (
-                <div key={payment.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                  <div>
-                    <p className="font-medium">{formatCurrency(payment.amount)}</p>
-                    <p className="text-sm text-gray-500">
-                      {payment.paymentMethod.replace(/_/g, ' ')} • {new Date(payment.paymentDate).toLocaleDateString()}
-                    </p>
-                    {payment.referenceNumber && (
-                      <p className="text-xs text-gray-400">Ref: {payment.referenceNumber}</p>
-                    )}
+                    <Badge variant="outline">{payment.status}</Badge>
                   </div>
-                  <span className="text-sm text-gray-600">{payment.status}</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -20,11 +20,12 @@ import {
 } from 'lucide-react';
 import { cn } from '@/core/utils';
 import { useAuth, usePermissions } from '@/core/hooks';
-import { Button } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
 
 export interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  isDesktopOpen?: boolean;
 }
 
 interface NavItem {
@@ -128,9 +129,16 @@ const navItems: NavItem[] = [
   },
 ];
 
-export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isDesktopOpen = true }) => {
   const { logout, user } = useAuth();
   const { can } = usePermissions();
+
+  const handleNavClick = () => {
+    // Only auto-close on navigation for mobile viewports (< 1024px)
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      onClose();
+    }
+  };
 
   // Filter navigation items based on permissions and roles
   const filteredNavItems = navItems.filter((item) => {
@@ -177,15 +185,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200',
-          'transform transition-transform duration-200 ease-in-out lg:translate-x-0',
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+          'transform transition-transform duration-200 ease-in-out',
+          isOpen ? 'translate-x-0' : '-translate-x-full',
+          isDesktopOpen ? 'lg:translate-x-0' : 'lg:-translate-x-full'
         )}
       >
         <div className="flex flex-col h-full">
-          {/* Close button (mobile only) */}
-          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 lg:hidden">
+          {/* Close button */}
+          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold">Menu</h2>
-            <Button variant="ghost" size="sm" onClick={onClose}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              aria-label="Close sidebar"
+            >
               <X className="h-5 w-5" />
             </Button>
           </div>
@@ -206,7 +220,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   key={item.path}
                   id={id}
                   to={item.path}
-                  onClick={onClose}
+                  onClick={handleNavClick}
                   className={({ isActive }) =>
                     cn(
                       'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
@@ -227,7 +241,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <div className="border-t border-gray-200 p-3 space-y-1">
             <NavLink
               to="/settings"
-              onClick={onClose}
+              onClick={handleNavClick}
               className={({ isActive }) =>
                 cn(
                   'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
@@ -240,16 +254,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <Settings className="h-5 w-5" />
               Settings
             </NavLink>
-            <button
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 px-3 py-2 h-auto text-sm font-medium text-gray-700 hover:bg-gray-100 font-normal"
               onClick={() => {
                 logout();
                 onClose();
               }}
-              className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100 w-full transition-colors"
             >
               <LogOut className="h-5 w-5" />
               Logout
-            </button>
+            </Button>
           </div>
         </div>
       </aside>

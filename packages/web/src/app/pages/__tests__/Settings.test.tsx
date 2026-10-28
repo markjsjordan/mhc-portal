@@ -302,4 +302,49 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
     expect(editBtn).toBeInTheDocument();
     expect(editBtn.className).toContain('shrink-0');
   });
+
+  it('renders edit modal centered with relative positioning above backdrop (wdvf3abzpb)', async () => {
+    renderSettings();
+
+    // Switch to Team tab
+    const teamTab = await screen.findByRole('button', { name: /Team/i });
+    fireEvent.click(teamTab);
+
+    // Verify member is listed
+    await screen.findByText('Admin User');
+
+    // Click Edit button
+    const editBtn = screen.getByRole('button', { name: /Edit Admin User/i });
+    fireEvent.click(editBtn);
+
+    // Verify modal heading is rendered
+    const modalHeading = await screen.findByRole('heading', { name: 'Edit Team Member' });
+    expect(modalHeading).toBeInTheDocument();
+
+    // Verify the modal card has relative positioning to sit above the fixed backdrop
+    const modalContent = modalHeading.closest('.relative.bg-white');
+    expect(modalContent).not.toBeNull();
+    expect(modalContent?.className).toContain('relative');
+    expect(modalContent?.className).toContain('bg-white');
+    expect(modalContent?.className).toContain('shadow-xl');
+
+    // Verify the centering container uses flex centering and not broken sm:block table/span hacks
+    const centeringContainer = modalContent?.parentElement;
+    expect(centeringContainer?.className).toContain('flex');
+    expect(centeringContainer?.className).toContain('items-center');
+    expect(centeringContainer?.className).toContain('justify-center');
+    expect(centeringContainer?.className).not.toContain('sm:block');
+
+    // Verify backdrop exists as a sibling
+    const backdrop = centeringContainer?.querySelector('.fixed.inset-0.bg-gray-500');
+    expect(backdrop).not.toBeNull();
+
+    // Verify close button works
+    const closeBtn = screen.getByRole('button', { name: /Close modal/i });
+    fireEvent.click(closeBtn);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('heading', { name: 'Edit Team Member' })).not.toBeInTheDocument();
+    });
+  });
 });

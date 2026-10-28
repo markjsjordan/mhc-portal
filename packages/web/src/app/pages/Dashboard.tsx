@@ -1,7 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, useDemoData, useOrganizationStats } from '@/core/hooks';
-import { Card, CardHeader, CardContent, Button, EmptyState, LoadDemoDataCard } from '@/core/components';
+import { EmptyState, LoadDemoDataCard } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
 import { Users, Calendar, ClipboardList, AlertCircle, Activity, CalendarPlus } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
@@ -44,7 +46,7 @@ export const Dashboard: React.FC = () => {
       <div id="dashboard" className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Welcome to Folk, {user?.name?.split(' ')[0]}!
+            Welcome to MHC Portal, {user?.name?.split(' ')[0]}!
           </h1>
           <p className="mt-1 text-gray-600">
             Let&apos;s get started with your home healthcare management.
@@ -108,8 +110,7 @@ export const Dashboard: React.FC = () => {
         {stats.map((stat) => (
           <Card
             key={stat.label}
-            padding="md"
-            className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 active:scale-95"
+            className="p-6 cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 active:scale-95"
             onClick={stat.onClick}
           >
             <div className="flex items-center justify-between">
@@ -126,7 +127,9 @@ export const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <CardHeader title="Recent Activity" />
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-gray-900">Recent Activity</CardTitle>
+          </CardHeader>
           <CardContent>
             <div id="visit-timeline">
               <EmptyState
@@ -157,7 +160,9 @@ export const Dashboard: React.FC = () => {
         </Card>
 
         <Card>
-          <CardHeader title="Upcoming Visits" />
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-gray-900">Upcoming Visits</CardTitle>
+          </CardHeader>
           <CardContent>
             <div id="today-visits">
               <EmptyState
@@ -167,7 +172,7 @@ export const Dashboard: React.FC = () => {
                 action={
                   <div className="flex flex-col sm:flex-row gap-3">
                     <Button
-                      variant="primary"
+                      variant="default"
                       size="sm"
                       onClick={() => navigate('/scheduling')}
                     >

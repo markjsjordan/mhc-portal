@@ -12,7 +12,8 @@
 
 import { useState, useEffect } from 'react';
 import { CheckCircle, CloudOff, RefreshCw, AlertCircle, WifiOff } from 'lucide-react';
-import { Badge } from '../../core/components/Badge.js';
+import { Badge } from '@/components/ui/badge.js';
+import { Button } from '@/components/ui/button.js';
 import { database } from '../../db/index.js';
 import { Q } from '@nozbe/watermelondb';
 
@@ -116,14 +117,14 @@ export function SyncStatusBadge() {
   if (!status.isOnline) {
     if (status.pendingCount > 0 || status.failedCount > 0) {
       return (
-        <Badge variant="warning" className="flex items-center gap-2">
+        <Badge variant="secondary" className="flex items-center gap-2">
           <WifiOff className="w-4 h-4" />
           <span>Offline - {status.pendingCount + status.failedCount} pending</span>
         </Badge>
       );
     }
     return (
-      <Badge variant="default" className="flex items-center gap-2">
+      <Badge variant="outline" className="flex items-center gap-2">
         <CloudOff className="w-4 h-4" />
         <span>Offline</span>
       </Badge>
@@ -132,25 +133,27 @@ export function SyncStatusBadge() {
 
   if (status.failedCount > 0) {
     return (
-      <Badge variant="error" className="flex items-center gap-2">
+      <Badge variant="destructive" className="flex items-center gap-2">
         <AlertCircle className="w-4 h-4" />
         <span>{status.failedCount} sync failed</span>
-        <button
+        <Button
           onClick={() => {
             void handleSyncNow();
           }}
-          className="ml-2 text-xs underline hover:no-underline"
+          variant="link"
+          size="xs"
+          className="ml-1 h-auto p-0 text-destructive underline"
           type="button"
         >
           Retry
-        </button>
+        </Button>
       </Badge>
     );
   }
 
   if (status.isSyncing) {
     return (
-      <Badge variant="warning" className="flex items-center gap-2">
+      <Badge variant="secondary" className="flex items-center gap-2">
         <RefreshCw className="w-4 h-4 animate-spin" />
         <span>Syncing {status.pendingCount} items...</span>
       </Badge>
@@ -159,16 +162,18 @@ export function SyncStatusBadge() {
 
   if (status.pendingCount > 0) {
     return (
-      <Badge variant="info" className="flex items-center gap-2">
+      <Badge variant="secondary" className="flex items-center gap-2">
         <CloudOff className="w-4 h-4" />
         <span>{status.pendingCount} pending sync</span>
-        <button
+        <Button
           onClick={handleSyncNow}
-          className="ml-2 text-xs underline hover:no-underline"
+          variant="link"
+          size="xs"
+          className="ml-1 h-auto p-0 underline"
           type="button"
         >
           Sync Now
-        </button>
+        </Button>
       </Badge>
     );
   }
@@ -179,7 +184,7 @@ export function SyncStatusBadge() {
     : 'never';
 
   return (
-    <Badge variant="success" className="flex items-center gap-2">
+    <Badge variant="outline" className="flex items-center gap-2">
       <CheckCircle className="w-4 h-4" />
       <span>Synced {timeAgo}</span>
     </Badge>

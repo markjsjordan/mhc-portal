@@ -2,18 +2,43 @@ import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { 
-  Button, 
-  Card, 
-  CardHeader, 
-  CardContent, 
-  Input, 
-  Select, 
-  FormField,
-  LoadingSpinner
-} from '@/core/components';
-import { formatDate } from '@/core/utils';
+import { LoadingSpinner } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
+import { Input } from '@/components/ui/input.js';
+import { Textarea } from '@/components/ui/textarea.js';
+import { Label } from '@/components/ui/label.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 import { useAuth } from '@/core/hooks/auth';
+
+const toDateInputValue = (date: string | Date | undefined): string => {
+  if (!date) return '';
+  if (date instanceof Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  if (typeof date === 'string') {
+    if (/^\d{4}-\d{2}-\d{2}/.test(date)) {
+      return date.slice(0, 10);
+    }
+    const parsed = new Date(date);
+    if (!isNaN(parsed.getTime())) {
+      const year = parsed.getFullYear();
+      const month = String(parsed.getMonth() + 1).padStart(2, '0');
+      const day = String(parsed.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  }
+  return '';
+};
 import { useApiClient } from '@/core/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { useClients, useBranches } from '@/verticals/client-demographics/hooks/index.js';
@@ -139,8 +164,8 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
       branchId: initialData?.branchId ?? user?.branchIds?.[0] ?? '',
       name: initialData?.name ?? '',
       planType: initialData?.planType ?? 'PERSONAL_CARE',
-      effectiveDate: initialData?.effectiveDate ?? formatDate(new Date()),
-      expirationDate: initialData?.expirationDate ?? '',
+      effectiveDate: toDateInputValue(initialData?.effectiveDate) || toDateInputValue(new Date()),
+      expirationDate: toDateInputValue(initialData?.expirationDate),
       coordinatorId: initialData?.coordinatorId ?? '',
       notes: initialData?.notes ?? '',
       goals: initialData?.goals ?? [],
@@ -191,174 +216,206 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
   };
 
   const renderBasicInfo = () => {
-    // Client select options
-    const clientOptions = [
-      { value: '', label: 'Select client...' },
-      ...clients.map((c) => ({
-        value: c.id,
-        label: `${c.firstName} ${c.lastName}${c.clientNumber ? ` (${c.clientNumber})` : ''}`,
-      })),
-    ];
-
-    // Branch select options
-    const branchOptions = [
-      { value: '', label: 'Select branch (optional)...' },
-      ...branches.map((b) => ({
-        value: b.id,
-        label: `${b.name}${b.code ? ` (${b.code})` : ''}`,
-      })),
-    ];
-
     // Organization select options
     const orgOptions = [
       { value: organizationId, label: 'Current Organization (Marquette Home Care)' },
     ];
 
     // Coordinator select options
-    const coordinatorOptions = [
-      { value: '', label: 'Select coordinator (optional)...' },
-      ...teamMembers
-        .filter((m) => m.roles.some((r) => ['COORDINATOR', 'ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'SUPER_ADMIN'].includes(r)))
-        .map((m) => ({
-          value: m.id,
-          label: `${m.firstName} ${m.lastName} (${m.email})`,
-        })),
-    ];
+    const coordinatorOptions = teamMembers
+      .filter((m) => m.roles.some((r) => ['COORDINATOR', 'ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'SUPER_ADMIN'].includes(r)))
+      .map((m) => ({
+        value: m.id,
+        label: `${m.firstName} ${m.lastName} (${m.email})`,
+      }));
 
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            label="Client"
-            error={errors.clientId?.message}
-            required
-          >
-            <select
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-              value={selectedClientId}
-              onChange={(e) => setValue('clientId', e.target.value, { shouldValidate: true })}
+          <div className="space-y-1.5">
+            <Label htmlFor="care-plan-client-select">
+              Client <span className="text-destructive">*</span>
+            </Label>
+            <Select
+              value={selectedClientId || ''}
+              onValueChange={(val) => setValue('clientId', val, { shouldValidate: true })}
             >
-              {clientOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </FormField>
+              <SelectTrigger id="care-plan-client-select">
+                <SelectValue placeholder="Select client..." />
+              </SelectTrigger>
+              <SelectContent>
+                {clients.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {`${c.firstName} ${c.lastName}${c.clientNumber ? ` (${c.clientNumber})` : ''}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.clientId?.message && (
+              <p className="text-destructive text-sm">{errors.clientId.message}</p>
+            )}
+          </div>
 
-          <FormField
-            label="Organization"
-            error={errors.organizationId?.message}
-            required
-          >
-            <select
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm bg-gray-50"
+          <div className="space-y-1.5">
+            <Label htmlFor="care-plan-org-select">
+              Organization <span className="text-destructive">*</span>
+            </Label>
+            <Select
               value={selectedOrgId || organizationId}
-              onChange={(e) => setValue('organizationId', e.target.value, { shouldValidate: true })}
+              onValueChange={(val) => setValue('organizationId', val, { shouldValidate: true })}
             >
-              {orgOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </FormField>
+              <SelectTrigger id="care-plan-org-select">
+                <SelectValue placeholder="Select organization..." />
+              </SelectTrigger>
+              <SelectContent>
+                {orgOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.organizationId?.message && (
+              <p className="text-destructive text-sm">{errors.organizationId.message}</p>
+            )}
+          </div>
 
-          <FormField
-            label="Branch (Optional)"
-            error={errors.branchId?.message}
-          >
-            <select
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-              value={selectedBranchId || ''}
-              onChange={(e) => setValue('branchId', e.target.value, { shouldValidate: true })}
+          <div className="space-y-1.5">
+            <Label htmlFor="care-plan-branch-select">
+              Branch (Optional)
+            </Label>
+            <Select
+              value={selectedBranchId || '__none__'}
+              onValueChange={(val) => setValue('branchId', val === '__none__' ? '' : val, { shouldValidate: true })}
             >
-              {branchOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </FormField>
+              <SelectTrigger id="care-plan-branch-select">
+                <SelectValue placeholder="Select branch (optional)..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Select branch (optional)...</SelectItem>
+                {branches.map((b) => (
+                  <SelectItem key={b.id} value={b.id}>
+                    {`${b.name}${b.code ? ` (${b.code})` : ''}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.branchId?.message && (
+              <p className="text-destructive text-sm">{errors.branchId.message}</p>
+            )}
+          </div>
 
-          <FormField
-            label="Coordinator (Optional)"
-            error={errors.coordinatorId?.message}
-          >
-            <select
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-              value={selectedCoordinatorId || ''}
-              onChange={(e) => setValue('coordinatorId', e.target.value, { shouldValidate: true })}
+          <div className="space-y-1.5">
+            <Label htmlFor="care-plan-coordinator-select">
+              Coordinator (Optional)
+            </Label>
+            <Select
+              value={selectedCoordinatorId || '__none__'}
+              onValueChange={(val) => setValue('coordinatorId', val === '__none__' ? '' : val, { shouldValidate: true })}
             >
-              {coordinatorOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </FormField>
+              <SelectTrigger id="care-plan-coordinator-select">
+                <SelectValue placeholder="Select coordinator (optional)..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Select coordinator (optional)...</SelectItem>
+                {coordinatorOptions.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>
+                    {c.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.coordinatorId?.message && (
+              <p className="text-destructive text-sm">{errors.coordinatorId.message}</p>
+            )}
+          </div>
         </div>
 
-        <FormField
-          label="Care Plan Name"
-          error={errors.name?.message}
-          required
-        >
+        <div className="space-y-1.5">
+          <Label htmlFor="care-plan-name-input">
+            Care Plan Name <span className="text-destructive">*</span>
+          </Label>
           <Input
+            id="care-plan-name-input"
             {...register('name')}
             placeholder="Enter care plan name"
           />
-        </FormField>
+          {errors.name?.message && (
+            <p className="text-destructive text-sm">{errors.name.message}</p>
+          )}
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <FormField
-          label="Plan Type"
-          error={errors.planType?.message}
-          required
-        >
-          <Select
-            options={planTypeOptions}
-            value={getValues('planType')}
-            onChange={(e) => setValue('planType', e.target.value as CarePlanFormData['planType'])}
-          />
-        </FormField>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-1.5">
+            <Label htmlFor="care-plan-type-select">
+              Plan Type <span className="text-destructive">*</span>
+            </Label>
+            <Select
+              value={watch('planType')}
+              onValueChange={(val) => setValue('planType', val as CarePlanFormData['planType'], { shouldValidate: true })}
+            >
+              <SelectTrigger id="care-plan-type-select">
+                <SelectValue placeholder="Select plan type..." />
+              </SelectTrigger>
+              <SelectContent>
+                {planTypeOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.planType?.message && (
+              <p className="text-destructive text-sm">{errors.planType.message}</p>
+            )}
+          </div>
 
-        <FormField
-          label="Effective Date"
-          error={errors.effectiveDate?.message}
-          required
-        >
+          <div className="space-y-1.5">
+            <Label htmlFor="care-plan-effective-date">
+              Effective Date <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="care-plan-effective-date"
+              {...register('effectiveDate')}
+              type="date"
+            />
+            {errors.effectiveDate?.message && (
+              <p className="text-destructive text-sm">{errors.effectiveDate.message}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="care-plan-expiration-date">
+            Expiration Date (Optional)
+          </Label>
           <Input
-            {...register('effectiveDate')}
+            id="care-plan-expiration-date"
+            {...register('expirationDate')}
             type="date"
           />
-        </FormField>
+          {errors.expirationDate?.message && (
+            <p className="text-destructive text-sm">{errors.expirationDate.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="care-plan-notes">
+            Notes (Optional)
+          </Label>
+          <Textarea
+            id="care-plan-notes"
+            {...register('notes')}
+            placeholder="Enter any additional notes"
+            rows={4}
+          />
+          {errors.notes?.message && (
+            <p className="text-destructive text-sm">{errors.notes.message}</p>
+          )}
+        </div>
       </div>
-
-      <FormField
-        label="Expiration Date (Optional)"
-        error={errors.expirationDate?.message}
-      >
-        <Input
-          {...register('expirationDate')}
-          type="date"
-        />
-      </FormField>
-
-      <FormField
-        label="Notes (Optional)"
-        error={errors.notes?.message}
-      >
-        <textarea
-          {...register('notes')}
-          placeholder="Enter any additional notes"
-          rows={4}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
-      </FormField>
-    </div>
-  );
-};
+    );
+  };
 
   const renderGoals = () => (
     <div className="space-y-6">
@@ -386,85 +443,130 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
       </div>
 
       {goalFields.length === 0 ? (
-        <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-md">
-          <p className="text-gray-500">No goals added yet</p>
-          <p className="text-sm text-gray-400 mt-2">Click "Add Goal" to define care goals for this care plan</p>
+        <div className="text-center py-8 border-2 border-dashed border-border rounded-md">
+          <p className="text-muted-foreground">No goals added yet</p>
+          <p className="text-sm text-muted-foreground/80 mt-2">Click "Add Goal" to define care goals for this care plan</p>
         </div>
       ) : (
         <div className="space-y-4">
           {goalFields.map((field, index) => (
             <Card key={field.id}>
-              <CardHeader title={`Goal ${index + 1}`} />
+              <CardHeader>
+                <CardTitle className="text-base">{`Goal ${index + 1}`}</CardTitle>
+              </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      label="Goal Name"
-                      error={errors.goals?.[index]?.name?.message}
-                      required
-                    >
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`goal-${index}-name`}>
+                        Goal Name <span className="text-destructive">*</span>
+                      </Label>
                       <Input
+                        id={`goal-${index}-name`}
                         {...register(`goals.${index}.name`)}
                         placeholder="Enter goal name"
                       />
-                    </FormField>
+                      {errors.goals?.[index]?.name?.message && (
+                        <p className="text-destructive text-sm">{errors.goals[index]?.name?.message}</p>
+                      )}
+                    </div>
 
-                    <FormField
-                      label="Target Date (Optional)"
-                      error={errors.goals?.[index]?.targetDate?.message}
-                    >
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`goal-${index}-target-date`}>
+                        Target Date (Optional)
+                      </Label>
                       <Input
+                        id={`goal-${index}-target-date`}
                         {...register(`goals.${index}.targetDate`)}
                         type="date"
                       />
-                    </FormField>
+                      {errors.goals?.[index]?.targetDate?.message && (
+                        <p className="text-destructive text-sm">{errors.goals[index]?.targetDate?.message}</p>
+                      )}
+                    </div>
                   </div>
 
-                  <FormField
-                    label="Description (Optional)"
-                    error={errors.goals?.[index]?.description?.message}
-                  >
-                    <textarea
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`goal-${index}-description`}>
+                      Description (Optional)
+                    </Label>
+                    <Textarea
+                      id={`goal-${index}-description`}
                       {...register(`goals.${index}.description`)}
                       placeholder="Enter goal description"
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-                  </FormField>
+                    {errors.goals?.[index]?.description?.message && (
+                      <p className="text-destructive text-sm">{errors.goals[index]?.description?.message}</p>
+                    )}
+                  </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      label="Category"
-                      error={errors.goals?.[index]?.category?.message}
-                    >
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`goal-${index}-category`}>Category</Label>
                       <Select
-                        options={goalCategoryOptions}
-                        value={getValues(`goals.${index}.category`)}
-                        onChange={(e) => setValue(`goals.${index}.category`, e.target.value)}
-                      />
-                    </FormField>
+                        value={watch(`goals.${index}.category`) || 'OTHER'}
+                        onValueChange={(val) => setValue(`goals.${index}.category`, val)}
+                      >
+                        <SelectTrigger id={`goal-${index}-category`}>
+                          <SelectValue placeholder="Select category..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {goalCategoryOptions.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.goals?.[index]?.category?.message && (
+                        <p className="text-destructive text-sm">{errors.goals[index]?.category?.message}</p>
+                      )}
+                    </div>
 
-                    <FormField
-                      label="Priority"
-                      error={errors.goals?.[index]?.priority?.message}
-                    >
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`goal-${index}-priority`}>Priority</Label>
                       <Select
-                        options={priorityOptions}
-                        value={getValues(`goals.${index}.priority`)}
-                        onChange={(e) => setValue(`goals.${index}.priority`, e.target.value)}
-                      />
-                    </FormField>
+                        value={watch(`goals.${index}.priority`) || 'MEDIUM'}
+                        onValueChange={(val) => setValue(`goals.${index}.priority`, val)}
+                      >
+                        <SelectTrigger id={`goal-${index}-priority`}>
+                          <SelectValue placeholder="Select priority..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {priorityOptions.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.goals?.[index]?.priority?.message && (
+                        <p className="text-destructive text-sm">{errors.goals[index]?.priority?.message}</p>
+                      )}
+                    </div>
 
-                    <FormField
-                      label="Status"
-                      error={errors.goals?.[index]?.status?.message}
-                    >
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`goal-${index}-status`}>Status</Label>
                       <Select
-                        options={goalStatusOptions}
-                        value={getValues(`goals.${index}.status`)}
-                        onChange={(e) => setValue(`goals.${index}.status`, e.target.value)}
-                      />
-                    </FormField>
+                        value={watch(`goals.${index}.status`) || 'NOT_STARTED'}
+                        onValueChange={(val) => setValue(`goals.${index}.status`, val)}
+                      >
+                        <SelectTrigger id={`goal-${index}-status`}>
+                          <SelectValue placeholder="Select status..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {goalStatusOptions.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.goals?.[index]?.status?.message && (
+                        <p className="text-destructive text-sm">{errors.goals[index]?.status?.message}</p>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex justify-end">
@@ -473,7 +575,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => removeGoal(index)}
-                      className="text-red-600 hover:text-red-700 flex items-center gap-2"
+                      className="text-destructive hover:text-destructive flex items-center gap-2"
                     >
                       <Trash2 className="h-4 w-4" />
                       Remove Goal
@@ -490,9 +592,9 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
 
   const renderInterventions = () => (
     <div className="space-y-6">
-      <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-md">
-        <p className="text-gray-500">Interventions will be implemented in a future update</p>
-        <p className="text-sm text-gray-400 mt-2">This will include intervention planning, scheduling, and instructions</p>
+      <div className="text-center py-8 border-2 border-dashed border-border rounded-md">
+        <p className="text-muted-foreground">Interventions will be implemented in a future update</p>
+        <p className="text-sm text-muted-foreground/80 mt-2">This will include intervention planning, scheduling, and instructions</p>
       </div>
     </div>
   );
@@ -505,33 +607,35 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
         <h3 className="text-lg font-medium">Review Care Plan</h3>
         
         <Card>
-          <CardHeader title="Basic Information" />
+          <CardHeader>
+            <CardTitle className="text-base">Basic Information</CardTitle>
+          </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <dt className="text-sm font-medium text-gray-500">Name</dt>
-                <dd className="mt-1 text-sm text-gray-900">{watchedValues.name}</dd>
+                <dt className="text-sm font-medium text-muted-foreground">Name</dt>
+                <dd className="mt-1 text-sm">{watchedValues.name}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Plan Type</dt>
-                <dd className="mt-1 text-sm text-gray-900">{watchedValues.planType?.replace(/_/g, ' ')}</dd>
+                <dt className="text-sm font-medium text-muted-foreground">Plan Type</dt>
+                <dd className="mt-1 text-sm">{watchedValues.planType?.replace(/_/g, ' ')}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Client ID</dt>
-                <dd className="mt-1 text-sm text-gray-900">{watchedValues.clientId}</dd>
+                <dt className="text-sm font-medium text-muted-foreground">Client ID</dt>
+                <dd className="mt-1 text-sm">{watchedValues.clientId}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Organization ID</dt>
-                <dd className="mt-1 text-sm text-gray-900">{watchedValues.organizationId}</dd>
+                <dt className="text-sm font-medium text-muted-foreground">Organization ID</dt>
+                <dd className="mt-1 text-sm">{watchedValues.organizationId}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Effective Date</dt>
-                <dd className="mt-1 text-sm text-gray-900">{watchedValues.effectiveDate}</dd>
+                <dt className="text-sm font-medium text-muted-foreground">Effective Date</dt>
+                <dd className="mt-1 text-sm">{watchedValues.effectiveDate}</dd>
               </div>
               {watchedValues.expirationDate && (
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Expiration Date</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{watchedValues.expirationDate}</dd>
+                  <dt className="text-sm font-medium text-muted-foreground">Expiration Date</dt>
+                  <dd className="mt-1 text-sm">{watchedValues.expirationDate}</dd>
                 </div>
               )}
             </dl>
@@ -540,16 +644,18 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
 
         {watchedValues.goals && watchedValues.goals.length > 0 && (
           <Card>
-            <CardHeader title={`Goals (${watchedValues.goals.length})`} />
+            <CardHeader>
+              <CardTitle className="text-base">{`Goals (${watchedValues.goals.length})`}</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {watchedValues.goals.map((goal, index) => (
-                  <div key={index} className="border-l-4 border-blue-500 pl-4 py-2">
+                  <div key={index} className="border-l-4 border-primary pl-4 py-2">
                     <h4 className="font-medium">{goal.name}</h4>
                     {goal.description && (
-                      <p className="text-sm text-gray-600 mt-1">{goal.description}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{goal.description}</p>
                     )}
-                    <div className="flex items-center gap-4 text-xs text-gray-500 mt-2">
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
                       {goal.category && <span>{goal.category.replace(/_/g, ' ')}</span>}
                       {goal.priority && <span>Priority: {goal.priority}</span>}
                       {goal.targetDate && <span>Target: {goal.targetDate}</span>}
@@ -562,16 +668,18 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
         )}
 
         <Card>
-          <CardHeader title="Next Steps" />
+          <CardHeader>
+            <CardTitle className="text-base">Next Steps</CardTitle>
+          </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="border-l-4 border-green-500 pl-4">
                 <h4 className="font-medium">Task Templates</h4>
-                <p className="text-sm text-gray-600">Create task templates for recurring care activities</p>
+                <p className="text-sm text-muted-foreground">Create task templates for recurring care activities</p>
               </div>
               <div className="border-l-4 border-purple-500 pl-4">
                 <h4 className="font-medium">Assign Caregivers</h4>
-                <p className="text-sm text-gray-600">Assign primary caregivers and backup staff</p>
+                <p className="text-sm text-muted-foreground">Assign primary caregivers and backup staff</p>
               </div>
             </div>
           </CardContent>
@@ -581,31 +689,31 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="w-full overflow-x-hidden space-y-6">
       {/* Progress Indicator */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap gap-2 md:gap-0 md:flex-nowrap md:items-center md:justify-between">
         {steps.map((step, index) => (
-          <div key={index} className="flex items-center">
+          <div key={index} className="flex items-center flex-shrink-0">
             <div
               className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
                 index <= currentStep
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-600'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground'
               }`}
             >
               {index + 1}
             </div>
             <div className="ml-3">
               <p className={`text-sm font-medium ${
-                index <= currentStep ? 'text-blue-600' : 'text-gray-500'
+                index <= currentStep ? 'text-primary' : 'text-muted-foreground'
               }`}>
                 {step.title}
               </p>
-              <p className="text-xs text-gray-500">{step.description}</p>
+              <p className="text-xs text-muted-foreground hidden md:block">{step.description}</p>
             </div>
             {index < steps.length - 1 && (
-              <div className={`flex-1 h-px mx-4 ${
-                index < currentStep ? 'bg-blue-600' : 'bg-gray-200'
+              <div className={`hidden md:block flex-1 h-px mx-4 ${
+                index < currentStep ? 'bg-primary' : 'bg-muted'
               }`} />
             )}
           </div>

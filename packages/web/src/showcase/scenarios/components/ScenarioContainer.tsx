@@ -8,6 +8,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, RotateCcw } from 'lucide-react';
 import { useScenario } from '../ScenarioContext';
+import { Button } from '@/components/ui/button';
 
 export const ScenarioContainer: React.FC = () => {
   const {
@@ -59,20 +60,24 @@ export const ScenarioContainer: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2">
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={restartScenario}
-                  className="p-2 text-gray-400 hover:text-white transition-colors"
+                  className="text-gray-400 hover:text-white"
                   title="Restart Scenario"
                 >
                   <RotateCcw className="h-5 w-5" />
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={exitScenario}
-                  className="p-2 text-gray-400 hover:text-white transition-colors"
+                  className="text-gray-400 hover:text-white"
                   title="Exit Scenario"
                 >
                   <X className="h-5 w-5" />
-                </button>
+                </Button>
               </div>
             </div>
           </div>

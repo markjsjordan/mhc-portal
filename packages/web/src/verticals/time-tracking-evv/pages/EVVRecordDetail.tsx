@@ -1,7 +1,10 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin } from 'lucide-react';
-import { Button, LoadingSpinner, ErrorMessage } from '@/core/components';
+import { LoadingSpinner, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { Badge } from '@/components/ui/badge.js';
 import { useEVVRecord } from '../hooks';
 import toast from 'react-hot-toast';
 
@@ -23,12 +26,13 @@ export const EVVRecordDetail: React.FC = () => {
       <ErrorMessage
         message="Failed to load EVV record"
         action={
-          // @ts-ignore
-          <Button onClick={() => {
-          Promise.resolve(navigate('/time-tracking')).catch((err: unknown) => {
-            toast.error(err instanceof Error ? err.message : 'Navigation failed');
-          });
-        }}>
+          <Button
+            onClick={() => {
+              Promise.resolve(navigate('/time-tracking')).catch((err: unknown) => {
+                toast.error(err instanceof Error ? err.message : 'Navigation failed');
+              });
+            }}
+          >
             Back to List
           </Button>
         }
@@ -39,88 +43,87 @@ export const EVVRecordDetail: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        {/* @ts-ignore */}
         <Button
           variant="outline"
           onClick={() => {
-              Promise.resolve(navigate('/time-tracking')).catch((err: unknown) => {
-                toast.error(err instanceof Error ? err.message : 'Navigation failed');
-              });
-            }}
-          leftIcon={(() => { 
-            // @ts-ignore
-            return <ArrowLeft className="h-4 w-4" />; 
-          })()}
+            Promise.resolve(navigate('/time-tracking')).catch((err: unknown) => {
+              toast.error(err instanceof Error ? err.message : 'Navigation failed');
+            });
+          }}
         >
+          <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
         <h1 className="text-2xl font-bold text-gray-900">EVV Record Details</h1>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Visit ID</h3>
-            <p className="text-lg font-semibold">{record.visitId}</p>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Status</h3>
-            <p className="text-lg font-semibold">{record.recordStatus.replace('_', ' ')}</p>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Clock In</h3>
-            <p className="text-lg">{new Date(record.clockInTime).toLocaleString()}</p>
-          </div>
-
-          {record.clockOutTime && (
+      <Card>
+        <CardContent className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-1">Clock Out</h3>
-              <p className="text-lg">{new Date(record.clockOutTime).toLocaleString()}</p>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Visit ID</h3>
+              <p className="text-lg font-semibold">{record.visitId}</p>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Status</h3>
+              <Badge variant="outline" className="text-sm font-semibold">
+                {record.recordStatus.replace('_', ' ')}
+              </Badge>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Clock In</h3>
+              <p className="text-lg">{new Date(record.clockInTime).toLocaleString()}</p>
+            </div>
+
+            {record.clockOutTime && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">Clock Out</h3>
+                <p className="text-lg">{new Date(record.clockOutTime).toLocaleString()}</p>
+              </div>
+            )}
+
+            {record.totalDuration && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">Total Duration</h3>
+                <p className="text-lg font-semibold">{record.totalDuration} minutes</p>
+              </div>
+            )}
+
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Verification Level</h3>
+              <p className="text-lg">{record.verificationLevel}</p>
+            </div>
+          </div>
+
+          {record.clockInVerification?.latitude != null && record.clockInVerification.longitude != null && (
+            <div className="pt-6 border-t">
+              <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                GPS Coordinates
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-sm text-gray-500">Latitude:</span>
+                  <p className="font-mono">{record.clockInVerification.latitude}</p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500">Longitude:</span>
+                  <p className="font-mono">{record.clockInVerification.longitude}</p>
+                </div>
+              </div>
             </div>
           )}
 
-          {record.totalDuration && (
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-1">Total Duration</h3>
-              <p className="text-lg font-semibold">{record.totalDuration} minutes</p>
+          {record.notes && (
+            <div className="pt-6 border-t">
+              <h3 className="text-sm font-medium text-gray-500 mb-2">Notes</h3>
+              <p className="text-gray-700">{record.notes}</p>
             </div>
           )}
-
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Verification Level</h3>
-            <p className="text-lg">{record.verificationLevel}</p>
-          </div>
-        </div>
-
-        {record.clockInVerification?.latitude != null && record.clockInVerification?.longitude != null && (
-          <div className="pt-6 border-t">
-            <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center gap-2">
-              {/* @ts-ignore */}
-              <MapPin className="h-4 w-4" />
-              GPS Coordinates
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <span className="text-sm text-gray-500">Latitude:</span>
-                <p className="font-mono">{record.clockInVerification.latitude}</p>
-              </div>
-              <div>
-                <span className="text-sm text-gray-500">Longitude:</span>
-                <p className="font-mono">{record.clockInVerification.longitude}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {record.notes && (
-          <div className="pt-6 border-t">
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Notes</h3>
-            <p className="text-gray-700">{record.notes}</p>
-          </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

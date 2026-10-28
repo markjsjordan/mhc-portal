@@ -77,6 +77,12 @@ export default [
       // React rules
       ...react.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
+      // React Compiler rules: downgrade from error to warn (pre-existing violations, gradual migration)
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/immutability': 'warn',
+      'react-hooks/refs': 'warn',
+      'react-hooks/purity': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
@@ -145,6 +151,21 @@ export default [
     files: ['**/__tests__/**/*.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+  {
+    // shadcn/ui guard (wdvf3ac32k): raw form/button controls must come from
+    // @/components/ui/*. The primitives themselves are exempt.
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/components/ui/**', 'src/components/ai/**', '**/__tests__/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "JSXOpeningElement[name.name=/^(button|input|select|textarea)$/]",
+          message: 'Use the shadcn primitive from @/components/ui/* instead of a raw <button>/<input>/<select>/<textarea>.',
+        },
+      ],
     },
   },
   {

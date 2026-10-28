@@ -18,7 +18,17 @@ import {
   Plus,
   ChevronDown,
 } from 'lucide-react';
-import { LoadingSpinner, EmptyState, ErrorMessage, Button } from '@/core/components';
+import { LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 import { CreateVisitModal } from '@/core/components/forms/CreateVisitModal';
 import { useVisits } from '../hooks/useVisits';
 import { VisitCard, SummaryCard, VisitFilters } from '../components';
@@ -279,21 +289,24 @@ export const VisitList: React.FC = () => {
         <div className="flex gap-3 items-center">
           <div className="relative inline-flex rounded-md shadow-sm">
             <Button
-              variant="primary"
+              variant="default"
               size="sm"
-              leftIcon={<Plus className="h-4 w-4" />}
               onClick={() => handleOpenCreateModal('REGULAR')}
+              className="rounded-r-none"
             >
+              <Plus className="h-4 w-4 mr-2" />
               Schedule Visit
             </Button>
-            <button
+            <Button
               type="button"
+              variant="default"
+              size="icon-sm"
               onClick={() => setIsDropdownOpen((prev) => !prev)}
-              className="inline-flex items-center px-2 py-1.5 border border-l-0 border-blue-600 rounded-r-md bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-l-none border-l border-primary-foreground/20"
               aria-label="Select visit type to schedule"
             >
               <ChevronDown className="h-4 w-4" />
-            </button>
+            </Button>
 
             {isDropdownOpen && (
               <>
@@ -301,23 +314,25 @@ export const VisitList: React.FC = () => {
                   className="fixed inset-0 z-10"
                   onClick={() => setIsDropdownOpen(false)}
                 />
-                <div className="absolute right-0 top-full mt-1 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 py-1 max-h-80 overflow-y-auto">
-                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">
+                <div className="absolute right-0 top-full mt-1 w-64 rounded-md shadow-lg bg-card text-card-foreground border border-border z-20 py-1 max-h-80 overflow-y-auto">
+                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">
                     Schedule by Visit Type
                   </div>
                   {Object.entries(VISIT_TYPES).map(([typeKey, config]) => {
                     const type = typeKey as VisitType;
                     const Icon = config.icon;
                     return (
-                      <button
+                      <Button
                         key={type}
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleOpenCreateModal(type)}
-                        className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        className="w-full justify-start h-auto px-3 py-2 text-sm font-normal text-left"
                       >
                         <Icon className={`h-4 w-4 flex-shrink-0 ${config.colorClass}`} />
                         <span className="truncate">{config.label}</span>
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
@@ -329,30 +344,30 @@ export const VisitList: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              leftIcon={<Calendar className="h-4 w-4 text-gray-600" />}
             >
+              <Calendar className="h-4 w-4 mr-2 text-gray-600" />
               Schedule Builder
             </Button>
           </Link>
-          <div className="flex border border-gray-300 rounded-md">
-            <button
+          <div className="flex border border-input rounded-md overflow-hidden">
+            <Button
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="icon"
               onClick={() => setViewMode('grid')}
-              className={`p-2 ${
-                viewMode === 'grid' ? 'bg-gray-100' : 'hover:bg-gray-50'
-              }`}
               aria-label="Grid view"
+              className="rounded-none h-8 w-8"
             >
-              <Grid className="h-5 w-5 text-gray-700" />
-            </button>
-            <button
+              <Grid className="h-4 w-4 text-gray-700" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="icon"
               onClick={() => setViewMode('list')}
-              className={`p-2 ${
-                viewMode === 'list' ? 'bg-gray-100' : 'hover:bg-gray-50'
-              }`}
               aria-label="List view"
+              className="rounded-none h-8 w-8"
             >
-              <List className="h-5 w-5 text-gray-700" />
-            </button>
+              <List className="h-4 w-4 text-gray-700" />
+            </Button>
           </div>
         </div>
       </div>
@@ -412,22 +427,24 @@ export const VisitList: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
+            <Input
               type="text"
               placeholder="Search by client, caregiver, service, address, or visit #..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-9 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+              className="w-full pl-9 pr-9 bg-white"
             />
             {searchQuery && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-xs"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 h-6 w-6"
                 aria-label="Clear search"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             )}
           </div>
 
@@ -439,97 +456,111 @@ export const VisitList: React.FC = () => {
             />
 
             {hasAnyFilterActive && (
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={clearAllFilters}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 title="Clear all active filters"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
                 <span className="hidden sm:inline">Clear All</span>
-              </button>
+              </Button>
             )}
           </div>
         </div>
 
         {/* Active Filter Chips */}
         {hasAnyFilterActive && (
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100 text-xs">
-            <span className="text-gray-500 font-medium">Active filters:</span>
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border text-xs">
+            <span className="text-muted-foreground font-medium">Active filters:</span>
 
             {activeSummaryFilter && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 font-medium capitalize">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium capitalize">
                 Tab: {activeSummaryFilter}
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-xs"
                   onClick={() => setActiveSummaryFilter(null)}
-                  className="hover:text-blue-900 ml-0.5"
+                  className="hover:text-inherit ml-0.5 h-3.5 w-3.5 p-0 hover:bg-transparent"
+                  aria-label="Remove tab filter"
                 >
                   <X className="w-3 h-3" />
-                </button>
+                </Button>
               </span>
             )}
 
             {debouncedSearch && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 text-gray-800 font-medium">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted text-foreground font-medium">
                 Search: &quot;{debouncedSearch}&quot;
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-xs"
                   onClick={() => setSearchQuery('')}
-                  className="hover:text-gray-900 ml-0.5"
+                  className="hover:text-inherit ml-0.5 h-3.5 w-3.5 p-0 hover:bg-transparent"
+                  aria-label="Remove search filter"
                 >
                   <X className="w-3 h-3" />
-                </button>
+                </Button>
               </span>
             )}
 
             {advancedFilters.status?.map((st) => (
               <span
                 key={st}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 font-medium"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground font-medium"
               >
                 Status: {VISIT_STATUS_LABELS[st] || st}
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-xs"
                   onClick={() =>
                     setAdvancedFilters({
                       ...advancedFilters,
                       status: advancedFilters.status?.filter((s) => s !== st),
                     })
                   }
-                  className="hover:text-indigo-900 ml-0.5"
+                  className="hover:text-inherit ml-0.5 h-3.5 w-3.5 p-0 hover:bg-transparent"
+                  aria-label={`Remove status ${st} filter`}
                 >
                   <X className="w-3 h-3" />
-                </button>
+                </Button>
               </span>
             ))}
 
             {advancedFilters.visitType?.map((vt) => (
               <span
                 key={vt}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 font-medium"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground font-medium"
               >
                 Type: {VISIT_TYPE_LABELS[vt] || vt}
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-xs"
                   onClick={() =>
                     setAdvancedFilters({
                       ...advancedFilters,
                       visitType: advancedFilters.visitType?.filter((t) => t !== vt),
                     })
                   }
-                  className="hover:text-purple-900 ml-0.5"
+                  className="hover:text-inherit ml-0.5 h-3.5 w-3.5 p-0 hover:bg-transparent"
+                  aria-label={`Remove type ${vt} filter`}
                 >
                   <X className="w-3 h-3" />
-                </button>
+                </Button>
               </span>
             ))}
 
             {(advancedFilters.dateFrom || advancedFilters.dateTo) && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 font-medium">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground font-medium">
                 Date: {String(advancedFilters.dateFrom || 'Any')} to {String(advancedFilters.dateTo || 'Any')}
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-xs"
                   onClick={() =>
                     setAdvancedFilters({
                       ...advancedFilters,
@@ -537,20 +568,23 @@ export const VisitList: React.FC = () => {
                       dateTo: undefined,
                     })
                   }
-                  className="hover:text-amber-900 ml-0.5"
+                  className="hover:text-inherit ml-0.5 h-3.5 w-3.5 p-0 hover:bg-transparent"
+                  aria-label="Remove date filter"
                 >
                   <X className="w-3 h-3" />
-                </button>
+                </Button>
               </span>
             )}
 
-            <button
+            <Button
               type="button"
+              variant="link"
+              size="xs"
               onClick={clearAllFilters}
-              className="text-blue-600 hover:text-blue-800 hover:underline font-medium ml-1"
+              className="font-medium ml-1 h-auto p-0"
             >
               Reset all
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -615,62 +649,73 @@ export const VisitList: React.FC = () => {
 
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <label htmlFor="pageSizeSelect" className="text-sm text-gray-600">
+                  <Label htmlFor="pageSizeSelect" className="text-sm text-muted-foreground whitespace-nowrap">
                     Per page:
-                  </label>
-                  <select
-                    id="pageSizeSelect"
-                    value={pageSize}
-                    onChange={(e) => {
-                      setPageSize(Number(e.target.value));
+                  </Label>
+                  <Select
+                    value={String(pageSize)}
+                    onValueChange={(val) => {
+                      setPageSize(Number(val));
                       setPage(1);
                     }}
-                    className="border border-gray-300 rounded px-2 py-1 text-sm bg-white text-gray-900"
                   >
-                    <option value={25}>25</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
+                    <SelectTrigger id="pageSizeSelect" className="w-[70px] h-8 text-sm">
+                      <SelectValue placeholder={String(pageSize)} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="flex items-center gap-1">
-                  <button
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
                     onClick={() => setPage(1)}
                     disabled={currentPage === 1}
                     aria-label="First page"
-                    className="p-1.5 rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700"
                   >
                     <ChevronsLeft className="h-4 w-4" />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
                     aria-label="Previous page"
-                    className="p-1.5 rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700"
                   >
                     <ChevronLeft className="h-4 w-4" />
-                  </button>
+                  </Button>
 
                   <span className="px-3 py-1 text-sm text-gray-700">
                     Page {currentPage} of {totalPages}
                   </span>
 
-                  <button
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
                     aria-label="Next page"
-                    className="p-1.5 rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700"
                   >
                     <ChevronRight className="h-4 w-4" />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
                     onClick={() => setPage(totalPages)}
                     disabled={currentPage === totalPages}
                     aria-label="Last page"
-                    className="p-1.5 rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700"
                   >
                     <ChevronsRight className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

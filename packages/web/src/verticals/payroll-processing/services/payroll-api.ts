@@ -1,4 +1,5 @@
 import type { ApiClient } from '@/core/services';
+import { useAuthStore } from '@/core/hooks/auth';
 import type {
   PayPeriod,
   PayRun,
@@ -137,9 +138,10 @@ export const createPayrollApiService = (apiClient: ApiClient): PayrollApiService
     },
 
     downloadPayStubPdf: async (id: string) => {
+      const token = useAuthStore.getState().token;
       const response = await fetch(`/api/payroll/pay-stubs/${id}/pdf`, {
         headers: {
-          'Authorization': `Bearer ${globalThis.localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
 

@@ -13,6 +13,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
+import { Button } from '@/components/ui/button.js';
 
 interface VoiceNoteRecorderProps {
   onTranscriptionComplete: (transcription: string, audioBlob: Blob) => void;
@@ -199,23 +200,26 @@ export function VoiceNoteRecorder({
       )}
 
       {/* Record Button */}
-      <button
+      <Button
+        type="button"
+        variant="ghost"
         onClick={isRecording ? stopRecording : startRecording}
         className={`
           relative w-32 h-32 rounded-full flex items-center justify-center
-          transition-all duration-300 mb-8
+          transition-all duration-300 mb-8 p-0
           ${isRecording
             ? 'bg-red-50 hover:bg-red-100'
-            : 'bg-gray-100 hover:bg-gray-200'
+            : 'bg-muted hover:bg-muted/80'
           }
           shadow-lg hover:shadow-xl
         `}
+        aria-label={isRecording ? "Stop recording" : "Start recording"}
       >
         <div
           className={`
             w-24 h-24 rounded-full flex items-center justify-center
             transition-all duration-300
-            ${isRecording ? 'bg-red-600' : 'bg-blue-600'}
+            ${isRecording ? 'bg-destructive' : 'bg-primary'}
             ${isPulsing ? 'animate-pulse' : ''}
           `}
         >
@@ -225,16 +229,18 @@ export function VoiceNoteRecorder({
             <span className="text-5xl">🎙️</span>
           )}
         </div>
-      </button>
+      </Button>
 
       {/* Action Buttons */}
       <div className="flex gap-3 mb-12">
-        <button
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
           onClick={isRecording ? cancelRecording : onCancel}
-          className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors font-medium text-gray-700"
         >
           {isRecording ? 'Cancel' : 'Close'}
-        </button>
+        </Button>
       </div>
 
       {/* Tips */}

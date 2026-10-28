@@ -10,8 +10,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Button } from '@/core/components';
-import { useAuth } from '@/core/hooks';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { useAuth } from '@/core/hooks/index.js';
 import { CaregiverForm, EMPTY_CAREGIVER_FORM } from '../components/CaregiverForm.js';
 import type { CaregiverFormValues } from '../components/CaregiverForm.js';
 import { useCaregiverApi } from '../hooks/index.js';
@@ -181,32 +182,36 @@ export const CreateCaregiverPage: React.FC = () => {
         <p className="text-gray-600 mt-1">Create a new caregiver record</p>
       </div>
 
-      <form onSubmit={(e) => { handleSubmit(e).catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to submit form'); }); }} className="bg-white rounded-lg shadow p-6 space-y-6">
-        <CaregiverForm
-          values={values}
-          onChange={setValues}
-          errors={errors}
-          disabled={isSubmitting}
-        />
+      <Card>
+        <CardContent className="p-6">
+          <form onSubmit={(e) => { handleSubmit(e).catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to submit form'); }); }} className="space-y-6">
+            <CaregiverForm
+              values={values}
+              onChange={setValues}
+              errors={errors}
+              disabled={isSubmitting}
+            />
 
-        <div className="flex gap-3 pt-4 border-t border-gray-100">
-          <Button type="submit" isLoading={isSubmitting}>
-            {isSubmitting ? 'Creating...' : 'Create Caregiver'}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-            Promise.resolve(navigate('/caregivers')).catch((err: unknown) => {
-              toast.error(err instanceof Error ? err.message : 'Navigation failed');
-            });
-          }}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-        </div>
-      </form>
+            <div className="flex gap-3 pt-4 border-t border-gray-100">
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Creating...' : 'Create Caregiver'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  Promise.resolve(navigate('/caregivers')).catch((err: unknown) => {
+                    toast.error(err instanceof Error ? err.message : 'Navigation failed');
+                  });
+                }}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

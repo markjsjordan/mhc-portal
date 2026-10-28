@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
 
 interface CareTeamMember {
   id: string;
@@ -21,17 +22,23 @@ interface CareTeamCardProps {
 export const CareTeamCard: React.FC<CareTeamCardProps> = ({ careTeam }) => {
   if (careTeam.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Care Team</h2>
-        <p className="text-sm text-gray-600">No care team members assigned yet</p>
-      </div>
+      <Card>
+        <CardHeader className="p-6 pb-2">
+          <CardTitle className="text-lg font-semibold text-gray-900">Care Team</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 pt-0">
+          <p className="text-sm text-gray-600">No care team members assigned yet</p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Care Team</h2>
-      <div className="space-y-4">
+    <Card>
+      <CardHeader className="p-6 pb-4">
+        <CardTitle className="text-lg font-semibold text-gray-900">Care Team</CardTitle>
+      </CardHeader>
+      <CardContent className="p-6 pt-0 space-y-4">
         {careTeam.map((member) => (
           <div key={member.id} className="flex items-center gap-4 rounded-lg bg-gray-50 p-3">
             {member.photoUrl ? (
@@ -41,7 +48,7 @@ export const CareTeamCard: React.FC<CareTeamCardProps> = ({ careTeam }) => {
                 className="h-12 w-12 rounded-full object-cover"
               />
             ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-200 text-lg font-semibold text-blue-700">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 text-lg font-semibold text-primary-700">
                 {member.name.charAt(0)}
               </div>
             )}
@@ -51,7 +58,7 @@ export const CareTeamCard: React.FC<CareTeamCardProps> = ({ careTeam }) => {
               {member.phone && (
                 <a
                   href={`tel:${member.phone}`}
-                  className="text-xs text-blue-600 hover:underline"
+                  className="text-xs text-primary hover:underline"
                 >
                   {member.phone}
                 </a>
@@ -59,7 +66,7 @@ export const CareTeamCard: React.FC<CareTeamCardProps> = ({ careTeam }) => {
             </div>
           </div>
         ))}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };

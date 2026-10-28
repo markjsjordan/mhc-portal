@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Plus, Lock, Unlock, Play } from 'lucide-react';
-import { Button, LoadingSpinner, EmptyState, ErrorMessage, Card } from '@/core/components';
+import { LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePermissions } from '@/core/hooks';
 import { usePayPeriods, useCreatePayRun, useLockPayPeriod, useUnlockPayPeriod } from '../hooks';
 import { CreatePayPeriodModal } from '../components';
@@ -39,15 +44,15 @@ export const PayPeriodManagement: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      DRAFT: 'bg-gray-100 text-gray-800',
-      OPEN: 'bg-blue-100 text-blue-800',
-      LOCKED: 'bg-yellow-100 text-yellow-800',
-      PROCESSING: 'bg-purple-100 text-purple-800',
-      APPROVED: 'bg-green-100 text-green-800',
-      PAID: 'bg-green-100 text-green-800',
-      CLOSED: 'bg-gray-100 text-gray-800',
+      DRAFT: 'bg-gray-100 text-gray-800 border-gray-300',
+      OPEN: 'bg-blue-100 text-blue-800 border-blue-300',
+      LOCKED: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+      PROCESSING: 'bg-purple-100 text-purple-800 border-purple-300',
+      APPROVED: 'bg-green-100 text-green-800 border-green-300',
+      PAID: 'bg-green-100 text-green-800 border-green-300',
+      CLOSED: 'bg-gray-100 text-gray-800 border-gray-300',
     };
-    return colors[status] ?? 'bg-gray-100 text-gray-800';
+    return colors[status] ?? 'bg-gray-100 text-gray-800 border-gray-300';
   };
 
   const handleProcessPayroll = async (payPeriod: PayPeriod) => {
@@ -76,7 +81,8 @@ export const PayPeriodManagement: React.FC = () => {
           </p>
         </div>
         {can('payroll:write') && (
-          <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => setIsCreatePeriodOpen(true)}>
+          <Button onClick={() => setIsCreatePeriodOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
             Create Pay Period
           </Button>
         )}
@@ -88,76 +94,90 @@ export const PayPeriodManagement: React.FC = () => {
         onCreated={() => { refetch().catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to refresh pay periods'); }); }}
       />
 
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-lg font-semibold mb-4">Filters</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Status
-            </label>
-            <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              value={filters.status ?? ''}
-              onChange={(e) =>
-                setFilters({ ...filters, status: (e.target.value || undefined) as PayrollSearchFilters['status'] })
-              }
-            >
-              <option value="">All Statuses</option>
-              <option value="DRAFT">Draft</option>
-              <option value="OPEN">Open</option>
-              <option value="LOCKED">Locked</option>
-              <option value="PROCESSING">Processing</option>
-              <option value="APPROVED">Approved</option>
-              <option value="PAID">Paid</option>
-              <option value="CLOSED">Closed</option>
-            </select>
+      <Card>
+        <CardContent className="pt-6">
+          <h3 className="text-lg font-semibold mb-4">Filters</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <Label htmlFor="period-status-filter" className="block text-sm font-medium text-gray-700 mb-2">
+                Status
+              </Label>
+              <Select
+                value={filters.status ?? 'ALL'}
+                onValueChange={(val) =>
+                  setFilters({ ...filters, status: val === 'ALL' ? undefined : (val as PayrollSearchFilters['status']) })
+                }
+              >
+                <SelectTrigger id="period-status-filter">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Statuses</SelectItem>
+                  <SelectItem value="DRAFT">Draft</SelectItem>
+                  <SelectItem value="OPEN">Open</SelectItem>
+                  <SelectItem value="LOCKED">Locked</SelectItem>
+                  <SelectItem value="PROCESSING">Processing</SelectItem>
+                  <SelectItem value="APPROVED">Approved</SelectItem>
+                  <SelectItem value="PAID">Paid</SelectItem>
+                  <SelectItem value="CLOSED">Closed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="period-year-filter" className="block text-sm font-medium text-gray-700 mb-2">
+                Year
+              </Label>
+              <Select
+                value={filters.year ? String(filters.year) : 'ALL'}
+                onValueChange={(val) =>
+                  setFilters({ ...filters, year: val === 'ALL' ? undefined : parseInt(val) })
+                }
+              >
+                <SelectTrigger id="period-year-filter">
+                  <SelectValue placeholder="All Years" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Years</SelectItem>
+                  <SelectItem value="2025">2025</SelectItem>
+                  <SelectItem value="2024">2024</SelectItem>
+                  <SelectItem value="2023">2023</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="period-type-filter" className="block text-sm font-medium text-gray-700 mb-2">
+                Period Type
+              </Label>
+              <Select
+                value={filters.periodType ?? 'ALL'}
+                onValueChange={(val) =>
+                  setFilters({ ...filters, periodType: val === 'ALL' ? undefined : (val as PayrollSearchFilters['periodType']) })
+                }
+              >
+                <SelectTrigger id="period-type-filter">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Types</SelectItem>
+                  <SelectItem value="WEEKLY">Weekly</SelectItem>
+                  <SelectItem value="BI_WEEKLY">Bi-Weekly</SelectItem>
+                  <SelectItem value="SEMI_MONTHLY">Semi-Monthly</SelectItem>
+                  <SelectItem value="MONTHLY">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end">
+              <Button
+                variant="outline"
+                onClick={() => setFilters({})}
+                className="w-full"
+              >
+                Clear Filters
+              </Button>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Year
-            </label>
-            <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              value={filters.year ?? ''}
-              onChange={(e) =>
-                setFilters({ ...filters, year: e.target.value ? parseInt(e.target.value) : undefined })
-              }
-            >
-              <option value="">All Years</option>
-              <option value="2025">2025</option>
-              <option value="2024">2024</option>
-              <option value="2023">2023</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Period Type
-            </label>
-            <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              value={filters.periodType ?? ''}
-              onChange={(e) =>
-                setFilters({ ...filters, periodType: (e.target.value || undefined) as PayrollSearchFilters['periodType'] })
-              }
-            >
-              <option value="">All Types</option>
-              <option value="WEEKLY">Weekly</option>
-              <option value="BI_WEEKLY">Bi-Weekly</option>
-              <option value="SEMI_MONTHLY">Semi-Monthly</option>
-              <option value="MONTHLY">Monthly</option>
-            </select>
-          </div>
-          <div className="flex items-end">
-            <Button
-              variant="outline"
-              onClick={() => setFilters({})}
-              className="w-full"
-            >
-              Clear Filters
-            </Button>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {payPeriods.length === 0 ? (
         <EmptyState
@@ -165,7 +185,8 @@ export const PayPeriodManagement: React.FC = () => {
           description="Create your first pay period to get started with payroll processing."
           action={
             can('payroll:write') ? (
-              <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => setIsCreatePeriodOpen(true)}>
+              <Button onClick={() => setIsCreatePeriodOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
                 Create Pay Period
               </Button>
             ) : undefined
@@ -175,36 +196,36 @@ export const PayPeriodManagement: React.FC = () => {
         <div className="space-y-4">
           {payPeriods.map((period) => (
             <Card key={period.id} className="hover:shadow-md transition-shadow">
-              <div className="p-6">
+              <CardContent className="p-6">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-lg font-semibold text-gray-900">
                         {formatDate(period.startDate)} - {formatDate(period.endDate)}
                       </h3>
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(period.status)}`}>
+                      <Badge variant="outline" className={getStatusColor(period.status)}>
                         {period.status}
-                      </span>
+                      </Badge>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                       <div>
-                        <label className="text-xs text-gray-500">Pay Date</label>
-                        <p className="text-sm font-medium">{formatDate(period.payDate)}</p>
+                        <Label className="text-xs text-gray-500">Pay Date</Label>
+                        <p className="text-sm font-medium mt-1">{formatDate(period.payDate)}</p>
                       </div>
                       <div>
-                        <label className="text-xs text-gray-500">Period Type</label>
-                        <p className="text-sm font-medium">{period.periodType.replace(/_/g, ' ')}</p>
+                        <Label className="text-xs text-gray-500">Period Type</Label>
+                        <p className="text-sm font-medium mt-1">{period.periodType.replace(/_/g, ' ')}</p>
                       </div>
                       {period.totalCaregivers !== undefined && (
                         <div>
-                          <label className="text-xs text-gray-500">Caregivers</label>
-                          <p className="text-sm font-medium">{period.totalCaregivers}</p>
+                          <Label className="text-xs text-gray-500">Caregivers</Label>
+                          <p className="text-sm font-medium mt-1">{period.totalCaregivers}</p>
                         </div>
                       )}
                       {period.totalGrossPay !== undefined && (
                         <div>
-                          <label className="text-xs text-gray-500">Total Gross Pay</label>
-                          <p className="text-sm font-medium">{formatCurrency(period.totalGrossPay)}</p>
+                          <Label className="text-xs text-gray-500">Total Gross Pay</Label>
+                          <p className="text-sm font-medium mt-1">{formatCurrency(period.totalGrossPay)}</p>
                         </div>
                       )}
                     </div>
@@ -215,10 +236,10 @@ export const PayPeriodManagement: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          leftIcon={<Lock className="h-4 w-4" />}
                           onClick={() => lockPayPeriod.mutate(period.id)}
                           disabled={lockPayPeriod.isPending}
                         >
+                          <Lock className="h-4 w-4 mr-1.5" />
                           Lock
                         </Button>
                       )}
@@ -227,18 +248,18 @@ export const PayPeriodManagement: React.FC = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            leftIcon={<Unlock className="h-4 w-4" />}
                             onClick={() => unlockPayPeriod.mutate(period.id)}
                             disabled={unlockPayPeriod.isPending}
                           >
+                            <Unlock className="h-4 w-4 mr-1.5" />
                             Unlock
                           </Button>
                           <Button
                             size="sm"
-                            leftIcon={<Play className="h-4 w-4" />}
                             onClick={() => { handleProcessPayroll(period).catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to process payroll'); }); }}
                             disabled={createPayRun.isPending}
                           >
+                            <Play className="h-4 w-4 mr-1.5" />
                             Process
                           </Button>
                         </>
@@ -246,7 +267,7 @@ export const PayPeriodManagement: React.FC = () => {
                     </div>
                   )}
                 </div>
-              </div>
+              </CardContent>
             </Card>
           ))}
         </div>

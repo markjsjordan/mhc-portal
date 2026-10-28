@@ -8,8 +8,8 @@
  */
 import React, { useState } from 'react';
 import { Edit2, Trash2, Copy, History, MoreVertical } from 'lucide-react';
-import { Button } from '@/core/components';
-import { useAuth } from '@/core/hooks';
+import { Button } from '@/components/ui/button.js';
+import { useAuth } from '@/core/hooks/index.js';
 import type { Caregiver } from '../types/index.js';
 
 export interface CaregiverActionButtonsProps {
@@ -48,15 +48,17 @@ const CaregiverMoreMenu: React.FC<{
 
   return (
     <div className="relative" ref={menuRef}>
-      <button
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
         onClick={() => onOpenChange(!isOpen)}
-        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
         aria-label="More actions"
         aria-expanded={isOpen}
         aria-haspopup="menu"
       >
-        <MoreVertical className="h-5 w-5 text-gray-600" />
-      </button>
+        <MoreVertical className="h-4 w-4 text-muted-foreground" />
+      </Button>
 
       {isOpen && (
         <div
@@ -64,30 +66,36 @@ const CaregiverMoreMenu: React.FC<{
           role="menu"
         >
           {canDuplicate && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 onDuplicate();
                 onOpenChange(false);
               }}
-              className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 first:rounded-t-lg transition-colors"
+              className="w-full justify-start text-left px-4 py-2 hover:bg-muted flex items-center gap-2 first:rounded-t-lg font-normal"
               role="menuitem"
             >
               <Copy className="h-4 w-4" />
               <span className="text-sm">Duplicate Caregiver</span>
-            </button>
+            </Button>
           )}
           {onViewHistory && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 onViewHistory();
                 onOpenChange(false);
               }}
-              className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+              className="w-full justify-start text-left px-4 py-2 hover:bg-muted flex items-center gap-2 font-normal"
               role="menuitem"
             >
               <History className="h-4 w-4" />
               <span className="text-sm">View Audit History</span>
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -120,20 +128,19 @@ export const CaregiverActionButtons: React.FC<CaregiverActionButtonsProps> = ({
       <Button
         onClick={onEdit}
         disabled={!canEdit || isLoading}
-        variant="primary"
+        variant="default"
         size="sm"
-        leftIcon={<Edit2 className="h-4 w-4" />}
         aria-label="Edit caregiver"
       >
+        <Edit2 className="h-4 w-4 mr-1.5" />
         Edit
       </Button>
 
       <Button
         onClick={onDelete}
         disabled={!canDelete || !isDeletable || isLoading}
-        variant="danger"
+        variant="destructive"
         size="sm"
-        leftIcon={<Trash2 className="h-4 w-4" />}
         aria-label="Delete caregiver"
         title={
           !isDeletable
@@ -143,6 +150,7 @@ export const CaregiverActionButtons: React.FC<CaregiverActionButtonsProps> = ({
               : undefined
         }
       >
+        <Trash2 className="h-4 w-4 mr-1.5" />
         Delete
       </Button>
 

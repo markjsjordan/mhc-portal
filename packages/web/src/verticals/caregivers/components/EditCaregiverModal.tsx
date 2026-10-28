@@ -5,7 +5,8 @@
  * Pre-populates with existing caregiver data and handles PATCH requests.
  */
 import React, { useState, useEffect } from 'react';
-import { Button, Modal, LoadingSpinner } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Modal, LoadingSpinner } from '@/core/components/index.js';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { caregiverApi } from '../api/index.js';
@@ -169,8 +170,9 @@ export const EditCaregiverModal: React.FC<EditCaregiverModalProps> = ({
           disabled={updateMutation.isPending}
         />
 
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        <div className="flex justify-end gap-3 pt-4 border-t border-border">
           <Button
+            type="button"
             onClick={handleCancel}
             variant="outline"
             disabled={updateMutation.isPending}
@@ -178,11 +180,12 @@ export const EditCaregiverModal: React.FC<EditCaregiverModalProps> = ({
             Cancel
           </Button>
           <Button
+            type="button"
             onClick={handleSave}
-            variant="primary"
+            variant="default"
             disabled={!hasChanges || updateMutation.isPending}
-            leftIcon={updateMutation.isPending && <LoadingSpinner size="sm" />}
           >
+            {updateMutation.isPending && <LoadingSpinner size="sm" />}
             {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>

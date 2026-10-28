@@ -10,7 +10,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import type { ComplianceAlert } from '@/types/analytics-types';
-import { Badge } from '@/core/components';
+import { Badge } from '@/components/ui/badge';
 
 interface AlertsListProps {
   alerts: ComplianceAlert[];
@@ -40,18 +40,28 @@ export function AlertsList({
 
   const getBadgeVariant = (
     severity: ComplianceAlert['severity']
-  ): 'success' | 'warning' | 'error' | 'default' => {
+  ): 'destructive' | 'outline' | 'secondary' | 'default' => {
     switch (severity) {
       case 'CRITICAL':
       case 'HIGH':
-        return 'error';
+        return 'destructive';
       case 'MEDIUM':
       case 'WARNING':
-        return 'warning';
+        return 'outline';
       case 'INFO':
-        return 'default';
+        return 'secondary';
       default:
         return 'default';
+    }
+  };
+
+  const getBadgeClassName = (severity: ComplianceAlert['severity']) => {
+    switch (severity) {
+      case 'MEDIUM':
+      case 'WARNING':
+        return 'bg-amber-100 text-amber-800 border-amber-200';
+      default:
+        return '';
     }
   };
 
@@ -89,7 +99,10 @@ export function AlertsList({
                   <h4 className="text-sm font-medium text-gray-900">
                     {alert.message}
                   </h4>
-                  <Badge variant={getBadgeVariant(alert.severity)}>
+                  <Badge
+                    variant={getBadgeVariant(alert.severity)}
+                    className={getBadgeClassName(alert.severity)}
+                  >
                     {alert.severity}
                   </Badge>
                 </div>

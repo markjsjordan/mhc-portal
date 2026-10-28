@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Clock, MapPin, AlertTriangle, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Button, Card } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card } from '@/components/ui/card.js';
 import { useAuth } from '@/core/hooks';
 import { useClockIn, useClockOut, useEVVRecord } from '../hooks';
 import type { EVVDeviceInfo, EVVLocationInput } from '../types';
@@ -166,7 +167,7 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
   const busy = clockIn.isPending || clockOut.isPending || isLocating;
 
   return (
-    <Card padding="md">
+    <Card className="p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
           {/* @ts-ignore */}
@@ -225,9 +226,9 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
             });
           }}
           disabled={busy}
-          leftIcon={<Clock className="h-4 w-4" />}
           className="w-full"
         >
+          <Clock className="h-4 w-4 mr-2" />
           {busy ? 'Getting location…' : 'Clock In'}
         </Button>
       )}
@@ -241,9 +242,9 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
           }}
           disabled={busy}
           variant="outline"
-          leftIcon={<Clock className="h-4 w-4" />}
           className="w-full"
         >
+          <Clock className="h-4 w-4 mr-2" />
           {busy ? 'Getting location…' : 'Clock Out'}
         </Button>
       )}

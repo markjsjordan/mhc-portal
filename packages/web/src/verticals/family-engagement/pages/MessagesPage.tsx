@@ -15,6 +15,11 @@ import {
 } from '../hooks';
 import { useAuth } from '@/core/hooks';
 import { MessageList, MessageThread, MessageComposer } from '../components';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { Textarea } from '@/components/ui/textarea.js';
 import type { UUID } from '@folkcare/core/browser';
 
 export const MessagesPage: React.FC = () => {
@@ -82,69 +87,75 @@ export const MessagesPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
           <p className="mt-1 text-gray-600">Communicate with your care team</p>
         </div>
-        <button
+        <Button
           onClick={() => setShowNewThread(!showNewThread)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          variant={showNewThread ? "outline" : "default"}
         >
           {showNewThread ? 'Cancel' : 'New Message'}
-        </button>
+        </Button>
       </div>
 
       {/* New Thread Form */}
       {showNewThread && (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">New Message</h2>
-          <div className="space-y-4">
+        <Card>
+          <CardHeader className="p-6 pb-2">
+            <CardTitle className="text-lg font-semibold text-gray-900">New Message</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 pt-2 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-              <input
+              <Label className="block text-sm font-medium text-gray-700 mb-1">Subject</Label>
+              <Input
                 type="text"
                 value={newThreadSubject}
                 onChange={(e) => setNewThreadSubject(e.target.value)}
                 placeholder="What is this about?"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                className="w-full text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
-              <textarea
+              <Label className="block text-sm font-medium text-gray-700 mb-1">Message</Label>
+              <Textarea
                 value={newThreadMessage}
                 onChange={(e) => setNewThreadMessage(e.target.value)}
                 placeholder="Type your message..."
                 rows={4}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                className="w-full text-sm"
               />
             </div>
-            <button
+            <Button
               onClick={handleCreateThread}
               disabled={createThread.isPending}
-              className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+              className="w-full"
             >
               {createThread.isPending ? 'Sending...' : 'Send Message'}
-            </button>
-          </div>
-        </div>
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {/* Layout */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Thread List */}
         <div className="lg:col-span-1">
-          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-gray-900 mb-3">Conversations</h2>
-            <MessageList threads={threads || []} loading={threadsLoading} />
-          </div>
+          <Card>
+            <CardHeader className="p-4 pb-2">
+              <CardTitle className="text-sm font-semibold text-gray-900">Conversations</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-1">
+              <MessageList threads={threads || []} loading={threadsLoading} />
+            </CardContent>
+          </Card>
         </div>
 
         {/* Message Thread */}
         <div className="lg:col-span-2">
           {threadId ? (
-            <div className="flex flex-col rounded-lg border border-gray-200 bg-white shadow-sm">
-              <div className="border-b border-gray-200 p-4">
-                <h2 className="text-base font-semibold text-gray-900">
+            <Card className="flex flex-col">
+              <CardHeader className="border-b p-4">
+                <CardTitle className="text-base font-semibold text-gray-900">
                   {threads?.find((t) => t.id === threadId)?.subject || 'Conversation'}
-                </h2>
-              </div>
+                </CardTitle>
+              </CardHeader>
               <div className="flex-1 overflow-y-auto" style={{ maxHeight: '500px' }}>
                 <MessageThread messages={messages || []} loading={messagesLoading} />
               </div>
@@ -153,14 +164,14 @@ export const MessagesPage: React.FC = () => {
                 disabled={sendMessage.isPending}
                 placeholder="Type your message..."
               />
-            </div>
+            </Card>
           ) : (
-            <div className="flex h-96 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500">
-              <div className="text-center">
+            <Card className="flex h-96 items-center justify-center text-gray-500">
+              <CardContent className="text-center">
                 <p className="text-3xl mb-2">💬</p>
                 <p>Select a conversation or start a new one</p>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>

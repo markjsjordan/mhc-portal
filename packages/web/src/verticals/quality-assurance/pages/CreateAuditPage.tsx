@@ -10,17 +10,19 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.js';
+import { Input } from '@/components/ui/input.js';
+import { Textarea } from '@/components/ui/textarea.js';
+import { Label } from '@/components/ui/label.js';
 import {
-  Button,
-  Card,
-  CardHeader,
-  CardContent,
-  Input,
   Select,
-  FormField,
-  LoadingSpinner,
-  ErrorMessage,
-} from '@/core/components';
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
+import { LoadingSpinner, ErrorMessage } from '@/core/components';
 import { useCreateAudit } from '../hooks';
 import type { CreateAuditInput } from '../types';
 import toast from 'react-hot-toast';
@@ -85,6 +87,8 @@ export const CreateAuditPage: React.FC = () => {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<AuditFormData>({
     resolver: zodResolver(auditSchema as any),
@@ -126,7 +130,8 @@ export const CreateAuditPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link to="/quality-assurance/audits">
-          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Audits
           </Button>
         </Link>
@@ -142,61 +147,161 @@ export const CreateAuditPage: React.FC = () => {
 
       {/* Form */}
       <Card>
-        <CardHeader title="Audit Details" />
+        <CardHeader>
+          <CardTitle>Audit Details</CardTitle>
+        </CardHeader>
         <CardContent>
           <form onSubmit={(e) => { handleSubmit(onFormSubmit)(e).catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to submit audit'); }); }} className="space-y-6">
-            <FormField label="Title" error={errors.title?.message} required>
-              <Input {...register('title')} placeholder="Enter audit title" />
-            </FormField>
+            <div>
+              <Label htmlFor="audit-title" className="block text-sm font-medium mb-2">
+                Title <span className="text-destructive">*</span>
+              </Label>
+              <Input id="audit-title" {...register('title')} placeholder="Enter audit title" />
+              {errors.title?.message && (
+                <p className="text-destructive text-sm mt-1">{errors.title.message}</p>
+              )}
+            </div>
 
-            <FormField label="Description" error={errors.description?.message} required>
-              <textarea
+            <div>
+              <Label htmlFor="audit-description" className="block text-sm font-medium mb-2">
+                Description <span className="text-destructive">*</span>
+              </Label>
+              <Textarea
+                id="audit-description"
                 {...register('description')}
                 rows={4}
                 placeholder="Describe the purpose and scope of this audit"
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
               />
-            </FormField>
+              {errors.description?.message && (
+                <p className="text-destructive text-sm mt-1">{errors.description.message}</p>
+              )}
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <FormField label="Audit Type" error={errors.auditType?.message} required>
-                <Select {...register('auditType')} options={auditTypeOptions} />
-              </FormField>
+              <div>
+                <Label htmlFor="audit-type" className="block text-sm font-medium mb-2">
+                  Audit Type <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={watch('auditType')}
+                  onValueChange={(val) =>
+                    setValue('auditType', val as AuditFormData['auditType'], {
+                      shouldValidate: true,
+                    })
+                  }
+                >
+                  <SelectTrigger id="audit-type" className="w-full">
+                    <SelectValue placeholder="Select audit type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {auditTypeOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.auditType?.message && (
+                  <p className="text-destructive text-sm mt-1">{errors.auditType.message}</p>
+                )}
+              </div>
 
-              <FormField label="Priority" error={errors.priority?.message} required>
-                <Select {...register('priority')} options={priorityOptions} />
-              </FormField>
+              <div>
+                <Label htmlFor="audit-priority" className="block text-sm font-medium mb-2">
+                  Priority <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={watch('priority')}
+                  onValueChange={(val) =>
+                    setValue('priority', val as AuditFormData['priority'], {
+                      shouldValidate: true,
+                    })
+                  }
+                >
+                  <SelectTrigger id="audit-priority" className="w-full">
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {priorityOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.priority?.message && (
+                  <p className="text-destructive text-sm mt-1">{errors.priority.message}</p>
+                )}
+              </div>
 
-              <FormField label="Scope" error={errors.scope?.message} required>
-                <Select {...register('scope')} options={scopeOptions} />
-              </FormField>
+              <div>
+                <Label htmlFor="audit-scope" className="block text-sm font-medium mb-2">
+                  Scope <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={watch('scope')}
+                  onValueChange={(val) =>
+                    setValue('scope', val as AuditFormData['scope'], {
+                      shouldValidate: true,
+                    })
+                  }
+                >
+                  <SelectTrigger id="audit-scope" className="w-full">
+                    <SelectValue placeholder="Select scope" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {scopeOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.scope?.message && (
+                  <p className="text-destructive text-sm mt-1">{errors.scope.message}</p>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                label="Scheduled Start Date"
-                error={errors.scheduledStartDate?.message}
-                required
-              >
-                <Input type="date" {...register('scheduledStartDate')} />
-              </FormField>
+              <div>
+                <Label htmlFor="audit-start-date" className="block text-sm font-medium mb-2">
+                  Scheduled Start Date <span className="text-destructive">*</span>
+                </Label>
+                <Input id="audit-start-date" type="date" {...register('scheduledStartDate')} />
+                {errors.scheduledStartDate?.message && (
+                  <p className="text-destructive text-sm mt-1">{errors.scheduledStartDate.message}</p>
+                )}
+              </div>
 
-              <FormField
-                label="Scheduled End Date"
-                error={errors.scheduledEndDate?.message}
-                required
-              >
-                <Input type="date" {...register('scheduledEndDate')} />
-              </FormField>
+              <div>
+                <Label htmlFor="audit-end-date" className="block text-sm font-medium mb-2">
+                  Scheduled End Date <span className="text-destructive">*</span>
+                </Label>
+                <Input id="audit-end-date" type="date" {...register('scheduledEndDate')} />
+                {errors.scheduledEndDate?.message && (
+                  <p className="text-destructive text-sm mt-1">{errors.scheduledEndDate.message}</p>
+                )}
+              </div>
             </div>
 
             {/*
               Pending: No reusable user-picker component exists under @/core/components yet.
               Using a plain text input for the lead auditor's user ID until one is built.
             */}
-            <FormField label="Lead Auditor ID" error={errors.leadAuditorId?.message} required>
-              <Input {...register('leadAuditorId')} placeholder="Enter lead auditor user ID" />
-            </FormField>
+            <div>
+              <Label htmlFor="audit-lead-auditor" className="block text-sm font-medium mb-2">
+                Lead Auditor ID <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="audit-lead-auditor"
+                {...register('leadAuditorId')}
+                placeholder="Enter lead auditor user ID"
+              />
+              {errors.leadAuditorId?.message && (
+                <p className="text-destructive text-sm mt-1">{errors.leadAuditorId.message}</p>
+              )}
+            </div>
 
             <div className="flex items-center gap-3 pt-4">
               <Button type="submit" disabled={createAudit.isPending}>

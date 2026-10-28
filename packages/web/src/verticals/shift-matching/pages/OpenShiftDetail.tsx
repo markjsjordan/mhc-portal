@@ -1,7 +1,10 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search } from 'lucide-react';
-import { Button, LoadingSpinner, ErrorMessage } from '@/core/components';
+import { LoadingSpinner, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { Badge } from '@/components/ui/badge.js';
 import { usePermissions } from '@/core/hooks';
 import { useOpenShift, useMatchCandidates, useMatchShift, useCreateProposal } from '../hooks';
 import { MatchCandidateCard } from '../components';
@@ -66,19 +69,19 @@ export const OpenShiftDetail: React.FC = () => {
                 toast.error(err instanceof Error ? err.message : 'Navigation failed');
               });
             }}
-            leftIcon={<ArrowLeft className="h-4 w-4" />}
           >
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Open Shift Details</h1>
             <div className="flex items-center gap-2 mt-2">
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${priorityColor}`}>
+              <Badge variant="outline" className={priorityColor}>
                 {shift.priority}
-              </span>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor}`}>
+              </Badge>
+              <Badge variant="outline" className={statusColor}>
                 {shift.matchingStatus.replace(/_/g, ' ')}
-              </span>
+              </Badge>
             </div>
           </div>
         </div>
@@ -86,102 +89,104 @@ export const OpenShiftDetail: React.FC = () => {
         {can('scheduling:write') && shift.matchingStatus !== 'ASSIGNED' && (
           <Button
             onClick={handleMatchShift}
-            leftIcon={<Search className="h-4 w-4" />}
             disabled={matchShift.isPending}
           >
+            <Search className="h-4 w-4 mr-2" />
             Find Matches
           </Button>
         )}
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Client</h3>
-            <p className="text-lg font-semibold">{shift.clientName || shift.clientId}</p>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Service Type</h3>
-            <p className="text-lg">{shift.serviceTypeName}</p>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Date & Time</h3>
-            <p className="text-lg">{new Date(shift.scheduledDate).toLocaleDateString()}</p>
-            <p className="text-sm text-gray-600">
-              {shift.startTime} - {shift.endTime} ({formatDuration(shift.duration)})
-            </p>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Location</h3>
-            <p className="text-lg">{shift.address.line1}</p>
-            <p className="text-sm text-gray-600">
-              {shift.address.city}, {shift.address.state} {shift.address.postalCode}
-            </p>
-          </div>
-
-          {shift.requiredSkills && shift.requiredSkills.length > 0 && (
+      <Card>
+        <CardContent className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Required Skills</h3>
-              <div className="flex flex-wrap gap-2">
-                {shift.requiredSkills.map((skill, idx) => (
-                  <span key={idx} className="text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
-                    {skill}
-                  </span>
-                ))}
-              </div>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Client</h3>
+              <p className="text-lg font-semibold">{shift.clientName || shift.clientId}</p>
             </div>
-          )}
 
-          {shift.requiredCertifications && shift.requiredCertifications.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Required Certifications</h3>
-              <div className="flex flex-wrap gap-2">
-                {shift.requiredCertifications.map((cert, idx) => (
-                  <span key={idx} className="text-xs bg-green-100 text-green-800 px-3 py-1 rounded-full">
-                    {cert}
-                  </span>
-                ))}
-              </div>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Service Type</h3>
+              <p className="text-lg">{shift.serviceTypeName}</p>
             </div>
-          )}
-        </div>
 
-        {shift.clientInstructions && (
-          <div className="pt-6 border-t">
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Client Instructions</h3>
-            <p className="text-gray-700">{shift.clientInstructions}</p>
-          </div>
-        )}
-
-        {shift.internalNotes && (
-          <div className="pt-6 border-t">
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Internal Notes</h3>
-            <p className="text-gray-700">{shift.internalNotes}</p>
-          </div>
-        )}
-
-        <div className="pt-6 border-t">
-          <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-sm text-gray-500">Match Attempts</p>
-              <p className="text-2xl font-bold text-gray-900">{shift.matchAttempts}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Proposals</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {shift.proposedAssignments?.length ?? 0}
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Date & Time</h3>
+              <p className="text-lg">{new Date(shift.scheduledDate).toLocaleDateString()}</p>
+              <p className="text-sm text-gray-600">
+                {shift.startTime} - {shift.endTime} ({formatDuration(shift.duration)})
               </p>
             </div>
+
             <div>
-              <p className="text-sm text-gray-500">Candidates</p>
-              <p className="text-2xl font-bold text-gray-900">{candidates.length}</p>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Location</h3>
+              <p className="text-lg">{shift.address.line1}</p>
+              <p className="text-sm text-gray-600">
+                {shift.address.city}, {shift.address.state} {shift.address.postalCode}
+              </p>
+            </div>
+
+            {shift.requiredSkills && shift.requiredSkills.length > 0 && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-2">Required Skills</h3>
+                <div className="flex flex-wrap gap-2">
+                  {shift.requiredSkills.map((skill, idx) => (
+                    <Badge key={idx} variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {shift.requiredCertifications && shift.requiredCertifications.length > 0 && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-2">Required Certifications</h3>
+                <div className="flex flex-wrap gap-2">
+                  {shift.requiredCertifications.map((cert, idx) => (
+                    <Badge key={idx} variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100">
+                      {cert}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {shift.clientInstructions && (
+            <div className="pt-6 border-t">
+              <h3 className="text-sm font-medium text-gray-500 mb-2">Client Instructions</h3>
+              <p className="text-gray-700">{shift.clientInstructions}</p>
+            </div>
+          )}
+
+          {shift.internalNotes && (
+            <div className="pt-6 border-t">
+              <h3 className="text-sm font-medium text-gray-500 mb-2">Internal Notes</h3>
+              <p className="text-gray-700">{shift.internalNotes}</p>
+            </div>
+          )}
+
+          <div className="pt-6 border-t">
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="text-sm text-gray-500">Match Attempts</p>
+                <p className="text-2xl font-bold text-gray-900">{shift.matchAttempts}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Proposals</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {shift.proposedAssignments?.length ?? 0}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Candidates</p>
+                <p className="text-2xl font-bold text-gray-900">{candidates.length}</p>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {candidates.length > 0 && (
         <div>

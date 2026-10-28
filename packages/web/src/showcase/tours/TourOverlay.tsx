@@ -15,6 +15,7 @@ import {
   SkipForward,
 } from 'lucide-react';
 import { useTour } from './TourContext';
+import { Button } from '@/components/ui/button';
 
 interface ElementPosition {
   top: number;
@@ -196,29 +197,35 @@ export const TourOverlay: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 {isPaused ? (
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={resumeTour}
-                    className="p-1 text-white hover:text-gray-200 transition-colors"
+                    className="text-white hover:text-gray-200"
                     title="Resume Tour"
                   >
                     <Play className="h-5 w-5" />
-                  </button>
+                  </Button>
                 ) : (
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={pauseTour}
-                    className="p-1 text-white hover:text-gray-200 transition-colors"
+                    className="text-white hover:text-gray-200"
                     title="Pause Tour"
                   >
                     <Pause className="h-5 w-5" />
-                  </button>
+                  </Button>
                 )}
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={skipTour}
-                  className="p-1 text-white hover:text-gray-200 transition-colors"
+                  className="text-white hover:text-gray-200"
                   title="Exit Tour"
                 >
                   <X className="h-5 w-5" />
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -248,41 +255,41 @@ export const TourOverlay: React.FC = () => {
 
           {/* Footer */}
           <div className="border-t border-gray-200 p-4 bg-gray-50 rounded-b-xl flex items-center justify-between">
-            <button
+            <Button
+              variant="ghost"
               onClick={skipTour}
-              className="text-sm text-gray-600 hover:text-gray-800 font-medium transition-colors flex items-center gap-1"
+              className="text-sm text-gray-600 hover:text-gray-800"
             >
-              <SkipForward className="h-4 w-4" />
+              <SkipForward className="h-4 w-4 mr-1" />
               Skip Tour
-            </button>
+            </Button>
 
             <div className="flex items-center gap-2">
               {currentStep > 0 && (
-                <button
+                <Button
+                  variant="ghost"
                   onClick={previousStep}
-                  className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-gray-900 font-medium transition-colors rounded-lg hover:bg-gray-100"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-4 w-4 mr-2" />
                   Previous
-                </button>
+                </Button>
               )}
 
-              <button
+              <Button
                 onClick={nextStep}
-                className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
               >
                 {currentStep < currentTour.steps.length - 1 ? (
                   <>
                     Next
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-4 w-4 ml-2" />
                   </>
                 ) : (
                   <>
                     Complete
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-4 w-4 ml-2" />
                   </>
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </motion.div>
@@ -301,19 +308,19 @@ export const TourOverlay: React.FC = () => {
                 The tour is paused. Click resume when you're ready to continue.
               </p>
               <div className="flex gap-3">
-                <button
+                <Button
                   onClick={resumeTour}
-                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors flex items-center justify-center gap-2"
+                  className="flex-1"
                 >
-                  <Play className="h-5 w-5" />
+                  <Play className="h-5 w-5 mr-2" />
                   Resume Tour
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="secondary"
                   onClick={skipTour}
-                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium transition-colors"
                 >
                   Exit
-                </button>
+                </Button>
               </div>
             </div>
           </motion.div>

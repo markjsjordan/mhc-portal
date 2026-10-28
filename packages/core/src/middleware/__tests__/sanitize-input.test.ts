@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/code-eval -- test file intentionally tests XSS/script injection sanitization */
 import { describe, it, expect, beforeEach } from 'vitest';
 import express, { type Express } from 'express';
 import request from 'supertest';

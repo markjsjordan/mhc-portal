@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/client" />
 
 // This interface extends ImportMeta to correctly type the 'env' object.
 interface ImportMetaEnv {

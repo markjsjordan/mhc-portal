@@ -98,7 +98,7 @@ export function createOvertimeAlertsRoutes(pool: Pool): Router {
     '/overtime-config/:state',
     async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const state = req.params.state?.toUpperCase() || 'DEFAULT';
+        const state = (req.params.state as string | undefined)?.toUpperCase() ?? 'DEFAULT';
         const config = overtimeService.getOvertimeConfig(state);
 
         res.json({

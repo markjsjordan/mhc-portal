@@ -12,16 +12,21 @@ import { z } from 'zod';
 import { ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
-  Button,
-  Card,
-  CardHeader,
-  CardContent,
-  Input,
-  Select,
-  FormField,
   LoadingSpinner,
   ErrorMessage,
 } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
+import { Input } from '@/components/ui/input.js';
+import { Textarea } from '@/components/ui/textarea.js';
+import { Label } from '@/components/ui/label.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 import { useInvoice, useCreateInvoice, useUpdateInvoice } from '../hooks';
 import { billingErrorMessage } from '../services/billing-api';
 import type { CreateInvoiceInput, UpdateInvoiceInput } from '../types';
@@ -123,13 +128,15 @@ export const InvoiceForm: React.FC = () => {
   const updateInvoice = useUpdateInvoice();
 
   const isPending = createInvoice.isPending || updateInvoice.isPending;
-  const isError = createInvoice.isError || updateInvoice.isError;
+  const isError = createInvoice.isError || updateInvoice.error;
   const error = createInvoice.error || updateInvoice.error;
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<InvoiceFormData>({
     resolver: zodResolver(invoiceFormSchema as any),
@@ -149,6 +156,9 @@ export const InvoiceForm: React.FC = () => {
       discountAmount: '',
     },
   });
+
+  const payerType = watch('payerType');
+  const status = watch('status');
 
   // Pre-populate defaultValues in edit mode once the invoice loads
   React.useEffect(() => {
@@ -232,7 +242,8 @@ export const InvoiceForm: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link to={isEditMode && id ? `/billing/${id}` : '/billing'}>
-          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
         </Link>
@@ -250,43 +261,149 @@ export const InvoiceForm: React.FC = () => {
       </div>
 
       <Card>
-        <CardHeader title="Invoice Details" />
+        <CardHeader>
+          <CardTitle>Invoice Details</CardTitle>
+        </CardHeader>
         <CardContent>
           <form onSubmit={(e) => { handleSubmit(onFormSubmit)(e).catch((err: unknown) => { toast.error(billingErrorMessage(err, 'Failed to save invoice')); }); }} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField label="Client ID" error={errors.clientId?.message}>
-                <Input {...register('clientId')} placeholder="Optional client ID" disabled={isEditMode} data-testid="invoice-client-id" />
-              </FormField>
+              <div className="space-y-2">
+                <Label htmlFor="invoice-client-id">Client ID</Label>
+                <Input
+                  id="invoice-client-id"
+                  {...register('clientId')}
+                  placeholder="Optional client ID"
+                  disabled={isEditMode}
+                  data-testid="invoice-client-id"
+                />
+                {errors.clientId?.message && (
+                  <p className="text-destructive text-sm">{errors.clientId.message}</p>
+                )}
+              </div>
 
-              <FormField label="Payer ID" error={errors.payerId?.message} required>
-                <Input {...register('payerId')} placeholder="Payer ID" disabled={isEditMode} data-testid="invoice-payer-id" />
-              </FormField>
+              <div className="space-y-2">
+                <Label htmlFor="invoice-payer-id">
+                  Payer ID <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="invoice-payer-id"
+                  {...register('payerId')}
+                  placeholder="Payer ID"
+                  disabled={isEditMode}
+                  data-testid="invoice-payer-id"
+                />
+                {errors.payerId?.message && (
+                  <p className="text-destructive text-sm">{errors.payerId.message}</p>
+                )}
+              </div>
 
-              <FormField label="Payer Type" error={errors.payerType?.message} required>
-                <Select {...register('payerType')} options={payerTypeOptions} disabled={isEditMode} data-testid="invoice-payer-type" />
-              </FormField>
+              <div className="space-y-2">
+                <Label htmlFor="invoice-payer-type">
+                  Payer Type <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={payerType}
+                  onValueChange={(val) =>
+                    setValue('payerType', val as InvoiceFormData['payerType'], { shouldValidate: true })
+                  }
+                  disabled={isEditMode}
+                >
+                  <SelectTrigger id="invoice-payer-type" data-testid="invoice-payer-type">
+                    <SelectValue placeholder="Select payer type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {payerTypeOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.payerType?.message && (
+                  <p className="text-destructive text-sm">{errors.payerType.message}</p>
+                )}
+              </div>
 
-              <FormField label="Payer Name" error={errors.payerName?.message} required>
-                <Input {...register('payerName')} placeholder="Payer name" disabled={isEditMode} data-testid="invoice-payer-name" />
-              </FormField>
+              <div className="space-y-2">
+                <Label htmlFor="invoice-payer-name">
+                  Payer Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="invoice-payer-name"
+                  {...register('payerName')}
+                  placeholder="Payer name"
+                  disabled={isEditMode}
+                  data-testid="invoice-payer-name"
+                />
+                {errors.payerName?.message && (
+                  <p className="text-destructive text-sm">{errors.payerName.message}</p>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField label="Invoice Date" error={errors.invoiceDate?.message} required>
-                <Input type="date" {...register('invoiceDate')} disabled={isEditMode} data-testid="invoice-date" />
-              </FormField>
+              <div className="space-y-2">
+                <Label htmlFor="invoice-date">
+                  Invoice Date <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="invoice-date"
+                  type="date"
+                  {...register('invoiceDate')}
+                  disabled={isEditMode}
+                  data-testid="invoice-date"
+                />
+                {errors.invoiceDate?.message && (
+                  <p className="text-destructive text-sm">{errors.invoiceDate.message}</p>
+                )}
+              </div>
 
-              <FormField label="Due Date" error={errors.dueDate?.message} required>
-                <Input type="date" {...register('dueDate')} data-testid="invoice-due-date" />
-              </FormField>
+              <div className="space-y-2">
+                <Label htmlFor="invoice-due-date">
+                  Due Date <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="invoice-due-date"
+                  type="date"
+                  {...register('dueDate')}
+                  data-testid="invoice-due-date"
+                />
+                {errors.dueDate?.message && (
+                  <p className="text-destructive text-sm">{errors.dueDate.message}</p>
+                )}
+              </div>
 
-              <FormField label="Period Start" error={errors.periodStart?.message} required>
-                <Input type="date" {...register('periodStart')} disabled={isEditMode} data-testid="invoice-period-start" />
-              </FormField>
+              <div className="space-y-2">
+                <Label htmlFor="invoice-period-start">
+                  Period Start <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="invoice-period-start"
+                  type="date"
+                  {...register('periodStart')}
+                  disabled={isEditMode}
+                  data-testid="invoice-period-start"
+                />
+                {errors.periodStart?.message && (
+                  <p className="text-destructive text-sm">{errors.periodStart.message}</p>
+                )}
+              </div>
 
-              <FormField label="Period End" error={errors.periodEnd?.message} required>
-                <Input type="date" {...register('periodEnd')} disabled={isEditMode} data-testid="invoice-period-end" />
-              </FormField>
+              <div className="space-y-2">
+                <Label htmlFor="invoice-period-end">
+                  Period End <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="invoice-period-end"
+                  type="date"
+                  {...register('periodEnd')}
+                  disabled={isEditMode}
+                  data-testid="invoice-period-end"
+                />
+                {errors.periodEnd?.message && (
+                  <p className="text-destructive text-sm">{errors.periodEnd.message}</p>
+                )}
+              </div>
             </div>
 
             {/*
@@ -295,45 +412,92 @@ export const InvoiceForm: React.FC = () => {
               newline separated IDs) until a real billable-items selector is
               built in a follow-up.
             */}
-            <FormField
-              label="Billable Item IDs"
-              error={errors.billableItemIdsRaw?.message}
-            >
-              <textarea
+            <div className="space-y-2">
+              <Label htmlFor="invoice-billable-item-ids">
+                Billable Item IDs
+              </Label>
+              <Textarea
+                id="invoice-billable-item-ids"
                 {...register('billableItemIdsRaw')}
                 rows={4}
                 placeholder="Enter billable item IDs, one per line or comma-separated"
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                 disabled={isEditMode}
                 data-testid="invoice-billable-item-ids"
               />
-            </FormField>
+              {errors.billableItemIdsRaw?.message && (
+                <p className="text-destructive text-sm">{errors.billableItemIdsRaw.message}</p>
+              )}
+            </div>
 
             {isEditMode && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <FormField label="Status" error={errors.status?.message}>
-                  <Select {...register('status')} options={invoiceStatusOptions} data-testid="invoice-status" />
-                </FormField>
+                <div className="space-y-2">
+                  <Label htmlFor="invoice-status">Status</Label>
+                  <Select
+                    value={status}
+                    onValueChange={(val) =>
+                      setValue('status', val as InvoiceFormData['status'], { shouldValidate: true })
+                    }
+                  >
+                    <SelectTrigger id="invoice-status" data-testid="invoice-status">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {invoiceStatusOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.status?.message && (
+                    <p className="text-destructive text-sm">{errors.status.message}</p>
+                  )}
+                </div>
 
-                <FormField label="Tax Amount" error={errors.taxAmount?.message}>
-                  <Input type="number" step="0.01" {...register('taxAmount')} data-testid="invoice-tax-amount" />
-                </FormField>
+                <div className="space-y-2">
+                  <Label htmlFor="invoice-tax-amount">Tax Amount</Label>
+                  <Input
+                    id="invoice-tax-amount"
+                    type="number"
+                    step="0.01"
+                    {...register('taxAmount')}
+                    data-testid="invoice-tax-amount"
+                  />
+                  {errors.taxAmount?.message && (
+                    <p className="text-destructive text-sm">{errors.taxAmount.message}</p>
+                  )}
+                </div>
 
-                <FormField label="Discount Amount" error={errors.discountAmount?.message}>
-                  <Input type="number" step="0.01" {...register('discountAmount')} data-testid="invoice-discount-amount" />
-                </FormField>
+                <div className="space-y-2">
+                  <Label htmlFor="invoice-discount-amount">Discount Amount</Label>
+                  <Input
+                    id="invoice-discount-amount"
+                    type="number"
+                    step="0.01"
+                    {...register('discountAmount')}
+                    data-testid="invoice-discount-amount"
+                  />
+                  {errors.discountAmount?.message && (
+                    <p className="text-destructive text-sm">{errors.discountAmount.message}</p>
+                  )}
+                </div>
               </div>
             )}
 
-            <FormField label="Notes" error={errors.notes?.message}>
-              <textarea
+            <div className="space-y-2">
+              <Label htmlFor="invoice-notes">Notes</Label>
+              <Textarea
+                id="invoice-notes"
                 {...register('notes')}
                 rows={3}
                 placeholder="Optional notes"
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                 data-testid="invoice-notes"
               />
-            </FormField>
+              {errors.notes?.message && (
+                <p className="text-destructive text-sm">{errors.notes.message}</p>
+              )}
+            </div>
 
             <div className="flex items-center gap-3 pt-4">
               <Button type="submit" disabled={isPending} data-testid="invoice-submit">
@@ -350,8 +514,8 @@ export const InvoiceForm: React.FC = () => {
       </Card>
 
       {isPending && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background rounded-lg p-6 flex items-center gap-3 shadow-lg border">
             <LoadingSpinner size="lg" />
             <span className="text-lg font-medium">
               {isEditMode ? 'Saving Invoice...' : 'Creating Invoice...'}

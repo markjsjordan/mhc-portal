@@ -1022,7 +1022,7 @@ export class ClientHandlers {
    */
   geocodeClientAddress = asyncHandler(async (req: Request, res: Response): Promise<Response> => {
     const context = getUserContext(req);
-    const clientId = req.params.id;
+    const clientId = req.params.id as string | undefined;
 
     if (!clientId) {
       return res.status(400).json({
