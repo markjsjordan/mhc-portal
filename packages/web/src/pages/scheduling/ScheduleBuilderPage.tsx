@@ -350,6 +350,14 @@ export default function ScheduleBuilderPage() {
             width: 100% !important;
           }
         }
+        @media (max-width: 1100px) {
+          .schedule-builder-controls {
+            flex-wrap: wrap !important;
+          }
+          .schedule-builder-action-btn {
+            min-height: 40px !important;
+          }
+        }
         @media (max-width: 767px) {
           .modal-form-grid {
             grid-template-columns: 1fr !important;
@@ -491,6 +499,7 @@ export default function ScheduleBuilderPage() {
           </Button>
           <Button
             variant="outline"
+            className="schedule-builder-action-btn"
             style={isMobile ? styles.patternButtonMobile : styles.patternButton}
             onClick={() => setShowSupervisionModal(true)}
           >
@@ -775,6 +784,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     gap: '12px',
     alignItems: 'center',
+    flexWrap: 'wrap',
   },
   headerControlsMobile: {
     display: 'flex',
