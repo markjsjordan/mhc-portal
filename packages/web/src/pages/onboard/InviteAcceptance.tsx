@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Button, Input } from '@folkcare/shared-components';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useApiClient } from '@/core/hooks';
 import './InviteAcceptance.css';
 
@@ -120,13 +123,14 @@ export const InviteAcceptance: React.FC = () => {
         <h1>Complete Your Setup</h1>
         
         <div className="form-group">
-          <label>Email</label>
-          <Input disabled value={inviteDetails?.email || ''} />
+          <Label htmlFor="email">Email</Label>
+          <Input id="email" disabled value={inviteDetails?.email || ''} />
         </div>
 
         <div className="form-group">
-          <label>Password</label>
+          <Label htmlFor="password">Password</Label>
           <Input
+            id="password"
             type="password"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -135,8 +139,9 @@ export const InviteAcceptance: React.FC = () => {
         </div>
 
         <div className="form-group">
-          <label>Confirm Password</label>
+          <Label htmlFor="confirmPassword">Confirm Password</Label>
           <Input
+            id="confirmPassword"
             type="password"
             value={formData.confirmPassword}
             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
@@ -144,23 +149,23 @@ export const InviteAcceptance: React.FC = () => {
           {errors.confirmPassword && <p className="error">{errors.confirmPassword}</p>}
         </div>
 
-        <div className="form-group">
-          <input
-            type="checkbox"
+        <div className="form-group flex items-center space-x-2">
+          <Checkbox
+            id="acceptTerms"
             checked={formData.acceptTerms}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, acceptTerms: e.target.checked })}
+            onCheckedChange={(checked) => setFormData({ ...formData, acceptTerms: checked === true })}
           />
-          <label>I agree to Terms of Service</label>
+          <Label htmlFor="acceptTerms">I agree to Terms of Service</Label>
           {errors.acceptTerms && <p className="error">{errors.acceptTerms}</p>}
         </div>
 
-        <div className="form-group">
-          <input
-            type="checkbox"
+        <div className="form-group flex items-center space-x-2">
+          <Checkbox
+            id="acceptPrivacy"
             checked={formData.acceptPrivacy}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, acceptPrivacy: e.target.checked })}
+            onCheckedChange={(checked) => setFormData({ ...formData, acceptPrivacy: checked === true })}
           />
-          <label>I agree to Privacy Policy</label>
+          <Label htmlFor="acceptPrivacy">I agree to Privacy Policy</Label>
           {errors.acceptPrivacy && <p className="error">{errors.acceptPrivacy}</p>}
         </div>
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Menu, Bell, User, Shield } from 'lucide-react';
 import { useAuth } from '@/core/hooks';
-import { Button } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
 import mqtLogo from '@/assets/mqt-logo.png';
 import { getPrimaryRole, getRoleLabel } from '@/core/utils/role-routing';
 
@@ -98,15 +98,17 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
               </div>
             </div>
 
-            <button
+            <Button
               type="button"
-              className="min-w-[44px] min-h-[44px] h-11 w-11 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 shrink-0"
+              variant="ghost"
+              size="icon"
+              className="min-w-[44px] min-h-[44px] h-11 w-11 rounded-full shrink-0"
               aria-label="User profile"
             >
-              <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
+              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
                 <User className="h-5 w-5" />
               </div>
-            </button>
+            </Button>
           </div>
         </div>
       </div>

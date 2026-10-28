@@ -154,6 +154,21 @@ export default [
     },
   },
   {
+    // shadcn/ui guard (wdvf3ac32k): raw form/button controls must come from
+    // @/components/ui/*. The primitives themselves are exempt.
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/components/ui/**', '**/__tests__/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "JSXOpeningElement[name.name=/^(button|input|select|textarea)$/]",
+          message: 'Use the shadcn primitive from @/components/ui/* instead of a raw <button>/<input>/<select>/<textarea>.',
+        },
+      ],
+    },
+  },
+  {
     ignores: [
       'dev-dist/**',
       'dist/**',

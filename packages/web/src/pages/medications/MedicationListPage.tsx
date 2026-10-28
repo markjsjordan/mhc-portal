@@ -12,6 +12,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { Badge } from '@/components/ui/badge.js';
 
 interface Medication {
   id: string;
@@ -112,19 +115,6 @@ export function MedicationListPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ACTIVE':
-        return 'bg-green-100 text-green-800';
-      case 'DISCONTINUED':
-        return 'bg-gray-100 text-gray-800';
-      case 'ON_HOLD':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const isOverdue = (medication: Medication) => {
     if (!medication.nextScheduledTime) return false;
     return new Date(medication.nextScheduledTime) < new Date();
@@ -169,35 +159,33 @@ export function MedicationListPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="mb-6 border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+      <div className="mb-6 border-b border-gray-200 pb-2">
+        <nav className="flex space-x-2">
           {(['ACTIVE', 'ALL', 'DISCONTINUED'] as const).map((status) => (
-            <button
+            <Button
               key={status}
+              variant={filterStatus === status ? 'default' : 'ghost'}
+              size="sm"
               onClick={() => setFilterStatus(status)}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                filterStatus === status
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+              className="gap-2"
             >
               {status.replace('_', ' ')}
               {status === 'ACTIVE' && (
-                <span className="ml-2 py-0.5 px-2 rounded-full bg-blue-100 text-blue-600 text-xs">
+                <Badge variant="secondary" className="ml-2 text-xs">
                   {medications.filter((m) => m.status === 'ACTIVE').length}
-                </span>
+                </Badge>
               )}
-            </button>
+            </Button>
           ))}
         </nav>
       </div>
 
       {/* Medications List */}
       {filteredMedications.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
+        <Card className="p-12 text-center">
           <p className="text-gray-500 text-lg">No medications found</p>
           <p className="text-gray-400 text-sm mt-2">Add medications to start tracking</p>
-        </div>
+        </Card>
       ) : (
         <div className="space-y-4">
           {filteredMedications.map((medication) => {
@@ -205,13 +193,11 @@ export function MedicationListPage() {
             const refillNeeded = needsRefill(medication);
 
             return (
-              <div
+              <Card
                 key={medication.id}
-                className={`bg-white rounded-lg shadow overflow-hidden ${
-                  overdue ? 'border-l-4 border-red-500' : ''
-                }`}
+                className={overdue ? 'border-l-4 border-red-500' : ''}
               >
-                <div className="p-6">
+                <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4 flex-1">
                       {/* Route Icon */}
@@ -223,17 +209,13 @@ export function MedicationListPage() {
                           <h3 className="text-lg font-semibold text-gray-900">
                             {medication.medicationName}
                           </h3>
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                              medication.status
-                            )}`}
-                          >
+                          <Badge variant={medication.status === 'ACTIVE' ? 'default' : medication.status === 'DISCONTINUED' ? 'secondary' : 'outline'}>
                             {medication.status}
-                          </span>
+                          </Badge>
                           {refillNeeded && (
-                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                            <Badge variant="destructive">
                               Refill Needed
-                            </span>
+                            </Badge>
                           )}
                         </div>
 
@@ -311,24 +293,24 @@ export function MedicationListPage() {
                     {/* Actions */}
                     {medication.status === 'ACTIVE' && (
                       <div className="flex flex-col gap-2">
-                        <button
+                        <Button
                           onClick={() => markAsTakenMutation.mutate({ medicationId: medication.id })}
                           disabled={markAsTakenMutation.isPending}
-                          className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+                          className="bg-green-600 hover:bg-green-700"
                         >
                           {markAsTakenMutation.isPending ? 'Marking...' : '✓ Mark as Taken'}
-                        </button>
+                        </Button>
                         <Link
                           to={`/clients/${clientId}/medications/${medication.id}`}
-                          className="px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 text-center transition-colors"
+                          className="inline-flex items-center justify-center h-8 px-2.5 rounded-lg border border-border bg-background hover:bg-muted text-sm font-medium transition-all"
                         >
                           View Details
                         </Link>
                       </div>
                     )}
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>

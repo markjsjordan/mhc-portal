@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Grid, List, FileText } from 'lucide-react';
-import { Button, LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
+import { LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
 import { usePermissions } from '@/core/hooks';
 import { useCarePlans } from '../hooks';
 import { CarePlanCard, CarePlanFilters } from '../components';
@@ -42,33 +43,37 @@ export const CarePlanList: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <div className="flex border border-gray-300 rounded-md">
-            <button
+          <div className="flex border border-input rounded-md overflow-hidden">
+            <Button
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="icon"
               onClick={() => setViewMode('grid')}
-              className={`p-2 ${
-                viewMode === 'grid' ? 'bg-gray-100' : 'hover:bg-gray-50'
-              }`}
+              aria-label="Grid view"
+              className="rounded-none h-9 w-9"
             >
-              <Grid className="h-5 w-5" />
-            </button>
-            <button
+              <Grid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="icon"
               onClick={() => setViewMode('list')}
-              className={`p-2 ${
-                viewMode === 'list' ? 'bg-gray-100' : 'hover:bg-gray-50'
-              }`}
+              aria-label="List view"
+              className="rounded-none h-9 w-9"
             >
-              <List className="h-5 w-5" />
-            </button>
+              <List className="h-4 w-4" />
+            </Button>
           </div>
           {can('care_plans:write') && (
             <>
               <Link to="/care-plans/from-template">
-                <Button variant="outline" leftIcon={<FileText className="h-4 w-4" />}>
+                <Button variant="outline">
+                  <FileText className="h-4 w-4 mr-2" />
                   From Template
                 </Button>
               </Link>
               <Link to="/care-plans/new">
-                <Button leftIcon={<Plus className="h-4 w-4" />}>
+                <Button variant="default">
+                  <Plus className="h-4 w-4 mr-2" />
                   New Care Plan
                 </Button>
               </Link>
@@ -86,7 +91,8 @@ export const CarePlanList: React.FC = () => {
           action={
             can('care_plans:write') ? (
               <Link to="/care-plans/new">
-                <Button leftIcon={<Plus className="h-4 w-4" />}>
+                <Button variant="default">
+                  <Plus className="h-4 w-4 mr-2" />
                   Create Care Plan
                 </Button>
               </Link>

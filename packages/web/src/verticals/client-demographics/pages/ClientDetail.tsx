@@ -1,7 +1,10 @@
 import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Edit, Trash2, Phone, Mail, MapPin, Calendar, User, Pill, AlertTriangle } from 'lucide-react';
-import { Button, Card, CardHeader, CardContent, LoadingSpinner, ErrorMessage, StatusBadge, DemoBadge } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
+import { Badge } from '@/components/ui/badge.js';
+import { LoadingSpinner, ErrorMessage, StatusBadge, DemoBadge } from '@/core/components';
 import { usePermissions } from '@/core/hooks';
 import { formatDate, formatPhone } from '@/core/utils';
 import { useClient, useDeleteClient } from '../hooks';
@@ -51,7 +54,8 @@ export const ClientDetail: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link to="/clients">
-          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-1.5" />
             Back
           </Button>
         </Link>
@@ -70,17 +74,18 @@ export const ClientDetail: React.FC = () => {
           {can('clients:write') && (
             <>
               <Link to={`/clients/${client.id}/edit`}>
-                <Button variant="outline" leftIcon={<Edit className="h-4 w-4" />}>
+                <Button variant="outline">
+                  <Edit className="h-4 w-4 mr-1.5" />
                   Edit
                 </Button>
               </Link>
               <Button
-                variant="danger"
-                leftIcon={<Trash2 className="h-4 w-4" />}
+                variant="destructive"
                 onClick={handleDelete}
-                isLoading={deleteClient.isPending}
+                disabled={deleteClient.isPending}
               >
-                Delete
+                <Trash2 className="h-4 w-4 mr-1.5" />
+                {deleteClient.isPending ? 'Deleting...' : 'Delete'}
               </Button>
             </>
           )}
@@ -90,7 +95,9 @@ export const ClientDetail: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <Card>
-            <CardHeader title="Personal Information" />
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-medium">Personal Information</CardTitle>
+            </CardHeader>
             <CardContent>
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -120,7 +127,9 @@ export const ClientDetail: React.FC = () => {
           </Card>
 
           <Card>
-            <CardHeader title="Contact Information" />
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-medium">Contact Information</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {client.primaryPhone && (
@@ -183,7 +192,9 @@ export const ClientDetail: React.FC = () => {
 
           {client.emergencyContacts && client.emergencyContacts.length > 0 && (
             <Card>
-              <CardHeader title="Emergency Contacts" />
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-medium">Emergency Contacts</CardTitle>
+              </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {client.emergencyContacts.map((contact) => (
@@ -194,9 +205,9 @@ export const ClientDetail: React.FC = () => {
                           <p className="text-sm text-gray-600">{contact.relationship}</p>
                         </div>
                         {contact.isPrimary && (
-                          <span className="text-xs bg-primary-100 text-primary-800 px-2 py-1 rounded">
+                          <Badge variant="secondary">
                             Primary
-                          </span>
+                          </Badge>
                         )}
                       </div>
                       <div className="mt-2 space-y-1">
@@ -222,7 +233,9 @@ export const ClientDetail: React.FC = () => {
 
         <div className="space-y-6">
           <Card>
-            <CardHeader title="Quick Actions" />
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-medium">Quick Actions</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <Link to={`/clients/${client.id}/medications`} className="block">
@@ -267,7 +280,9 @@ export const ClientDetail: React.FC = () => {
           </Card>
 
           <Card>
-            <CardHeader title="Timeline" />
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-medium">Timeline</CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-start gap-3">

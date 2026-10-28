@@ -8,6 +8,8 @@ import React, { useState } from 'react';
 import { useUnreadNotifications, useFamilyMemberProfile } from '../hooks';
 import { useAuth } from '@/core/hooks';
 import { NotificationList, NotificationSettings } from '../components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent } from '@/components/ui/card.js';
 import type { UUID } from '@folkcare/core/browser';
 
 export const NotificationsPage: React.FC = () => {
@@ -28,12 +30,12 @@ export const NotificationsPage: React.FC = () => {
             Stay updated on important care events and activities
           </p>
         </div>
-        <button
+        <Button
+          variant="outline"
           onClick={() => setShowSettings(!showSettings)}
-          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
         >
           {showSettings ? 'Hide Settings' : 'Settings'}
-        </button>
+        </Button>
       </div>
 
       {/* Layout */}
@@ -56,12 +58,14 @@ export const NotificationsPage: React.FC = () => {
 
       {/* Info Banner */}
       {!showSettings && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-          <p className="text-sm text-blue-900">
-            <strong>💡 Tip:</strong> Click the Settings button above to customize which
-            notifications you receive and how often.
-          </p>
-        </div>
+        <Card className="bg-blue-50/50 border-blue-200">
+          <CardContent className="p-4">
+            <p className="text-sm text-blue-900">
+              <strong>💡 Tip:</strong> Click the Settings button above to customize which
+              notifications you receive and how often.
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

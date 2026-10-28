@@ -5,11 +5,12 @@ import {
   Download,
   FileText,
   Check,
-  ShieldCheck,
   ShieldAlert,
+  ShieldCheck,
   FileSpreadsheet,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { Button } from "@/components/ui/button.js";
 import type { ClaimsQueueItem, CMS1500ClaimForm } from "../types";
 import { formatCurrency } from "../utils";
 
@@ -106,49 +107,45 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
                 : `Batch Export (${allClaims.length} items in queue)`}
             </p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            aria-label="Close"
           >
-            <X className="h-5 w-5" />
-          </button>
+            <X className="h-4 w-4" />
+          </Button>
         </div>
 
         {/* Tab Navigation */}
         <div className="flex border-b border-gray-200 px-6 pt-3 bg-white gap-2">
-          <button
+          <Button
+            variant={activeTab === "837p" ? "secondary" : "ghost"}
+            size="sm"
             onClick={() => setActiveTab("837p")}
-            className={`pb-3 px-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
-              activeTab === "837p"
-                ? "border-blue-600 text-blue-700"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
+            className="gap-2"
           >
             <ShieldCheck className="h-4 w-4" />
             ANSI 837P (EDI Electronic)
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={activeTab === "cms1500" ? "secondary" : "ghost"}
+            size="sm"
             onClick={() => setActiveTab("cms1500")}
-            className={`pb-3 px-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
-              activeTab === "cms1500"
-                ? "border-blue-600 text-blue-700"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
+            className="gap-2"
           >
             <FileText className="h-4 w-4" />
             CMS-1500 (HCFA Form)
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={activeTab === "csv" ? "secondary" : "ghost"}
+            size="sm"
             onClick={() => setActiveTab("csv")}
-            className={`pb-3 px-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${
-              activeTab === "csv"
-                ? "border-blue-600 text-blue-700"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
+            className="gap-2"
           >
             <FileSpreadsheet className="h-4 w-4" />
             Clearinghouse CSV Export
-          </button>
+          </Button>
         </div>
 
         {/* Modal Body */}
@@ -172,9 +169,11 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <button
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleCopy(ediContent || "")}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-white text-blue-700 border border-blue-300 rounded hover:bg-blue-50 transition-colors"
+                    className="gap-1"
                   >
                     {copied ? (
                       <Check className="h-3.5 w-3.5" />
@@ -182,8 +181,9 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
                       <Copy className="h-3.5 w-3.5" />
                     )}
                     Copy EDI
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    size="sm"
                     onClick={() =>
                       downloadTextFile(
                         `claim-${selectedClaim?.claimNumber || "batch"}.837p`,
@@ -191,11 +191,11 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
                         "text/plain",
                       )
                     }
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-sm"
+                    className="gap-1"
                   >
                     <Download className="h-3.5 w-3.5" />
                     Download .837p
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -221,7 +221,8 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
                     layout with EVV line verification.
                   </p>
                 </div>
-                <button
+                <Button
+                  size="sm"
                   onClick={() =>
                     downloadTextFile(
                       `cms1500-${selectedClaim?.invoiceNumber ?? "claim"}.json`,
@@ -229,11 +230,11 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
                       "application/json",
                     )
                   }
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-sm"
+                  className="gap-1.5"
                 >
                   <Download className="h-3.5 w-3.5" />
                   Export Form Data
-                </button>
+                </Button>
               </div>
 
               {cms1500Forms.length > 0 ? (
@@ -417,7 +418,8 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
                     not passed the EVV gate are excluded.
                   </p>
                 </div>
-                <button
+                <Button
+                  size="sm"
                   onClick={() =>
                     downloadTextFile(
                       "claims-queue-export.csv",
@@ -425,11 +427,11 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
                       "text/csv",
                     )
                   }
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-emerald-700 text-white rounded hover:bg-emerald-800 transition-colors shadow-sm"
+                  className="gap-1"
                 >
                   <Download className="h-3.5 w-3.5" />
                   Download CSV
-                </button>
+                </Button>
               </div>
 
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
@@ -447,12 +449,12 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
             21st Century Cures Act § 12006 • Electronic Visit Verification (EVV)
             Gate Active
           </span>
-          <button
+          <Button
+            variant="outline"
             onClick={onClose}
-            className="px-4 py-2 font-medium bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
           >
             Close
-          </button>
+          </Button>
         </div>
       </div>
     </div>

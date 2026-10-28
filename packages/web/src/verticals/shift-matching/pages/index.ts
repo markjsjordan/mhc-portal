@@ -1,3 +1,4 @@
-export * from './OpenShiftList';
-export * from './OpenShiftDetail';
-export * from './MatchAnalyticsDashboard';
+export * from './OpenShiftList.js';
+export * from './OpenShiftDetail.js';
+export * from './MatchAnalyticsDashboard.js';
+export * from './ShiftMatchingPage.js';

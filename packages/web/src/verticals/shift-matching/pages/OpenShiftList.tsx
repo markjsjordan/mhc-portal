@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import { Grid, List } from 'lucide-react';
 import { LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 import { useOpenShifts, useMatchingMetrics } from '../hooks';
 import { OpenShiftCard, MatchingMetricsCard } from '../components';
 import type { OpenShiftSearchFilters, MatchingStatus, ShiftPriority } from '../types';
@@ -45,93 +56,109 @@ export const OpenShiftList: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <div className="flex border border-gray-300 rounded-md">
-            <button
+          <div className="flex border border-gray-300 rounded-md p-0.5">
+            <Button
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="icon-sm"
               onClick={() => setViewMode('grid')}
-              className={`p-2 ${
-                viewMode === 'grid' ? 'bg-gray-100' : 'hover:bg-gray-50'
-              }`}
               aria-label="Grid view"
             >
-              <Grid className="h-5 w-5" />
-            </button>
-            <button
+              <Grid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="icon-sm"
               onClick={() => setViewMode('list')}
-              className={`p-2 ${
-                viewMode === 'list' ? 'bg-gray-100' : 'hover:bg-gray-50'
-              }`}
               aria-label="List view"
             >
-              <List className="h-5 w-5" />
-            </button>
+              <List className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>
 
       {metrics && <MatchingMetricsCard metrics={metrics} />}
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
-            </label>
-            <select
-              value={filters.matchingStatus ?? ''}
-              onChange={(e) => setFilters({ ...filters, matchingStatus: e.target.value as MatchingStatus })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Statuses</option>
-              <option value="NEW">New</option>
-              <option value="MATCHING">Matching</option>
-              <option value="MATCHED">Matched</option>
-              <option value="PROPOSED">Proposed</option>
-              <option value="NO_MATCH">No Match</option>
-            </select>
-          </div>
+      <Card>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <Label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Status
+              </Label>
+              <Select
+                value={filters.matchingStatus ?? 'ALL'}
+                onValueChange={(val) =>
+                  setFilters({
+                    ...filters,
+                    matchingStatus: val === 'ALL' ? undefined : (val as MatchingStatus),
+                  })
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Statuses</SelectItem>
+                  <SelectItem value="NEW">New</SelectItem>
+                  <SelectItem value="MATCHING">Matching</SelectItem>
+                  <SelectItem value="MATCHED">Matched</SelectItem>
+                  <SelectItem value="PROPOSED">Proposed</SelectItem>
+                  <SelectItem value="NO_MATCH">No Match</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Priority
-            </label>
-            <select
-              value={filters.priority ?? ''}
-              onChange={(e) => setFilters({ ...filters, priority: e.target.value as ShiftPriority })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Priorities</option>
-              <option value="CRITICAL">Critical</option>
-              <option value="HIGH">High</option>
-              <option value="NORMAL">Normal</option>
-              <option value="LOW">Low</option>
-            </select>
-          </div>
+            <div>
+              <Label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Priority
+              </Label>
+              <Select
+                value={filters.priority ?? 'ALL'}
+                onValueChange={(val) =>
+                  setFilters({
+                    ...filters,
+                    priority: val === 'ALL' ? undefined : (val as ShiftPriority),
+                  })
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All Priorities" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Priorities</SelectItem>
+                  <SelectItem value="CRITICAL">Critical</SelectItem>
+                  <SelectItem value="HIGH">High</SelectItem>
+                  <SelectItem value="NORMAL">Normal</SelectItem>
+                  <SelectItem value="LOW">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              From Date
-            </label>
-            <input
-              type="date"
-              value={filters.dateFrom ?? ''}
-              onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+            <div>
+              <Label className="block text-sm font-medium text-gray-700 mb-1.5">
+                From Date
+              </Label>
+              <Input
+                type="date"
+                value={filters.dateFrom ?? ''}
+                onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              To Date
-            </label>
-            <input
-              type="date"
-              value={filters.dateTo ?? ''}
-              onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <div>
+              <Label className="block text-sm font-medium text-gray-700 mb-1.5">
+                To Date
+              </Label>
+              <Input
+                type="date"
+                value={filters.dateTo ?? ''}
+                onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
+              />
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {shifts.length === 0 ? (
         <EmptyState

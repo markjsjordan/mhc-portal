@@ -1,41 +1,29 @@
 import React from 'react';
+import {
+  Checkbox as ShadcnCheckbox,
+  type CheckboxProps as ShadcnCheckboxProps,
+} from '@/components/ui/checkbox.js';
 
-export interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
-  checked: boolean;
-  onChange?: (checked: boolean) => void;
+export interface CheckboxProps
+  extends Omit<ShadcnCheckboxProps, 'onCheckedChange'> {
   onCheckedChange?: (checked: boolean) => void;
-  disabled?: boolean;
-  label?: string;
-  id?: string;
 }
 
-/**
- * Checkbox Component
- * Stub implementation for checkboxes
- */
-export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ checked, onChange, onCheckedChange, disabled = false, label, id, ...props }, ref) => {
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const isChecked = e.target.checked;
-      if (onChange) onChange(isChecked);
-      if (onCheckedChange) onCheckedChange(isChecked);
-    };
-
-    return (
-      <label htmlFor={id} className="checkbox-wrapper">
-        <input
-          ref={ref}
-          id={id}
-          type="checkbox"
-          checked={checked}
-          onChange={handleChange}
-          disabled={disabled}
-          {...props}
-        />
-        {label && <span className="checkbox-label">{label}</span>}
-      </label>
-    );
-  }
-);
+export const Checkbox = React.forwardRef<
+  React.ElementRef<typeof ShadcnCheckbox>,
+  CheckboxProps
+>(({ onCheckedChange, ...props }, ref) => {
+  return (
+    <ShadcnCheckbox
+      ref={ref}
+      onCheckedChange={(checked) => {
+        if (onCheckedChange) {
+          onCheckedChange(checked === true);
+        }
+      }}
+      {...props}
+    />
+  );
+});
 
 Checkbox.displayName = 'Checkbox';

@@ -8,6 +8,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, ChevronLeft } from 'lucide-react';
 import { useScenario } from '../ScenarioContext';
+import { Button } from '@/components/ui/button';
 
 interface ActionButtonsProps {
   actions: string[];
@@ -55,13 +56,14 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
       </div>
 
       {showPrevious && currentStep > 0 && (
-        <button
+        <Button
+          variant="ghost"
           onClick={previousStep}
-          className="mt-4 flex items-center gap-2 text-purple-200 hover:text-white transition-colors"
+          className="mt-4 text-purple-200 hover:text-white"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-4 w-4 mr-2" />
           Go back
-        </button>
+        </Button>
       )}
     </div>
   );

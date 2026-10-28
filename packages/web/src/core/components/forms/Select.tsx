@@ -1,5 +1,7 @@
 import React from 'react';
-import { cn } from '../../utils/classnames';
+import { NativeSelect } from '@/components/ui/select.js';
+import { Label } from '@/components/ui/label.js';
+import { cn } from '@/lib/utils.js';
 
 export interface SelectOption {
   value: string;
@@ -17,32 +19,25 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   (
-    { error, label, helperText, options, placeholder, className, id, ...props },
+    { error, label, helperText, options, placeholder, className, id, required, ...props },
     ref
   ) => {
     const selectId = id || `select-${label?.toLowerCase().replace(/\s/g, '-')}`;
 
     return (
-      <div className="w-full">
+      <div className="w-full space-y-1">
         {label && (
-          <label
-            htmlFor={selectId}
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
+          <Label htmlFor={selectId} className="block text-sm font-medium">
             {label}
-            {props.required && <span className="text-red-500 ml-1">*</span>}
-          </label>
+            {required && <span className="text-destructive ml-1">*</span>}
+          </Label>
         )}
-        <select
+        <NativeSelect
           ref={ref}
           id={selectId}
-          className={cn(
-            'block w-full rounded-md border-gray-300 shadow-sm',
-            'focus:border-primary-500 focus:ring-primary-500 sm:text-sm',
-            'disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed',
-            error && 'border-red-300 focus:border-red-500 focus:ring-red-500',
-            className
-          )}
+          error={!!error}
+          required={required}
+          className={cn(className)}
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={error ? `${selectId}-error` : undefined}
           {...props}
@@ -61,14 +56,14 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               {option.label}
             </option>
           ))}
-        </select>
+        </NativeSelect>
         {error && (
-          <p className="mt-1 text-sm text-red-600" id={`${selectId}-error`}>
+          <p className="text-sm text-destructive" id={`${selectId}-error`}>
             {error}
           </p>
         )}
         {helperText && !error && (
-          <p className="mt-1 text-sm text-gray-500">{helperText}</p>
+          <p className="text-sm text-muted-foreground">{helperText}</p>
         )}
       </div>
     );

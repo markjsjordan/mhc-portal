@@ -32,6 +32,7 @@ import {
   formatTimeString,
   type VisitTaskItem,
 } from './visitTaskUtils';
+import { Button } from '@/components/ui/button.js';
 
 const FALLBACK_SCHEDULED_DATE = new Date('2026-10-08T08:30:00.000Z');
 const FALLBACK_ACTUAL_START_TIME = new Date('2026-10-08T08:35:00.000Z');
@@ -294,14 +295,12 @@ export const VisitDetailPage: React.FC = () => {
         <p className="text-sm text-gray-500 mb-6">
           The requested visit ID <code className="bg-gray-100 px-1 py-0.5 rounded text-gray-800">{id}</code> could not be loaded.
         </p>
-        <button
-          type="button"
+        <Button
           onClick={() => navigate('/scheduling')}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Scheduling
-        </button>
+        </Button>
       </div>
     );
   }
@@ -355,14 +354,15 @@ export const VisitDetailPage: React.FC = () => {
     <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Navigation & Header Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => navigate('/scheduling')}
-          className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors self-start"
+          className="self-start text-gray-600 hover:text-blue-600"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Scheduling
-        </button>
+        </Button>
 
         <div className="flex items-center gap-2.5">
           {caregiverPhone && (
@@ -383,25 +383,27 @@ export const VisitDetailPage: React.FC = () => {
               Call Client
             </a>
           )}
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors min-h-[44px]"
             title="Print Summary"
+            className="min-h-[44px]"
           >
-            <Printer className="w-4 h-4 text-gray-500" />
+            <Printer className="w-4 h-4 mr-1.5 text-gray-500" />
             <span className="hidden sm:inline">Print</span>
-          </button>
+          </Button>
           {!isLocked && canEditVisit && (
-            <button
-              type="button"
+            <Button
+              variant="default"
+              size="sm"
               onClick={() => setIsEditModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-colors min-h-[44px]"
+              className="min-h-[44px]"
               data-testid="edit-visit-button"
             >
-              <Edit3 className="w-4 h-4" />
+              <Edit3 className="w-4 h-4 mr-1.5" />
               <span>Edit Visit</span>
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -706,13 +708,12 @@ export const VisitDetailPage: React.FC = () => {
                     This visit requires a qualified caregiver to be matched and assigned.
                   </p>
                 </div>
-                <button
-                  type="button"
+                <Button
+                  size="sm"
                   onClick={() => navigate('/shift-matching')}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors"
                 >
                   Match & Assign Caregiver
-                </button>
+                </Button>
               </div>
             )}
 

@@ -8,6 +8,9 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { allScenarios, useScenario } from '../scenarios';
 import { Scenario, PersonaRole } from '../types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 export const ScenarioLibraryPage: React.FC = () => {
   const { startScenario } = useScenario();
@@ -70,18 +73,28 @@ const ScenarioCard: React.FC<ScenarioCardProps> = ({ scenario, onStart, delay })
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.5 }}
-      className="bg-white rounded-lg border-2 border-gray-200 hover:border-gray-900 transition-all p-6"
     >
-      <h3 className="text-xl font-bold text-gray-900 mb-2">{scenario.title}</h3>
-      <p className="text-gray-600 mb-4">{roleLabels[scenario.role]}</p>
-
-      {/* Start Button */}
-      <button
-        onClick={onStart}
-        className="w-full px-6 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
-      >
-        Start
-      </button>
+      <Card className="border-2 border-gray-200 hover:border-gray-900 transition-all h-full flex flex-col justify-between">
+        <CardHeader className="p-6 pb-4">
+          <div className="flex items-start justify-between gap-3 mb-2">
+            <CardTitle className="text-xl font-bold text-gray-900 leading-tight">
+              {scenario.title}
+            </CardTitle>
+            <Badge variant="secondary" className="whitespace-nowrap shrink-0">
+              {roleLabels[scenario.role]}
+            </Badge>
+          </div>
+          <p className="text-sm text-gray-600">{roleLabels[scenario.role]}</p>
+        </CardHeader>
+        <CardContent className="p-6 pt-0">
+          <Button
+            onClick={onStart}
+            className="w-full px-6 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors h-auto"
+          >
+            Start
+          </Button>
+        </CardContent>
+      </Card>
     </motion.div>
   );
 };

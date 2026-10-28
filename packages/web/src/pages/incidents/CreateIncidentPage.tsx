@@ -9,6 +9,17 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useApiClient } from '@/core/hooks';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { Textarea } from '@/components/ui/textarea.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 import {
   createIncidentApiService,
   type CreateIncidentInput,
@@ -70,157 +81,164 @@ export function CreateIncidentPage() {
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
         {/* Client ID */}
         <div>
-          <label htmlFor="clientId" className="block text-sm font-medium text-gray-700 mb-2">
-            Client ID <span className="text-red-600">*</span>
-          </label>
-          <input
+          <Label htmlFor="clientId" className="block text-sm font-medium mb-2">
+            Client ID <span className="text-destructive">*</span>
+          </Label>
+          <Input
             type="text"
             id="clientId"
             name="clientId"
             required
             value={formData.clientId}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Enter client ID"
           />
         </div>
 
         {/* Incident Type */}
         <div>
-          <label htmlFor="incidentType" className="block text-sm font-medium text-gray-700 mb-2">
-            Incident Type <span className="text-red-600">*</span>
-          </label>
-          <select
-            id="incidentType"
-            name="incidentType"
-            required
+          <Label htmlFor="incidentType" className="block text-sm font-medium mb-2">
+            Incident Type <span className="text-destructive">*</span>
+          </Label>
+          <Select
             value={formData.incidentType}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onValueChange={(val) =>
+              setFormData((prev) => ({
+                ...prev,
+                incidentType: val as CreateIncidentInput['incidentType'],
+              }))
+            }
           >
-            <option value="FALL">Fall</option>
-            <option value="MEDICATION_ERROR">Medication Error</option>
-            <option value="INJURY">Injury</option>
-            <option value="ABUSE_ALLEGATION">Abuse Allegation</option>
-            <option value="NEGLECT_ALLEGATION">Neglect Allegation</option>
-            <option value="EXPLOITATION_ALLEGATION">Exploitation Allegation</option>
-            <option value="EQUIPMENT_FAILURE">Equipment Failure</option>
-            <option value="EMERGENCY_HOSPITALIZATION">Emergency Hospitalization</option>
-            <option value="DEATH">Death</option>
-            <option value="ELOPEMENT">Elopement</option>
-            <option value="BEHAVIORAL_INCIDENT">Behavioral Incident</option>
-            <option value="INFECTION">Infection</option>
-            <option value="PRESSURE_INJURY">Pressure Injury</option>
-            <option value="CLIENT_REFUSAL">Client Refusal</option>
-            <option value="OTHER">Other</option>
-          </select>
+            <SelectTrigger id="incidentType" className="w-full">
+              <SelectValue placeholder="Select incident type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="FALL">Fall</SelectItem>
+              <SelectItem value="MEDICATION_ERROR">Medication Error</SelectItem>
+              <SelectItem value="INJURY">Injury</SelectItem>
+              <SelectItem value="ABUSE_ALLEGATION">Abuse Allegation</SelectItem>
+              <SelectItem value="NEGLECT_ALLEGATION">Neglect Allegation</SelectItem>
+              <SelectItem value="EXPLOITATION_ALLEGATION">Exploitation Allegation</SelectItem>
+              <SelectItem value="EQUIPMENT_FAILURE">Equipment Failure</SelectItem>
+              <SelectItem value="EMERGENCY_HOSPITALIZATION">Emergency Hospitalization</SelectItem>
+              <SelectItem value="DEATH">Death</SelectItem>
+              <SelectItem value="ELOPEMENT">Elopement</SelectItem>
+              <SelectItem value="BEHAVIORAL_INCIDENT">Behavioral Incident</SelectItem>
+              <SelectItem value="INFECTION">Infection</SelectItem>
+              <SelectItem value="PRESSURE_INJURY">Pressure Injury</SelectItem>
+              <SelectItem value="CLIENT_REFUSAL">Client Refusal</SelectItem>
+              <SelectItem value="OTHER">Other</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Severity */}
         <div>
-          <label htmlFor="severity" className="block text-sm font-medium text-gray-700 mb-2">
-            Severity <span className="text-red-600">*</span>
-          </label>
-          <select
-            id="severity"
-            name="severity"
-            required
+          <Label htmlFor="severity" className="block text-sm font-medium mb-2">
+            Severity <span className="text-destructive">*</span>
+          </Label>
+          <Select
             value={formData.severity}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onValueChange={(val) =>
+              setFormData((prev) => ({
+                ...prev,
+                severity: val as CreateIncidentInput['severity'],
+              }))
+            }
           >
-            <option value="LOW">Low</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="HIGH">High</option>
-            <option value="CRITICAL">Critical</option>
-          </select>
+            <SelectTrigger id="severity" className="w-full">
+              <SelectValue placeholder="Select severity" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="LOW">Low</SelectItem>
+              <SelectItem value="MEDIUM">Medium</SelectItem>
+              <SelectItem value="HIGH">High</SelectItem>
+              <SelectItem value="CRITICAL">Critical</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Date/Time Occurred */}
         <div>
-          <label htmlFor="occurredAt" className="block text-sm font-medium text-gray-700 mb-2">
-            Date & Time Occurred <span className="text-red-600">*</span>
-          </label>
-          <input
+          <Label htmlFor="occurredAt" className="block text-sm font-medium mb-2">
+            Date & Time Occurred <span className="text-destructive">*</span>
+          </Label>
+          <Input
             type="datetime-local"
             id="occurredAt"
             name="occurredAt"
             required
             value={formData.occurredAt}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         {/* Location */}
         <div>
-          <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-            Location <span className="text-red-600">*</span>
-          </label>
-          <input
+          <Label htmlFor="location" className="block text-sm font-medium mb-2">
+            Location <span className="text-destructive">*</span>
+          </Label>
+          <Input
             type="text"
             id="location"
             name="location"
             required
             value={formData.location}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., Client's home, bathroom"
           />
         </div>
 
         {/* Description */}
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-            Description <span className="text-red-600">*</span>
-          </label>
-          <textarea
+          <Label htmlFor="description" className="block text-sm font-medium mb-2">
+            Description <span className="text-destructive">*</span>
+          </Label>
+          <Textarea
             id="description"
             name="description"
             required
             value={formData.description}
             onChange={handleChange}
             rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Describe what happened in detail..."
           />
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Include who, what, when, where, and how. Be specific and factual.
           </p>
         </div>
 
         {/* Immediate Action */}
         <div>
-          <label htmlFor="immediateAction" className="block text-sm font-medium text-gray-700 mb-2">
+          <Label htmlFor="immediateAction" className="block text-sm font-medium mb-2">
             Immediate Action Taken
-          </label>
-          <textarea
+          </Label>
+          <Textarea
             id="immediateAction"
             name="immediateAction"
             value={formData.immediateAction}
             onChange={handleChange}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="What was done immediately after the incident?"
           />
         </div>
 
         {/* Actions */}
         <div className="flex gap-3 pt-4">
-          <button
+          <Button
             type="submit"
+            variant="destructive"
             disabled={createMutation.isPending}
-            className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {createMutation.isPending ? 'Reporting...' : 'Report Incident'}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="outline"
             onClick={() => navigate('/incidents')}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </form>
     </div>

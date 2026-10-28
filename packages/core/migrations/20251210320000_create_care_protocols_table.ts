@@ -160,7 +160,9 @@ export async function up(knex: Knex): Promise<void> {
   });
 
   // Seed default protocol categories
-  await knex('protocol_categories').insert([
+  // Seed rows reference the base org; skip on fresh DBs with no org (seeded by seed-base.ts in dev/preview).
+  const hasOrg = await knex('organizations').first('id');
+  if (hasOrg) await knex('protocol_categories').insert([
     {
       id: knex.raw('gen_random_uuid()'),
       organization_id: knex.raw("(SELECT id FROM organizations LIMIT 1)"),
@@ -236,7 +238,8 @@ export async function up(knex: Knex): Promise<void> {
   ]);
 
   // Seed infection control protocols
-  await knex('care_protocols').insert([
+  // Seed rows reference the base org; skip on fresh DBs with no org (seeded by seed-base.ts in dev/preview).
+  if (hasOrg) await knex('care_protocols').insert([
     {
       id: knex.raw('gen_random_uuid()'),
       organization_id: knex.raw("(SELECT id FROM organizations LIMIT 1)"),

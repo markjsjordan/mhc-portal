@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Plus, Grid, List } from 'lucide-react';
-import { Button, LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
+import { LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/core/hooks';
 import { usePayRuns, usePayrollSummary } from '../hooks';
 import { PayRunCard, PayRunSearch, PayrollSummaryCard, CreatePayRunModal } from '../components';
@@ -43,29 +44,28 @@ export const PayRunList: React.FC = () => {
             {payRunData?.total ?? 0} total pay runs
           </p>
         </div>
-        <div className="flex gap-2">
-          <div className="flex border border-gray-300 rounded-md">
-            <button
+        <div className="flex items-center gap-2">
+          <div className="flex border border-input rounded-md p-0.5 bg-background">
+            <Button
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="icon-sm"
               onClick={() => setViewMode('grid')}
-              className={`p-2 ${
-                viewMode === 'grid' ? 'bg-gray-100' : 'hover:bg-gray-50'
-              }`}
               aria-label="Grid view"
             >
-              <Grid className="h-5 w-5" />
-            </button>
-            <button
+              <Grid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="icon-sm"
               onClick={() => setViewMode('list')}
-              className={`p-2 ${
-                viewMode === 'list' ? 'bg-gray-100' : 'hover:bg-gray-50'
-              }`}
               aria-label="List view"
             >
-              <List className="h-5 w-5" />
-            </button>
+              <List className="h-4 w-4" />
+            </Button>
           </div>
           {can('payroll:write') && (
-            <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => setIsCreateRunOpen(true)}>
+            <Button onClick={() => setIsCreateRunOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
               New Pay Run
             </Button>
           )}
@@ -99,7 +99,8 @@ export const PayRunList: React.FC = () => {
           description="Get started by creating your first pay run."
           action={
             can('payroll:write') ? (
-              <Button leftIcon={<Plus className="h-4 w-4" />} onClick={() => setIsCreateRunOpen(true)}>
+              <Button onClick={() => setIsCreateRunOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
                 Create Pay Run
               </Button>
             ) : undefined

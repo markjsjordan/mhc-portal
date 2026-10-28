@@ -1,7 +1,9 @@
 import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { Button, LoadingSpinner, ErrorMessage } from '@/core/components';
+import { LoadingSpinner, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent } from '@/components/ui/card.js';
 import { useCarePlan, useUpdateCarePlan } from '../hooks';
 import { CarePlanForm } from '../components';
 import type { UpdateCarePlanInput, CreateCarePlanInput } from '../types';
@@ -62,7 +64,8 @@ export const EditCarePlanPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link to={`/care-plans/${id}`}>
-          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Care Plan
           </Button>
         </Link>
@@ -77,13 +80,15 @@ export const EditCarePlanPage: React.FC = () => {
       </div>
 
       {/* Form */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <CarePlanForm
-          initialData={carePlan}
-          onSubmit={handleSubmit}
-          isLoading={updateCarePlan.isPending}
-        />
-      </div>
+      <Card>
+        <CardContent className="p-6">
+          <CarePlanForm
+            initialData={carePlan}
+            onSubmit={handleSubmit}
+            isLoading={updateCarePlan.isPending}
+          />
+        </CardContent>
+      </Card>
 
       {/* Loading Overlay */}
       {updateCarePlan.isPending && (

@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { Download, FileText, DollarSign, TrendingUp, Calendar } from 'lucide-react';
-import { Button, LoadingSpinner, ErrorMessage, Card } from '@/core/components';
+import { LoadingSpinner, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePermissions } from '@/core/hooks';
 import { usePayrollSummary, usePayRuns } from '../hooks';
 import { formatCurrency, formatDate } from '../utils';
@@ -85,56 +90,60 @@ export const PayrollReports: React.FC = () => {
 
       {/* Period Selector */}
       <Card>
-        <div className="p-6">
+        <CardContent className="p-6">
           <h3 className="text-lg font-semibold mb-4">Report Period</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Label htmlFor="report-period-select" className="block text-sm font-medium text-gray-700 mb-2">
                 Period
-              </label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              </Label>
+              <Select
                 value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
+                onValueChange={setSelectedPeriod}
               >
-                <option value="current-quarter">Current Quarter</option>
-                <option value="last-quarter">Last Quarter</option>
-                <option value="ytd">Year to Date</option>
-                <option value="last-year">Last Year</option>
-                <option value="custom">Custom Range</option>
-              </select>
+                <SelectTrigger id="report-period-select">
+                  <SelectValue placeholder="Select period" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="current-quarter">Current Quarter</SelectItem>
+                  <SelectItem value="last-quarter">Last Quarter</SelectItem>
+                  <SelectItem value="ytd">Year to Date</SelectItem>
+                  <SelectItem value="last-year">Last Year</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             {selectedPeriod === 'custom' && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Label htmlFor="custom-start-date" className="block text-sm font-medium text-gray-700 mb-2">
                     Start Date
-                  </label>
-                  <input
+                  </Label>
+                  <Input
+                    id="custom-start-date"
                     type="date"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Label htmlFor="custom-end-date" className="block text-sm font-medium text-gray-700 mb-2">
                     End Date
-                  </label>
-                  <input
+                  </Label>
+                  <Input
+                    id="custom-end-date"
                     type="date"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   />
                 </div>
               </>
             )}
           </div>
-        </div>
+        </CardContent>
       </Card>
 
       {/* Summary Statistics */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
-            <div className="p-6">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Total Payroll</p>
@@ -144,11 +153,11 @@ export const PayrollReports: React.FC = () => {
                 </div>
                 <DollarSign className="h-8 w-8 text-green-600" />
               </div>
-            </div>
+            </CardContent>
           </Card>
 
           <Card>
-            <div className="p-6">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Tax Withheld</p>
@@ -158,11 +167,11 @@ export const PayrollReports: React.FC = () => {
                 </div>
                 <FileText className="h-8 w-8 text-blue-600" />
               </div>
-            </div>
+            </CardContent>
           </Card>
 
           <Card>
-            <div className="p-6">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Caregivers Paid</p>
@@ -172,11 +181,11 @@ export const PayrollReports: React.FC = () => {
                 </div>
                 <TrendingUp className="h-8 w-8 text-purple-600" />
               </div>
-            </div>
+            </CardContent>
           </Card>
 
           <Card>
-            <div className="p-6">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Total Hours</p>
@@ -186,7 +195,7 @@ export const PayrollReports: React.FC = () => {
                 </div>
                 <Calendar className="h-8 w-8 text-orange-600" />
               </div>
-            </div>
+            </CardContent>
           </Card>
         </div>
       )}
@@ -199,7 +208,7 @@ export const PayrollReports: React.FC = () => {
             const Icon = report.icon;
             return (
               <Card key={index} className="hover:shadow-md transition-shadow">
-                <div className="p-6">
+                <CardContent className="p-6">
                   <div className={`inline-flex p-3 rounded-lg ${report.color} mb-4`}>
                     <Icon className="h-6 w-6" />
                   </div>
@@ -214,28 +223,28 @@ export const PayrollReports: React.FC = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        leftIcon={<Download className="h-4 w-4" />}
                         onClick={() => handleDownloadReport(report.title)}
                         disabled
                         title="Report generation coming soon"
                         className="flex-1 opacity-50 cursor-not-allowed"
                       >
+                        <Download className="h-4 w-4 mr-1.5" />
                         PDF
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        leftIcon={<Download className="h-4 w-4" />}
                         onClick={() => handleDownloadReport(report.title)}
                         disabled
                         title="Report generation coming soon"
                         className="flex-1 opacity-50 cursor-not-allowed"
                       >
+                        <Download className="h-4 w-4 mr-1.5" />
                         CSV
                       </Button>
                     </div>
                   )}
-                </div>
+                </CardContent>
               </Card>
             );
           })}
@@ -245,7 +254,7 @@ export const PayrollReports: React.FC = () => {
       {/* Recent Pay Runs */}
       {payRunData && payRunData.items.length > 0 && (
         <Card>
-          <div className="p-6">
+          <CardContent className="p-6">
             <h2 className="text-xl font-bold mb-4">Recent Pay Runs</h2>
             <div className="space-y-3">
               {payRunData.items.slice(0, 5).map((payRun) => (
@@ -270,7 +279,7 @@ export const PayrollReports: React.FC = () => {
                 </div>
               ))}
             </div>
-          </div>
+          </CardContent>
         </Card>
       )}
     </div>

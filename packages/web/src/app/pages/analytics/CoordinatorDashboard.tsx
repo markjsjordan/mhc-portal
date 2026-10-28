@@ -15,7 +15,9 @@ import {
   MapPin,
   Activity,
 } from 'lucide-react';
-import { Card, LoadingSpinner, ErrorMessage, Badge } from '@/core/components';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner, ErrorMessage } from '@/core/components';
 import { KPICard } from './components/KPICard';
 import { AlertsList } from './components/charts/AlertsList';
 import {
@@ -142,17 +144,24 @@ export function CoordinatorDashboard() {
           </div>
 
           {/* EVV Issues */}
-          <Card padding="md" className="mb-6">
-            <Card.Header
-              title="EVV Issues"
-              subtitle="Electronic Visit Verification exceptions"
-              action={
-                <Badge variant={evvExceptions && evvExceptions.length > 0 ? 'warning' : 'success'}>
-                  {evvExceptions?.length ?? 0} Issues
-                </Badge>
-              }
-            />
-            <Card.Content>
+          <Card className="mb-6">
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
+              <div>
+                <CardTitle className="text-lg font-semibold text-gray-900">EVV Issues</CardTitle>
+                <CardDescription className="text-sm text-gray-600">Electronic Visit Verification exceptions</CardDescription>
+              </div>
+              <Badge
+                variant="outline"
+                className={
+                  evvExceptions && evvExceptions.length > 0
+                    ? 'bg-amber-100 text-amber-800 border-amber-200'
+                    : 'bg-green-100 text-green-800 border-green-200'
+                }
+              >
+                {evvExceptions?.length ?? 0} Issues
+              </Badge>
+            </CardHeader>
+            <CardContent>
               {evvExceptions && evvExceptions.length > 0 ? (
                 <div className="space-y-3">
                   {evvExceptions.slice(0, 5).map((exception) => (
@@ -170,7 +179,7 @@ export function CoordinatorDashboard() {
                             {exception.description}
                           </div>
                           <div className="mt-1 flex items-center gap-2">
-                            <Badge variant="error">{exception.exceptionType}</Badge>
+                            <Badge variant="destructive">{exception.exceptionType}</Badge>
                             <span className="text-xs text-gray-500">
                               {new Date(exception.visitDate).toLocaleDateString()}
                             </span>
@@ -178,12 +187,13 @@ export function CoordinatorDashboard() {
                         </div>
                       </div>
                       <Badge
-                        variant={
+                        variant="outline"
+                        className={
                           exception.status === 'PENDING'
-                            ? 'warning'
+                            ? 'bg-amber-100 text-amber-800 border-amber-200'
                             : exception.status === 'APPROVED'
-                            ? 'success'
-                            : 'error'
+                            ? 'bg-green-100 text-green-800 border-green-200'
+                            : 'bg-red-100 text-red-800 border-red-200'
                         }
                       >
                         {exception.status}
@@ -197,16 +207,16 @@ export function CoordinatorDashboard() {
                   <p>No EVV issues at this time</p>
                 </div>
               )}
-            </Card.Content>
+            </CardContent>
           </Card>
 
           {/* Caregiver Status (Mock Data) */}
-          <Card padding="md" className="mb-6">
-            <Card.Header
-              title="Caregiver Status"
-              subtitle="Current availability"
-            />
-            <Card.Content>
+          <Card className="mb-6">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-900">Caregiver Status</CardTitle>
+              <CardDescription className="text-sm text-gray-600">Current availability</CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center p-4 bg-green-50 rounded-lg">
                   <Users className="h-8 w-8 text-green-600 mx-auto mb-2" />
@@ -229,21 +239,28 @@ export function CoordinatorDashboard() {
                   <div className="text-sm text-gray-600">Sick/PTO</div>
                 </div>
               </div>
-            </Card.Content>
+            </CardContent>
           </Card>
 
           {/* Client Alerts */}
-          <Card padding="md">
-            <Card.Header
-              title="Client Alerts"
-              subtitle="High-priority client issues"
-              action={
-                <Badge variant={alerts && alerts.length > 0 ? 'error' : 'success'}>
-                  {alerts?.length ?? 0} Alerts
-                </Badge>
-              }
-            />
-            <Card.Content>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
+              <div>
+                <CardTitle className="text-lg font-semibold text-gray-900">Client Alerts</CardTitle>
+                <CardDescription className="text-sm text-gray-600">High-priority client issues</CardDescription>
+              </div>
+              <Badge
+                variant="outline"
+                className={
+                  alerts && alerts.length > 0
+                    ? 'bg-red-100 text-red-800 border-red-200'
+                    : 'bg-green-100 text-green-800 border-green-200'
+                }
+              >
+                {alerts?.length ?? 0} Alerts
+              </Badge>
+            </CardHeader>
+            <CardContent>
               {alerts && alerts.length > 0 ? (
                 <AlertsList
                   alerts={alerts}
@@ -255,7 +272,7 @@ export function CoordinatorDashboard() {
                   <p>No client alerts at this time</p>
                 </div>
               )}
-            </Card.Content>
+            </CardContent>
           </Card>
         </>
       )}

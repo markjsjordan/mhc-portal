@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertTriangle, Clock, Calendar, ShieldAlert } from 'lucide-react';
-import { Button } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
 import { useNavigate } from 'react-router-dom';
 import type { SupervisoryCadenceResult } from '../utils/supervisory-cadence';
 
@@ -58,7 +58,7 @@ export const SupervisionAlertBanner: React.FC<SupervisionAlertBannerProps> = ({
         </div>
         <Button
           size="sm"
-          variant={isOverdue ? 'danger' : 'outline'}
+          variant={isOverdue ? 'destructive' : 'outline'}
           onClick={handleScheduleClick}
           className="ml-4 flex-shrink-0"
         >
@@ -111,12 +111,12 @@ export const SupervisionAlertBanner: React.FC<SupervisionAlertBannerProps> = ({
 
         <div className="flex-shrink-0 w-full sm:w-auto">
           <Button
-            variant={isOverdue ? 'danger' : 'primary'}
+            variant={isOverdue ? 'destructive' : 'default'}
             size="sm"
             onClick={handleScheduleClick}
-            leftIcon={<Calendar className="h-4 w-4" />}
             className="w-full sm:w-auto shadow-sm"
           >
+            <Calendar className="h-4 w-4" />
             Schedule Supervision Visit
           </Button>
         </div>

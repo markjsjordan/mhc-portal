@@ -6,6 +6,11 @@
 
 import React from 'react';
 import type { ActivityType } from '@folkcare/family-engagement';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { Checkbox } from '@/components/ui/checkbox.js';
 
 interface ActivityFiltersProps {
   selectedTypes: ActivityType[];
@@ -48,83 +53,102 @@ export const ActivityFilters: React.FC<ActivityFiltersProps> = ({
   };
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Filter Activities</h3>
-
-      {/* Date Range Presets */}
-      <div className="mb-4">
-        <label className="block text-xs font-medium text-gray-700 mb-2">Time Period</label>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => handlePresetRange(7)}
-            className="rounded-md bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-200"
-          >
-            Last 7 days
-          </button>
-          <button
-            onClick={() => handlePresetRange(30)}
-            className="rounded-md bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-200"
-          >
-            Last 30 days
-          </button>
-          <button
-            onClick={() => handlePresetRange(90)}
-            className="rounded-md bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-200"
-          >
-            Last 90 days
-          </button>
+    <Card>
+      <CardHeader className="p-4 pb-0">
+        <CardTitle className="text-sm font-semibold text-gray-900">Filter Activities</CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 pt-3">
+        {/* Date Range Presets */}
+        <div className="mb-4">
+          <Label className="block text-xs font-medium text-gray-700 mb-2">Time Period</Label>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => handlePresetRange(7)}
+              className="bg-blue-100 text-blue-700 hover:bg-blue-200"
+            >
+              Last 7 days
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => handlePresetRange(30)}
+              className="bg-blue-100 text-blue-700 hover:bg-blue-200"
+            >
+              Last 30 days
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => handlePresetRange(90)}
+              className="bg-blue-100 text-blue-700 hover:bg-blue-200"
+            >
+              Last 90 days
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {/* Custom Date Range */}
-      <div className="mb-4 grid grid-cols-2 gap-2">
+        {/* Custom Date Range */}
+        <div className="mb-4 grid grid-cols-2 gap-2">
+          <div>
+            <Label className="block text-xs font-medium text-gray-700 mb-1">From</Label>
+            <Input
+              type="date"
+              value={dateRange.start}
+              onChange={(e) => onDateRangeChange({ ...dateRange, start: e.target.value })}
+              className="h-9 px-3 py-1 text-sm"
+            />
+          </div>
+          <div>
+            <Label className="block text-xs font-medium text-gray-700 mb-1">To</Label>
+            <Input
+              type="date"
+              value={dateRange.end}
+              onChange={(e) => onDateRangeChange({ ...dateRange, end: e.target.value })}
+              className="h-9 px-3 py-1 text-sm"
+            />
+          </div>
+        </div>
+
+        {/* Activity Types */}
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">From</label>
-          <input
-            type="date"
-            value={dateRange.start}
-            onChange={(e) => onDateRangeChange({ ...dateRange, start: e.target.value })}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
+          <Label className="block text-xs font-medium text-gray-700 mb-2">Activity Types</Label>
+          <div className="space-y-2">
+            {activityTypes.map((type) => (
+              <div key={type.value} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`activity-type-${type.value}`}
+                  checked={selectedTypes.includes(type.value)}
+                  onCheckedChange={() => handleTypeToggle(type.value)}
+                />
+                <Label
+                  htmlFor={`activity-type-${type.value}`}
+                  className="text-sm font-normal text-gray-700 cursor-pointer"
+                >
+                  {type.label}
+                </Label>
+              </div>
+            ))}
+          </div>
         </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">To</label>
-          <input
-            type="date"
-            value={dateRange.end}
-            onChange={(e) => onDateRangeChange({ ...dateRange, end: e.target.value })}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
-        </div>
-      </div>
 
-      {/* Activity Types */}
-      <div>
-        <label className="block text-xs font-medium text-gray-700 mb-2">Activity Types</label>
-        <div className="space-y-2">
-          {activityTypes.map((type) => (
-            <label key={type.value} className="flex items-center">
-              <input
-                type="checkbox"
-                checked={selectedTypes.includes(type.value)}
-                onChange={() => handleTypeToggle(type.value)}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">{type.label}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Clear All */}
-      {selectedTypes.length > 0 && (
-        <button
-          onClick={() => onTypeChange([])}
-          className="mt-4 w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-        >
-          Clear Filters
-        </button>
-      )}
-    </div>
+        {/* Clear All */}
+        {selectedTypes.length > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onTypeChange([])}
+            className="mt-4 w-full"
+          >
+            Clear Filters
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 };

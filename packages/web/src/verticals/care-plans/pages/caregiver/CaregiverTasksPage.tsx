@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { Calendar, Filter, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
-import { Button, Card, LoadingSpinner, EmptyState, ErrorMessage, Input, Select } from '@/core/components';
+import { LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.js';
 import { useAuth } from '@/core/hooks';
 import { useMyCaregiverId } from '@/verticals/caregivers/hooks';
 import { useTasks } from '../../hooks';
@@ -60,14 +65,6 @@ export const CaregiverTasksPage: React.FC = () => {
     t.status === 'SCHEDULED' && new Date(t.scheduledDate) < new Date()
   );
 
-  const statusOptions = [
-    { value: '', label: 'All Statuses' },
-    { value: 'SCHEDULED', label: 'Scheduled' },
-    { value: 'IN_PROGRESS', label: 'In Progress' },
-    { value: 'COMPLETED', label: 'Completed' },
-    { value: 'SKIPPED', label: 'Skipped' },
-  ];
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -93,79 +90,102 @@ export const CaregiverTasksPage: React.FC = () => {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Tasks</p>
-              <p className="text-2xl font-bold text-gray-900">{tasks.length}</p>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Tasks</p>
+                <p className="text-2xl font-bold text-gray-900">{tasks.length}</p>
+              </div>
+              <Calendar className="h-8 w-8 text-blue-500" />
             </div>
-            <Calendar className="h-8 w-8 text-blue-500" />
-          </div>
+          </CardContent>
         </Card>
 
-        <Card padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Scheduled</p>
-              <p className="text-2xl font-bold text-blue-600">{scheduledTasks.length}</p>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Scheduled</p>
+                <p className="text-2xl font-bold text-blue-600">{scheduledTasks.length}</p>
+              </div>
+              <Clock className="h-8 w-8 text-blue-500" />
             </div>
-            <Clock className="h-8 w-8 text-blue-500" />
-          </div>
+          </CardContent>
         </Card>
 
-        <Card padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Completed</p>
-              <p className="text-2xl font-bold text-green-600">{completedTasks.length}</p>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Completed</p>
+                <p className="text-2xl font-bold text-green-600">{completedTasks.length}</p>
+              </div>
+              <CheckCircle className="h-8 w-8 text-green-500" />
             </div>
-            <CheckCircle className="h-8 w-8 text-green-500" />
-          </div>
+          </CardContent>
         </Card>
 
-        <Card padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Overdue</p>
-              <p className="text-2xl font-bold text-red-600">{overdueTasks.length}</p>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Overdue</p>
+                <p className="text-2xl font-bold text-red-600">{overdueTasks.length}</p>
+              </div>
+              <AlertTriangle className="h-8 w-8 text-red-500" />
             </div>
-            <AlertTriangle className="h-8 w-8 text-red-500" />
-          </div>
+          </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
       <div className="space-y-4">
-        <div className="flex gap-4">
-          <div className="flex-1">
+        <div className="flex gap-4 items-end">
+          <div className="flex-1 space-y-1.5">
+            <Label htmlFor="task-date">Date</Label>
             <Input
+              id="task-date"
               type="date"
-              label="Date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
             />
           </div>
-          <div className="flex items-end">
+          <div>
             <Button
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
-              leftIcon={<Filter className="h-4 w-4" />}
             >
+              <Filter className="h-4 w-4 mr-2" />
               Filters
             </Button>
           </div>
         </div>
 
         {showFilters && (
-          <Card padding="md">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Select
-                label="Status"
-                options={statusOptions}
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as TaskStatus | '')}
-              />
-            </div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="status-select">Status</Label>
+                  <Select
+                    value={statusFilter || 'ALL'}
+                    onValueChange={(val) => setStatusFilter(val === 'ALL' ? '' : (val as TaskStatus))}
+                  >
+                    <SelectTrigger id="status-select">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All Statuses</SelectItem>
+                      <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+                      <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                      <SelectItem value="COMPLETED">Completed</SelectItem>
+                      <SelectItem value="SKIPPED">Skipped</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
           </Card>
         )}
       </div>

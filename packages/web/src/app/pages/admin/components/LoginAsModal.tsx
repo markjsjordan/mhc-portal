@@ -8,6 +8,7 @@ import { X, AlertCircle, Loader, ChevronUp, ChevronDown, ChevronLeft, ChevronRig
 import { useApiClient } from '@/core/hooks/api.js';
 import { useAuth } from '@/core/hooks/auth.js';
 import type { CaregiverListItem, PaginatedCaregivers } from '@/verticals/caregivers/types/index.js';
+import { Button } from '@/components/ui/button.js';
 
 interface LoginAsModalProps {
   isOpen: boolean;
@@ -145,14 +146,15 @@ export const LoginAsModal: React.FC<LoginAsModalProps> = ({
               Select a caregiver to impersonate their session
             </p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={onClose}
             disabled={isImpersonating}
-            className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
             aria-label="Close modal"
           >
             <X className="h-6 w-6" />
-          </button>
+          </Button>
         </div>
 
         {/* Error Message */}
@@ -285,34 +287,37 @@ export const LoginAsModal: React.FC<LoginAsModalProps> = ({
             {total > 0 && ` (${total} total)`}
           </div>
           <div className="flex items-center gap-2">
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1 || isLoading || isImpersonating}
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Previous page"
             >
               <ChevronLeft className="h-4 w-4" />
               <span>Prev</span>
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages || isLoading || isImpersonating}
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Next page"
             >
               <span>Next</span>
               <ChevronRight className="h-4 w-4" />
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={onClose}
               disabled={isImpersonating}
-              className="ml-2 px-4 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       </div>

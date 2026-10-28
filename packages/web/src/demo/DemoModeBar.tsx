@@ -7,6 +7,7 @@
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useDemoSession } from './useDemoSession.js';
+import { Button } from '@/components/ui/button.js';
 import type { DemoPersonaType } from './types.js';
 
 const PERSONA_LABELS: Record<DemoPersonaType, string> = {
@@ -73,50 +74,55 @@ export function DemoModeBar() {
           <div className="flex items-center gap-2">
             {/* Persona switcher dropdown */}
             <div className="relative">
-              <button
+              <Button
                 onClick={() => setIsPersonaMenuOpen(!isPersonaMenuOpen)}
-                className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded text-sm font-medium transition-colors flex items-center gap-1"
+                variant="ghost"
+                size="sm"
+                className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 h-auto font-medium"
               >
                 <span>Try another role</span>
                 <svg
-                  className={`w-4 h-4 transition-transform ${isPersonaMenuOpen ? 'rotate-180' : ''}`}
+                  className={`w-4 h-4 ml-1 transition-transform ${isPersonaMenuOpen ? 'rotate-180' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
-              </button>
+              </Button>
 
               {/* Dropdown menu */}
               {isPersonaMenuOpen && (
                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg overflow-hidden z-50">
                   <div className="py-1">
                     {session.availablePersonas.map((persona) => (
-                      <button
+                      <Button
                         key={persona.id}
                         onClick={() => {
                           void switchPersona(persona.type);
                           setIsPersonaMenuOpen(false);
                         }}
                         disabled={persona.id === session.currentPersona.id}
+                        variant="ghost"
                         className={`
-                          w-full px-4 py-2 text-left transition-colors
+                          w-full px-4 py-2 justify-start h-auto font-normal
                           ${
                             persona.id === session.currentPersona.id
-                              ? 'bg-blue-50 text-blue-700 cursor-default'
-                              : 'text-gray-700 hover:bg-gray-100'
+                              ? 'bg-blue-50 text-blue-700 cursor-default hover:bg-blue-50 hover:text-blue-700'
+                              : 'text-gray-700 hover:bg-gray-100 hover:text-gray-700'
                           }
                         `}
                       >
-                        <div className="font-medium text-sm">{persona.name}</div>
-                        <div className="text-xs text-gray-500">
-                          {persona.role}
-                          {persona.id === session.currentPersona.id && (
-                            <span className="ml-2 text-blue-600">✓ Active</span>
-                          )}
+                        <div className="text-left">
+                          <div className="font-medium text-sm">{persona.name}</div>
+                          <div className="text-xs text-gray-500">
+                            {persona.role}
+                            {persona.id === session.currentPersona.id && (
+                              <span className="ml-2 text-blue-600">✓ Active</span>
+                            )}
+                          </div>
                         </div>
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -124,13 +130,15 @@ export function DemoModeBar() {
             </div>
 
             {/* Reset button */}
-            <button
+            <Button
               onClick={() => void resetSession()}
-              className="bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded text-sm font-medium transition-colors hidden sm:block"
+              variant="ghost"
+              size="sm"
+              className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 h-auto font-medium hidden sm:block"
               title="Reset all demo changes"
             >
               Reset data
-            </button>
+            </Button>
 
             {/* Session timer */}
             <div className="text-xs opacity-75 hidden lg:block">
@@ -138,12 +146,14 @@ export function DemoModeBar() {
             </div>
 
             {/* Exit demo button */}
-            <button
+            <Button
               onClick={() => void endSession()}
-              className="bg-red-500/80 hover:bg-red-500 px-3 py-1.5 rounded text-sm font-medium transition-colors"
+              variant="ghost"
+              size="sm"
+              className="bg-red-500/80 hover:bg-red-500 text-white px-3 py-1.5 h-auto font-medium"
             >
               Exit Demo
-            </button>
+            </Button>
           </div>
         </div>
       </div>

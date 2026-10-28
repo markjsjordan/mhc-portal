@@ -15,8 +15,13 @@ import {
   PlusCircle,
   Edit3,
   Lock,
+  X,
 } from 'lucide-react';
-import { Button, Card, CardHeader, CardContent, LoadingSpinner, ErrorMessage } from '@/core/components';
+import { LoadingSpinner, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card.js';
+import { Badge } from '@/components/ui/badge.js';
+import { Checkbox } from '@/components/ui/checkbox.js';
 import { formatDate } from '@/core/utils';
 import { useVisit } from '../hooks/useVisits';
 import { useClient } from '@/verticals/client-demographics/hooks';
@@ -287,7 +292,8 @@ export const VisitDetail: React.FC = () => {
     return (
       <div className="space-y-4 max-w-4xl mx-auto py-8">
         <Link to="/scheduling">
-          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Scheduling
           </Button>
         </Link>
@@ -315,19 +321,20 @@ export const VisitDetail: React.FC = () => {
       {/* Header Navigation */}
       <div className="flex items-center justify-between">
         <Link to="/scheduling">
-          <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Visits
           </Button>
         </Link>
         <div className="flex items-center gap-3">
           {!isLocked && canEditVisit && (
             <Button
-              variant="primary"
+              variant="default"
               size="sm"
               onClick={() => setIsEditModalOpen(true)}
-              leftIcon={<Edit3 className="h-4 w-4" />}
               data-testid="edit-visit-button"
             >
+              <Edit3 className="h-4 w-4 mr-2" />
               Edit Visit
             </Button>
           )}
@@ -339,8 +346,8 @@ export const VisitDetail: React.FC = () => {
                 `/scheduling/builder?clientId=${visit.clientId}&visitType=SUPERVISION`
               )
             }
-            leftIcon={<Stethoscope className="h-4 w-4 text-blue-600" />}
           >
+            <Stethoscope className="h-4 w-4 mr-2 text-blue-600" />
             Schedule Supervision Visit
           </Button>
         </div>
@@ -470,25 +477,25 @@ export const VisitDetail: React.FC = () => {
       {/* INITIAL VISIT WORKFLOW SECTION */}
       {isInitialVisit && (
         <Card className="border-blue-200 shadow-md">
-          <CardHeader
-            title="Initial Visit Assessment Completion Checklist"
-            subtitle="Required under Florida AHCA Ch. 59A-8 & Texas HHSC 26 TAC §558 before ongoing care authorization"
-            action={
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-800">
-                  {completedCount} / {checklist.length} Completed ({progressPercent}%)
-                </span>
-                <Button
-                  size="sm"
-                  variant="primary"
-                  onClick={handleConvertFindings}
-                  leftIcon={<Sparkles className="h-4 w-4" />}
-                >
-                  Convert Findings to Draft Care Plan Tasks
-                </Button>
-              </div>
-            }
-          />
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
+            <div>
+              <CardTitle className="text-lg font-semibold">Initial Visit Assessment Completion Checklist</CardTitle>
+              <CardDescription>Required under Florida AHCA Ch. 59A-8 & Texas HHSC 26 TAC §558 before ongoing care authorization</CardDescription>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge variant="secondary">
+                {completedCount} / {checklist.length} Completed ({progressPercent}%)
+              </Badge>
+              <Button
+                size="sm"
+                variant="default"
+                onClick={handleConvertFindings}
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Convert Findings to Draft Care Plan Tasks
+              </Button>
+            </div>
+          </CardHeader>
           <CardContent className="space-y-6">
             {/* Progress Bar */}
             <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
@@ -520,11 +527,10 @@ export const VisitDetail: React.FC = () => {
                             }`}
                           >
                             <label className="flex items-start gap-3 cursor-pointer flex-1 mr-4">
-                              <input
-                                type="checkbox"
+                              <Checkbox
                                 checked={item.completed}
-                                onChange={() => toggleChecklistItem(item.id)}
-                                className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                onCheckedChange={() => toggleChecklistItem(item.id)}
+                                className="mt-1"
                               />
                               <div>
                                 <p
@@ -538,9 +544,9 @@ export const VisitDetail: React.FC = () => {
                               </div>
                             </label>
                             {item.regulatoryCode && (
-                              <span className="text-xs font-mono px-2 py-0.5 rounded bg-gray-100 text-gray-600 flex-shrink-0">
+                              <Badge variant="outline" className="font-mono text-xs flex-shrink-0">
                                 {item.regulatoryCode}
-                              </span>
+                              </Badge>
                             )}
                           </div>
                         ))}
@@ -563,12 +569,12 @@ export const VisitDetail: React.FC = () => {
                 </p>
               </div>
               <Button
-                variant="primary"
+                variant="default"
                 size="sm"
                 onClick={handleConvertFindings}
-                leftIcon={<Sparkles className="h-4 w-4" />}
                 className="w-full sm:w-auto"
               >
+                <Sparkles className="h-4 w-4 mr-2" />
                 Convert Findings to Draft Tasks
               </Button>
             </div>
@@ -579,24 +585,24 @@ export const VisitDetail: React.FC = () => {
       {/* Supervisory Cadence Summary Card */}
       {cadenceResult && (
         <Card>
-          <CardHeader
-            title="Supervisory Visit Cadence Status"
-            subtitle={`${cadenceResult.state} Licensure Regulation Oversight (${cadenceResult.cadenceDays}-Day Cycle)`}
-            action={
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  navigate(
-                    `/scheduling/builder?clientId=${visit.clientId}&visitType=SUPERVISION`
-                  )
-                }
-                leftIcon={<PlusCircle className="h-4 w-4 text-blue-600" />}
-              >
-                Schedule Supervision Visit
-              </Button>
-            }
-          />
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
+            <div>
+              <CardTitle className="text-lg font-semibold">Supervisory Visit Cadence Status</CardTitle>
+              <CardDescription>{`${cadenceResult.state} Licensure Regulation Oversight (${cadenceResult.cadenceDays}-Day Cycle)`}</CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                navigate(
+                  `/scheduling/builder?clientId=${visit.clientId}&visitType=SUPERVISION`
+                )
+              }
+            >
+              <PlusCircle className="h-4 w-4 mr-2 text-blue-600" />
+              Schedule Supervision Visit
+            </Button>
+          </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -654,12 +660,15 @@ export const VisitDetail: React.FC = () => {
                   Draft Care Plan Tasks ({convertedTasks.length} Synthesized)
                 </h3>
               </div>
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => setIsTaskModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 text-lg font-bold p-1"
+                aria-label="Close dialog"
               >
-                ✕
-              </button>
+                <X className="h-4 w-4" />
+              </Button>
             </div>
 
             <div className="p-6 overflow-y-auto space-y-4 flex-1">
@@ -712,10 +721,10 @@ export const VisitDetail: React.FC = () => {
                 Cancel
               </Button>
               <Button
-                variant="primary"
+                variant="default"
                 onClick={handleSaveDraftTasks}
-                leftIcon={<CheckCircle2 className="h-4 w-4" />}
               >
+                <CheckCircle2 className="h-4 w-4 mr-2" />
                 Confirm & Attach to Care Plan
               </Button>
             </div>

@@ -31,7 +31,19 @@ import {
   Lock,
   Check,
 } from 'lucide-react';
-import { Card, CardHeader, CardContent, Button, Badge } from '@/core/components';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card.js';
+import { Button } from '@/components/ui/button.js';
+import { Badge } from '@/components/ui/badge.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
 
 type EntityType = 'clients' | 'caregivers';
 type ImportStep = 'upload' | 'mapping' | 'preview' | 'completed';
@@ -392,36 +404,32 @@ export const BulkDataHub: React.FC = () => {
 
         {/* Tab Switcher */}
         <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1">
-          <button
+          <Button
             type="button"
+            variant={activeTab === 'import' ? 'default' : 'ghost'}
+            size="sm"
             onClick={() => {
               setActiveTab('import');
               setErrorMessage(null);
             }}
-            className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === 'import'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className="gap-2"
           >
-            <Upload className="h-4 w-4 text-blue-600" />
+            <Upload className="h-4 w-4" />
             Bulk CSV Import Wizard
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant={activeTab === 'export' ? 'default' : 'ghost'}
+            size="sm"
             onClick={() => {
               setActiveTab('export');
               setErrorMessage(null);
             }}
-            className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === 'export'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className="gap-2"
           >
-            <FileArchive className="h-4 w-4 text-purple-600" />
+            <FileArchive className="h-4 w-4" />
             Regulatory Audit Pack Export
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -479,48 +487,40 @@ export const BulkDataHub: React.FC = () => {
           {/* STEP 1: UPLOAD */}
           {step === 'upload' && (
             <Card>
-              <CardHeader
-                title="Select Entity & Upload CSV"
-                subtitle="Import clients or caregivers from HHAeXchange, ClearCare, Alora, or standard CSV."
-              />
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold text-gray-900">Select Entity & Upload CSV</CardTitle>
+                <CardDescription>Import clients or caregivers from HHAeXchange, ClearCare, Alora, or standard CSV.</CardDescription>
+              </CardHeader>
               <CardContent className="space-y-6">
                 {/* Entity Selector */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Target Entity</label>
+                  <Label className="block text-sm font-medium mb-2">Target Entity</Label>
                   <div className="grid grid-cols-2 gap-4 max-w-md">
-                    <button
+                    <Button
                       type="button"
+                      variant={entityType === 'clients' ? 'secondary' : 'outline'}
                       onClick={() => setEntityType('clients')}
-                      className={`flex items-center gap-3 p-4 rounded-lg border text-left transition-all ${
-                        entityType === 'clients'
-                          ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-500/20'
-                          : 'border-gray-200 hover:bg-gray-50'
-                      }`}
+                      className="h-auto p-4 justify-start text-left gap-3"
                     >
-                      <Users className={`h-6 w-6 ${entityType === 'clients' ? 'text-blue-600' : 'text-gray-400'}`} />
+                      <Users className="h-6 w-6 text-primary shrink-0" />
                       <div>
-                        <div className="font-semibold text-gray-900">Clients</div>
-                        <div className="text-xs text-gray-500">Demographics, contacts, addresses</div>
+                        <div className="font-semibold text-foreground">Clients</div>
+                        <div className="text-xs text-muted-foreground">Demographics, contacts, addresses</div>
                       </div>
-                    </button>
+                    </Button>
 
-                    <button
+                    <Button
                       type="button"
+                      variant={entityType === 'caregivers' ? 'secondary' : 'outline'}
                       onClick={() => setEntityType('caregivers')}
-                      className={`flex items-center gap-3 p-4 rounded-lg border text-left transition-all ${
-                        entityType === 'caregivers'
-                          ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-500/20'
-                          : 'border-gray-200 hover:bg-gray-50'
-                      }`}
+                      className="h-auto p-4 justify-start text-left gap-3"
                     >
-                      <UserCheck
-                        className={`h-6 w-6 ${entityType === 'caregivers' ? 'text-blue-600' : 'text-gray-400'}`}
-                      />
+                      <UserCheck className="h-6 w-6 text-primary shrink-0" />
                       <div>
-                        <div className="font-semibold text-gray-900">Caregivers</div>
-                        <div className="text-xs text-gray-500">Staff records, credentials, roles</div>
+                        <div className="font-semibold text-foreground">Caregivers</div>
+                        <div className="text-xs text-muted-foreground">Staff records, credentials, roles</div>
                       </div>
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -530,7 +530,7 @@ export const BulkDataHub: React.FC = () => {
                   onDrop={handleDrop}
                   className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-500 transition-colors bg-gray-50/50"
                 >
-                  <input
+                  <Input
                     type="file"
                     ref={fileInputRef}
                     accept=".csv"
@@ -547,7 +547,7 @@ export const BulkDataHub: React.FC = () => {
                     Supports exports from HHAeXchange, ClearCare, Alora, or custom agency exports.
                   </p>
                   <Button
-                    variant="primary"
+                    variant="default"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Upload className="h-4 w-4 mr-2" />
@@ -576,10 +576,10 @@ export const BulkDataHub: React.FC = () => {
           {/* STEP 2: MAPPING */}
           {step === 'mapping' && (
             <Card>
-              <CardHeader
-                title="Column Mapping & Legacy Preset"
-                subtitle={`Map CSV columns from "${selectedFile?.name}" to MHC Portal ${entityType} fields.`}
-              />
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold text-gray-900">Column Mapping & Legacy Preset</CardTitle>
+                <CardDescription>Map CSV columns from &quot;{selectedFile?.name}&quot; to MHC Portal {entityType} fields.</CardDescription>
+              </CardHeader>
               <CardContent className="space-y-6">
                 {/* Preset Banner */}
                 <div className="flex items-center justify-between p-4 rounded-lg bg-blue-50 border border-blue-200">
@@ -590,7 +590,7 @@ export const BulkDataHub: React.FC = () => {
                       <span className="text-blue-800 font-medium">{detectedPreset} Format</span>
                     </div>
                   </div>
-                  <Badge variant="info">Auto-Mapped {Object.keys(mappings).length} Columns</Badge>
+                  <Badge variant="outline" className="border-blue-300 text-blue-700 bg-blue-50">Auto-Mapped {Object.keys(mappings).length} Columns</Badge>
                 </div>
 
                 {/* Mapping Table */}
@@ -613,13 +613,12 @@ export const BulkDataHub: React.FC = () => {
                             <td className="px-4 py-3 font-mono text-xs text-gray-900 font-semibold">{header}</td>
                             <td className="px-4 py-3 text-gray-500">{header}</td>
                             <td className="px-4 py-3">
-                              <select
-                                value={currentTarget}
-                                onChange={(e) => {
-                                  const val = e.target.value;
+                              <Select
+                                value={currentTarget || '__none__'}
+                                onValueChange={(val) => {
                                   setMappings((prev) => {
                                     const next = { ...prev };
-                                    if (val === '') {
+                                    if (val === '__none__') {
                                       delete next[header];
                                     } else {
                                       next[header] = val;
@@ -627,21 +626,25 @@ export const BulkDataHub: React.FC = () => {
                                     return next;
                                   });
                                 }}
-                                className="w-full rounded-md border-gray-300 py-1.5 px-2 text-sm border focus:ring-blue-500 focus:border-blue-500"
                               >
-                                <option value="">-- Ignore this column --</option>
-                                {targetFields.map((tf) => (
-                                  <option key={tf.key} value={tf.key}>
-                                    {tf.label}
-                                  </option>
-                                ))}
-                              </select>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="-- Ignore this column --" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__none__">-- Ignore this column --</SelectItem>
+                                  {targetFields.map((tf) => (
+                                    <SelectItem key={tf.key} value={tf.key}>
+                                      {tf.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </td>
                             <td className="px-4 py-3">
                               {currentTarget ? (
-                                <Badge variant="success">Mapped</Badge>
+                                <Badge className="bg-green-100 text-green-800 border-transparent hover:bg-green-100">Mapped</Badge>
                               ) : (
-                                <Badge variant="default">Ignored</Badge>
+                                <Badge variant="secondary">Ignored</Badge>
                               )}
                             </td>
                           </tr>
@@ -657,7 +660,7 @@ export const BulkDataHub: React.FC = () => {
                     Back
                   </Button>
                   <Button
-                    variant="primary"
+                    variant="default"
                     disabled={isProcessing || Object.keys(mappings).length === 0}
                     onClick={handleRunValidationPreview}
                   >
@@ -681,10 +684,10 @@ export const BulkDataHub: React.FC = () => {
           {/* STEP 3: PREVIEW */}
           {step === 'preview' && previewResult && (
             <Card>
-              <CardHeader
-                title="Phase 1: Validation & Deduplication Preview"
-                subtitle="Review validated records, duplicates, and errors before committing to the database."
-              />
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold text-gray-900">Phase 1: Validation & Deduplication Preview</CardTitle>
+                <CardDescription>Review validated records, duplicates, and errors before committing to the database.</CardDescription>
+              </CardHeader>
               <CardContent className="space-y-6">
                 {/* Stats Summary Cards */}
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -719,28 +722,24 @@ export const BulkDataHub: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="dupStrategy"
-                        value="skip"
-                        checked={duplicateStrategy === 'skip'}
-                        onChange={() => setDuplicateStrategy('skip')}
-                        className="text-blue-600 focus:ring-blue-500"
-                      />
-                      <span>Skip Duplicates (Recommended)</span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="dupStrategy"
-                        value="update"
-                        checked={duplicateStrategy === 'update'}
-                        onChange={() => setDuplicateStrategy('update')}
-                        className="text-blue-600 focus:ring-blue-500"
-                      />
-                      <span>Update Existing Records</span>
-                    </label>
+                  <RadioGroup
+                    value={duplicateStrategy}
+                    onValueChange={(val) => setDuplicateStrategy(val as DuplicateStrategy)}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="skip" id="dupStrategy-skip" />
+                      <Label htmlFor="dupStrategy-skip" className="cursor-pointer">
+                        Skip Duplicates (Recommended)
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="update" id="dupStrategy-update" />
+                      <Label htmlFor="dupStrategy-update" className="cursor-pointer">
+                        Update Existing Records
+                      </Label>
+                    </div>
+                  </RadioGroup>
                   </div>
                 </div>
 
@@ -748,18 +747,16 @@ export const BulkDataHub: React.FC = () => {
                 <div className="flex items-center justify-between border-b pb-2">
                   <div className="flex gap-2">
                     {(['all', 'valid', 'issues', 'duplicates'] as const).map((filter) => (
-                      <button
+                      <Button
                         key={filter}
                         type="button"
+                        variant={previewFilter === filter ? 'default' : 'secondary'}
+                        size="sm"
                         onClick={() => setPreviewFilter(filter)}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-md capitalize transition-colors ${
-                          previewFilter === filter
-                            ? 'bg-gray-900 text-white'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
+                        className="capitalize"
                       >
                         {filter} {filter === 'all' ? `(${previewResult.totalRows})` : ''}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                   <span className="text-xs text-gray-500">Showing {filteredRows.length} rows</span>
@@ -801,11 +798,11 @@ export const BulkDataHub: React.FC = () => {
                             <td className="px-3 py-2 font-mono text-gray-500">{row.rowNumber}</td>
                             <td className="px-3 py-2">
                               {hasErrors ? (
-                                <Badge variant="error">Invalid</Badge>
+                                <Badge variant="destructive">Invalid</Badge>
                               ) : hasDup ? (
-                                <Badge variant="warning">Duplicate</Badge>
+                                <Badge className="bg-yellow-100 text-yellow-800 border-transparent hover:bg-yellow-100">Duplicate</Badge>
                               ) : (
-                                <Badge variant="success">Valid</Badge>
+                                <Badge className="bg-green-100 text-green-800 border-transparent hover:bg-green-100">Valid</Badge>
                               )}
                             </td>
                             <td className="px-3 py-2 font-mono font-medium text-gray-900">{idVal}</td>
@@ -840,7 +837,7 @@ export const BulkDataHub: React.FC = () => {
                     Back to Mappings
                   </Button>
                   <Button
-                    variant="primary"
+                    variant="default"
                     disabled={isProcessing || previewResult.validRows === 0}
                     onClick={handleConfirmAndCommit}
                   >
@@ -890,7 +887,7 @@ export const BulkDataHub: React.FC = () => {
 
                 <div className="pt-4 flex justify-center gap-3">
                   <Button
-                    variant="primary"
+                    variant="default"
                     onClick={() => {
                       setStep('upload');
                       setSelectedFile(null);
@@ -911,10 +908,12 @@ export const BulkDataHub: React.FC = () => {
       {/* TAB 2: REGULATORY AUDIT PACK EXPORT */}
       {activeTab === 'export' && (
         <Card>
-          <CardHeader
-            title="State Regulatory Audit Pack Export"
-            subtitle="Generate a comprehensive, immutable ZIP audit package for state licensing surveys (HHSC/AHCA), CMS Medicare/Medicaid audits, or accreditation reviews."
-          />
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-gray-900">State Regulatory Audit Pack Export</CardTitle>
+            <CardDescription>
+              Generate a comprehensive, immutable ZIP audit package for state licensing surveys (HHSC/AHCA), CMS Medicare/Medicaid audits, or accreditation reviews.
+            </CardDescription>
+          </CardHeader>
           <CardContent className="space-y-6">
             {/* Security Notice */}
             <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4 flex items-start gap-3">
@@ -924,7 +923,7 @@ export const BulkDataHub: React.FC = () => {
                   HIPAA Security Rule Audit Compliance (45 CFR § 164.312(b))
                 </div>
                 <div className="text-xs text-blue-800 leading-relaxed">
-                  Every regulatory audit pack generation is permanently logged with the requester's user ID, IP
+                  Every regulatory audit pack generation is permanently logged with the requester&apos;s user ID, IP
                   address, export timestamp, client count, and cryptographic manifest. The resulting archive contains
                   self-contained verification manifests to support state survey audit trails.
                 </div>
@@ -938,13 +937,13 @@ export const BulkDataHub: React.FC = () => {
                   Audit Survey Start Date
                 </label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                  <input
+                  <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 z-10 pointer-events-none" />
+                  <Input
                     id={auditPackStartDateId}
                     type="date"
                     value={exportStartDate}
                     onChange={(e) => setExportStartDate(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500"
+                    className="pl-9"
                   />
                 </div>
               </div>
@@ -954,13 +953,13 @@ export const BulkDataHub: React.FC = () => {
                   Audit Survey End Date
                 </label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                  <input
+                  <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 z-10 pointer-events-none" />
+                  <Input
                     id={auditPackEndDateId}
                     type="date"
                     value={exportEndDate}
                     onChange={(e) => setExportEndDate(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 text-sm focus:ring-blue-500 focus:border-blue-500"
+                    className="pl-9"
                   />
                 </div>
               </div>
@@ -1005,37 +1004,31 @@ export const BulkDataHub: React.FC = () => {
 
             {/* Format Selector */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Package Data Format</label>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="exportFormat"
-                    value="csv"
-                    checked={exportFormat === 'csv'}
-                    onChange={() => setExportFormat('csv')}
-                    className="text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>CSV Archive (Standard for state auditors & Excel inspection)</span>
-                </label>
-                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="exportFormat"
-                    value="json"
-                    checked={exportFormat === 'json'}
-                    onChange={() => setExportFormat('json')}
-                    className="text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>JSON Archive (Machine-readable healthcare interoperability)</span>
-                </label>
-              </div>
+              <Label className="block text-sm font-medium mb-2">Package Data Format</Label>
+              <RadioGroup
+                value={exportFormat}
+                onValueChange={(val) => setExportFormat(val as 'csv' | 'json')}
+                className="flex flex-col sm:flex-row gap-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="csv" id="fmt-csv" />
+                  <Label htmlFor="fmt-csv" className="cursor-pointer">
+                    CSV Archive (Standard for state auditors & Excel inspection)
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="json" id="fmt-json" />
+                  <Label htmlFor="fmt-json" className="cursor-pointer">
+                    JSON Archive (Machine-readable healthcare interoperability)
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
 
             {/* Action Button */}
             <div className="pt-4 border-t flex justify-end">
               <Button
-                variant="primary"
+                variant="default"
                 disabled={isExporting}
                 onClick={handleGenerateAuditPack}
               >

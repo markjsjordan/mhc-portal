@@ -12,9 +12,10 @@ import React, { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Phone, Calendar, Briefcase, GraduationCap, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { Card, CardHeader, CardContent } from '@/core/components';
-import { Button, StatusBadge, LoadingSpinner, ErrorMessage } from '@/core/components';
-import { formatDate, formatPhone } from '@/core/utils';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
+import { Button } from '@/components/ui/button.js';
+import { StatusBadge, LoadingSpinner, ErrorMessage } from '@/core/components/index.js';
+import { formatDate, formatPhone } from '@/core/utils/index.js';
 import { useCaregiver } from '../hooks/index.js';
 import {
   CaregiverActionButtons,
@@ -63,17 +64,19 @@ export const CaregiverDetail: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <div className="flex items-center gap-3">
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={() => {
             Promise.resolve(navigate('/caregivers')).catch((err: unknown) => {
               toast.error(err instanceof Error ? err.message : 'Navigation failed');
             });
           }}
-          className="text-gray-500 hover:text-gray-700"
           aria-label="Back to caregivers"
         >
           <ArrowLeft className="h-5 w-5" />
-        </button>
+        </Button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-900">
@@ -97,7 +100,8 @@ export const CaregiverDetail: React.FC = () => {
             }}
           />
           <Link to={`/caregivers/${caregiver.id}/training`}>
-            <Button variant="outline" leftIcon={<GraduationCap className="h-4 w-4" />}>
+            <Button variant="outline">
+              <GraduationCap className="h-4 w-4 mr-1.5" />
               Training & Compliance
             </Button>
           </Link>
@@ -105,8 +109,10 @@ export const CaregiverDetail: React.FC = () => {
       </div>
 
       {/* Contact */}
-      <Card padding="md">
-        <CardHeader title="Contact" />
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-lg font-medium">Contact</CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex items-center gap-2 text-sm text-gray-700">
@@ -144,11 +150,11 @@ export const CaregiverDetail: React.FC = () => {
       </Card>
 
       {/* Compliance */}
-      <Card padding="md">
-        <CardHeader
-          title="Compliance Status"
-          action={<ShieldCheck className="h-5 w-5 text-gray-400" />}
-        />
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-lg font-medium">Compliance Status</CardTitle>
+          <ShieldCheck className="h-5 w-5 text-gray-400" />
+        </CardHeader>
         <CardContent>
           <div className="flex items-center gap-3">
             <StatusBadge status={caregiver.complianceStatus} />
@@ -162,8 +168,10 @@ export const CaregiverDetail: React.FC = () => {
       </Card>
 
       {/* Credentials */}
-      <Card padding="md">
-        <CardHeader title="Credentials" />
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-lg font-medium">Credentials</CardTitle>
+        </CardHeader>
         <CardContent>
           {caregiver.credentials && caregiver.credentials.length > 0 ? (
             <div className="space-y-3">
@@ -191,18 +199,16 @@ export const CaregiverDetail: React.FC = () => {
       </Card>
 
       {/* Training */}
-      <Card padding="md">
-        <CardHeader
-          title="Training"
-          action={
-            <Link
-              to={`/caregivers/${caregiver.id}/training`}
-              className="text-sm font-medium text-primary-600 hover:text-primary-700"
-            >
-              View full training dashboard &rarr;
-            </Link>
-          }
-        />
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-lg font-medium">Training</CardTitle>
+          <Link
+            to={`/caregivers/${caregiver.id}/training`}
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            View full training dashboard &rarr;
+          </Link>
+        </CardHeader>
         <CardContent>
           {caregiver.training && caregiver.training.length > 0 ? (
             <div className="space-y-3">

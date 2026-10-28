@@ -11,7 +11,9 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/hooks';
-import { Card, CardHeader, CardContent, Button, EmptyState, LoadingSpinner, ErrorMessage } from '@/core/components';
+import { EmptyState, LoadingSpinner, ErrorMessage } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
 import {
   Users,
   Calendar,
@@ -54,8 +56,7 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, icon, change, trend, 
 
   return (
     <Card
-      padding="md"
-      className={`${onClick ? 'cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 active:scale-95' : ''}`}
+      className={`p-6 ${onClick ? 'cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 active:scale-95' : ''}`}
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
@@ -141,20 +142,21 @@ interface QuickActionProps {
 
 const QuickAction: React.FC<QuickActionProps> = ({ title, description, icon, onClick }) => {
   return (
-    <button
+    <Button
+      variant="outline"
       onClick={onClick}
-      className="w-full p-4 text-left rounded-lg border-2 border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all group"
+      className="w-full h-auto p-4 text-left justify-start group"
     >
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center group-hover:bg-primary-200 transition-colors">
-          <div className="text-primary-600">{icon}</div>
+        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+          <div className="text-primary">{icon}</div>
         </div>
         <div>
-          <h4 className="font-semibold text-gray-900">{title}</h4>
-          <p className="text-sm text-gray-600">{description}</p>
+          <h4 className="font-semibold text-foreground">{title}</h4>
+          <p className="text-sm text-muted-foreground">{description}</p>
         </div>
       </div>
-    </button>
+    </Button>
   );
 };
 
@@ -382,16 +384,18 @@ export const AdministratorDashboard: React.FC = () => {
               This is an impersonation session. Your actions are being audited for compliance.
             </p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => {
               localStorage.removeItem('auth-storage');
               window.location.href = '/login';
             }}
-            className="text-yellow-600 hover:text-yellow-800 flex-shrink-0"
+            className="flex-shrink-0"
             aria-label="End impersonation"
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
       )}
 
@@ -408,7 +412,7 @@ export const AdministratorDashboard: React.FC = () => {
         {!user?.roles?.includes('CAREGIVER') && (
           <Button
             onClick={() => setIsLoginAsOpen(true)}
-            variant="primary"
+            variant="default"
             size="sm"
             className="flex items-center gap-2"
           >
@@ -472,7 +476,9 @@ export const AdministratorDashboard: React.FC = () => {
 
       {/* Recent Activity */}
       <Card>
-        <CardHeader title="Recent System Activity" />
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-900">Recent System Activity</CardTitle>
+        </CardHeader>
         <CardContent>
           <EmptyState
             title="No recent activity"
@@ -480,7 +486,7 @@ export const AdministratorDashboard: React.FC = () => {
             icon={<Activity className="h-12 w-12" />}
             action={
               <Button
-                variant="primary"
+                variant="default"
                 size="sm"
                 onClick={() => navigate('/admin/activity')}
               >

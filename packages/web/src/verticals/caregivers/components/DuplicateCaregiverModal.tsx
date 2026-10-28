@@ -6,13 +6,23 @@
  */
 import React, { useState } from 'react';
 import type { CaregiverStatus } from '../types/index.js';
-import { Button, Modal, Checkbox, Input, Select } from '@/core/components';
+import { Button } from '@/components/ui/button.js';
+import { Input } from '@/components/ui/input.js';
+import { Label } from '@/components/ui/label.js';
+import { Checkbox } from '@/components/ui/checkbox.js';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select.js';
+import { Modal } from '@/core/components/index.js';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { caregiverApi } from '../api/index.js';
 import type { Caregiver } from '../types/index.js';
-import type { SelectOption } from '@/core/components/forms/Select';
 
 export interface DuplicateCaregiverModalProps {
   isOpen: boolean;
@@ -29,6 +39,18 @@ interface CopyFieldsOptions {
   performanceReviews: boolean;
   backgroundCheckResults: boolean;
 }
+
+interface StatusOption {
+  value: CaregiverStatus;
+  label: string;
+}
+
+const statusOptions: StatusOption[] = [
+  { value: 'PENDING_ONBOARDING', label: 'Pending Onboarding' },
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'INACTIVE', label: 'Inactive' },
+  { value: 'ON_LEAVE', label: 'On Leave' },
+];
 
 export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = ({
   isOpen,
@@ -115,13 +137,6 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
     duplicateMutation.mutate(payload);
   };
 
-  const statusOptions: SelectOption[] = [
-    { value: 'PENDING_ONBOARDING', label: 'Pending Onboarding' },
-    { value: 'ACTIVE', label: 'Active' },
-    { value: 'INACTIVE', label: 'Inactive' },
-    { value: 'ON_LEAVE', label: 'On Leave' },
-  ];
-
   return (
     <Modal
       isOpen={isOpen}
@@ -141,47 +156,79 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
 
         {/* New caregiver fields */}
         <div className="space-y-3">
-          <Input
-            label="New Employee #"
-            value={newEmployeeNumber}
-            onChange={(e) => setNewEmployeeNumber(e.target.value)}
-            placeholder="e.g., EMP-2024-999"
-            required
-            disabled={duplicateMutation.isPending}
-          />
+          <div className="space-y-1.5">
+            <Label htmlFor="dup-employee-number">
+              New Employee # <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="dup-employee-number"
+              value={newEmployeeNumber}
+              onChange={(e) => setNewEmployeeNumber(e.target.value)}
+              placeholder="e.g., EMP-2024-999"
+              required
+              disabled={duplicateMutation.isPending}
+            />
+          </div>
 
-          <Input
-            label="New First Name"
-            value={newFirstName}
-            onChange={(e) => setNewFirstName(e.target.value)}
-            required
-            disabled={duplicateMutation.isPending}
-          />
+          <div className="space-y-1.5">
+            <Label htmlFor="dup-first-name">
+              New First Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="dup-first-name"
+              value={newFirstName}
+              onChange={(e) => setNewFirstName(e.target.value)}
+              required
+              disabled={duplicateMutation.isPending}
+            />
+          </div>
 
-          <Input
-            label="New Last Name"
-            value={newLastName}
-            onChange={(e) => setNewLastName(e.target.value)}
-            required
-            disabled={duplicateMutation.isPending}
-          />
+          <div className="space-y-1.5">
+            <Label htmlFor="dup-last-name">
+              New Last Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="dup-last-name"
+              value={newLastName}
+              onChange={(e) => setNewLastName(e.target.value)}
+              required
+              disabled={duplicateMutation.isPending}
+            />
+          </div>
 
-          <Input
-            label="New Email"
-            type="email"
-            value={newEmail}
-            onChange={(e) => setNewEmail(e.target.value)}
-            required
-            disabled={duplicateMutation.isPending}
-          />
+          <div className="space-y-1.5">
+            <Label htmlFor="dup-email">
+              New Email <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="dup-email"
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              required
+              disabled={duplicateMutation.isPending}
+            />
+          </div>
 
-          <Select
-            label="New Status"
-            value={newStatus}
-            onChange={(e) => setNewStatus(e.target.value as CaregiverStatus)}
-            options={statusOptions}
-            disabled={duplicateMutation.isPending}
-          />
+          <div className="space-y-1.5">
+            <Label htmlFor="dup-status">New Status</Label>
+            <Select
+              value={newStatus}
+              onValueChange={(val) => setNewStatus(val as CaregiverStatus)}
+              disabled={duplicateMutation.isPending}
+            >
+              <SelectTrigger id="dup-status">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Field selection */}
@@ -199,24 +246,31 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
             ].map(({ id, label }) => (
               <div key={id} className="flex items-center gap-2">
                 <Checkbox
-                  label={label}
+                  id={`copy-field-${id}`}
                   checked={copyFields[id as keyof CopyFieldsOptions]}
                   onCheckedChange={(checked) =>
                     setCopyFields((prev) => ({
                       ...prev,
-                      [id]: checked,
+                      [id]: checked === true,
                     }))
                   }
                   disabled={duplicateMutation.isPending}
                 />
+                <Label
+                  htmlFor={`copy-field-${id}`}
+                  className="text-sm font-normal text-gray-900 cursor-pointer"
+                >
+                  {label}
+                </Label>
               </div>
             ))}
           </div>
         </div>
 
         {/* Action buttons */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        <div className="flex justify-end gap-3 pt-4 border-t border-border">
           <Button
+            type="button"
             onClick={handleClose}
             variant="outline"
             disabled={duplicateMutation.isPending}
@@ -224,12 +278,12 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
             Cancel
           </Button>
           <Button
+            type="button"
             onClick={handleDuplicate}
-            variant="primary"
+            variant="default"
             disabled={duplicateMutation.isPending}
-            isLoading={duplicateMutation.isPending}
           >
-            Create Duplicate
+            {duplicateMutation.isPending ? 'Creating...' : 'Create Duplicate'}
           </Button>
         </div>
       </div>
