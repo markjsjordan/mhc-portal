@@ -67,6 +67,46 @@ describe('wdvf3abbth Care Plan Creation Fixes', () => {
       expect(result.clientId).toBe(validInput.clientId);
       expect(result.name).toBe(validInput.name);
     });
+
+    it('should validate system/seed UUIDs like 00000000-0000-0000-0000-000000000001 (wdvf3abxbu)', () => {
+      const systemInput = {
+        clientId: '00000000-0000-0000-0000-000000000004',
+        organizationId: '00000000-0000-0000-0000-000000000001',
+        branchId: '00000000-0000-0000-0000-000000000002',
+        coordinatorId: '00000000-0000-0000-0000-000000000003',
+        name: 'Marquette Care Plan',
+        planType: 'PERSONAL_CARE',
+        effectiveDate: '2026-10-27',
+        expirationDate: '2026-12-31',
+        goals: [],
+        interventions: [],
+      };
+
+      const result = CarePlanValidator.validateCreateCarePlan(systemInput);
+      expect(result).toBeDefined();
+      expect(result.organizationId).toBe('00000000-0000-0000-0000-000000000001');
+      expect(result.branchId).toBe('00000000-0000-0000-0000-000000000002');
+    });
+
+    it('should sanitize blank string optional UUIDs, dates, and notes to undefined (wdvf3abxbu)', () => {
+      const inputWithBlanks = {
+        clientId: '00000000-0000-0000-0000-000000000004',
+        organizationId: '00000000-0000-0000-0000-000000000001',
+        branchId: '',
+        coordinatorId: '__none__',
+        expirationDate: '',
+        notes: '   ',
+        name: 'Care Plan With Blanks',
+        planType: 'PERSONAL_CARE',
+        effectiveDate: '2026-10-27',
+      };
+
+      const result = CarePlanValidator.validateCreateCarePlan(inputWithBlanks);
+      expect(result.branchId).toBeUndefined();
+      expect(result.coordinatorId).toBeUndefined();
+      expect(result.expirationDate).toBeUndefined();
+      expect(result.notes).toBeUndefined();
+    });
   });
 
   describe('Task 2: Repository Parameter Mapping', () => {
