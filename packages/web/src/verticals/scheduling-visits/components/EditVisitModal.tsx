@@ -121,9 +121,14 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
     queryFn: async () => {
       try {
         const response = await apiClient.get<{
-          success?: boolean;
+          items?: Array<{ id: string; first_name: string; last_name: string; status?: string }>;
           data?: Array<{ id: string; first_name: string; last_name: string; status?: string }>;
         }>('/api/caregivers?limit=100');
+        // Handle paginated response format (actual API response)
+        if (response && Array.isArray((response as any).items)) {
+          return (response as any).items;
+        }
+        // Fallback to legacy format
         if (response && Array.isArray((response as any).data)) {
           return (response as any).data;
         }
