@@ -83,12 +83,13 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
   );
   const [duration, setDuration] = useState<number>(initialDuration);
   const [assignedCaregiverId, setAssignedCaregiverId] = useState<string>(
-    visit.assignedCaregiverId ?? ''
+    visit.assignedCaregiverId || ''
   );
-  const [visitType, setVisitType] = useState<VisitType>(visit.visitType);
+  const [visitType, setVisitType] = useState<VisitType>(
+    (visit.visitType as VisitType) || 'REGULAR'
+  );
   const [notes, setNotes] = useState<string>(
-    ((visit as unknown as Record<string, unknown>).internalNotes as string | undefined) ??
-    ((visit as unknown as Record<string, unknown>).notes as string | undefined) ?? ''
+    (visit as any)?.internalNotes || (visit as any)?.notes || ''
   );
 
   // Errors state
@@ -120,14 +121,19 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
     queryFn: async () => {
       try {
         const response = await apiClient.get<{
-          success?: boolean;
+          items?: Array<{ id: string; first_name: string; last_name: string; status?: string }>;
           data?: Array<{ id: string; first_name: string; last_name: string; status?: string }>;
         }>('/api/caregivers?limit=100');
-        if (Array.isArray(response.data)) {
-          return response.data;
+        // Handle paginated response format (actual API response)
+        if (response && Array.isArray((response as any).items)) {
+          return (response as any).items;
+        }
+        // Fallback to legacy format
+        if (response && Array.isArray((response as any).data)) {
+          return (response as any).data;
         }
         if (Array.isArray(response)) {
-          return response as Array<{ id: string; first_name: string; last_name: string; status?: string }>;
+          return response;
         }
         return [];
       } catch (err) {
@@ -209,9 +215,11 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
         onSaved(updated);
       }
       onClose();
-    } catch (err: unknown) {
+    } catch (err: any) {
       const errMsg =
-        err instanceof Error ? err.message : 'Failed to update visit. Please check inputs and try again.';
+        err?.response?.data?.error ||
+        err?.message ||
+        'Failed to update visit. Please check inputs and try again.';
       toast.error(errMsg);
     }
   };
@@ -232,7 +240,7 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
               Edit Scheduled Visit
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Visit ID: <span className="font-mono text-foreground">{visit.id.slice(0, 8)}...</span>
+              Visit ID: <span className="font-mono text-foreground">{visit?.id?.slice(0, 8)}...</span>
             </p>
           </div>
           <Button
@@ -265,12 +273,7 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
         )}
 
         {/* Form Body */}
-        <form
-          onSubmit={(e) => {
-            void handleSubmit(e);
-          }}
-          className="p-6 overflow-y-auto flex-1 space-y-6"
-        >
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-6">
           {/* Section: Date & Time */}
           <div className="space-y-4">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -387,7 +390,7 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
                 ))}
               </SelectContent>
             </Select>
-            {VISIT_TYPES[visitType].requiredCertifications.length > 0 && (
+            {VISIT_TYPES[visitType]?.requiredCertifications?.length > 0 && (
               <p className="text-xs text-primary bg-primary/10 p-2 rounded border border-primary/20">
                 Requires certification: {VISIT_TYPES[visitType].requiredCertifications.join(', ')}
               </p>
@@ -409,7 +412,7 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="UNASSIGNED">-- Unassigned --</SelectItem>
-                {caregivers.map((cg) => (
+                {caregivers.map((cg: any) => (
                   <SelectItem key={cg.id} value={cg.id}>
                     {cg.first_name} {cg.last_name} {cg.status ? `(${cg.status})` : ''}
                   </SelectItem>
@@ -502,7 +505,7 @@ export const EditVisitModal: React.FC<EditVisitModalProps> = ({
   onClose,
   onSaved,
 }) => {
-  if (!isOpen) return null;
+  if (!isOpen || !visit) return null;
 
   return (
     <EditVisitModalContent
