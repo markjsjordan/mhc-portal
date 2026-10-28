@@ -114,3 +114,98 @@ describe('FamilyEngagementService staff inbox', () => {
     expect(messageRepo.markThreadReadByStaff).not.toHaveBeenCalled();
   });
 });
+
+describe('FamilyEngagementService staff-initiated threads', () => {
+  const MEMBER = {
+    id: 'fam-1',
+    clientId: 'client-1',
+    organizationId: 'org-1',
+    branchId: 'branch-1',
+    status: 'ACTIVE',
+  };
+  let service: FamilyEngagementService;
+  let messageRepo: any;
+  let familyMemberRepo: any;
+  let notificationRepo: any;
+
+  const input = {
+    familyMemberId: 'fam-1',
+    clientId: 'client-1',
+    subject: 'Care plan update',
+    initialMessage: 'Hello',
+  };
+
+  beforeEach(() => {
+    messageRepo = {
+      createThread: vi.fn().mockResolvedValue({ id: 'thread-9' }),
+      sendMessage: vi
+        .fn()
+        .mockResolvedValue({ id: 'msg-1', senderName: 'Coordinator', threadId: 'thread-9' }),
+    };
+    familyMemberRepo = { findById: vi.fn().mockResolvedValue(MEMBER) };
+    notificationRepo = { createNotification: vi.fn().mockResolvedValue({}) };
+    service = new FamilyEngagementService(
+      familyMemberRepo,
+      notificationRepo,
+      {} as any,
+      messageRepo,
+      { hasPermission: vi.fn().mockReturnValue(true) } as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      undefined as any
+    );
+    vi.spyOn(service as any, 'getUserName').mockResolvedValue('Coordinator');
+  });
+
+  it('creates a STAFF thread assigned to the creator and notifies the family member', async () => {
+    await service.createMessageThread(input as any, ctx(['COORDINATOR']));
+    expect(messageRepo.createThread).toHaveBeenCalledWith(
+      expect.objectContaining({
+        branchId: 'branch-1',
+        assignedToUserId: 'user-1',
+        organizationId: 'org-1',
+      })
+    );
+    expect(messageRepo.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ senderType: 'STAFF', threadId: 'thread-9' })
+    );
+    expect(notificationRepo.createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ familyMemberId: 'fam-1', category: 'MESSAGE' })
+    );
+  });
+
+  it('rejects family members from another organization', async () => {
+    familyMemberRepo.findById.mockResolvedValue({ ...MEMBER, organizationId: 'org-2' });
+    await expect(service.createMessageThread(input as any, ctx(['ADMIN']))).rejects.toThrow(
+      'Family member not found'
+    );
+    expect(messageRepo.createThread).not.toHaveBeenCalled();
+  });
+
+  it('rejects a family member that does not belong to the supplied client', async () => {
+    await expect(
+      service.createMessageThread({ ...input, clientId: 'client-2' } as any, ctx(['ADMIN']))
+    ).rejects.toThrow('Family member not found');
+  });
+
+  it('rejects coordinators outside the family member branch', async () => {
+    await expect(
+      service.createMessageThread(
+        input as any,
+        ctx(['COORDINATOR'], { branchIds: ['branch-2'] })
+      )
+    ).rejects.toThrow('Family member not found');
+  });
+
+  it('labels family-initiated threads as FAMILY without staff notification', async () => {
+    await service.createMessageThread(input as any, ctx(['FAMILY']));
+    expect(messageRepo.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ senderType: 'FAMILY' })
+    );
+    expect(messageRepo.createThread).toHaveBeenCalledWith(
+      expect.objectContaining({ assignedToUserId: undefined })
+    );
+    expect(notificationRepo.createNotification).not.toHaveBeenCalled();
+  });
+});
