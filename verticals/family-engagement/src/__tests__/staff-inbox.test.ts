@@ -64,11 +64,11 @@ describe('FamilyEngagementService staff inbox', () => {
     );
   });
 
-  it('limits caregivers to threads assigned to them', async () => {
+  it('limits caregivers to threads assigned to or shared with them', async () => {
     await service.getStaffInbox(ctx(['CAREGIVER'], { userId: 'cg-1' }));
     expect(messageRepo.getStaffInbox).toHaveBeenCalledWith(
       'org-1',
-      { assignedToUserId: 'cg-1' },
+      { caregiverUserId: 'cg-1' },
       undefined
     );
   });
@@ -99,6 +99,17 @@ describe('FamilyEngagementService staff inbox', () => {
     await expect(
       service.getMessagesInThread('thread-1', ctx(['CAREGIVER'], { userId: 'cg-2' }))
     ).rejects.toThrow('not found');
+  });
+
+  it('lets a caregiver listed as participant read the thread', async () => {
+    messageRepo.getThreadByIdForOrganization.mockResolvedValue({
+      ...THREAD,
+      assignedToUserId: null,
+      participants: ['fam-1', 'cg-2'],
+    });
+    await expect(
+      service.getMessagesInThread('thread-1', ctx(['CAREGIVER'], { userId: 'cg-2' }))
+    ).resolves.toEqual([]);
   });
 
   it('includes internal notes and marks read for staff, with audit', async () => {

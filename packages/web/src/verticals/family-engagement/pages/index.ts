@@ -7,3 +7,4 @@ export * from './SchedulePage';
 export * from './CarePlanPage';
 export * from './HealthUpdatesPage';
 export * from './StaffMessagesPage';
+export * from './CaregiverMessagesPage';

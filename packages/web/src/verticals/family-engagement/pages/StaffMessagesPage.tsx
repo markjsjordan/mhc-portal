@@ -21,7 +21,12 @@ import { Badge } from '@/components/ui/badge.js';
 
 type StatusFilter = 'OPEN' | 'CLOSED';
 
-export const StaffMessagesPage: React.FC = () => {
+export interface StaffMessagesPageProps {
+  /** Route prefix used for thread links (e.g. '/messages' or '/caregiver/messages') */
+  basePath?: string;
+}
+
+export const StaffMessagesPage: React.FC<StaffMessagesPageProps> = ({ basePath = '/messages' }) => {
   const { threadId } = useParams<{ threadId: string }>();
   const [status, setStatus] = useState<StatusFilter>('OPEN');
 
@@ -68,7 +73,7 @@ export const StaffMessagesPage: React.FC = () => {
                   {threads.map((thread) => (
                     <li key={thread.id}>
                       <Link
-                        to={`/messages/${thread.id}`}
+                        to={`${basePath}/${thread.id}`}
                         className={`block rounded-lg border p-3 hover:bg-gray-50 transition-colors ${
                           thread.id === threadId ? 'border-primary bg-primary/5' : 'border-gray-200'
                         }`}

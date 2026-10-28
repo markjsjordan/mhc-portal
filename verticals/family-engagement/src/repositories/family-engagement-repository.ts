@@ -469,7 +469,7 @@ export class MessageRepository {
         assigned_to_user_id, organization_id, branch_id,
         created_by, updated_by, created_at, updated_at
       ) VALUES (
-        gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $9, NOW(), NOW()
+        gen_random_uuid(), $1, $2, $3, $4, $5::uuid[], $6, $7, $8, $9, $9, NOW(), NOW()
       )
       RETURNING *
     `;
@@ -479,7 +479,8 @@ export class MessageRepository {
       input.clientId,
       input.subject,
       input.priority || 'NORMAL',
-      JSON.stringify([input.familyMemberId, input.createdBy]),
+      // participants is a uuid[] column: pass a real array (deduplicated), never JSON
+      [...new Set([input.familyMemberId, input.createdBy, ...(input.caregiverUserIds ?? [])])],
       input.assignedToUserId || null,
       input.organizationId,
       input.branchId,
@@ -605,7 +606,7 @@ export class MessageRepository {
    */
   async getStaffInbox(
     organizationId: UUID,
-    scope: { branchIds?: UUID[]; assignedToUserId?: UUID },
+    scope: { branchIds?: UUID[]; caregiverUserId?: UUID },
     status?: 'OPEN' | 'CLOSED'
   ): Promise<StaffMessageThread[]> {
     const params: unknown[] = [organizationId];
@@ -614,9 +615,10 @@ export class MessageRepository {
       params.push(scope.branchIds);
       where += ` AND mt.branch_id = ANY($${params.length}::uuid[])`;
     }
-    if (scope.assignedToUserId) {
-      params.push(scope.assignedToUserId);
-      where += ` AND mt.assigned_to_user_id = $${params.length}`;
+    if (scope.caregiverUserId) {
+      // Caregivers see threads assigned to them OR where they are a listed participant.
+      params.push(scope.caregiverUserId);
+      where += ` AND (mt.assigned_to_user_id = $${params.length}::uuid OR $${params.length}::uuid = ANY(mt.participants))`;
     }
     if (status) {
       params.push(status);

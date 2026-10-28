@@ -542,11 +542,12 @@ export class FamilyEngagementService {
 
   /**
    * HIPAA minimum necessary: org-level admins see all org threads, branch-level
-   * roles see their branches, everyone else (caregivers) only threads assigned to them.
+   * roles see their branches, everyone else (caregivers) only threads assigned to them
+   * or on which they are a listed participant.
    */
   private resolveStaffScope(
     context: UserContext
-  ): { branchIds?: UUID[]; assignedToUserId?: UUID } {
+  ): { branchIds?: UUID[]; caregiverUserId?: UUID } {
     const roles = context.roles as string[];
     if (roles.some((r) => ['SUPER_ADMIN', 'ORG_ADMIN', 'ADMIN'].includes(r))) {
       return {};
@@ -554,7 +555,7 @@ export class FamilyEngagementService {
     if (roles.some((r) => ['BRANCH_ADMIN', 'COORDINATOR'].includes(r))) {
       return { branchIds: context.branchIds ?? [] };
     }
-    return { assignedToUserId: context.userId };
+    return { caregiverUserId: context.userId };
   }
 
   private async assertThreadAccess(threadId: UUID, context: UserContext): Promise<MessageThread> {
@@ -572,7 +573,10 @@ export class FamilyEngagementService {
     if (this.isStaffContext(context)) {
       const scope = this.resolveStaffScope(context);
       const branchOk = !scope.branchIds || scope.branchIds.includes(thread.branchId);
-      const assignedOk = !scope.assignedToUserId || thread.assignedToUserId === scope.assignedToUserId;
+      const assignedOk =
+        !scope.caregiverUserId ||
+        thread.assignedToUserId === scope.caregiverUserId ||
+        (thread.participants ?? []).includes(scope.caregiverUserId);
       if (!branchOk || !assignedOk) {
         throw new Error('Message thread not found') as NotFoundError;
       }
