@@ -552,6 +552,19 @@ const editMemberSchema = z.object({
 
 type EditMemberFormData = z.infer<typeof editMemberSchema>;
 
+const VALID_EDIT_ROLES = ['ORG_ADMIN', 'BRANCH_ADMIN', 'COORDINATOR', 'CAREGIVER', 'BILLING', 'SCHEDULER', 'NURSE_RN'] as const;
+
+function resolveMemberRole(roles?: string[]): EditMemberFormData['role'] {
+  const role = roles?.[0];
+  if (role && (VALID_EDIT_ROLES as readonly string[]).includes(role)) {
+    return role as EditMemberFormData['role'];
+  }
+  if (role === 'SUPER_ADMIN' || role === 'ADMIN') {
+    return 'ORG_ADMIN';
+  }
+  return 'CAREGIVER';
+}
+
 interface EditMemberModalProps {
   readonly member: TeamMember;
   readonly isOpen: boolean;
@@ -580,7 +593,7 @@ function EditMemberModal({
       firstName: member.firstName,
       lastName: member.lastName,
       email: member.email,
-      role: (member.roles[0] as EditMemberFormData['role']) ?? 'CAREGIVER',
+      role: resolveMemberRole(member.roles),
     },
   });
 
@@ -590,9 +603,9 @@ function EditMemberModal({
       firstName: member.firstName,
       lastName: member.lastName,
       email: member.email,
-      role: (member.roles[0] as EditMemberFormData['role']) ?? 'CAREGIVER',
+      role: resolveMemberRole(member.roles),
     });
-  }, [member.id, reset]);
+  }, [member.id, member.roles, member.firstName, member.lastName, member.email, reset]);
 
   if (!isOpen) return null;
 
@@ -602,10 +615,9 @@ function EditMemberModal({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="edit-member-modal-title">
-      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={onClose} />
-        <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-        <div className="inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={onClose} />
+        <div className="relative bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
           <div className="flex items-center justify-between pb-3 border-b border-gray-200">
             <h3 id="edit-member-modal-title" className="text-lg font-medium text-gray-900">
               Edit Team Member
