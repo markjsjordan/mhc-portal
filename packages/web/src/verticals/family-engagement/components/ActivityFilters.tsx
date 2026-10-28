@@ -67,7 +67,6 @@ export const ActivityFilters: React.FC<ActivityFiltersProps> = ({
               variant="secondary"
               size="sm"
               onClick={() => handlePresetRange(7)}
-              className="bg-blue-100 text-blue-700 hover:bg-blue-200"
             >
               Last 7 days
             </Button>
@@ -76,7 +75,6 @@ export const ActivityFilters: React.FC<ActivityFiltersProps> = ({
               variant="secondary"
               size="sm"
               onClick={() => handlePresetRange(30)}
-              className="bg-blue-100 text-blue-700 hover:bg-blue-200"
             >
               Last 30 days
             </Button>
@@ -85,7 +83,6 @@ export const ActivityFilters: React.FC<ActivityFiltersProps> = ({
               variant="secondary"
               size="sm"
               onClick={() => handlePresetRange(90)}
-              className="bg-blue-100 text-blue-700 hover:bg-blue-200"
             >
               Last 90 days
             </Button>

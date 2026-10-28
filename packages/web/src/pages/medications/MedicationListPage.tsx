@@ -296,7 +296,6 @@ export function MedicationListPage() {
                         <Button
                           onClick={() => markAsTakenMutation.mutate({ medicationId: medication.id })}
                           disabled={markAsTakenMutation.isPending}
-                          className="bg-green-600 hover:bg-green-700"
                         >
                           {markAsTakenMutation.isPending ? 'Marking...' : '✓ Mark as Taken'}
                         </Button>
