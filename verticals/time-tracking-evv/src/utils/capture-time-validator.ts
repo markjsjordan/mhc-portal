@@ -40,8 +40,6 @@ export type CaptureTimeValidationResult =
   | { status: 'outOfGeofence'; reasons: string[] }
   | { status: 'flagged'; reasons: string[] };
 
-// Backwards-compatible alias
-export type ValidationResult = CaptureTimeValidationResult;
 
 /**
  * Clock event input
