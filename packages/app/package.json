@@ -35,6 +35,7 @@
     "@folkcare/medication-management": "*",
     "@folkcare/payroll-processing": "*",
     "@folkcare/quality-assurance-audits": "*",
+    "@folkcare/family-engagement": "*",
     "@folkcare/scheduling-visits": "*",
     "@folkcare/shift-matching": "*",
     "@folkcare/time-tracking-evv": "*",
