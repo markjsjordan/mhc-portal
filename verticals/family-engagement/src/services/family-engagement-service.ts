@@ -403,28 +403,76 @@ export class FamilyEngagementService {
       throw new Error('Insufficient permissions to create message threads') as PermissionError;
     }
 
+    if (!context.organizationId) {
+      throw new Error('Insufficient permissions: no organization context') as PermissionError;
+    }
+
+    const isStaff = this.isStaffContext(context);
+    let branchId = context.branchIds[0] || context.organizationId; // Fallback to orgId if no branchId
+    let assignedToUserId: UUID | undefined;
+
+    if (isStaff) {
+      // Staff-initiated outreach: the recipient must be an active family member of the
+      // given client inside the caller's tenant and staff scope (HIPAA minimum necessary).
+      const member = await this.familyMemberRepo.findById(input.familyMemberId);
+      if (
+        !member ||
+        member.organizationId !== context.organizationId ||
+        member.clientId !== input.clientId ||
+        member.status !== 'ACTIVE'
+      ) {
+        throw new Error('Family member not found') as NotFoundError;
+      }
+      branchId = member.branchId || branchId;
+      const scope = this.resolveStaffScope(context);
+      if (scope.branchIds && !scope.branchIds.includes(branchId)) {
+        throw new Error('Family member not found') as NotFoundError;
+      }
+      // Assign to the creator unless told otherwise so assigned-only staff (caregivers)
+      // can still see and answer the conversation they started.
+      assignedToUserId = input.assignedToUserId ?? context.userId;
+    }
+
     // Create thread
     const thread = await this.messageRepo.createThread({
       ...input,
+      assignedToUserId,
       createdBy: context.userId,
-      organizationId: context.organizationId!,
-      branchId: context.branchIds[0] || context.organizationId! // Fallback to orgId if no branchId
+      organizationId: context.organizationId,
+      branchId
     });
 
     // Send initial message if provided
     if (input.initialMessage) {
       const senderName = await this.getUserName(context.userId);
-      await this.messageRepo.sendMessage({
+      const message = await this.messageRepo.sendMessage({
         threadId: thread.id,
         messageText: input.initialMessage,
         familyMemberId: input.familyMemberId,
         clientId: input.clientId,
         sentBy: context.userId,
-        senderType: 'STAFF',
+        senderType: isStaff ? 'STAFF' : 'FAMILY',
         senderName,
-        organizationId: context.organizationId!,
+        organizationId: context.organizationId,
         createdBy: context.userId
       });
+
+      if (isStaff) {
+        await this.notificationRepo.createNotification({
+          familyMemberId: input.familyMemberId,
+          clientId: input.clientId,
+          category: 'MESSAGE',
+          priority: input.priority === 'HIGH' ? 'HIGH' : 'NORMAL',
+          title: 'New Message',
+          message: `You have a new message from ${message.senderName}`,
+          actionUrl: `/portal/messages/${thread.id}`,
+          actionLabel: 'View Message',
+          relatedEntityType: 'MESSAGE',
+          relatedEntityId: message.id,
+          createdBy: context.userId,
+          organizationId: context.organizationId
+        });
+      }
     }
 
     return thread;
