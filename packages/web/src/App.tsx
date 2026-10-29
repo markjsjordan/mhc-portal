@@ -25,6 +25,7 @@ import {
   ActivityPage,
   MessagesPage,
   StaffMessagesPage,
+  CaregiverMessagesPage,
   NotificationsPage,
   SchedulePage,
   CarePlanPage,
@@ -531,6 +532,26 @@ function AppRoutes() {
           <ProtectedRoute>
             <AppShell>
               <CaregiverTasksPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/caregiver/messages"
+        element={
+          <ProtectedRoute requiredRoles={['CAREGIVER']}>
+            <AppShell>
+              <CaregiverMessagesPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/caregiver/messages/:threadId"
+        element={
+          <ProtectedRoute requiredRoles={['CAREGIVER']}>
+            <AppShell>
+              <CaregiverMessagesPage />
             </AppShell>
           </ProtectedRoute>
         }

@@ -137,12 +137,12 @@ export const NoteSummarizer: React.FC<NoteSummarizerProps> = ({
               <Button
                 key={s}
                 type="button"
+                size="sm"
                 variant={strategy === s ? 'default' : 'outline'}
-                size="xs"
                 onClick={() => setStrategy(s)}
                 className={`px-2 py-1 text-xs rounded border transition-colors ${
                   strategy === s
-                    ? 'bg-purple-600 text-white border-purple-600'
+                    ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
                     : 'bg-white text-gray-700 border-gray-300 hover:border-purple-400'
                 }`}
               >
@@ -154,20 +154,28 @@ export const NoteSummarizer: React.FC<NoteSummarizerProps> = ({
 
         {/* Options */}
         <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+          <div className="flex items-center gap-2 text-xs text-gray-700">
             <Checkbox
+              id="summarizer-sentiment"
               checked={showSentiment}
-              onCheckedChange={(checked) => setShowSentiment(checked === true)}
+              onCheckedChange={(val) => setShowSentiment(val === true)}
+              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
             />
-            Include sentiment
-          </label>
-          <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
+            <label htmlFor="summarizer-sentiment" className="cursor-pointer">
+              Include sentiment
+            </label>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-gray-700">
             <Checkbox
+              id="summarizer-keywords"
               checked={showKeywords}
-              onCheckedChange={(checked) => setShowKeywords(checked === true)}
+              onCheckedChange={(val) => setShowKeywords(val === true)}
+              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
             />
-            Extract keywords
-          </label>
+            <label htmlFor="summarizer-keywords" className="cursor-pointer">
+              Extract keywords
+            </label>
+          </div>
         </div>
 
         {/* Generate Button */}

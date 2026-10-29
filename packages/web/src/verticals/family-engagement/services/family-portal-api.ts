@@ -39,6 +39,7 @@ export interface FamilyPortalApiService {
     initialMessage: string
   ): Promise<MessageThread>;
   getStaffInbox(status?: 'OPEN' | 'CLOSED'): Promise<StaffMessageThread[]>;
+  getFamilyMembersForClient(clientId: UUID): Promise<FamilyMember[]>;
   updateMessageThread(
     threadId: UUID,
     changes: { status?: 'OPEN' | 'CLOSED'; assignedToUserId?: UUID | null }
@@ -141,6 +142,13 @@ export const createFamilyPortalApiService = (apiClient: ApiClient): FamilyPortal
         initialMessage,
         priority: 'NORMAL',
       });
+    },
+
+    /**
+     * Active family members of a client (staff picker for outbound messages)
+     */
+    async getFamilyMembersForClient(clientId: UUID): Promise<FamilyMember[]> {
+      return apiClient.get<FamilyMember[]>(`${BASE_URL}/family-members/client/${clientId}`);
     },
 
     /**

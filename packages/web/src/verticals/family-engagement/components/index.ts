@@ -13,6 +13,7 @@ export * from './VisitNotifications';
 export * from './MessageList';
 export * from './MessageThread';
 export * from './MessageComposer';
+export * from './NewStaffMessageDialog';
 
 // Care Overview Components
 export * from './CareSummary';

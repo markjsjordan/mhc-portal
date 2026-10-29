@@ -1,6 +1,5 @@
 // Core components
 export {
-  Button,
   Input,
   Card,
   CardHeader,
@@ -14,7 +13,6 @@ export {
 } from './core/index.js';
 
 export type {
-  ButtonProps,
   InputProps,
   CardProps,
   CardHeaderProps,

@@ -2,7 +2,9 @@
  * React Query hooks for analytics data
  */
 
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useApiClient } from '@/core/hooks';
 import type {
   OperationalKPIs,
   ComplianceAlert,
@@ -14,14 +16,15 @@ import type {
   ReportType,
   ExportFormat,
 } from '@/types/analytics-types';
-import { AnalyticsApiService, type AnalyticsFilters } from '../services/analytics-api';
+import { AnalyticsApiService, createAnalyticsApiService, type AnalyticsFilters } from '../services/analytics-api';
 
-// Initialize API service
-// In production (Vercel), API is served on same domain via rewrites, so use relative path ('')
-// In development, use localhost
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (import.meta.env.MODE === 'production' ? '' : 'http://localhost:3000');
-const analyticsApi = new AnalyticsApiService(API_BASE_URL);
+/**
+ * Hook to get the Analytics API service instance
+ */
+export function useAnalyticsApi(): AnalyticsApiService {
+  const apiClient = useApiClient();
+  return useMemo(() => createAnalyticsApiService(apiClient), [apiClient]);
+}
 
 /**
  * Hook to fetch operational KPIs
@@ -30,6 +33,7 @@ export function useOperationalKPIs(
   filters: AnalyticsFilters,
   options?: { refetchInterval?: number }
 ) {
+  const analyticsApi = useAnalyticsApi();
   return useQuery<OperationalKPIs>({
     queryKey: ['analytics', 'kpis', filters],
     queryFn: () => analyticsApi.getOperationalKPIs(filters),
@@ -45,6 +49,7 @@ export function useComplianceAlerts(
   filters: AnalyticsFilters,
   _options?: { refetchInterval?: number }
 ) {
+  const analyticsApi = useAnalyticsApi();
   return useQuery<ComplianceAlert[]>({
     queryKey: ['analytics', 'compliance-alerts', filters],
     queryFn: () => analyticsApi.getComplianceAlerts(filters),
@@ -59,6 +64,7 @@ export function useComplianceAlerts(
  * Hook to fetch revenue trends
  */
 export function useRevenueTrends(filters: AnalyticsFilters) {
+  const analyticsApi = useAnalyticsApi();
   return useQuery<RevenueTrendDataPoint[]>({
     queryKey: ['analytics', 'revenue-trends', filters],
     queryFn: () => analyticsApi.getRevenueTrends(filters),
@@ -72,6 +78,7 @@ export function useCaregiverPerformance(
   caregiverId: string,
   filters: AnalyticsFilters
 ) {
+  const analyticsApi = useAnalyticsApi();
   return useQuery<CaregiverPerformance>({
     queryKey: ['analytics', 'caregiver-performance', caregiverId, filters],
     queryFn: () => analyticsApi.getCaregiverPerformance(caregiverId, filters),
@@ -83,6 +90,7 @@ export function useCaregiverPerformance(
  * Hook to fetch all caregiver performance data
  */
 export function useAllCaregiverPerformance(filters: AnalyticsFilters) {
+  const analyticsApi = useAnalyticsApi();
   return useQuery<CaregiverPerformance[]>({
     queryKey: ['analytics', 'all-caregivers-performance', filters],
     queryFn: () => analyticsApi.getAllCaregiverPerformance(filters),
@@ -96,6 +104,7 @@ export function useEVVExceptions(
   filters: AnalyticsFilters,
   _options?: { refetchInterval?: number }
 ) {
+  const analyticsApi = useAnalyticsApi();
   return useQuery<VisitException[]>({
     queryKey: ['analytics', 'evv-exceptions', filters],
     queryFn: () => analyticsApi.getEVVExceptions(filters),
@@ -110,6 +119,7 @@ export function useEVVExceptions(
  * Hook to fetch dashboard statistics
  */
 export function useDashboardStats(_options?: { refetchInterval?: number }) {
+  const analyticsApi = useAnalyticsApi();
   return useQuery<DashboardStats>({
     queryKey: ['analytics', 'dashboard-stats'],
     queryFn: () => analyticsApi.getDashboardStats(),
@@ -124,6 +134,7 @@ export function useDashboardStats(_options?: { refetchInterval?: number }) {
  * Hook to fetch reports list
  */
 export function useReports(filters?: Partial<AnalyticsFilters>) {
+  const analyticsApi = useAnalyticsApi();
   return useQuery<Report[]>({
     queryKey: ['analytics', 'reports', filters],
     queryFn: () => analyticsApi.getReports(filters),
@@ -135,6 +146,7 @@ export function useReports(filters?: Partial<AnalyticsFilters>) {
  */
 export function useGenerateReport() {
   const queryClient = useQueryClient();
+  const analyticsApi = useAnalyticsApi();
 
   return useMutation({
     mutationFn: ({
@@ -155,6 +167,8 @@ export function useGenerateReport() {
  * Hook to export a report
  */
 export function useExportReport() {
+  const analyticsApi = useAnalyticsApi();
+
   return useMutation({
     mutationFn: ({
       reportId,

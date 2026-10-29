@@ -7,23 +7,30 @@
  */
 
 import React, { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   useStaffInbox,
   useMessagesInThread,
   useSendMessage,
   useUpdateMessageThread,
 } from '../hooks';
-import { MessageThread, MessageComposer } from '../components';
+import { MessageThread, MessageComposer, NewStaffMessageDialog } from '../components';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
 import { Button } from '@/components/ui/button.js';
 import { Badge } from '@/components/ui/badge.js';
 
 type StatusFilter = 'OPEN' | 'CLOSED';
 
-export const StaffMessagesPage: React.FC = () => {
+export interface StaffMessagesPageProps {
+  /** Route prefix used for thread links (e.g. '/messages' or '/caregiver/messages') */
+  basePath?: string;
+}
+
+export const StaffMessagesPage: React.FC<StaffMessagesPageProps> = ({ basePath = '/messages' }) => {
   const { threadId } = useParams<{ threadId: string }>();
+  const navigate = useNavigate();
   const [status, setStatus] = useState<StatusFilter>('OPEN');
+  const [showNewMessage, setShowNewMessage] = useState(false);
 
   const { data: threads, isLoading: threadsLoading } = useStaffInbox(status);
   const { data: messages, isLoading: messagesLoading } = useMessagesInThread(threadId ?? null);
@@ -34,10 +41,22 @@ export const StaffMessagesPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-        <p className="mt-1 text-gray-600">Conversations with client families</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
+          <p className="mt-1 text-gray-600">Conversations with client families</p>
+        </div>
+        <Button onClick={() => setShowNewMessage(true)}>New Message</Button>
       </div>
+
+      <NewStaffMessageDialog
+        open={showNewMessage}
+        onOpenChange={setShowNewMessage}
+        onCreated={(newThreadId) => {
+          setStatus('OPEN');
+          navigate(`/messages/${newThreadId}`);
+        }}
+      />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1">
@@ -68,7 +87,7 @@ export const StaffMessagesPage: React.FC = () => {
                   {threads.map((thread) => (
                     <li key={thread.id}>
                       <Link
-                        to={`/messages/${thread.id}`}
+                        to={`${basePath}/${thread.id}`}
                         className={`block rounded-lg border p-3 hover:bg-gray-50 transition-colors ${
                           thread.id === threadId ? 'border-primary bg-primary/5' : 'border-gray-200'
                         }`}

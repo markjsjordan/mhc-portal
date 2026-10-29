@@ -498,6 +498,8 @@ export interface CreateMessageThreadInput {
   initialMessage: string;
   priority?: 'LOW' | 'NORMAL' | 'HIGH';
   assignedToUserId?: UUID;
+  /** Optional caregiver user IDs added as addressable thread participants */
+  caregiverUserIds?: UUID[];
 }
 
 /**

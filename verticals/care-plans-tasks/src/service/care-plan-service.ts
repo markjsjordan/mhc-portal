@@ -100,6 +100,9 @@ export class CarePlanService {
       throw new PermissionError('Insufficient permissions to create care plans');
     }
 
+    // Validate input first
+    const validatedInput = CarePlanValidator.validateCreateCarePlan(input);
+
     // State compliance validation for TX/FL
     if (input.stateJurisdiction && ['TX', 'FL'].includes(input.stateJurisdiction)) {
       const validation = StateComplianceValidator.validateCarePlanCompliance(
@@ -119,11 +122,8 @@ export class CarePlanService {
     const reviewIntervalDays = input.planReviewIntervalDays || 
       (input.stateJurisdiction === 'TX' ? 60 : input.stateJurisdiction === 'FL' ? 60 : 90);
     
-    const nextReviewDue = new Date(input.effectiveDate);
+    const nextReviewDue = new Date(validatedInput.effectiveDate);
     nextReviewDue.setDate(nextReviewDue.getDate() + reviewIntervalDays);
-
-    // Validate input
-    const validatedInput = CarePlanValidator.validateCreateCarePlan(input);
 
     // Generate plan number
     const planNumber = await this.generatePlanNumber();

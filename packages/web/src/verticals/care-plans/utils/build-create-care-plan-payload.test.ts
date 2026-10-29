@@ -26,6 +26,16 @@ describe('buildCreateCarePlanPayload', () => {
     expect(payload.goals).toEqual([]);
   });
 
+  it('treats __none__ placeholder values for optional dropdowns as undefined', () => {
+    const payload = buildCreateCarePlanPayload({
+      ...base,
+      branchId: '__none__',
+      coordinatorId: '__none__',
+    });
+    expect(payload.branchId).toBeUndefined();
+    expect(payload.coordinatorId).toBeUndefined();
+  });
+
   it('keeps provided optional values', () => {
     const payload = buildCreateCarePlanPayload({
       ...base,

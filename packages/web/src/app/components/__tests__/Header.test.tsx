@@ -18,7 +18,7 @@ vi.mock('@/core/hooks', () => ({
 }));
 
 describe('Header component', () => {
-  it('renders hamburger menu button with accessible label and minimum 44px tap target', () => {
+  it('renders hamburger menu button with accessible label and minimum 44px tap target on all screen sizes', () => {
     const handleMenuClick = vi.fn();
     render(<Header onMenuClick={handleMenuClick} />);
 
@@ -26,6 +26,7 @@ describe('Header component', () => {
     expect(menuButton).toBeInTheDocument();
     expect(menuButton.className).toMatch(/min-w-\[44px\]/);
     expect(menuButton.className).toMatch(/min-h-\[44px\]/);
+    expect(menuButton.className).not.toContain('lg:hidden');
 
     fireEvent.click(menuButton);
     expect(handleMenuClick).toHaveBeenCalledTimes(1);

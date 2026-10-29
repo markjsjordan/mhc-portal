@@ -90,6 +90,50 @@ export function useCreateMessageThread() {
 }
 
 /**
+ * Hook to let staff (admin/coordinator/caregiver) start a conversation with a family member.
+ * The server derives `sender_type = STAFF` from the authenticated roles and notifies the family.
+ */
+export function useStaffCreateThread() {
+  const familyPortalApi = useFamilyPortalApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      familyMemberId,
+      clientId,
+      subject,
+      initialMessage,
+    }: {
+      familyMemberId: UUID;
+      clientId: UUID;
+      subject: string;
+      initialMessage: string;
+    }) => familyPortalApi.createMessageThread(familyMemberId, clientId, subject, initialMessage),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['staffInbox'] });
+      void queryClient.invalidateQueries({ queryKey: ['messageThreads'] });
+      toast.success('Message sent to family');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to send message');
+    },
+  });
+}
+
+/**
+ * Hook to load active family members for a client (recipient picker)
+ */
+export function useFamilyMembersForClient(clientId: UUID | null) {
+  const familyPortalApi = useFamilyPortalApi();
+
+  return useQuery({
+    queryKey: ['familyMembersForClient', clientId],
+    queryFn: () => familyPortalApi.getFamilyMembersForClient(clientId!),
+    enabled: !!clientId,
+  });
+}
+
+/**
  * Hook to load the staff inbox of family conversations
  */
 export function useStaffInbox(status?: 'OPEN' | 'CLOSED') {
