@@ -4,7 +4,7 @@
   "framework": "vite-react",
   "tsx": true,
   "tailwind": {
-    "config": "packages/web/tailwind.config.js",
+    "config": "packages/web/src/styles/globals.css",
     "css": "packages/web/src/styles/globals.css",
     "baseColor": "slate",
     "cssVariables": true,
