@@ -9,7 +9,7 @@ import { usePermissions } from '@/core/hooks';
 import { useOpenShift, useMatchCandidates, useMatchShift, useCreateProposal } from '../hooks';
 import { MatchCandidateCard } from '../components';
 import { getShiftPriorityColor, getMatchingStatusColor, formatDuration } from '../utils';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export const OpenShiftDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();

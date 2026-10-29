@@ -54,7 +54,7 @@
     "react-big-calendar": "^1.19.4",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.91.0",
-    "react-hot-toast": "^2.6.0",
+
     "react-is": "^19.2.0",
     "react-router-dom": "^7.9.6",
     "recharts": "^3.5.1",

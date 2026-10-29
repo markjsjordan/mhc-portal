@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, Send, Ban, Edit } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { LoadingSpinner, ErrorMessage } from '@/core/components';
 import { Button } from '@/components/ui/button.js';
 import { Card, CardContent } from '@/components/ui/card.js';

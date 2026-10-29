@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Clock, MapPin, AlertTriangle, CheckCircle } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.js';
 import { Card } from '@/components/ui/card.js';
 import { useAuth } from '@/core/hooks';

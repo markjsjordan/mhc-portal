@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useApiClient } from '@/core/hooks';
 import { createEVVApiService } from '../services/evv-api';
 import type { EVVSearchFilters, ClockInRequest, ClockOutRequest } from '../types';

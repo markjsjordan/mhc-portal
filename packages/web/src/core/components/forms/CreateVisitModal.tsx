@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { VisitForm } from './VisitForm.js';
 import { useVisitApi } from '@/verticals/scheduling-visits/hooks/useVisits.js';
 import type { CreateVisitPayload } from '@/verticals/scheduling-visits/services/visit-api.js';

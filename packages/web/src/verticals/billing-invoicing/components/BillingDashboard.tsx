@@ -9,7 +9,7 @@ import {
   FileCheck2,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { LoadingSpinner, ErrorMessage } from '@/core/components';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';

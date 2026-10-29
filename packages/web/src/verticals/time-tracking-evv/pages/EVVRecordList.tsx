@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button.js';
 import { useEVVRecords } from '../hooks';
 import { EVVRecordCard, EVVRecordSearch } from '../components';
 import type { EVVSearchFilters } from '../types';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export const EVVRecordList: React.FC = () => {
   const [filters, setFilters] = useState<EVVSearchFilters>({});

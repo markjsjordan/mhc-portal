@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from 'sonner';
 import { useAuth } from './core/hooks';
 import { ProtectedRoute, FamilyProtectedRoute, PublicRoute, LoadingSpinner, UpdatePrompt, OnlineStatus } from './core/components';
 import { AppShell } from './app/components';

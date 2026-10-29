@@ -39,7 +39,7 @@ import {
   AssessmentFindings,
 } from '@/verticals/care-plans';
 import { VISIT_STATUS_LABELS, VISIT_TYPE_LABELS, VISIT_STATUS_COLORS } from '../types';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 interface ChecklistItem {
   id: string;
