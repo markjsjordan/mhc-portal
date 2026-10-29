@@ -7,8 +7,6 @@ name: "Folk Care CodeQL Config"
 paths-ignore:
   # Test files - load testing uses Math.random() intentionally for test data
   - tests/load/**
-  # Showcase/demo code - uses localStorage intentionally (no backend)
-  - showcase/**
   - packages/web/src/core/providers/showcase-api-provider.ts
 
 # Query filters to suppress known false positives

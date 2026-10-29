@@ -14,8 +14,7 @@
   "packageManager": "npm@10.9.4",
   "workspaces": [
     "packages/*",
-    "verticals/*",
-    "showcase"
+    "verticals/*"
   ],
   "scripts": {
     "dev:setup": "tsx scripts/dev-setup.ts",
@@ -24,7 +23,6 @@
     "dev:test": "./scripts/test-dev-workflow.sh",
     "dev:server": "cd packages/app && npm run dev",
     "dev:web": "cd packages/web && npm run dev",
-    "dev:showcase": "cd showcase && npm run dev",
     "docker:up": "docker-compose up -d",
     "docker:up:tools": "docker-compose --profile tools up -d",
     "docker:down": "docker-compose down",
@@ -33,7 +31,7 @@
     "docker:ps": "docker-compose ps",
     "docker:restart": "docker-compose restart",
     "dev:clean": "turbo run clean && rm -rf node_modules",
-    "build": "turbo run build --filter=!@folkcare/showcase && npm run build:copy-web",
+    "build": "turbo run build && npm run build:copy-web",
     "build:web": "cd packages/web && npm run build",
     "build:copy-web": "cp -r packages/web/dist/* public/",
     "build:ts": "tsc -b",
@@ -87,7 +85,6 @@
     "capture": "tsx scripts/capture-screenshots.ts",
     "capture:prod": "tsx scripts/capture-screenshots.ts --production",
     "capture:all": "tsx scripts/capture-screenshots.ts --all",
-    "capture:showcase": "tsx scripts/capture-screenshots.ts --showcase",
     "capture:mobile": "tsx scripts/capture-screenshots.ts --mobile",
     "ui:report": "tsx scripts/generate-ui-state-report.ts"
   },
