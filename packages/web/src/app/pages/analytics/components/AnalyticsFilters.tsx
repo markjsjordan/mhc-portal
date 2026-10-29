@@ -38,7 +38,7 @@ export function AnalyticsFilters({
   showServiceTypeFilter = false,
   showStatusFilter = false,
   showBranchFilter = false,
-}: AnalyticsFiltersProps) {
+}: Readonly<AnalyticsFiltersProps>) {
   const [datePreset, setDatePreset] = useState<DatePreset>('month');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');

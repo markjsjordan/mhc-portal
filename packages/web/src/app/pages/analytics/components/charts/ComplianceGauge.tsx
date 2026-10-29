@@ -11,7 +11,7 @@ interface ComplianceGaugeProps {
   className?: string;
 }
 
-export function ComplianceGauge({ value, label, className = '' }: ComplianceGaugeProps) {
+export function ComplianceGauge({ value, label, className = '' }: Readonly<ComplianceGaugeProps>) {
   // Ensure value is between 0 and 100
   const normalizedValue = Math.max(0, Math.min(100, value));
 

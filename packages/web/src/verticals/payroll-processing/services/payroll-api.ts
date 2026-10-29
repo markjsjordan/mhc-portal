@@ -52,7 +52,7 @@ export const createPayrollApiService = (apiClient: ApiClient): PayrollApiService
       // Backend returns { data: PayPeriod[], meta: { total, limit, offset } },
       // not the { items, total, hasMore } shape PayPeriodListResponse expects.
       const response = await apiClient.get<{ data: PayPeriod[]; meta?: { total: number; limit: number; offset: number } }>(url);
-      const items = response.data ?? [];
+      const items = response.data;
       const total = response.meta?.total ?? items.length;
       const limit = response.meta?.limit ?? items.length;
       const offset = response.meta?.offset ?? 0;
@@ -91,7 +91,7 @@ export const createPayrollApiService = (apiClient: ApiClient): PayrollApiService
       const url = `/api/payroll/pay-runs${params.toString() ? `?${params.toString()}` : ''}`;
       // Backend returns { data: PayRun[] } (no pagination envelope).
       const response = await apiClient.get<{ data: PayRun[] }>(url);
-      const items = response.data ?? [];
+      const items = response.data;
       return { items, total: items.length, hasMore: false };
     },
 
@@ -129,7 +129,7 @@ export const createPayrollApiService = (apiClient: ApiClient): PayrollApiService
       const url = `/api/payroll/pay-stubs${params.toString() ? `?${params.toString()}` : ''}`;
       // Backend returns { data: PayStub[] } (no pagination envelope).
       const response = await apiClient.get<{ data: PayStub[] }>(url);
-      const items = response.data ?? [];
+      const items = response.data;
       return { items, total: items.length, hasMore: false };
     },
 

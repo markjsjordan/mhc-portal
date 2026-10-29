@@ -29,7 +29,7 @@ export function CreateIncidentPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
-  const prefilledClientId = searchParams.get('clientId') || '';
+  const prefilledClientId = searchParams.get('clientId') ?? '';
 
   const apiClient = useApiClient();
   const incidentApi = useMemo(() => createIncidentApiService(apiClient), [apiClient]);
@@ -47,9 +47,9 @@ export function CreateIncidentPage() {
   const createMutation = useMutation({
     mutationFn: (data: CreateIncidentInput) => incidentApi.createIncident(data),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['incidents'] });
+      void queryClient.invalidateQueries({ queryKey: ['incidents'] });
       toast.success('Incident reported successfully');
-      navigate(`/incidents/${data.id}`);
+      Promise.resolve(navigate(`/incidents/${data.id}`)).catch(() => {});
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to report incident');
@@ -235,7 +235,7 @@ export function CreateIncidentPage() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate('/incidents')}
+            onClick={() => { Promise.resolve(navigate('/incidents')).catch(() => {}); }}
           >
             Cancel
           </Button>

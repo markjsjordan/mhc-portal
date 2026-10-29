@@ -19,7 +19,7 @@ export function createApiProvider(config: ApiProviderConfig): ApiProvider {
   }
 
   // Production provider
-  const baseUrl = config.baseUrl || import.meta.env.VITE_API_BASE_URL || '';
+  const baseUrl = (config.baseUrl ?? import.meta.env.VITE_API_BASE_URL) || '';
   const getAuthToken = () => {
     const state = useAuthStore.getState();
     return state.token;

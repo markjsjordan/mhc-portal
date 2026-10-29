@@ -27,7 +27,7 @@ export function KPICard({
   trendValue,
   onClick,
   className = '',
-}: KPICardProps) {
+}: Readonly<KPICardProps>) {
   const getTrendIcon = () => {
     switch (trend) {
       case 'up':

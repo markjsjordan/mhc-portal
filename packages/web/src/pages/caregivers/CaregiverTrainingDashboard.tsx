@@ -210,9 +210,27 @@ const COURSE_CATALOG = [
   },
 ];
 
+function getTrainingFormatIcon(format: string): string {
+  if (format === 'online') return '💻';
+  if (format === 'in-person') return '🏫';
+  return '🔄';
+}
+
+function getTrainingButtonLabel(status: string): string {
+  if (status === 'not-started') return 'Start Course';
+  if (status === 'in-progress') return 'Continue';
+  return 'View Certificate';
+}
+
+function getCategoryIcon(category: string): string {
+  if (category === 'Required Certifications') return '⭐';
+  if (category === 'Specialty Certifications') return '🏆';
+  return '📚';
+}
+
 export default function CaregiverTrainingDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'certifications' | 'training' | 'catalog'>('overview');
-  const [_selectedCert, setSelectedCert] = useState<Certification | null>(null);
+  const [, setSelectedCert] = useState<Certification | null>(null);
 
   const certStats = {
     total: DEMO_CERTIFICATIONS.length,
@@ -478,7 +496,7 @@ export default function CaregiverTrainingDashboard() {
                         <span style={styles.trainingCategory}>{training.category}</span>
                         <span style={styles.trainingDuration}>• {training.duration}</span>
                         <span style={styles.trainingFormat}>
-                          • {training.format === 'online' ? '💻' : training.format === 'in-person' ? '🏫' : '🔄'} {training.format}
+                          • {getTrainingFormatIcon(training.format)} {training.format}
                         </span>
                       </div>
                     </div>
@@ -511,7 +529,7 @@ export default function CaregiverTrainingDashboard() {
                     variant={training.status === 'completed' ? 'outline' : 'default'}
                     size="sm"
                   >
-                    {training.status === 'not-started' ? 'Start Course' : training.status === 'in-progress' ? 'Continue' : 'View Certificate'}
+                    {getTrainingButtonLabel(training.status)}
                   </Button>
                 </div>
               ))}
@@ -536,8 +554,7 @@ export default function CaregiverTrainingDashboard() {
                   {category.courses.map((course, courseIdx) => (
                     <div key={courseIdx} style={styles.catalogCard}>
                       <div style={styles.catalogCardIcon}>
-                        {category.category === 'Required Certifications' ? '⭐' :
-                         category.category === 'Specialty Certifications' ? '🏆' : '📚'}
+                        {getCategoryIcon(category.category)}
                       </div>
                       <div style={styles.catalogCardTitle}>{course.title}</div>
                       <div style={styles.catalogCardMeta}>

@@ -21,7 +21,7 @@ interface VisitMetricsChartProps {
   className?: string;
 }
 
-export function VisitMetricsChart({ data, className = '' }: VisitMetricsChartProps) {
+export function VisitMetricsChart({ data, className = '' }: Readonly<VisitMetricsChartProps>) {
   const chartData = [
     { name: 'Scheduled', value: data.scheduled, color: '#3b82f6' },
     { name: 'Completed', value: data.completed, color: '#10b981' },

@@ -10,8 +10,9 @@ export const useApiClient = () => {
   try {
     const provider = useApiProvider();
     return provider.getApiClient();
-  } catch (_error) {
+  } catch (error) {
     // Fallback to legacy implementation for backward compatibility
+    console.debug('ApiProvider not available, falling back to legacy client', error);
     const { token, user } = useAuth();
     return useMemo(() => {
       return createApiClient(

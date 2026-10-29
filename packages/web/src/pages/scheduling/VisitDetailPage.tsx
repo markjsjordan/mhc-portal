@@ -37,6 +37,13 @@ import { Button } from '@/components/ui/button.js';
 const FALLBACK_SCHEDULED_DATE = new Date('2026-10-08T08:30:00.000Z');
 const FALLBACK_ACTUAL_START_TIME = new Date('2026-10-08T08:35:00.000Z');
 
+const getStatusSubtitle = (status: string) => {
+  if (status === 'COMPLETED') return 'EVV Verified & Completed';
+  if (status === 'IN_PROGRESS') return 'Currently Active in Field';
+  if (status === 'UNASSIGNED') return 'Caregiver Staffing Needed';
+  return 'Scheduled for Care Delivery';
+};
+
 export const VisitDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -124,12 +131,20 @@ export const VisitDetailPage: React.FC = () => {
     );
   }, [visit]);
 
-  const effectiveEvvRecordId = evvRecordId ?? (visit as any)?.evvRecordId;
+  const effectiveEvvRecordId = evvRecordId ?? (visit as { evvRecordId?: string } | undefined)?.evvRecordId;
   const { data: evvRecord } = useEVVRecord(effectiveEvvRecordId);
-  const evvData = (visit as any)?.evv;
+  const evvData = (visit as {
+    evv?: {
+      verificationMethod?: string;
+      clockInTime?: string;
+      clockOutTime?: string;
+      distanceMeters?: number;
+      geofenceStatus?: string;
+    };
+  } | undefined)?.evv;
 
   const { data: carePlanTasksResult } = useTasks(
-    visit?.id && visit?.clientId
+    visit?.id && visit.clientId
       ? { visitId: visit.id, clientId: visit.clientId }
       : undefined
   );
@@ -176,9 +191,11 @@ export const VisitDetailPage: React.FC = () => {
   }, [evvRecord, evvData, visit]);
 
   const evvMethodDisplay = useMemo(() => {
+    const clockIn = evvRecord?.clockInVerification as { method?: string } | undefined;
+    const evvRecordAny = evvRecord as { verificationMethod?: string } | undefined;
     const method =
-      (evvRecord?.clockInVerification as any)?.method ??
-      (evvRecord as any)?.verificationMethod ??
+      clockIn?.method ??
+      evvRecordAny?.verificationMethod ??
       evvData?.verificationMethod ??
       (evvRecord?.verificationLevel === 'FULL' ? 'GPS' : evvRecord?.verificationLevel);
     if (method === 'GPS' || method === 'FULL') return 'GPS Mobile App';
@@ -194,7 +211,7 @@ export const VisitDetailPage: React.FC = () => {
       evvRecord?.clockInVerification?.distanceFromAddress ??
       evvData?.distanceMeters;
 
-    if (distance !== undefined && distance !== null) {
+    if (typeof distance === 'number') {
       const isWithin =
         evvRecord?.clockInVerification?.isWithinGeofence ??
         (distance <= 100);
@@ -296,7 +313,9 @@ export const VisitDetailPage: React.FC = () => {
           The requested visit ID <code className="bg-gray-100 px-1 py-0.5 rounded text-gray-800">{id}</code> could not be loaded.
         </p>
         <Button
-          onClick={() => navigate('/scheduling')}
+          onClick={() => {
+            Promise.resolve(navigate('/scheduling')).catch(() => {});
+          }}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Scheduling
@@ -308,19 +327,26 @@ export const VisitDetailPage: React.FC = () => {
   const visitConfig = getVisitTypeConfig(visit.visitType);
   const TypeIcon = visitConfig.icon;
 
-  const clientFullName =
-    visit.clientFirstName && visit.clientLastName
-      ? `${visit.clientFirstName} ${visit.clientLastName}`
-      : client
-      ? `${client.firstName} ${client.lastName}`
-      : 'Client';
+  const clientFullName = (() => {
+    if (visit.clientFirstName && visit.clientLastName) {
+      return `${visit.clientFirstName} ${visit.clientLastName}`;
+    }
+    if (client) {
+      return `${client.firstName} ${client.lastName}`;
+    }
+    return 'Client';
+  })();
 
-  const caregiverName = caregiver
-    ? `${caregiver.firstName} ${caregiver.lastName}`
-    : visit.assignedCaregiverId
-    ? 'Caregiver Assigned'
-    : null;
-  const caregiverPhone = caregiver?.primaryPhone?.number ?? (visit.assignedCaregiverId ? '555-1001' : null);
+  const caregiverName = (() => {
+    if (caregiver) {
+      return `${caregiver.firstName} ${caregiver.lastName}`;
+    }
+    if (visit.assignedCaregiverId) {
+      return 'Caregiver Assigned';
+    }
+    return null;
+  })();
+  const caregiverPhone = caregiver?.primaryPhone.number ?? (visit.assignedCaregiverId ? '555-1001' : null);
 
   const completedCount = tasks.filter((t) => t.completed).length;
   const totalCount = tasks.length;
@@ -357,7 +383,9 @@ export const VisitDetailPage: React.FC = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate('/scheduling')}
+          onClick={() => {
+            Promise.resolve(navigate('/scheduling')).catch(() => {});
+          }}
           className="self-start text-gray-600 hover:text-blue-600"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -471,13 +499,7 @@ export const VisitDetailPage: React.FC = () => {
               </span>
             </div>
             <span className="text-xs text-gray-500 font-medium">
-              {visit.status === 'COMPLETED'
-                ? 'EVV Verified & Completed'
-                : visit.status === 'IN_PROGRESS'
-                ? 'Currently Active in Field'
-                : visit.status === 'UNASSIGNED'
-                ? 'Caregiver Staffing Needed'
-                : 'Scheduled for Care Delivery'}
+              {getStatusSubtitle(visit.status)}
             </span>
 
             {/* Primary Clock In / Clock Out Action */}
@@ -541,26 +563,24 @@ export const VisitDetailPage: React.FC = () => {
             </div>
 
             {/* Service Address */}
-            {visit.address && (
-              <div className="pt-3 border-t border-gray-100">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-blue-600" />
-                  Service Location
+            <div className="pt-3 border-t border-gray-100">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                Service Location
+              </p>
+              <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-xs text-gray-700 space-y-0.5">
+                <p className="font-semibold text-gray-900">{visit.address.line1}</p>
+                {visit.address.line2 && <p>{visit.address.line2}</p>}
+                <p>
+                  {visit.address.city}, {visit.address.state} {visit.address.postalCode}
                 </p>
-                <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-xs text-gray-700 space-y-0.5">
-                  <p className="font-semibold text-gray-900">{visit.address.line1}</p>
-                  {visit.address.line2 && <p>{visit.address.line2}</p>}
-                  <p>
-                    {visit.address.city}, {visit.address.state} {visit.address.postalCode}
+                {visit.address.latitude && visit.address.longitude && (
+                  <p className="text-[11px] text-gray-500 font-mono pt-1">
+                    GPS: {visit.address.latitude.toFixed(4)}, {visit.address.longitude.toFixed(4)}
                   </p>
-                  {visit.address.latitude && visit.address.longitude && (
-                    <p className="text-[11px] text-gray-500 font-mono pt-1">
-                      GPS: {visit.address.latitude.toFixed(4)}, {visit.address.longitude.toFixed(4)}
-                    </p>
-                  )}
-                </div>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Access Instructions Callout */}
             <div className="pt-2">
@@ -598,7 +618,7 @@ export const VisitDetailPage: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      {contact.phone?.number && (
+                      {contact.phone.number && (
                         <a
                           href={`tel:${contact.phone.number}`}
                           className="text-blue-600 hover:underline flex items-center gap-1 mt-1 font-medium"
@@ -710,7 +730,9 @@ export const VisitDetailPage: React.FC = () => {
                 </div>
                 <Button
                   size="sm"
-                  onClick={() => navigate('/shift-matching')}
+                  onClick={() => {
+                    Promise.resolve(navigate('/shift-matching')).catch(() => {});
+                  }}
                 >
                   Match & Assign Caregiver
                 </Button>
@@ -870,7 +892,7 @@ export const VisitDetailPage: React.FC = () => {
         </div>
       </div>
       {/* Edit Visit Modal */}
-      {visit && isEditModalOpen && (
+      {isEditModalOpen && (
         <EditVisitModal
           visit={visit}
           isOpen={isEditModalOpen}

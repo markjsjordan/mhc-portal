@@ -6,33 +6,14 @@
  * (API, mock, hybrid) without changing component code.
  */
 
-import React, { createContext, useContext, type ReactNode } from 'react';
-import type { DataProvider } from './types';
+import { createContext, useContext } from 'react';
+import type { DataProvider } from './types.js';
 
 interface DataProviderContextValue {
   provider: DataProvider;
 }
 
-const DataProviderContext = createContext<DataProviderContextValue | null>(null);
-
-interface DataProviderProps {
-  provider: DataProvider;
-  children: ReactNode;
-}
-
-/**
- * Provider component that injects a data provider into the React tree
- */
-export const DataProviderContextProvider: React.FC<DataProviderProps> = ({
-  provider,
-  children,
-}) => {
-  return (
-    <DataProviderContext.Provider value={{ provider }}>
-      {children}
-    </DataProviderContext.Provider>
-  );
-};
+export const DataProviderContext = createContext<DataProviderContextValue | null>(null);
 
 /**
  * Hook to access the current data provider

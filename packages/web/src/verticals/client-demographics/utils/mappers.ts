@@ -112,27 +112,27 @@ export interface IntakeData {
 export function mapClientToIntakeData(client: Client): Partial<IntakeData> {
   return {
     // Demographics
-    firstName: client.firstName || '',
-    lastName: client.lastName || '',
-    middleName: client.middleName || '',
-    preferredName: client.preferredName || '',
+    firstName: client.firstName,
+    lastName: client.lastName,
+    middleName: client.middleName ?? '',
+    preferredName: client.preferredName ?? '',
     dateOfBirth: client.dateOfBirth
       ? new Date(client.dateOfBirth).toISOString().split('T')[0]
       : '',
-    gender: client.gender || '',
+    gender: client.gender ?? '',
 
     // Address
     address: {
-      line1: client.primaryAddress?.line1 || '',
-      line2: client.primaryAddress?.line2 || '',
-      city: client.primaryAddress?.city || '',
-      state: client.primaryAddress?.state || '',
-      postalCode: client.primaryAddress?.postalCode || '',
+      line1: client.primaryAddress.line1,
+      line2: client.primaryAddress.line2 ?? '',
+      city: client.primaryAddress.city,
+      state: client.primaryAddress.state,
+      postalCode: client.primaryAddress.postalCode,
     },
 
     // Contact
-    phone: client.primaryPhone?.number || '',
-    email: client.email || '',
+    phone: client.primaryPhone?.number ?? '',
+    email: client.email ?? '',
 
     // Default empty structures for other fields
     emergencyContacts: [],

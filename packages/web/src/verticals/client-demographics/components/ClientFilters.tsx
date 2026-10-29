@@ -40,24 +40,22 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
   filters,
   onFiltersChange,
 }) => {
-  const [queryInput, setQueryInput] = React.useState(filters.query || '');
+  const [queryInput, setQueryInput] = React.useState(filters.query ?? '');
 
   // Sync input when filters change externally
   React.useEffect(() => {
-    if (filters.query !== queryInput) {
-      setQueryInput(filters.query || '');
-    }
+    setQueryInput(filters.query ?? '');
   }, [filters.query]);
 
   // Debounced query update
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      if ((filters.query || '') !== queryInput) {
+      if ((filters.query ?? '') !== queryInput) {
         onFiltersChange({ ...filters, query: queryInput || undefined });
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [queryInput]);
+  }, [queryInput, filters, onFiltersChange]);
 
   const activeCount = React.useMemo(() => {
     let count = 0;
@@ -71,7 +69,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
 
   const toggleStatus = (value: string) => {
     const status = value as ClientStatus;
-    const current = filters.status || [];
+    const current = filters.status ?? [];
     const updated = current.includes(status)
       ? current.filter((s) => s !== status)
       : [...current, status];
@@ -82,7 +80,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
   };
 
   const toggleServiceLevel = (level: string) => {
-    const current = filters.serviceLevel || [];
+    const current = filters.serviceLevel ?? [];
     const updated = current.includes(level)
       ? current.filter((l) => l !== level)
       : [...current, level];
@@ -93,7 +91,7 @@ export const ClientFilters: React.FC<ClientFiltersProps> = ({
   };
 
   const toggleInsuranceType = (type: string) => {
-    const current = filters.insuranceType || [];
+    const current = filters.insuranceType ?? [];
     const updated = current.includes(type)
       ? current.filter((t) => t !== type)
       : [...current, type];

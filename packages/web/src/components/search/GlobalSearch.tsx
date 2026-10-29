@@ -47,7 +47,7 @@ const typeColors: Record<SearchResult['type'], string> = {
   user: 'bg-pink-100 text-pink-800',
 };
 
-export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
+export function GlobalSearch({ isOpen, onClose }: Readonly<GlobalSearchProps>) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -71,19 +71,21 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     }
 
     setIsLoading(true);
-    const timer = setTimeout(async () => {
-      try {
-        const response = await api.get<{ results: SearchResult[] }>(
-          `/api/search?q=${encodeURIComponent(query)}&type=all&limit=10`
-        );
-        setResults(response.results);
-        setSelectedIndex(0);
-      } catch (error) {
-        console.error('Search error:', error);
-        setResults([]);
-      } finally {
-        setIsLoading(false);
-      }
+    const timer = setTimeout(() => {
+      void (async () => {
+        try {
+          const response = await api.get<{ results: SearchResult[] }>(
+            `/api/search?q=${encodeURIComponent(query)}&type=all&limit=10`
+          );
+          setResults(response.results);
+          setSelectedIndex(0);
+        } catch (error) {
+          console.error('Search error:', error);
+          setResults([]);
+        } finally {
+          setIsLoading(false);
+        }
+      })();
     }, SEARCH_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
@@ -109,7 +111,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
         e.preventDefault();
         const selected = results[selectedIndex];
         if (selected) {
-          navigate(selected.url);
+          Promise.resolve(navigate(selected.url)).catch(() => {});
           onClose();
         }
       }
@@ -200,7 +202,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
                 index === selectedIndex ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
               }`}
               onClick={() => {
-                navigate(result.url);
+                Promise.resolve(navigate(result.url)).catch(() => {});
                 onClose();
               }}
               onMouseEnter={() => setSelectedIndex(index)}
@@ -267,35 +269,4 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
       </div>
     </div>
   );
-}
-
-/**
- * Hook to toggle search with keyboard shortcut (Cmd+K / Ctrl+K)
- */
-export function useGlobalSearch(): {
-  isOpen: boolean;
-  openSearch: () => void;
-  closeSearch: () => void;
-  toggleSearch: () => void;
-} {
-  const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setIsOpen((prev) => !prev);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  return {
-    isOpen,
-    openSearch: () => setIsOpen(true),
-    closeSearch: () => setIsOpen(false),
-    toggleSearch: () => setIsOpen((prev) => !prev),
-  };
 }

@@ -4,7 +4,13 @@
  * Provides a standardized way to use form validation with React Hook Form and Zod
  */
 
-import { useForm, type UseFormProps, type UseFormReturn } from 'react-hook-form';
+import {
+  useForm,
+  type FieldValues,
+  type UseFormProps,
+  type UseFormReturn,
+  type Resolver,
+} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { z } from 'zod';
 
@@ -39,14 +45,17 @@ import type { z } from 'zod';
  * };
  * ```
  */
-export const useFormValidation = <TSchema extends z.ZodType<any, any, any>>(
+export const useFormValidation = <
+  TOutput extends FieldValues = FieldValues,
+  TSchema extends z.ZodType<TOutput> = z.ZodType<TOutput>
+>(
   schema: TSchema,
-  options?: Omit<UseFormProps<z.output<TSchema>>, 'resolver'>
-): UseFormReturn<z.output<TSchema>> => {
-  return useForm<z.output<TSchema>>({
-    resolver: zodResolver(schema) as any,
+  options?: Omit<UseFormProps<TOutput>, 'resolver'>
+): UseFormReturn<TOutput> => {
+  return useForm<TOutput>({
+    resolver: zodResolver(schema as unknown as Parameters<typeof zodResolver>[0]) as unknown as Resolver<TOutput>,
     mode: 'onBlur', // Validate on blur
     reValidateMode: 'onChange', // Re-validate on change after first submit
-    ...options
+    ...options,
   });
 };

@@ -32,7 +32,7 @@ export const ClientEditPage: React.FC = () => {
   if (error || !client) {
     return (
       <ErrorMessage
-        message={(error as Error)?.message || 'Failed to load client'}
+        message={(error as Error).message || 'Failed to load client'}
         retry={() => window.location.reload()}
       />
     );
@@ -41,9 +41,9 @@ export const ClientEditPage: React.FC = () => {
   // Map the client data to the intake form structure
   const initialData = mapClientToIntakeData(client);
 
-  const handleSuccess = (updatedClient: any) => {
+  const handleSuccess = (updatedClient: { id?: string }) => {
     // Navigate back to the client detail page after successful update
-    navigate(`/clients/${updatedClient.id}`);
+    Promise.resolve(navigate(`/clients/${updatedClient.id ?? id}`)).catch(() => {});
   };
 
   return (

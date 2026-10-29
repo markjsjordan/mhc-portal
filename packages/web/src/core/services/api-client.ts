@@ -164,9 +164,7 @@ class ApiClientImpl implements ApiClient {
             ) {
               try {
                 // Single-flight refresh: reuse existing promise if one is in flight
-                if (!this.refreshPromise) {
-                  this.refreshPromise = this.onRefresh();
-                }
+                this.refreshPromise ??= this.onRefresh();
                 await this.refreshPromise;
                 this.refreshPromise = null;
 
@@ -244,5 +242,5 @@ export const createApiClient = (
   getUserContext?: () => UserContextHeaders | null,
   options?: ApiClientOptions
 ): ApiClient => {
-  return new ApiClientImpl(baseUrl, getAuthToken, getUserContext || (() => null), options);
+  return new ApiClientImpl(baseUrl, getAuthToken, getUserContext ?? (() => null), options);
 };

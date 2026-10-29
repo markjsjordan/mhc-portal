@@ -33,7 +33,7 @@ export class AnalyticsApiService {
    */
   private getAuthHeaders(): Record<string, string> {
     // Zustand persists auth under 'auth-storage' key
-    const authStorage = globalThis.localStorage?.getItem('auth-storage');
+    const authStorage = globalThis.localStorage.getItem('auth-storage');
     let token: string | null = null;
     
     if (authStorage) {

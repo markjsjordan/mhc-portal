@@ -10,11 +10,11 @@ export interface CheckboxProps
 }
 
 const Checkbox = React.forwardRef<
-  React.ElementRef<typeof CheckboxPrimitive.Root>,
+  React.ComponentRef<typeof CheckboxPrimitive.Root>,
   CheckboxProps
 >(({ className, label, id, ...props }, ref) => {
   const generatedId = React.useId()
-  const checkboxId = id || (label ? generatedId : undefined)
+  const checkboxId = id ?? (label ? generatedId : undefined)
 
   const checkboxNode = (
     <CheckboxPrimitive.Root

@@ -86,7 +86,7 @@ export function useDemoSession(): UseDemoSessionResult {
 
     // Also check for visibility changes to detect potential session issues
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && session) {
+      if (document.visibilityState === 'visible') {
         // Verify session is still valid when user returns to tab
         void demoAPI.getSession(session.id)
           .catch((err: Error) => {
@@ -109,20 +109,22 @@ export function useDemoSession(): UseDemoSessionResult {
   useEffect(() => {
     if (typeof window === 'undefined' || !session) return;
 
-    let inactivityTimer: NodeJS.Timeout;
+    let inactivityTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const handleInactivityReset = async (sessionId: string) => {
+      try {
+        await demoAPI.resetSession(sessionId);
+        const updated = await demoAPI.getSession(sessionId);
+        setSession(updated);
+      } catch (err: unknown) {
+        console.error('Failed to reset demo session on inactivity:', err);
+      }
+    };
 
     const resetInactivityTimer = () => {
-      if (inactivityTimer) {
-        clearTimeout(inactivityTimer);
-      }
+      clearTimeout(inactivityTimer);
       inactivityTimer = setTimeout(() => {
-        // Reset session to base state after 15 minutes of inactivity
-        void demoAPI.resetSession(session.id)
-          .then(() => demoAPI.getSession(session.id))
-          .then(setSession)
-          .catch((err: Error) => {
-            console.error('Failed to reset demo session on inactivity:', err);
-          });
+        void handleInactivityReset(session.id);
       }, 15 * 60 * 1000); // 15 minutes
     };
 
@@ -135,9 +137,7 @@ export function useDemoSession(): UseDemoSessionResult {
     resetInactivityTimer();
 
     return () => {
-      if (inactivityTimer) {
-        clearTimeout(inactivityTimer);
-      }
+      clearTimeout(inactivityTimer);
       for (const event of activityEvents) {
         window.removeEventListener(event, resetInactivityTimer);
       }

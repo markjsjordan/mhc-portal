@@ -25,7 +25,7 @@ export const CreateFromTemplatePage: React.FC = () => {
     return (
       <ErrorMessage
         message={(error as Error).message || 'Failed to load templates'}
-        retry={refetch}
+        retry={() => { void refetch(); }}
       />
     );
   }

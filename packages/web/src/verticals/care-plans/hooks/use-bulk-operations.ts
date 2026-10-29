@@ -22,8 +22,8 @@ export const useBulkCreateTasks = () => {
       return tasks;
     },
     onSuccess: (tasks) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['care-plans'] });
+      void queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      void queryClient.invalidateQueries({ queryKey: ['care-plans'] });
       toast.success(`Created ${tasks.length} tasks successfully`);
     },
     onError: (error: Error) => {
@@ -54,8 +54,8 @@ export const useBulkCompleteTasks = () => {
       return completedTasks;
     },
     onSuccess: (tasks) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['care-plans'] });
+      void queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      void queryClient.invalidateQueries({ queryKey: ['care-plans'] });
       toast.success(`Completed ${tasks.length} tasks successfully`);
     },
     onError: (error: Error) => {
@@ -90,9 +90,9 @@ export const useCloneCarePlan = () => {
         planType: originalPlan.planType,
         effectiveDate: data.effectiveDate,
         expirationDate: originalPlan.expirationDate,
-        goals: originalPlan.goals.map(({ id, ...goal }) => goal),
-        interventions: originalPlan.interventions.map(({ id, ...intervention }) => intervention),
-        taskTemplates: originalPlan.taskTemplates?.map(({ id, ...template }) => template),
+        goals: originalPlan.goals.map(({ id: _id, ...goal }) => goal),
+        interventions: originalPlan.interventions.map(({ id: _id, ...intervention }) => intervention),
+        taskTemplates: originalPlan.taskTemplates.map(({ id: _id, ...template }) => template),
         coordinatorId: originalPlan.coordinatorId,
         notes: originalPlan.notes,
       });
@@ -100,7 +100,7 @@ export const useCloneCarePlan = () => {
       return newPlan;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['care-plans'] });
+      void queryClient.invalidateQueries({ queryKey: ['care-plans'] });
       toast.success('Care plan cloned successfully');
     },
     onError: (error: Error) => {
@@ -125,7 +125,7 @@ export const useBulkAssignTasks = () => {
       return assignedTasks;
     },
     onSuccess: (tasks) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      void queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast.success(`Assigned ${tasks.length} tasks successfully`);
     },
     onError: (error: Error) => {
@@ -150,8 +150,8 @@ export const useBulkCancelTasks = () => {
       return cancelledTasks;
     },
     onSuccess: (tasks) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['care-plans'] });
+      void queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      void queryClient.invalidateQueries({ queryKey: ['care-plans'] });
       toast.success(`Cancelled ${tasks.length} tasks successfully`);
     },
     onError: (error: Error) => {

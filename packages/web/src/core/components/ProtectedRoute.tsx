@@ -55,25 +55,25 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check single permission
   if (permission && !can(permission)) {
-    const redirect = fallbackPath || getDashboardRoute(user.roles);
+    const redirect = fallbackPath ?? getDashboardRoute(user.roles);
     return <Navigate to={redirect} replace />;
   }
 
   // Check multiple permissions (all required)
   if (permissions && !canAll(permissions)) {
-    const redirect = fallbackPath || getDashboardRoute(user.roles);
+    const redirect = fallbackPath ?? getDashboardRoute(user.roles);
     return <Navigate to={redirect} replace />;
   }
 
   // Check single required role
   if (requiredRole && !hasRole(requiredRole)) {
-    const redirect = fallbackPath || getDashboardRoute(user.roles);
+    const redirect = fallbackPath ?? getDashboardRoute(user.roles);
     return <Navigate to={redirect} replace />;
   }
 
   // Check multiple required roles (at least one)
   if (requiredRoles && !hasAnyRole(requiredRoles)) {
-    const redirect = fallbackPath || getDashboardRoute(user.roles);
+    const redirect = fallbackPath ?? getDashboardRoute(user.roles);
     return <Navigate to={redirect} replace />;
   }
 

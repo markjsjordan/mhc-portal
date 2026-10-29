@@ -52,6 +52,12 @@ interface TimeSlot {
 
 const CAREGIVER_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
 
+function getSlotBgColor(isOccupied: boolean, isAvailable: boolean, caregiverColor: string): string {
+  if (isOccupied) return `${caregiverColor}20`;
+  if (isAvailable) return '#ffffff';
+  return '#f9fafb';
+}
+
 const TIME_SLOTS: TimeSlot[] = Array.from({ length: 14 }, (_, i) => ({
   time: `${String(i + 7).padStart(2, '0')}:00`,
   hour: i + 7,
@@ -122,7 +128,7 @@ export default function ScheduleBuilderPage() {
   const [showPatternModal, setShowPatternModal] = useState(false);
 
   const [searchParams] = useSearchParams();
-  const initialClientId = searchParams.get('clientId') || '';
+  const initialClientId = searchParams.get('clientId') ?? '';
   const initialVisitType = searchParams.get('visitType');
   const [showSupervisionModal, setShowSupervisionModal] = useState<boolean>(
     () => initialVisitType === 'SUPERVISION'
@@ -149,7 +155,7 @@ export default function ScheduleBuilderPage() {
   const clients = useMemo(() => clientsResult?.items ?? [], [clientsResult]);
 
   const activeSupervisionClient = useMemo(
-    () => clients.find((c) => c.id === supervisionClientId) || clients[0],
+    () => clients.find((c) => c.id === supervisionClientId) ?? clients[0],
     [clients, supervisionClientId]
   );
 
@@ -157,9 +163,9 @@ export default function ScheduleBuilderPage() {
     if (!activeSupervisionClient) return null;
     return calculateSupervisoryCadence({
       clientId: activeSupervisionClient.id,
-      state: activeSupervisionClient.primaryAddress?.state || 'FL',
+      state: activeSupervisionClient.primaryAddress.state || 'FL',
       isSkilledNursing: true,
-      lastSupervisoryVisitDate: activeSupervisionClient.intakeDate || activeSupervisionClient.createdAt,
+      lastSupervisoryVisitDate: activeSupervisionClient.intakeDate ?? activeSupervisionClient.createdAt,
       referenceDate: new Date(),
     });
   }, [activeSupervisionClient]);
@@ -614,11 +620,7 @@ export default function ScheduleBuilderPage() {
                         key={slot.time}
                         style={{
                           ...styles.timeSlotCell,
-                          backgroundColor: isOccupied
-                            ? `${caregiver.color}20`
-                            : isAvailable
-                            ? '#ffffff'
-                            : '#f9fafb',
+                          backgroundColor: getSlotBgColor(isOccupied, isAvailable, caregiver.color),
                           cursor: isAvailable && !isOccupied ? 'pointer' : 'default',
                         }}
                         onDragOver={isAvailable && !isOccupied ? handleDragOver : undefined}
@@ -697,11 +699,13 @@ export default function ScheduleBuilderPage() {
           clients={clients}
           caregivers={caregivers}
           onClose={() => setShowPatternModal(false)}
-          onSuccess={async (count) => {
-            setShowPatternModal(false);
-            toast.success(`Recurring schedule created! Generated ${count} visits.`);
-            await queryClient.invalidateQueries({ queryKey: ['visits'] });
-            await refetchVisits();
+          onSuccess={(count) => {
+            void (async () => {
+              setShowPatternModal(false);
+              toast.success(`Recurring schedule created! Generated ${count} visits.`);
+              await queryClient.invalidateQueries({ queryKey: ['visits'] });
+              await refetchVisits();
+            })();
           }}
         />
       )}
@@ -1130,7 +1134,7 @@ function CreateRecurringPatternModal({
   caregivers,
   onClose,
   onSuccess,
-}: CreateRecurringPatternModalProps) {
+}: Readonly<CreateRecurringPatternModalProps>) {
   const visitApi = useVisitApi();
   const [clientId, setClientId] = useState<string>(clients[0]?.id ?? '');
   const [customClientName, setCustomClientName] = useState<string>('');
@@ -1185,10 +1189,11 @@ function CreateRecurringPatternModal({
         horizonDays: 90,
       });
 
-      onSuccess(res.generatedVisitsCount ?? 0);
-    } catch (err: any) {
+      onSuccess(res.generatedVisitsCount);
+    } catch (err: unknown) {
       console.error('Error creating pattern:', err);
-      toast.error(err?.message || 'Failed to create recurring pattern');
+      const message = err instanceof Error ? err.message : 'Failed to create recurring pattern';
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -1226,7 +1231,7 @@ function CreateRecurringPatternModal({
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} style={modalStyles.form} className="modal-form">
+        <form onSubmit={(e) => { void handleSubmit(e); }} style={modalStyles.form} className="modal-form">
           <div style={modalStyles.formGrid} className="modal-form-grid">
             <div style={modalStyles.formGroup}>
               <Label htmlFor="recurring-client">Client *</Label>
@@ -1438,7 +1443,7 @@ function CreateRecurringPatternModal({
 }
 
 interface ScheduleSupervisionVisitModalProps {
-  clients: Array<{ id: string; firstName: string; lastName: string; primaryAddress?: any }>;
+  clients: Array<{ id: string; firstName: string; lastName: string; primaryAddress?: { state?: string } }>;
   caregivers: Caregiver[];
   initialClientId?: string;
   onClose: () => void;
@@ -1451,8 +1456,8 @@ function ScheduleSupervisionVisitModal({
   initialClientId,
   onClose,
   onSuccess,
-}: ScheduleSupervisionVisitModalProps) {
-  const [clientId, setClientId] = useState<string>(initialClientId || clients[0]?.id || '');
+}: Readonly<ScheduleSupervisionVisitModalProps>) {
+  const [clientId, setClientId] = useState<string>(initialClientId ?? clients[0]?.id ?? '');
   const [caregiverId, setCaregiverId] = useState<string>('');
   const [visitDate, setVisitDate] = useState<string>(() => new Date().toISOString().split('T')[0]!);
   const [startTime, setStartTime] = useState<string>('09:00');
@@ -1463,7 +1468,7 @@ function ScheduleSupervisionVisitModal({
   const [submitting, setSubmitting] = useState<boolean>(false);
 
   const selectedClient = clients.find((c) => c.id === clientId);
-  const stateCode = selectedClient?.primaryAddress?.state || 'FL';
+  const stateCode = selectedClient?.primaryAddress?.state ?? 'FL';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1478,8 +1483,9 @@ function ScheduleSupervisionVisitModal({
       );
       await onSuccess();
       onClose();
-    } catch (err: any) {
-      toast.error(err?.message || 'Failed to schedule supervision visit');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to schedule supervision visit';
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -1507,7 +1513,7 @@ function ScheduleSupervisionVisitModal({
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit} style={modalStyles.form}>
+        <form onSubmit={(e) => { void handleSubmit(e); }} style={modalStyles.form}>
           <div style={modalStyles.formGrid}>
             <div style={modalStyles.formGroup}>
               <Label htmlFor="supervision-client">Client *</Label>
@@ -1818,7 +1824,7 @@ function CreateAppointmentModal({
   onClose,
   onSubmit,
   onChange,
-}: CreateAppointmentModalProps) {
+}: Readonly<CreateAppointmentModalProps>) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
@@ -1929,7 +1935,7 @@ function CreateAppointmentModal({
         <div style={styles.footer}>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
-            onClick={handleSubmit}
+            onClick={() => { void handleSubmit(); }}
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Creating...' : 'Create'}

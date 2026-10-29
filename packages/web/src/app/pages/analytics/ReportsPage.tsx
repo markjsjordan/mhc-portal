@@ -216,7 +216,7 @@ export function ReportsPage() {
                 Cancel
               </Button>
               <Button
-                onClick={handleGenerateReport}
+                onClick={() => { void handleGenerateReport(); }}
                 disabled={generateReport.isPending}
               >
                 {generateReport.isPending ? 'Generating...' : 'Generate Report'}
@@ -271,7 +271,7 @@ export function ReportsPage() {
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={() => handleExportReport(report.id, 'PDF')}
+                          onClick={() => { void handleExportReport(report.id, 'PDF'); }}
                           disabled={exportReport.isPending}
                         >
                           <Download className="h-4 w-4 mr-2" />
@@ -282,7 +282,7 @@ export function ReportsPage() {
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={() => handleExportReport(report.id, 'EXCEL')}
+                          onClick={() => { void handleExportReport(report.id, 'EXCEL'); }}
                           disabled={exportReport.isPending}
                         >
                           <Download className="h-4 w-4 mr-2" />
@@ -293,7 +293,7 @@ export function ReportsPage() {
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={() => handleExportReport(report.id, 'CSV')}
+                          onClick={() => { void handleExportReport(report.id, 'CSV'); }}
                           disabled={exportReport.isPending}
                         >
                           <Download className="h-4 w-4 mr-2" />

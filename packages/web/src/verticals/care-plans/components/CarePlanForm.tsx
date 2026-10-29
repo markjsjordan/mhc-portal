@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { LoadingSpinner } from '@/core/components';
@@ -113,7 +113,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
 
   const { data: branches = [] } = useBranches();
 
-  const organizationId = initialData?.organizationId || user?.organizationId || '00000000-0000-0000-0000-000000000001';
+  const organizationId = (initialData?.organizationId ?? user?.organizationId) ?? '00000000-0000-0000-0000-000000000001';
 
   // Fetch organization team members for coordinator selection
   const { data: teamMembers = [] } = useQuery({
@@ -130,12 +130,11 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
     register,
     handleSubmit,
     setValue,
-    watch,
     getValues,
     control,
     formState: { errors },
   } = useForm<CarePlanFormData>({
-    resolver: zodResolver(carePlanSchema as any),
+    resolver: zodResolver(carePlanSchema) as unknown as Resolver<CarePlanFormData>,
     defaultValues: {
       clientId: initialData?.clientId ?? '',
       organizationId: initialData?.organizationId ?? user?.organizationId ?? '00000000-0000-0000-0000-000000000001',
@@ -150,10 +149,12 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
     },
   });
 
-  const selectedClientId = watch('clientId');
-  const selectedOrgId = watch('organizationId');
-  const selectedBranchId = watch('branchId');
-  const selectedCoordinatorId = watch('coordinatorId');
+  const selectedClientId = useWatch({ control, name: 'clientId' });
+  const selectedOrgId = useWatch({ control, name: 'organizationId' });
+  const selectedBranchId = useWatch({ control, name: 'branchId' });
+  const selectedCoordinatorId = useWatch({ control, name: 'coordinatorId' });
+  const selectedPlanType = useWatch({ control, name: 'planType' });
+  const watchedGoals = useWatch({ control, name: 'goals' });
 
   // Update org and branch when user context is available
   useEffect(() => {
@@ -263,7 +264,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
               Branch (Optional)
             </Label>
             <Select
-              value={selectedBranchId || '__none__'}
+              value={selectedBranchId ?? '__none__'}
               onValueChange={(val) => setValue('branchId', val === '__none__' ? '' : val, { shouldValidate: true })}
             >
               <SelectTrigger id="care-plan-branch-select">
@@ -288,7 +289,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
               Coordinator (Optional)
             </Label>
             <Select
-              value={selectedCoordinatorId || '__none__'}
+              value={selectedCoordinatorId ?? '__none__'}
               onValueChange={(val) => setValue('coordinatorId', val === '__none__' ? '' : val, { shouldValidate: true })}
             >
               <SelectTrigger id="care-plan-coordinator-select">
@@ -329,7 +330,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
               Plan Type <span className="text-destructive">*</span>
             </Label>
             <Select
-              value={watch('planType')}
+              value={selectedPlanType}
               onValueChange={(val) => setValue('planType', val as CarePlanFormData['planType'], { shouldValidate: true })}
             >
               <SelectTrigger id="care-plan-type-select">
@@ -445,7 +446,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
                         placeholder="Enter goal name"
                       />
                       {errors.goals?.[index]?.name?.message && (
-                        <p className="text-destructive text-sm">{errors.goals[index]?.name?.message}</p>
+                        <p className="text-destructive text-sm">{errors.goals[index].name.message}</p>
                       )}
                     </div>
 
@@ -459,7 +460,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
                         type="date"
                       />
                       {errors.goals?.[index]?.targetDate?.message && (
-                        <p className="text-destructive text-sm">{errors.goals[index]?.targetDate?.message}</p>
+                        <p className="text-destructive text-sm">{errors.goals[index].targetDate.message}</p>
                       )}
                     </div>
                   </div>
@@ -475,7 +476,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
                       rows={3}
                     />
                     {errors.goals?.[index]?.description?.message && (
-                      <p className="text-destructive text-sm">{errors.goals[index]?.description?.message}</p>
+                      <p className="text-destructive text-sm">{errors.goals[index].description.message}</p>
                     )}
                   </div>
 
@@ -483,7 +484,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
                     <div className="space-y-1.5">
                       <Label htmlFor={`goal-${index}-category`}>Category</Label>
                       <Select
-                        value={watch(`goals.${index}.category`) || 'OTHER'}
+                        value={watchedGoals[index]?.category ?? 'OTHER'}
                         onValueChange={(val) => setValue(`goals.${index}.category`, val)}
                       >
                         <SelectTrigger id={`goal-${index}-category`}>
@@ -498,14 +499,14 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
                         </SelectContent>
                       </Select>
                       {errors.goals?.[index]?.category?.message && (
-                        <p className="text-destructive text-sm">{errors.goals[index]?.category?.message}</p>
+                        <p className="text-destructive text-sm">{errors.goals[index].category.message}</p>
                       )}
                     </div>
 
                     <div className="space-y-1.5">
                       <Label htmlFor={`goal-${index}-priority`}>Priority</Label>
                       <Select
-                        value={watch(`goals.${index}.priority`) || 'MEDIUM'}
+                        value={watchedGoals[index]?.priority ?? 'MEDIUM'}
                         onValueChange={(val) => setValue(`goals.${index}.priority`, val)}
                       >
                         <SelectTrigger id={`goal-${index}-priority`}>
@@ -520,14 +521,14 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
                         </SelectContent>
                       </Select>
                       {errors.goals?.[index]?.priority?.message && (
-                        <p className="text-destructive text-sm">{errors.goals[index]?.priority?.message}</p>
+                        <p className="text-destructive text-sm">{errors.goals[index].priority.message}</p>
                       )}
                     </div>
 
                     <div className="space-y-1.5">
                       <Label htmlFor={`goal-${index}-status`}>Status</Label>
                       <Select
-                        value={watch(`goals.${index}.status`) || 'NOT_STARTED'}
+                        value={watchedGoals[index]?.status ?? 'NOT_STARTED'}
                         onValueChange={(val) => setValue(`goals.${index}.status`, val)}
                       >
                         <SelectTrigger id={`goal-${index}-status`}>
@@ -542,7 +543,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
                         </SelectContent>
                       </Select>
                       {errors.goals?.[index]?.status?.message && (
-                        <p className="text-destructive text-sm">{errors.goals[index]?.status?.message}</p>
+                        <p className="text-destructive text-sm">{errors.goals[index].status.message}</p>
                       )}
                     </div>
                   </div>
@@ -596,7 +597,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
               </div>
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">Plan Type</dt>
-                <dd className="mt-1 text-sm">{watchedValues.planType?.replace(/_/g, ' ')}</dd>
+                <dd className="mt-1 text-sm">{watchedValues.planType.replace(/_/g, ' ')}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">Client ID</dt>
@@ -620,7 +621,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
           </CardContent>
         </Card>
 
-        {watchedValues.goals && watchedValues.goals.length > 0 && (
+        {watchedValues.goals.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">{`Goals (${watchedValues.goals.length})`}</CardTitle>
@@ -699,7 +700,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
       </div>
 
       {/* Form Content */}
-      <form onSubmit={handleSubmit(onFormSubmit)}>
+      <form onSubmit={(e) => { void handleSubmit(onFormSubmit)(e); }}>
         {currentStep === 0 && renderBasicInfo()}
         {currentStep === 1 && renderGoals()}
         {currentStep === 2 && renderInterventions()}

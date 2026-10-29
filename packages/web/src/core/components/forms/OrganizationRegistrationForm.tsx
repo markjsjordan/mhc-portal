@@ -124,30 +124,30 @@ export function OrganizationRegistrationForm({
     }
 
     // Address validation
-    if (!formData.primaryAddress?.street1?.trim()) {
+    if (!formData.primaryAddress?.street1.trim()) {
       newErrors['primaryAddress.street1'] = 'Street address is required';
     }
 
-    if (!formData.primaryAddress?.city?.trim()) {
+    if (!formData.primaryAddress?.city.trim()) {
       newErrors['primaryAddress.city'] = 'City is required';
     }
 
-    if (!formData.primaryAddress?.zipCode?.trim()) {
+    if (!formData.primaryAddress?.zipCode.trim()) {
       newErrors['primaryAddress.zipCode'] = 'ZIP code is required';
     } else if (!/^\d{5}(-\d{4})?$/.test(formData.primaryAddress.zipCode)) {
       newErrors['primaryAddress.zipCode'] = 'Invalid ZIP code format';
     }
 
     // Admin user validation
-    if (!formData.adminUser?.firstName?.trim()) {
+    if (!formData.adminUser?.firstName.trim()) {
       newErrors['adminUser.firstName'] = 'First name is required';
     }
 
-    if (!formData.adminUser?.lastName?.trim()) {
+    if (!formData.adminUser?.lastName.trim()) {
       newErrors['adminUser.lastName'] = 'Last name is required';
     }
 
-    if (!formData.adminUser?.email?.trim()) {
+    if (!formData.adminUser?.email.trim()) {
       newErrors['adminUser.email'] = 'Admin email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.adminUser.email)) {
       newErrors['adminUser.email'] = 'Invalid email format';
@@ -181,7 +181,7 @@ export function OrganizationRegistrationForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-6">
       {/* Organization Information */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-foreground">Organization Information</h3>

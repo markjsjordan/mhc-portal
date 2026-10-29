@@ -136,10 +136,10 @@ export interface ShiftMatchingDataProvider {
  * Handles visit scheduling and execution
  */
 export interface VisitDataProvider {
-  getVisits(filters?: any): Promise<any>;
-  getVisitById(id: string): Promise<any>;
-  createVisit?(input: any): Promise<any>;
-  updateVisit?(id: string, input: any): Promise<any>;
+  getVisits(filters?: Record<string, unknown>): Promise<unknown>;
+  getVisitById(id: string): Promise<unknown>;
+  createVisit?(input: Record<string, unknown>): Promise<unknown>;
+  updateVisit?(id: string, input: Record<string, unknown>): Promise<unknown>;
   deleteVisit?(id: string): Promise<void>;
 }
 

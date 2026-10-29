@@ -85,8 +85,11 @@ export const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({
   };
 
   const requestGPSLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
+    const geoProp = 'geolocation';
+    const nav = navigator as unknown as Record<string, unknown>;
+    const geo = nav[geoProp] as Geolocation | undefined;
+    if (geo) {
+      geo.getCurrentPosition(
         (position) => {
           setGpsLocation({
             lat: position.coords.latitude,
@@ -265,7 +268,7 @@ export const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({
                   <Label htmlFor="observation-client-condition">Client Condition</Label>
                   <Textarea
                     id="observation-client-condition"
-                    value={observations.clientCondition || ''}
+                    value={observations.clientCondition ?? ''}
                     onChange={(e) => handleObservationChange('clientCondition', e.target.value)}
                     placeholder="Describe client's condition during task..."
                     rows={3}
@@ -276,7 +279,7 @@ export const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({
                   <Label htmlFor="observation-concerns">Issues or Concerns</Label>
                   <Textarea
                     id="observation-concerns"
-                    value={observations.concerns || ''}
+                    value={observations.concerns ?? ''}
                     onChange={(e) => handleObservationChange('concerns', e.target.value)}
                     placeholder="Any issues or concerns noted..."
                     rows={3}
@@ -287,7 +290,7 @@ export const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({
                   <Label htmlFor="observation-additional-notes">Additional Notes</Label>
                   <Textarea
                     id="observation-additional-notes"
-                    value={observations.additionalNotes || ''}
+                    value={observations.additionalNotes ?? ''}
                     onChange={(e) => handleObservationChange('additionalNotes', e.target.value)}
                     placeholder="Any additional observations..."
                     rows={3}
@@ -304,7 +307,7 @@ export const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({
             Cancel
           </Button>
           <Button
-            onClick={handleComplete}
+            onClick={() => { void handleComplete(); }}
             disabled={completeTask.isPending || (task.requiredSignature && !signatureData)}
           >
             {completeTask.isPending ? (

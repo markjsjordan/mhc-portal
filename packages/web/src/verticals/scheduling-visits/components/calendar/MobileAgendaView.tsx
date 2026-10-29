@@ -56,21 +56,19 @@ export const MobileAgendaView: React.FC<MobileAgendaViewProps> = ({
               ? caregiverColorMap.get(visit.assignedCaregiverId)!
               : '#3B82F6';
 
-          const caregiverDisplayName =
-            visit.assignedCaregiverId && caregiverNameMap
-              ? caregiverNameMap.get(visit.assignedCaregiverId) || 'Assigned'
-              : visit.assignedCaregiverId
-              ? 'Assigned'
-              : 'Unassigned';
+          let caregiverDisplayName = 'Unassigned';
+          if (visit.assignedCaregiverId) {
+            caregiverDisplayName = caregiverNameMap?.get(visit.assignedCaregiverId) ?? 'Assigned';
+          }
 
-          const statusColor =
-            visit.status === 'UNASSIGNED'
-              ? '#F59E0B'
-              : visit.status === 'COMPLETED'
-              ? '#10B981'
-              : visit.status === 'CANCELLED'
-              ? '#EF4444'
-              : caregiverColor;
+          let statusColor = caregiverColor;
+          if (visit.status === 'UNASSIGNED') {
+            statusColor = '#F59E0B';
+          } else if (visit.status === 'COMPLETED') {
+            statusColor = '#10B981';
+          } else if (visit.status === 'CANCELLED') {
+            statusColor = '#EF4444';
+          }
 
           const startTime = visit.scheduledStartTime || '09:00';
           const endTime = visit.scheduledEndTime || '11:00';
@@ -100,7 +98,7 @@ export const MobileAgendaView: React.FC<MobileAgendaViewProps> = ({
                     <span>{clientName}</span>
                   </div>
                   <div className="text-xs text-gray-600 mt-1">
-                    {startTime} - {endTime} ({visit.status || 'Scheduled'})
+                    {startTime} - {endTime} ({visit.status})
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
                     Caregiver:{' '}

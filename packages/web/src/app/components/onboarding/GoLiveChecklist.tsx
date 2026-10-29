@@ -110,7 +110,7 @@ export function GoLiveChecklist({
   onRunVerification,
   onApproveGoLive,
   isLoading = false,
-}: GoLiveChecklistProps) {
+}: Readonly<GoLiveChecklistProps>) {
   const navigate = useNavigate();
   const [expandedCategories, setExpandedCategories] = useState<Set<GoLiveCategory>>(
     new Set(CATEGORY_ORDER)
@@ -156,6 +156,10 @@ export function GoLiveChecklist({
     } finally {
       setIsVerifying(false);
     }
+  };
+
+  const handleNavigate = (url: string) => {
+    Promise.resolve(navigate(url)).catch(() => {});
   };
 
   const handleApproveGoLive = async () => {
@@ -228,7 +232,7 @@ export function GoLiveChecklist({
             <Button
               variant="secondary"
               size="sm"
-              onClick={handleRunVerification}
+              onClick={() => { void handleRunVerification(); }}
               disabled={isVerifying || isLoading}
               className="gap-2"
             >
@@ -347,7 +351,7 @@ export function GoLiveChecklist({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleItemToggle(item)}
+                      onClick={() => { void handleItemToggle(item); }}
                       disabled={updatingItems.has(item.id) || isLoading || item.autoVerifiable}
                       className="mt-0.5 h-6 w-6 p-0 hover:bg-transparent"
                       title={item.autoVerifiable ? 'This item is verified automatically' : 'Click to toggle'}
@@ -391,7 +395,7 @@ export function GoLiveChecklist({
                         <Button
                           variant="link"
                           size="sm"
-                          onClick={() => navigate(item.actionUrl!)}
+                          onClick={() => handleNavigate(item.actionUrl!)}
                           className="mt-2 p-0 h-auto font-medium"
                         >
                           Complete this step &rarr;
@@ -421,7 +425,7 @@ export function GoLiveChecklist({
             <Button
               variant={isGoLiveReady ? 'secondary' : 'outline'}
               size="lg"
-              onClick={handleApproveGoLive}
+              onClick={() => { void handleApproveGoLive(); }}
               disabled={!isGoLiveReady || isApproving || isLoading}
               className="flex items-center gap-2 font-semibold"
             >

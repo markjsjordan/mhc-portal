@@ -67,7 +67,7 @@ export function initializeSentry(): void {
 
       // Scrub PHI-like patterns from exception messages
       if (event.exception) {
-        for (const exception of event.exception.values || []) {
+        for (const exception of event.exception.values ?? []) {
           if (exception.value) {
             // Redact SSN patterns (###-##-####)
             exception.value = exception.value.replace(/\d{3}-\d{2}-\d{4}/g, '[SSN-REDACTED]');

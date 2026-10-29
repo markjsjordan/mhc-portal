@@ -31,16 +31,16 @@ function caregiverToFormValues(caregiver: Caregiver): CaregiverFormValues {
     middleName: caregiver.middleName ?? '',
     preferredName: caregiver.preferredName ?? '',
     email: caregiver.email || '',
-    phoneNumber: caregiver.primaryPhone?.number ?? '',
-    phoneType: caregiver.primaryPhone?.type ?? 'MOBILE',
+    phoneNumber: caregiver.primaryPhone.number,
+    phoneType: caregiver.primaryPhone.type,
     dateOfBirth: caregiver.dateOfBirth ? String(caregiver.dateOfBirth).split('T')[0] ?? '' : '',
-    employmentType: caregiver.employmentType ?? 'FULL_TIME',
+    employmentType: caregiver.employmentType,
     hireDate: caregiver.hireDate ? String(caregiver.hireDate).split('T')[0] ?? '' : '',
-    role: caregiver.role ?? 'CAREGIVER',
-    status: caregiver.status ?? 'ACTIVE',
-    branchIdsRaw: caregiver.branchIds?.join(', ') || '',
+    role: caregiver.role,
+    status: caregiver.status,
+    branchIdsRaw: caregiver.branchIds.join(', '),
     primaryBranchId: caregiver.primaryBranchId || '',
-    payRateAmount: caregiver.payRate?.amount?.toString() ?? '',
+    payRateAmount: caregiver.payRate?.amount != null ? caregiver.payRate.amount.toString() : '',
     payRateUnit: caregiver.payRate?.unit ?? 'HOURLY',
     payRateEffectiveDate: caregiver.payRate?.effectiveDate
       ? (String(caregiver.payRate.effectiveDate).split('T')[0] ?? '')
@@ -125,14 +125,14 @@ export const EditCaregiverModal: React.FC<EditCaregiverModalProps> = ({
   }, [isOpen, caregiver]);
 
   const updateMutation = useMutation({
-    mutationFn: (payload: any) => caregiverApi.updateCaregiver(caregiver.id, payload),
+    mutationFn: (payload: Partial<CaregiverFormValues>) => caregiverApi.updateCaregiver(caregiver.id, payload),
     onSuccess: () => {
       toast.success('Caregiver updated successfully');
       setHasChanges(false);
       onSuccess();
       onClose();
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { error?: string; message?: string } } }) => {
       if (error.response?.data?.error === 'OPTIMISTIC_LOCK_FAILURE') {
         toast.error(
           'Record was modified by another user. Please refresh and try again.'

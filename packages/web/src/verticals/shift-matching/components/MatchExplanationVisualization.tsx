@@ -125,13 +125,13 @@ export const MatchExplanationVisualization: React.FC<
       <div className="divide-y divide-gray-200">
         {explanations.map(explanation => {
           const isExpanded = expandedCategories.has(explanation.category);
-          const categoryColor = categoryColors[explanation.category] || 'gray';
-          const impactBadgeColor =
-            explanation.overallImpact === 'POSITIVE'
-              ? 'bg-green-100 text-green-800'
-              : explanation.overallImpact === 'NEGATIVE'
-              ? 'bg-red-100 text-red-800'
-              : 'bg-gray-100 text-gray-800';
+          const categoryColor = categoryColors[explanation.category] ?? 'gray';
+          let impactBadgeColor = 'bg-gray-100 text-gray-800';
+          if (explanation.overallImpact === 'POSITIVE') {
+            impactBadgeColor = 'bg-green-100 text-green-800';
+          } else if (explanation.overallImpact === 'NEGATIVE') {
+            impactBadgeColor = 'bg-red-100 text-red-800';
+          }
 
           return (
             <div key={explanation.category} className="px-6 py-4">
@@ -323,7 +323,7 @@ export const MatchExplanationCompact: React.FC<{
       <div className="space-y-1.5">
         {topDetails.slice(0, 5).map((item, idx) => (
           <div key={idx} className="flex items-start gap-2 text-sm">
-            <span className="text-lg flex-shrink-0">{item.detail.icon || '✓'}</span>
+            <span className="text-lg flex-shrink-0">{item.detail.icon ?? '✓'}</span>
             <span className="text-gray-700">{item.detail.caregiverAttribute}</span>
           </div>
         ))}

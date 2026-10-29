@@ -43,7 +43,7 @@ function getBrowserDeviceInfo(): EVVDeviceInfo {
 
 function getCurrentPosition(): Promise<EVVLocationInput> {
   return new Promise((resolve, reject) => {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+    if (!('geolocation' in navigator)) {
       reject(new Error('Geolocation is not supported by this browser'));
       return;
     }
@@ -211,7 +211,7 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
   const isAdmin = isUserAdminOrCoordinator(hasAnyRole);
   const canClock = canUserClockInOut(user?.id, visit, hasAnyRole);
 
-  const state = visit.address?.state;
+  const state = visit.address.state;
   const gracePeriodMinutes = getGracePeriodMinutes(state);
   const withinWindow = isWithinClockInWindow(
     visit.scheduledDate,
@@ -250,13 +250,16 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
     }
 
     // When admin clocks in on behalf of caregiver, pass assignedCaregiverId so EVV/visit matches
-    const effectiveCaregiverId = visit.assignedCaregiverId || user.id;
+    const effectiveCaregiverId = visit.assignedCaregiverId ?? user.id;
     const adminNote = isAdmin && visit.assignedCaregiverId && visit.assignedCaregiverId !== user.id
       ? ` [Admin Clock-In by user ${user.id}]`
       : '';
-    const combinedOverride = overrideReason
-      ? `MANUAL_OVERRIDE: ${overrideReason}${adminNote}`
-      : adminNote ? `ADMIN_ENTRY: Clock-in recorded by Admin${adminNote}` : undefined;
+    let combinedOverride: string | undefined;
+    if (overrideReason) {
+      combinedOverride = `MANUAL_OVERRIDE: ${overrideReason}${adminNote}`;
+    } else if (adminNote) {
+      combinedOverride = `ADMIN_ENTRY: Clock-in recorded by Admin${adminNote}`;
+    }
 
     clockIn.mutate(
       {
@@ -272,7 +275,7 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
           void refetchEvvRecord();
           onClockIn?.(result.evvRecordId);
 
-          if (!result.location?.isWithinGeofence && !overrideReason) {
+          if (!result.location.isWithinGeofence && !overrideReason) {
             // Server confirmed geofence violation — prompt override
             const loc = location;
             setPendingLocation(loc);
@@ -324,13 +327,16 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
       return;
     }
 
-    const effectiveCaregiverId = visit.assignedCaregiverId || user.id;
+    const effectiveCaregiverId = visit.assignedCaregiverId ?? user.id;
     const adminNote = isAdmin && visit.assignedCaregiverId && visit.assignedCaregiverId !== user.id
       ? ` [Admin Clock-Out by user ${user.id}]`
       : '';
-    const combinedOverride = overrideReason
-      ? `MANUAL_OVERRIDE: ${overrideReason}${adminNote}`
-      : adminNote ? `ADMIN_ENTRY: Clock-out recorded by Admin${adminNote}` : undefined;
+    let combinedOverride: string | undefined;
+    if (overrideReason) {
+      combinedOverride = `MANUAL_OVERRIDE: ${overrideReason}${adminNote}`;
+    } else if (adminNote) {
+      combinedOverride = `ADMIN_ENTRY: Clock-out recorded by Admin${adminNote}`;
+    }
 
     clockOut.mutate(
       {
@@ -348,7 +354,7 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
           void refetchEvvRecord();
           onClockOut?.();
 
-          if (!result.location?.isWithinGeofence && !overrideReason) {
+          if (!result.location.isWithinGeofence && !overrideReason) {
             const loc = location;
             setPendingLocation(loc);
             setPendingAction('clockOut');
@@ -451,7 +457,7 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
           <div className="flex items-start gap-1.5 rounded-md bg-amber-50 border border-amber-200 px-2.5 py-1.5 text-xs text-amber-800">
             <Clock className="h-3.5 w-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
             <span>
-              Outside clock-in window ({gracePeriodMinutes} min grace — {state ?? 'Default'})
+              Outside clock-in window ({gracePeriodMinutes} min grace — {state})
             </span>
           </div>
         )}
@@ -491,12 +497,14 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
           </p>
         )}
 
-        {!isClockedIn && !isComplete && (
+        {!isClockedIn && (
           <Button
             variant="default"
             size="sm"
             disabled={!clockInEnabled || busy}
-            onClick={handleClockIn}
+            onClick={() => {
+              void handleClockIn();
+            }}
             className="min-h-[44px] w-full sm:w-auto whitespace-nowrap"
             title={
               !withinWindow && !isAdmin
@@ -505,20 +513,30 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
             }
           >
             <LogIn className="h-4 w-4" />
-            {busy ? 'Locating…' : isAdmin ? 'Clock In (Admin)' : 'Clock In'}
+            {(() => {
+              if (busy) return 'Locating…';
+              if (isAdmin) return 'Clock In (Admin)';
+              return 'Clock In';
+            })()}
           </Button>
         )}
 
-        {isClockedIn && !isComplete && (
+        {isClockedIn && (
           <Button
             variant="outline"
             size="sm"
             disabled={!clockOutEnabled || busy}
-            onClick={handleClockOut}
+            onClick={() => {
+              void handleClockOut();
+            }}
             className="min-h-[44px] w-full sm:w-auto whitespace-nowrap"
           >
             <LogOut className="h-4 w-4" />
-            {busy ? 'Locating…' : isAdmin ? 'Clock Out (Admin)' : 'Clock Out'}
+            {(() => {
+              if (busy) return 'Locating…';
+              if (isAdmin) return 'Clock Out (Admin)';
+              return 'Clock Out';
+            })()}
           </Button>
         )}
       </div>

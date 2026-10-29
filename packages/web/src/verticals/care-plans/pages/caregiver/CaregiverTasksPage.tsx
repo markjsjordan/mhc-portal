@@ -38,7 +38,7 @@ export const CaregiverTasksPage: React.FC = () => {
 
   const handleTaskComplete = () => {
     setSelectedTask(null);
-    refetch();
+    void refetch();
   };
 
   if (isLoading || (shouldFilterToSelf && isCaregiverIdLoading)) {
@@ -53,12 +53,12 @@ export const CaregiverTasksPage: React.FC = () => {
     return (
       <ErrorMessage
         message={(error as Error).message || 'Failed to load tasks'}
-        retry={refetch}
+        retry={() => { void refetch(); }}
       />
     );
   }
 
-  const tasks = data?.items || [];
+  const tasks = data?.items ?? [];
   const scheduledTasks = tasks.filter(t => t.status === 'SCHEDULED');
   const completedTasks = tasks.filter(t => t.status === 'COMPLETED');
   const overdueTasks = tasks.filter(t =>
@@ -226,7 +226,7 @@ export const CaregiverTasksPage: React.FC = () => {
                     key={task.id}
                     task={task}
                     showCompleteButton={true}
-                    onCompleted={refetch}
+                    onCompleted={() => { void refetch(); }}
                     onRequireSignature={setSelectedTask}
                   />
                 ))}
@@ -244,7 +244,7 @@ export const CaregiverTasksPage: React.FC = () => {
                     key={task.id}
                     task={task}
                     showCompleteButton={true}
-                    onCompleted={refetch}
+                    onCompleted={() => { void refetch(); }}
                     onRequireSignature={setSelectedTask}
                   />
                 ))}

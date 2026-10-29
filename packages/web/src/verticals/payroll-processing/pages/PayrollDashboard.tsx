@@ -64,7 +64,7 @@ async function fetchRecentPeriods(organizationId: string, limit: number = 5): Pr
  */
 export const PayrollDashboard: React.FC = () => {
   const { user } = useAuth();
-  const organizationId = user?.organizationId || '';
+  const organizationId = user?.organizationId ?? '';
   const [isCreatePeriodOpen, setIsCreatePeriodOpen] = useState(false);
   const [isCreateRunOpen, setIsCreateRunOpen] = useState(false);
 
@@ -77,6 +77,63 @@ export const PayrollDashboard: React.FC = () => {
     queryKey: ['payroll', 'periods', organizationId],
     queryFn: () => fetchRecentPeriods(organizationId, 5),
   });
+
+  const renderCurrentPeriodContent = (): React.JSX.Element => {
+    if (isLoadingCurrent) {
+      return (
+        <Card>
+          <CardContent className="p-6">
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+    if (currentPeriod) {
+      return <PayPeriodCard period={currentPeriod} isCurrent />;
+    }
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-gray-500">No active pay period. Create a new period to get started.</p>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderRecentPeriodsContent = (): React.JSX.Element => {
+    if (isLoadingRecent) {
+      return (
+        <Card>
+          <CardContent className="p-6">
+            <div className="animate-pulse space-y-4">
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+    if (recentPeriods.length > 0) {
+      return (
+        <div className="space-y-4">
+          {recentPeriods.map((period) => (
+            <PayPeriodCard key={period.id} period={period} />
+          ))}
+        </div>
+      );
+    }
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-gray-500">No pay periods found.</p>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -105,24 +162,7 @@ export const PayrollDashboard: React.FC = () => {
       {/* Current Period Section */}
       <section className="mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Pay Period</h2>
-        {isLoadingCurrent ? (
-          <Card>
-            <CardContent className="p-6">
-              <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ) : currentPeriod ? (
-          <PayPeriodCard period={currentPeriod} isCurrent />
-        ) : (
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-gray-500">No active pay period. Create a new period to get started.</p>
-            </CardContent>
-          </Card>
-        )}
+        {renderCurrentPeriodContent()}
       </section>
 
       {/* Quick Actions */}
@@ -160,29 +200,7 @@ export const PayrollDashboard: React.FC = () => {
       {/* Recent Pay Periods */}
       <section className="mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Pay Periods</h2>
-        {isLoadingRecent ? (
-          <Card>
-            <CardContent className="p-6">
-              <div className="animate-pulse space-y-4">
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ) : recentPeriods.length > 0 ? (
-          <div className="space-y-4">
-            {recentPeriods.map((period) => (
-              <PayPeriodCard key={period.id} period={period} />
-            ))}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-gray-500">No pay periods found.</p>
-            </CardContent>
-          </Card>
-        )}
+        {renderRecentPeriodsContent()}
       </section>
 
       {/* Summary Statistics */}
@@ -191,10 +209,10 @@ export const PayrollDashboard: React.FC = () => {
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Summary</h2>
           <PayrollSummaryCard
             summary={{
-              totalEmployees: currentPeriod.totalCaregivers || 0,
-              totalCaregivers: currentPeriod.totalCaregivers || 0,
-              totalHours: currentPeriod.totalHours || 0,
-              totalGrossPay: currentPeriod.totalGrossPay || 0,
+              totalEmployees: currentPeriod.totalCaregivers ?? 0,
+              totalCaregivers: currentPeriod.totalCaregivers ?? 0,
+              totalHours: currentPeriod.totalHours ?? 0,
+              totalGrossPay: currentPeriod.totalGrossPay ?? 0,
               totalTaxWithheld: 0,
               pendingApprovals: 0,
               upcomingPayDate: currentPeriod.payDate,
@@ -272,16 +290,16 @@ const PayPeriodCard: React.FC<PayPeriodCardProps> = ({ period, isCurrent = false
           <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200">
             <div>
               <p className="text-xs text-gray-500">Caregivers</p>
-              <p className="text-sm font-medium text-gray-900">{period.totalCaregivers || 0}</p>
+              <p className="text-sm font-medium text-gray-900">{period.totalCaregivers ?? 0}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500">Total Hours</p>
-              <p className="text-sm font-medium text-gray-900">{(period.totalHours || 0).toFixed(1)}</p>
+              <p className="text-sm font-medium text-gray-900">{(period.totalHours ?? 0).toFixed(1)}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500">Gross Pay</p>
               <p className="text-sm font-medium text-gray-900">
-                ${(period.totalGrossPay || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${(period.totalGrossPay ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
           </div>

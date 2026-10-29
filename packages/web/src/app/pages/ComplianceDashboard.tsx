@@ -81,9 +81,15 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   INCIDENT_REPORT: <AlertCircle className="h-4 w-4" />,
 };
 
+const getDaysRemainingText = (days: number): string => {
+  if (days > 0) return `${days} days remaining`;
+  if (days === 0) return 'Due today';
+  return `${Math.abs(days)} days overdue`;
+};
+
 interface DeadlineItemProps {
   deadline: ComplianceDeadline;
-  onResolve: (id: string) => void;
+  onResolve: (id: string) => Promise<void> | void;
 }
 
 const DeadlineItem: React.FC<DeadlineItemProps> = ({ deadline, onResolve }) => {
@@ -113,15 +119,10 @@ const DeadlineItem: React.FC<DeadlineItemProps> = ({ deadline, onResolve }) => {
             </div>
             <div className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
-              {daysRemaining > 0 
-                ? `${daysRemaining} days remaining`
-                : daysRemaining === 0
-                  ? 'Due today'
-                  : `${Math.abs(daysRemaining)} days overdue`
-              }
+              {getDaysRemainingText(daysRemaining)}
             </div>
             <div className="text-gray-400">
-              Status: {STATUS_LABELS[deadline.status] ?? deadline.status}
+              Status: {STATUS_LABELS[deadline.status]}
             </div>
           </div>
         </div>
@@ -138,7 +139,9 @@ const DeadlineItem: React.FC<DeadlineItemProps> = ({ deadline, onResolve }) => {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => onResolve(deadline.id)}
+              onClick={() => {
+                Promise.resolve(onResolve(deadline.id)).catch(() => {});
+              }}
             >
               Resolve
             </Button>
@@ -149,15 +152,29 @@ const DeadlineItem: React.FC<DeadlineItemProps> = ({ deadline, onResolve }) => {
   );
 };
 
+type TrendDirection = 'up' | 'down' | 'neutral';
+
 interface SummaryCardProps {
   title: string;
   value: number | string;
   subtitle?: string;
   icon: React.ReactNode;
-  trend?: 'up' | 'down' | 'neutral';
+  trend?: TrendDirection;
   trendValue?: string;
   variant?: 'default' | 'success' | 'warning' | 'danger';
 }
+
+const getTrendClass = (trend?: TrendDirection) => {
+  if (trend === 'up') return 'text-green-600';
+  if (trend === 'down') return 'text-red-600';
+  return 'text-gray-500';
+};
+
+const getTrendIcon = (trend?: TrendDirection) => {
+  if (trend === 'up') return '↑';
+  if (trend === 'down') return '↓';
+  return '•';
+};
 
 const SummaryCard: React.FC<SummaryCardProps> = ({
   title,
@@ -192,12 +209,8 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
             <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
           )}
           {trend !== undefined && trendValue !== undefined && (
-            <p className={`text-xs mt-1 ${
-              trend === 'up' ? 'text-green-600' : 
-              trend === 'down' ? 'text-red-600' : 
-              'text-gray-500'
-            }`}>
-              {trend === 'up' ? '↑' : trend === 'down' ? '↓' : '•'} {trendValue}
+            <p className={`text-xs mt-1 ${getTrendClass(trend)}`}>
+              {getTrendIcon(trend)} {trendValue}
             </p>
           )}
         </div>
@@ -207,6 +220,12 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
       </div>
     </div>
   );
+};
+
+const getAlertBadgeClass = (status: string) => {
+  if (status === 'EXHAUSTED') return 'bg-red-500 text-white';
+  if (status === 'WARNING_90') return 'bg-orange-500 text-white';
+  return 'bg-yellow-500 text-white';
 };
 
 export const ComplianceDashboard: React.FC = () => {
@@ -288,7 +307,7 @@ export const ComplianceDashboard: React.FC = () => {
         title="Failed to Load Compliance Data"
         description={error}
         action={
-          <Button variant="outline" onClick={refresh}>
+          <Button variant="outline" onClick={() => { void refresh(); }}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Retry
           </Button>
@@ -315,7 +334,7 @@ export const ComplianceDashboard: React.FC = () => {
         <div className="flex gap-3">
           <Button
             variant="outline"
-            onClick={handleScan}
+            onClick={() => { void handleScan(); }}
             disabled={isScanning}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isScanning ? 'animate-spin' : ''}`} />
@@ -323,7 +342,7 @@ export const ComplianceDashboard: React.FC = () => {
           </Button>
           <Button
             variant="default"
-            onClick={handleGenerateReport}
+            onClick={() => { void handleGenerateReport(); }}
             disabled={isGeneratingReport}
           >
             <Download className="h-4 w-4 mr-2" />
@@ -388,11 +407,7 @@ export const ComplianceDashboard: React.FC = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className={`px-2 py-1 rounded text-xs font-bold ${
-                        alert.status === 'EXHAUSTED' ? 'bg-red-500 text-white' :
-                        alert.status === 'WARNING_90' ? 'bg-orange-500 text-white' :
-                        'bg-yellow-500 text-white'
-                      }`}>
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${getAlertBadgeClass(alert.status)}`}>
                         {alert.status.replace('_', ' ')}
                       </span>
                       {alert.projectedExhaustionDate !== undefined && (
@@ -484,7 +499,7 @@ export const ComplianceDashboard: React.FC = () => {
           title="All Clear!"
           description="No compliance deadlines require attention at this time."
           action={
-            <Button variant="outline" onClick={handleScan}>
+            <Button variant="outline" onClick={() => { void handleScan(); }}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Run Compliance Scan
             </Button>

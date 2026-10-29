@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Card } from '@folkcare/shared-components';
@@ -17,23 +17,21 @@ const profileFormSchema = z.object({
     .min(1, 'First name is required')
     .max(100, 'First name must be 100 characters or less')
     .refine(
-      (val) => /^[a-zA-Z\s'-]+$/.test(val),
+      (val) => /^[\s'A-Za-z-]+$/.test(val),
       'First name must contain only letters, spaces, hyphens, and apostrophes'
     ),
   lastName: z.string()
     .min(1, 'Last name is required')
     .max(100, 'Last name must be 100 characters or less')
     .refine(
-      (val) => /^[a-zA-Z\s'-]+$/.test(val),
+      (val) => /^[\s'A-Za-z-]+$/.test(val),
       'Last name must contain only letters, spaces, hyphens, and apostrophes'
     ),
-  email: z.string()
-    .min(1, 'Email is required')
-    .email('Please enter a valid email address'),
+  email: z.email('Please enter a valid email address'),
   phone: z.string()
     .max(20, 'Phone number is too long')
     .refine(
-      (val) => val === '' || /^[\d\s\-()]{0,20}$/.test(val),
+      (val) => val === '' || /^[\d\s()-]{0,20}$/.test(val),
       'Invalid phone format'
     )
     .optional()
@@ -50,7 +48,15 @@ export interface ProfileFormProps {
   updateError: Error | null;
   onSubmit: (data: ProfileFormData & { version?: number }) => void;
   onCancel?: () => void;
-  onVersionConflict?: (current: any) => void;
+  onVersionConflict?: (current: unknown) => void;
+}
+
+interface ProfileConflictData {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  version?: number;
 }
 
 /**
@@ -58,19 +64,19 @@ export interface ProfileFormProps {
  */
 interface ConflictDialogProps {
   isOpen: boolean;
-  currentValues: any;
-  userChanges: any;
+  currentValues: ProfileConflictData | null | unknown;
+  userChanges: ProfileConflictData | null | unknown;
   onResolve: (action: 'replace' | 'merge') => void;
   onCancel: () => void;
 }
 
-function ConflictDialog({ isOpen, currentValues, userChanges, onResolve, onCancel }: ConflictDialogProps) {
+function ConflictDialog({ isOpen, currentValues, userChanges, onResolve, onCancel }: Readonly<ConflictDialogProps>) {
   if (!isOpen) return null;
 
   // Either side can be absent (e.g. a conflict surfaced via updateError before any
   // local submit captured pendingFormData). Render empty values instead of crashing.
-  const latest = currentValues ?? {};
-  const mine = userChanges ?? {};
+  const latest = (currentValues ?? {}) as ProfileConflictData;
+  const mine = (userChanges ?? {}) as ProfileConflictData;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -154,9 +160,9 @@ export function ProfileForm({
   onSubmit,
   onCancel,
   onVersionConflict,
-}: ProfileFormProps) {
+}: Readonly<ProfileFormProps>) {
   const [showConflict, setShowConflict] = useState(false);
-  const [conflictData, setConflictData] = useState<any>(null);
+  const [conflictData, setConflictData] = useState<ProfileConflictData | null>(null);
   const [pendingFormData, setPendingFormData] = useState<ProfileFormData | null>(null);
   const [syncedAt, setSyncedAt] = useState<Date | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -166,7 +172,7 @@ export function ProfileForm({
     handleSubmit,
     formState: { errors, isDirty },
     reset,
-    watch,
+    control,
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -177,6 +183,8 @@ export function ProfileForm({
     },
     mode: 'onBlur',
   });
+
+  const watchedEmail = useWatch({ control, name: 'email' });
 
   // Update form when profile data loads
   useEffect(() => {
@@ -201,7 +209,6 @@ export function ProfileForm({
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChanges) {
         e.preventDefault();
-        e.returnValue = '';
       }
     };
 
@@ -245,9 +252,9 @@ export function ProfileForm({
   // Check for version conflict in updateError
   useEffect(() => {
     if (updateError) {
-      const errorData = (updateError as any)?.response?.data;
+      const errorData = (updateError as { response?: { data?: { code?: string; current?: unknown } } }).response?.data;
       if (errorData?.code === 'VERSION_CONFLICT') {
-        setConflictData(errorData.current);
+        setConflictData(errorData.current as ProfileConflictData);
         setShowConflict(true);
         onVersionConflict?.(errorData.current);
       }
@@ -290,12 +297,12 @@ export function ProfileForm({
         <Card.Content>
           <form onSubmit={(e) => { void handleSubmit(handleFormSubmit)(e); }} className="space-y-6">
             {/* Error message */}
-            {updateError && (updateError as any)?.response?.data?.code !== 'VERSION_CONFLICT' && (
+            {updateError && (updateError as { response?: { data?: { code?: string } } }).response?.data?.code !== 'VERSION_CONFLICT' && (
               <div className="flex gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
                 <div>
                   <h4 className="font-semibold text-red-900">Error</h4>
-                  <p className="text-sm text-red-800 mt-1">{(updateError as any)?.message}</p>
+                  <p className="text-sm text-red-800 mt-1">{updateError.message}</p>
                 </div>
               </div>
             )}
@@ -358,7 +365,7 @@ export function ProfileForm({
                 <p className="text-destructive text-sm">{errors.email.message}</p>
               )}
             </div>
-            {watch('email') !== profile?.email && (
+            {watchedEmail !== profile?.email && (
               <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
                 ℹ️ We'll send a verification link to your new email address
               </div>

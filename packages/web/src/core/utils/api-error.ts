@@ -10,11 +10,9 @@ import type { ApiError } from '../types/api';
  */
 export function extractApiErrorMessage(body: ApiError | null | undefined, fallback: string): string {
   const nested = typeof body?.error === 'object' ? body.error : undefined;
-  const base =
-    (typeof body?.message === 'string' && body.message) ||
-    (typeof body?.error === 'string' && body.error) ||
-    nested?.message ||
-    fallback;
+  const messageStr = typeof body?.message === 'string' ? body.message : undefined;
+  const errorStr = typeof body?.error === 'string' ? body.error : undefined;
+  const base = messageStr ?? errorStr ?? nested?.message ?? fallback;
 
   const details = nested?.details ?? body?.details;
   const detailErrors = details?.errors;

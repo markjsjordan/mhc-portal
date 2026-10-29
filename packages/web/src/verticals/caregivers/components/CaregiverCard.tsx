@@ -36,12 +36,10 @@ export const CaregiverCard: React.FC<CaregiverCardProps> = ({ caregiver, compact
 
         {!compact && (
           <div className="mt-4 space-y-2">
-            {caregiver.primaryPhone && (
-              <div className="flex items-center gap-2 text-sm text-gray-600 min-w-0">
-                <Phone className="h-4 w-4 flex-shrink-0" />
-                <span className="truncate">{formatPhone(caregiver.primaryPhone.number)}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2 text-sm text-gray-600 min-w-0">
+              <Phone className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">{formatPhone(caregiver.primaryPhone.number)}</span>
+            </div>
             {caregiver.email && (
               <div className="flex items-center gap-2 text-sm text-gray-600 min-w-0">
                 <Mail className="h-4 w-4 flex-shrink-0" />

@@ -79,7 +79,7 @@ export const ManualAssignmentModal: React.FC<ManualAssignmentModalProps> = ({
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Manual Assignment</h2>
             <p className="text-sm text-gray-600 mt-1">
-              Shift #{shift.id} • {shift.clientName || shift.clientId}
+              Shift #{shift.id} • {shift.clientName ?? shift.clientId}
             </p>
             <p className="text-xs text-gray-500">
               {new Date(shift.scheduledDate).toLocaleDateString()} • {shift.startTime} - {shift.endTime}

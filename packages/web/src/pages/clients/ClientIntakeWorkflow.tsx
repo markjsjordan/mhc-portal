@@ -144,6 +144,18 @@ const STEPS = [
   { id: 7, title: 'Review', subtitle: 'Finalize & Submit' },
 ];
 
+const getStepBadgeClass = (currentStep: number, stepId: number): string => {
+  if (currentStep > stepId) return 'bg-emerald-500 text-white';
+  if (currentStep === stepId) return 'bg-blue-600 text-white shadow-sm';
+  return 'bg-gray-200 text-gray-500';
+};
+
+const getStepBarClass = (currentStep: number, stepId: number): string => {
+  if (currentStep > stepId) return 'bg-emerald-500';
+  if (currentStep === stepId) return 'bg-blue-600 ring-2 ring-blue-200';
+  return 'bg-gray-200';
+};
+
 const DEMO_CAREGIVERS = [
   { id: 'cg-1', name: 'Maria Garcia', skills: ['Personal Care', 'Dementia'], languages: ['English', 'Spanish'] },
   { id: 'cg-2', name: 'James Wilson', skills: ['Personal Care', 'Mobility'], languages: ['English'] },
@@ -184,15 +196,19 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
     return () => clearInterval(interval);
   }, [intakeData]);
 
-  const updateData = (field: string, value: any) => {
+  const updateData = (field: string, value: unknown) => {
     setIntakeData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const updateNestedData = (parent: string, field: string, value: any) => {
-    setIntakeData((prev) => ({
-      ...prev,
-      [parent]: { ...((prev as any)[parent] ?? {}), [field]: value },
-    }));
+  const updateNestedData = (parent: string, field: string, value: unknown) => {
+    setIntakeData((prev) => {
+      const parentObj = (prev as Record<string, unknown>)[parent];
+      const existing = typeof parentObj === 'object' && parentObj !== null ? parentObj : {};
+      return {
+        ...prev,
+        [parent]: { ...existing, [field]: value },
+      };
+    });
   };
 
   const addEmergencyContact = () => {
@@ -319,22 +335,22 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       (activeBranchId && activeBranchId.trim() !== '' ? activeBranchId : undefined) ??
       (user?.branchIds?.[0] && user.branchIds[0].trim() !== '' ? user.branchIds[0] : undefined) ??
       (branches.length > 0 && branches[0]?.id ? branches[0].id : undefined) ??
-      (existingClients?.items?.[0]?.branchId && existingClients.items[0].branchId.trim() !== '' ? existingClients.items[0].branchId : undefined) ??
+      (existingClients?.items[0]?.branchId && existingClients.items[0].branchId.trim() !== '' ? existingClients.items[0].branchId : undefined) ??
       undefined;
 
     // Build address only if all required address fields are provided
     const hasCompleteAddress = Boolean(
-      intakeData.address?.line1?.trim() &&
-      intakeData.address?.city?.trim() &&
-      intakeData.address?.state?.trim() &&
-      intakeData.address?.postalCode?.trim()
+      intakeData.address?.line1.trim() &&
+      intakeData.address.city.trim() &&
+      intakeData.address.state.trim() &&
+      intakeData.address.postalCode.trim()
     );
 
     const addressInput = hasCompleteAddress
       ? {
           type: 'HOME' as const,
           line1: intakeData.address!.line1.trim(),
-          line2: intakeData.address?.line2?.trim() ?? undefined,
+          line2: intakeData.address?.line2.trim() ?? undefined,
           city: intakeData.address!.city.trim(),
           state: intakeData.address!.state.trim().toUpperCase(),
           postalCode: intakeData.address!.postalCode.trim(),
@@ -347,11 +363,11 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       : undefined;
 
     const emergencyContactsInput = (intakeData.emergencyContacts ?? [])
-      .filter((c) => c.name?.trim() && c.phone?.trim())
+      .filter((c) => c.name.trim() && c.phone.trim())
       .map((c) => ({
         id: crypto.randomUUID(),
         name: c.name.trim(),
-        relationship: c.relationship?.trim() || 'Emergency Contact',
+        relationship: c.relationship.trim() || 'Emergency Contact',
         phone: { number: c.phone.trim(), type: 'MOBILE' as const, canReceiveSMS: false },
         isPrimary: true,
         canMakeHealthcareDecisions: false,
@@ -378,7 +394,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         if (onSuccess) {
           onSuccess(updatedClient);
         } else {
-          navigate(`/clients/${updatedClient.id}`);
+          Promise.resolve(navigate(`/clients/${updatedClient.id}`)).catch(() => {});
         }
       } else {
         // Create mode
@@ -404,7 +420,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         if (onSuccess) {
           onSuccess(newClient);
         } else {
-          navigate(`/clients/${newClient.id}`);
+          Promise.resolve(navigate(`/clients/${newClient.id}`)).catch(() => {});
         }
       }
     } catch {
@@ -420,13 +436,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           <div key={step.id} className="flex-1 flex flex-col items-center">
             <div className="flex items-center w-full relative">
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm z-10 relative transition-colors ${
-                  currentStep > step.id
-                    ? 'bg-emerald-500 text-white'
-                    : currentStep === step.id
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'bg-gray-200 text-gray-500'
-                }`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm z-10 relative transition-colors ${getStepBadgeClass(currentStep, step.id)}`}
               >
                 {currentStep > step.id ? '✓' : step.id}
               </div>
@@ -473,13 +483,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           {STEPS.map((step) => (
             <div
               key={step.id}
-              className={`h-2 rounded-full transition-colors ${
-                currentStep > step.id
-                  ? 'bg-emerald-500'
-                  : currentStep === step.id
-                  ? 'bg-blue-600 ring-2 ring-blue-200'
-                  : 'bg-gray-200'
-              }`}
+              className={`h-2 rounded-full transition-colors ${getStepBarClass(currentStep, step.id)}`}
               title={`${step.id}. ${step.title}`}
             />
           ))}
@@ -573,7 +577,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 />
               </div>
 
-              {branches && branches.length > 0 && (
+              {branches.length > 0 && (
                 <div className="flex-1 min-w-0 flex flex-col mb-4 md:mb-5">
                   <Label htmlFor="branch-select" className="block text-sm font-medium text-gray-700 mb-1.5">Branch / Office</Label>
                   <Select
@@ -636,7 +640,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 <div className="flex-1 min-w-0 flex flex-col">
                   <Label htmlFor="address-state" className="block text-sm font-medium text-gray-700 mb-1.5">State</Label>
                   <Select
-                    value={intakeData.address?.state || undefined}
+                    value={intakeData.address?.state ?? undefined}
                     onValueChange={(val) => updateNestedData('address', 'state', val)}
                   >
                     <SelectTrigger id="address-state" className="w-full min-h-[44px]">
@@ -738,7 +742,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 <div className="flex-1 min-w-0 flex flex-col">
                   <Label htmlFor="insurance-type" className="block text-sm font-medium text-gray-700 mb-1.5">Insurance Type</Label>
                   <Select
-                    value={intakeData.insurance?.type || undefined}
+                    value={intakeData.insurance?.type ?? undefined}
                     onValueChange={(val) => updateNestedData('insurance', 'type', val)}
                   >
                     <SelectTrigger id="insurance-type" className="w-full min-h-[44px]">
@@ -787,7 +791,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                     {adl.charAt(0).toUpperCase() + adl.slice(1)}
                   </Label>
                   <RadioGroup
-                    value={(intakeData.adls as any)?.[adl] || undefined}
+                    value={(intakeData.adls as Record<string, string | undefined> | undefined)?.[adl] ?? undefined}
                     onValueChange={(val) => updateNestedData('adls', adl, val as CareLevel)}
                     aria-labelledby={`label-adl-${adl}`}
                     className="flex flex-wrap items-center gap-2 sm:gap-4 w-full sm:w-auto"
@@ -818,7 +822,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                     {iadl === 'mealPrep' ? 'Meal Prep' : iadl.charAt(0).toUpperCase() + iadl.slice(1)}
                   </Label>
                   <RadioGroup
-                    value={(intakeData.iadls as any)?.[iadl] || undefined}
+                    value={(intakeData.iadls as Record<string, string | undefined> | undefined)?.[iadl] ?? undefined}
                     onValueChange={(val) => updateNestedData('iadls', iadl, val as CareLevel)}
                     aria-labelledby={`label-iadl-${iadl}`}
                     className="flex flex-wrap items-center gap-2 sm:gap-4 w-full sm:w-auto"
@@ -844,7 +848,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 <div className="flex-1 min-w-0 flex flex-col">
                   <Label htmlFor="mobility-select" className="block text-sm font-medium text-gray-700 mb-1.5">Mobility</Label>
                   <Select
-                    value={intakeData.mobility || undefined}
+                    value={intakeData.mobility ?? undefined}
                     onValueChange={(val) => updateData('mobility', val)}
                   >
                     <SelectTrigger id="mobility-select" className="w-full min-h-[44px]">
@@ -861,7 +865,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 <div className="flex-1 min-w-0 flex flex-col">
                   <Label htmlFor="cognitive-select" className="block text-sm font-medium text-gray-700 mb-1.5">Cognitive Status</Label>
                   <Select
-                    value={intakeData.cognitive || undefined}
+                    value={intakeData.cognitive ?? undefined}
                     onValueChange={(val) => updateData('cognitive', val)}
                   >
                     <SelectTrigger id="cognitive-select" className="w-full min-h-[44px]">
@@ -986,7 +990,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 <div className="flex-1 min-w-0 flex flex-col">
                   <Label htmlFor="visit-frequency" className="block text-sm font-medium text-gray-700 mb-1.5">Visit Frequency</Label>
                   <Select
-                    value={intakeData.visitFrequency || undefined}
+                    value={intakeData.visitFrequency ?? undefined}
                     onValueChange={(val) => updateData('visitFrequency', val)}
                   >
                     <SelectTrigger id="visit-frequency" className="w-full min-h-[44px]">
@@ -1594,7 +1598,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               variant="default"
               size="lg"
               className="w-full sm:w-auto min-h-[50px] sm:min-w-[200px] order-1 sm:order-3"
-              onClick={handleSubmit}
+              onClick={() => { void handleSubmit(); }}
             >
               Submit & Create Client
             </Button>

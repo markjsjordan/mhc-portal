@@ -40,8 +40,8 @@ export const coordinatorTour: Tour = {
       placement: 'right',
       highlightElement: true,
       action: () => {
-        const link = document.querySelector('[data-tour="clients-link"]') as HTMLElement;
-        if (link) link.click();
+        const link = document.querySelector<HTMLElement>('[data-tour="clients-link"]');
+        link?.click();
       },
     },
     {
@@ -62,8 +62,8 @@ export const coordinatorTour: Tour = {
       placement: 'right',
       highlightElement: true,
       action: () => {
-        const link = document.querySelector('[data-tour="care-plans-link"]') as HTMLElement;
-        if (link) link.click();
+        const link = document.querySelector<HTMLElement>('[data-tour="care-plans-link"]');
+        link?.click();
       },
     },
     {
@@ -84,8 +84,8 @@ export const coordinatorTour: Tour = {
       placement: 'right',
       highlightElement: true,
       action: () => {
-        const link = document.querySelector('[data-tour="shift-matching-link"]') as HTMLElement;
-        if (link) link.click();
+        const link = document.querySelector<HTMLElement>('[data-tour="shift-matching-link"]');
+        link?.click();
       },
     },
     {

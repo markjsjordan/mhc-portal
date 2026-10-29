@@ -43,6 +43,27 @@ interface BurnoutRiskAssessment {
   historicalScores: Array<{ date: string; score: number }>;
 }
 
+function getHistoricalScoreBarColor(score: number): string {
+  if (score >= 70) return 'bg-red-500';
+  if (score >= 50) return 'bg-orange-500';
+  if (score >= 30) return 'bg-yellow-500';
+  return 'bg-green-500';
+}
+
+function getFactorBorderColor(severity: string): string {
+  if (severity === 'CRITICAL') return '#dc2626';
+  if (severity === 'HIGH') return '#ea580c';
+  if (severity === 'MODERATE') return '#ca8a04';
+  return '#16a34a';
+}
+
+function getFactorBadgeClass(severity: string): string {
+  if (severity === 'CRITICAL') return 'bg-red-100 text-red-800';
+  if (severity === 'HIGH') return 'bg-orange-100 text-orange-800';
+  if (severity === 'MODERATE') return 'bg-yellow-100 text-yellow-800';
+  return 'bg-green-100 text-green-800';
+}
+
 export function BurnoutSelfAssessment() {
   const [assessment, setAssessment] = useState<BurnoutRiskAssessment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,7 +71,7 @@ export function BurnoutSelfAssessment() {
   const [showRequestHelp, setShowRequestHelp] = useState(false);
 
   useEffect(() => {
-    loadAssessment();
+    void loadAssessment();
   }, []);
 
   async function loadAssessment() {
@@ -119,11 +140,11 @@ export function BurnoutSelfAssessment() {
           <h2 className="text-lg font-semibold text-red-900 mb-2">
             Unable to Load Assessment
           </h2>
-          <p className="text-red-700">{error || 'No assessment data available'}</p>
+          <p className="text-red-700">{error ?? 'No assessment data available'}</p>
           <Button
             type="button"
             variant="destructive"
-            onClick={loadAssessment}
+            onClick={() => { void loadAssessment(); }}
             className="mt-4"
           >
             Try Again
@@ -201,12 +222,7 @@ export function BurnoutSelfAssessment() {
                 <div key={idx} className="flex-1 flex flex-col items-center">
                   <div className="w-full bg-gray-200 rounded-t relative" style={{ height: '120px' }}>
                     <div
-                      className={`absolute bottom-0 w-full rounded-t ${
-                        point.score >= 70 ? 'bg-red-500' :
-                        point.score >= 50 ? 'bg-orange-500' :
-                        point.score >= 30 ? 'bg-yellow-500' :
-                        'bg-green-500'
-                      }`}
+                      className={`absolute bottom-0 w-full rounded-t ${getHistoricalScoreBarColor(point.score)}`}
                       style={{ height: `${point.score}%` }}
                     />
                   </div>
@@ -225,20 +241,11 @@ export function BurnoutSelfAssessment() {
           <div className="space-y-4">
             {assessment.riskFactors.map((factor, idx) => (
               <div key={idx} className="border-l-4 pl-4 py-2" style={{
-                borderColor:
-                  factor.severity === 'CRITICAL' ? '#dc2626' :
-                  factor.severity === 'HIGH' ? '#ea580c' :
-                  factor.severity === 'MODERATE' ? '#ca8a04' :
-                  '#16a34a'
+                borderColor: getFactorBorderColor(factor.severity)
               }}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium text-gray-900">{factor.factor}</span>
-                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                    factor.severity === 'CRITICAL' ? 'bg-red-100 text-red-800' :
-                    factor.severity === 'HIGH' ? 'bg-orange-100 text-orange-800' :
-                    factor.severity === 'MODERATE' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-green-100 text-green-800'
-                  }`}>
+                  <span className={`px-2 py-1 rounded text-xs font-semibold ${getFactorBadgeClass(factor.severity)}`}>
                     {factor.severity}
                   </span>
                 </div>

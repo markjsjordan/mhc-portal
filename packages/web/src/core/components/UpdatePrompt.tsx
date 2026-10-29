@@ -1,6 +1,7 @@
 import React from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { RefreshCw, X } from 'lucide-react';
+import { Button } from '@/components/ui/button.js';
 
 export interface UpdatePromptProps {
   /**
@@ -76,30 +77,37 @@ export const UpdatePrompt: React.FC<UpdatePromptProps> = ({
             A new version of MHC Portal is ready. Update now to see the latest changes.
           </p>
           <div className="mt-3 flex items-center gap-2">
-            <button
+            <Button
               type="button"
-              onClick={handleUpdate}
+              size="sm"
+              onClick={() => {
+                void handleUpdate();
+              }}
               className="inline-flex items-center justify-center rounded-md bg-[#1E3A8A] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#1E3A8A]/90 focus:outline-none focus:ring-2 focus:ring-[#0284C7] focus:ring-offset-2"
             >
               Update now
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={handleDismiss}
               className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             >
               Later
-            </button>
+            </Button>
           </div>
         </div>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-xs"
           aria-label="Close update notification"
           onClick={handleDismiss}
           className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
         >
           <X className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );

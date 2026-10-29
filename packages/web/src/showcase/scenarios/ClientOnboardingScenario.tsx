@@ -4,7 +4,6 @@
  * Walk through the complete client intake and setup process
  */
 
-import React from 'react';
 import { UserPlus, FileCheck, CheckCircle, Shield } from 'lucide-react';
 import { Scenario } from '../types';
 import { NarrationBox } from './components/NarrationBox';
@@ -14,7 +13,7 @@ import { Label } from '@/components/ui/label';
 
 // Step Components
 
-const NewReferralIntro: React.FC = () => (
+const renderNewReferralIntro = () => (
   <div className="space-y-6">
     <NarrationBox
       text="A new client referral arrived overnight from Texas Health and Human Services. You need to complete the full onboarding workflow to get the client set up for services."
@@ -60,7 +59,7 @@ const NewReferralIntro: React.FC = () => (
   </div>
 );
 
-const ClientRegistration: React.FC = () => (
+const renderClientRegistration = () => (
   <div className="space-y-6">
     <NarrationBox
       text="You create a new client record in the system. The form collects essential demographics and Medicaid information required for EVV compliance."
@@ -144,7 +143,7 @@ const ClientRegistration: React.FC = () => (
   </div>
 );
 
-const MedicaidVerification: React.FC = () => (
+const renderMedicaidVerification = () => (
   <div className="space-y-6">
     <NarrationBox
       text="The system automatically verifies Medicaid eligibility through the Texas EVV aggregator (HHAeXchange). This ensures the client is eligible for services before you proceed."
@@ -201,7 +200,7 @@ const MedicaidVerification: React.FC = () => (
   </div>
 );
 
-const CarePlanCreation: React.FC = () => (
+const renderCarePlanCreation = () => (
   <div className="space-y-6">
     <NarrationBox
       text="You create an initial care plan based on the referral information. This will be refined during the RN assessment visit scheduled for next week."
@@ -261,7 +260,7 @@ const CarePlanCreation: React.FC = () => (
   </div>
 );
 
-const CoordinatorAssignment: React.FC = () => (
+const renderCoordinatorAssignment = () => (
   <div className="space-y-6">
     <NarrationBox
       text="You assign a care coordinator who will be Robert's primary point of contact. Sarah Kim has capacity and experience with similar clients."
@@ -314,7 +313,7 @@ const CoordinatorAssignment: React.FC = () => (
   </div>
 );
 
-const EVVConfiguration: React.FC = () => (
+const renderEVVConfiguration = () => (
   <div className="space-y-6">
     <NarrationBox
       text="You configure EVV requirements for Robert's services. Texas requires strict compliance with all six EVV elements including GPS verification."
@@ -375,7 +374,7 @@ const EVVConfiguration: React.FC = () => (
   </div>
 );
 
-const CompletionScreen: React.FC = () => (
+const renderCompletionScreen = () => (
   <div className="space-y-6">
     <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-8 text-white text-center">
       <CheckCircle className="h-16 w-16 mx-auto mb-4" />
@@ -463,48 +462,48 @@ export const clientOnboardingScenario: Scenario = {
   steps: [
     {
       id: 'new-referral',
-      component: <NewReferralIntro />,
+      component: renderNewReferralIntro(),
       narration: 'A new client referral arrived overnight...',
       actions: ['Begin Client Registration', 'Review Referral Details', 'Assign to Coordinator'],
       nextOnAction: 'Begin Client Registration',
     },
     {
       id: 'registration',
-      component: <ClientRegistration />,
+      component: renderClientRegistration(),
       narration: 'You create a new client record...',
       actions: ['Verify Medicaid Eligibility', 'Skip Verification', 'Save and Continue Later'],
       nextOnAction: 'Verify Medicaid Eligibility',
     },
     {
       id: 'medicaid-verification',
-      component: <MedicaidVerification />,
+      component: renderMedicaidVerification(),
       narration: 'The system verifies Medicaid eligibility...',
       actions: ['Create Initial Care Plan', 'Configure EVV Settings', 'Assign Coordinator'],
       nextOnAction: 'Create Initial Care Plan',
     },
     {
       id: 'care-plan',
-      component: <CarePlanCreation />,
+      component: renderCarePlanCreation(),
       narration: 'You create an initial care plan...',
       actions: ['Assign Care Coordinator', 'Schedule Assessment', 'Configure EVV'],
       nextOnAction: 'Assign Care Coordinator',
     },
     {
       id: 'coordinator-assignment',
-      component: <CoordinatorAssignment />,
+      component: renderCoordinatorAssignment(),
       narration: 'You assign a care coordinator...',
       actions: ['Schedule Assessment Visit', 'Configure EVV Requirements', 'Complete Onboarding'],
       nextOnAction: 'Configure EVV Requirements',
     },
     {
       id: 'evv-config',
-      component: <EVVConfiguration />,
+      component: renderEVVConfiguration(),
       narration: 'You configure EVV requirements...',
       actions: ['Complete Onboarding'],
     },
     {
       id: 'completion',
-      component: <CompletionScreen />,
+      component: renderCompletionScreen(),
       narration: 'Onboarding complete!',
       actions: [],
     },

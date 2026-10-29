@@ -15,7 +15,6 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
-  User,
   SlidersHorizontal,
   List,
   PanelLeft,
@@ -49,7 +48,9 @@ import {
   ReassignVisitModal,
   VisitDetailsPanel,
 } from '../components';
+import { CalendarVisitActionModal } from '../components/calendar/CalendarVisitActionModal.js';
 import type { Visit } from '../types';
+import type { CaregiverAvailability } from '../services/visit-api.js';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 
@@ -118,7 +119,7 @@ const normalizeTimeFormat = (timeStr: string | undefined): string => {
     return timeStr.trim();
   }
 
-  const ampmMatch = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)$/i);
+  const ampmMatch = /^(\d{1,2}):(\d{2})\s*(am|pm)$/i.exec(timeStr);
   if (ampmMatch) {
     let hours = parseInt(ampmMatch[1]!, 10);
     const minutes = ampmMatch[2]!;
@@ -134,6 +135,145 @@ const normalizeTimeFormat = (timeStr: string | undefined): string => {
   }
 
   return timeStr.trim();
+};
+
+const getCalendarNavUnit = (view: View): 'month' | 'day' | 'week' => {
+  if (view === 'month') return 'month';
+  if (view === 'day') return 'day';
+  return 'week';
+};
+
+const getCalendarPeriodTitle = (view: View, currentDate: Date): string => {
+  if (view === 'month') return moment(currentDate).format('MMMM YYYY');
+  if (view === 'day') return moment(currentDate).format('dddd, MMMM D, YYYY');
+  return `${moment(currentDate).startOf('week').format('MMM D')} – ${moment(currentDate).endOf('week').format('MMM D, YYYY')}`;
+};
+
+const getStripButtonVariant = (isSelected: boolean, isToday: boolean): 'default' | 'secondary' | 'outline' => {
+  if (isSelected) return 'default';
+  if (isToday) return 'secondary';
+  return 'outline';
+};
+
+
+const computeVisitMetrics = (visits: Visit[]) => {
+  let unassigned = 0;
+  let inProgress = 0;
+  let completed = 0;
+  let needsReview = 0;
+  let cancelled = 0;
+
+  for (const v of visits) {
+    const statusStr = (v.status as string) || '';
+    if (v.status === 'UNASSIGNED' || !v.assignedCaregiverId) {
+      unassigned++;
+    } else if (v.status === 'IN_PROGRESS') {
+      inProgress++;
+    } else if (v.status === 'COMPLETED') {
+      completed++;
+    } else if (statusStr === 'NEEDS_REVIEW' || v.requiresSupervision) {
+      needsReview++;
+    } else if (v.status === 'CANCELLED') {
+      cancelled++;
+    }
+  }
+
+  return { unassigned, inProgress, completed, needsReview, cancelled };
+};
+
+const filterCalendarVisits = (
+  visits: Visit[],
+  statusFilter: string | null,
+  selectedStatusFilterIds: string[],
+  selectedCaregiverFilter: string | null,
+  selectedCaregiverFilterIds: string[],
+  selectedClientFilterIds: string[]
+): Visit[] => {
+  return visits.filter((visit: Visit) => {
+    if (statusFilter) {
+      if (statusFilter === 'UNASSIGNED') {
+        if (visit.status !== 'UNASSIGNED' && Boolean(visit.assignedCaregiverId)) return false;
+      } else if (statusFilter === 'NEEDS_REVIEW') {
+        if ((visit.status as string) !== 'NEEDS_REVIEW' && !visit.requiresSupervision) return false;
+      } else {
+        if (visit.status !== statusFilter) return false;
+      }
+    } else if (selectedStatusFilterIds.length > 0) {
+      if (!selectedStatusFilterIds.includes(visit.status)) {
+        return false;
+      }
+    }
+
+    if (selectedCaregiverFilter) {
+      if (visit.assignedCaregiverId !== selectedCaregiverFilter) return false;
+    } else if (selectedCaregiverFilterIds.length > 0) {
+      if (!visit.assignedCaregiverId || !selectedCaregiverFilterIds.includes(visit.assignedCaregiverId)) {
+        return false;
+      }
+    }
+
+    if (selectedClientFilterIds.length > 0) {
+      if (!selectedClientFilterIds.includes(visit.clientId)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+};
+
+const mapVisitsToEvents = (
+  visits: Visit[],
+  caregiverColorMap: Map<string, string>
+): CalendarEvent[] => {
+  return visits.map((visit: Visit) => {
+    const scheduledDate =
+      typeof visit.scheduledDate === 'string'
+        ? new Date(visit.scheduledDate)
+        : visit.scheduledDate;
+
+    const normalizedStart = normalizeTimeFormat(visit.scheduledStartTime);
+    const normalizedEnd = normalizeTimeFormat(visit.scheduledEndTime);
+    const [startHour, startMinute] = normalizedStart.split(':').map(Number);
+    const [endHour, endMinute] = normalizedEnd.split(':').map(Number);
+
+    const start = new Date(scheduledDate);
+    start.setHours(startHour ?? 0, startMinute ?? 0, 0, 0);
+
+    const end = new Date(scheduledDate);
+    end.setHours(endHour ?? 0, endMinute ?? 0, 0, 0);
+
+    const statusStr = (visit.status as string) || '';
+
+    let color = '#3B82F6';
+    if (visit.status === 'UNASSIGNED' || !visit.assignedCaregiverId) {
+      color = '#F59E0B';
+    } else if (visit.status === 'IN_PROGRESS') {
+      color = '#06B6D4';
+    } else if (visit.status === 'COMPLETED') {
+      color = '#10B981';
+    } else if (statusStr === 'NEEDS_REVIEW' || visit.requiresSupervision) {
+      color = '#8B5CF6';
+    } else if (visit.status === 'CANCELLED') {
+      color = '#9CA3AF';
+    } else if (visit.assignedCaregiverId) {
+      color = caregiverColorMap.get(visit.assignedCaregiverId) ?? '#3B82F6';
+    }
+
+    const clientName =
+      visit.clientFirstName != null && visit.clientLastName != null
+        ? `${visit.clientFirstName} ${visit.clientLastName}`
+        : 'Unknown Client';
+
+    return {
+      id: visit.id,
+      title: `${clientName} - ${visit.serviceTypeName}`,
+      start,
+      end,
+      resource: visit,
+      color,
+    };
+  });
 };
 
 const CustomEvent: React.FC<CustomEventProps> = ({ event, densityMode }) => {
@@ -204,442 +344,169 @@ const CustomEvent: React.FC<CustomEventProps> = ({ event, densityMode }) => {
   );
 };
 
+const buildWeekStripDays = (currentDate: Date, daysWithVisits: Set<string>) => {
+  const startOfWeek = moment(currentDate).startOf('week');
+  const days: Array<{
+    date: moment.Moment;
+    key: string;
+    dayName: string;
+    dayNum: string;
+    isSelected: boolean;
+    isToday: boolean;
+    hasVisits: boolean;
+  }> = [];
+
+  for (let i = 0; i < 7; i++) {
+    const day = moment(startOfWeek).add(i, 'days');
+    const dateKey = day.format('YYYY-MM-DD');
+    const isSelected = day.isSame(currentDate, 'day');
+    const isToday = day.isSame(moment(), 'day');
+    const hasVisits = daysWithVisits.has(dateKey);
+
+    days.push({
+      date: day,
+      key: dateKey,
+      dayName: day.format('ddd'),
+      dayNum: day.format('D'),
+      isSelected,
+      isToday,
+      hasVisits,
+    });
+  }
+
+  return days;
+};
+
+const buildCaregiverColorMap = (
+  caregiverAvailability: CaregiverAvailability[],
+  visits: Visit[]
+): Map<string, string> => {
+  const map = new Map<string, string>();
+  const uniqueCaregiverIds = new Set<string>();
+
+  for (const ca of caregiverAvailability) {
+    uniqueCaregiverIds.add(ca.caregiver_id);
+  }
+  for (const visit of visits) {
+    if (visit.assignedCaregiverId != null) {
+      uniqueCaregiverIds.add(visit.assignedCaregiverId);
+    }
+  }
+
+  for (const [index, caregiverId] of Array.from(uniqueCaregiverIds).entries()) {
+    map.set(caregiverId, CAREGIVER_COLORS[index % CAREGIVER_COLORS.length]!);
+  }
+
+  return map;
+};
+
+const buildAllCaregiversList = (
+  caregiverAvailability: CaregiverAvailability[],
+  visits: Visit[],
+  caregiverColorMap: Map<string, string>
+) => {
+  const map = new Map<
+    string,
+    { id: string; name: string; color: string; visitCount: number; scheduledHours: number; role?: string }
+  >();
+
+  for (const ca of caregiverAvailability) {
+    const name = `${ca.first_name} ${ca.last_name}`.trim();
+    const hours = ca.visits.reduce((acc, v) => {
+      const start = moment(v.scheduled_start_time, 'HH:mm');
+      const end = moment(v.scheduled_end_time, 'HH:mm');
+      return acc + Math.max(0, end.diff(start, 'hours', true));
+    }, 0);
+
+    map.set(ca.caregiver_id, {
+      id: ca.caregiver_id,
+      name: name || 'Caregiver',
+      color: caregiverColorMap.get(ca.caregiver_id) ?? '#3B82F6',
+      visitCount: ca.visits.length,
+      scheduledHours: hours,
+      role: (ca as { role?: string }).role,
+    });
+  }
+
+  for (const v of visits) {
+    if (v.assignedCaregiverId && !map.has(v.assignedCaregiverId)) {
+      map.set(v.assignedCaregiverId, {
+        id: v.assignedCaregiverId,
+        name: 'Caregiver',
+        color: caregiverColorMap.get(v.assignedCaregiverId) ?? '#3B82F6',
+        visitCount: 0,
+        scheduledHours: 0,
+      });
+    }
+  }
+
+  return Array.from(map.values());
+};
+
+const buildDistinctClients = (visits: Visit[]) => {
+  const map = new Map<string, { id: string; name: string }>();
+  for (const v of visits) {
+    if (v.clientId) {
+      const name =
+        v.clientFirstName && v.clientLastName
+          ? `${v.clientFirstName} ${v.clientLastName}`
+          : 'Client';
+      map.set(v.clientId, { id: v.clientId, name });
+    }
+  }
+  return Array.from(map.values());
+};
+
+const computeWeeklyVisits = (visits: Visit[], currentDate: Date) => {
+  const weekStart = moment(currentDate).startOf('week');
+  const weekEnd = moment(currentDate).endOf('week');
+
+  return visits.filter((visit: Visit) => {
+    const visitDate = moment(visit.scheduledDate);
+    return visitDate.isSameOrAfter(weekStart) && visitDate.isSameOrBefore(weekEnd);
+  }).length;
+};
+
+const updateFilterSearchParams = (
+  searchParams: URLSearchParams,
+  caregiverIds: string[],
+  clientIds: string[],
+  statusIds: string[]
+): URLSearchParams => {
+  const newParams = new URLSearchParams(searchParams);
+  if (caregiverIds.length > 0) newParams.set('caregiver', caregiverIds.join(','));
+  else newParams.delete('caregiver');
+
+  if (clientIds.length > 0) newParams.set('client', clientIds.join(','));
+  else newParams.delete('client');
+
+  if (statusIds.length > 0) newParams.set('status', statusIds.join(','));
+  else newParams.delete('status');
+
+  return newParams;
+};
+
+const getEventStyle = (event: CalendarEvent) => ({
+  style: {
+    backgroundColor: event.color,
+    borderColor: event.color,
+    color: '#FFFFFF',
+    borderRadius: '4px',
+    opacity: event.resource.status === 'CANCELLED' ? 0.6 : 1,
+    border: event.resource.status === 'UNASSIGNED' ? '2px dashed #F59E0B' : '1px solid',
+  },
+});
+
 // Setup the localizer for react-big-calendar
 const localizer = momentLocalizer(moment);
 const DragAndDropCalendar = withDragAndDrop<CalendarEvent>(Calendar);
 
-export const CalendarView: React.FC = () => {
-  const { user } = useAuth();
-  const { caregiverId: myCaregiverId } = useMyCaregiverId();
-  const navigate = useNavigate();
-  const visitApi = useVisitApi();
-  const queryClient = useQueryClient();
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  // State for visit selection and quick actions
-  const [selectedVisitId, setSelectedVisitId] = useState<string | null>(null);
-  const [selectedVisitForAction, setSelectedVisitForAction] = useState<Visit | null>(null);
-  const [reassignCaregiverId, setReassignCaregiverId] = useState<string>('');
-  const [isReassigning, setIsReassigning] = useState(false);
-
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<View>('week');
-  const [showAvailability, setShowAvailability] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [showLegendPopover, setShowLegendPopover] = useState(false);
-  const [isMobileFilterDrawerOpen, setIsMobileFilterDrawerOpen] = useState(false);
-  const [mobileTab, setMobileTab] = useState<'grid' | 'caregivers'>('grid');
-  const [reassignVisit, setReassignVisit] = useState<Visit | null>(null);
-
-  // Status and Caregiver filter chips (interactive KPI row)
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [selectedCaregiverFilter, setSelectedCaregiverFilter] = useState<string | null>(null);
-
-  // Whether a ?caregiver= URL param was present on first render. Captured
-  // once so the caregiver-default effect below never fires after the user
-  // (or an explicit URL) has taken an action — explicit params/actions are
-  // always authoritative over the default.
-  const hadExplicitCaregiverParamOnMount = useRef(searchParams.get('caregiver') !== null);
-  const hasAppliedCaregiverDefault = useRef(false);
-
-  // Filters state with URL synchronization
-  const [selectedCaregiverFilterIds, setSelectedCaregiverFilterIds] = useState<string[]>(() => {
-    const param = searchParams.get('caregiver');
-    return param ? param.split(',').filter(Boolean) : [];
-  });
-
-  const [selectedClientFilterIds, setSelectedClientFilterIds] = useState<string[]>(() => {
-    const param = searchParams.get('client');
-    return param ? param.split(',').filter(Boolean) : [];
-  });
-
-  const [selectedStatusFilterIds, setSelectedStatusFilterIds] = useState<string[]>(() => {
-    const param = searchParams.get('status');
-    return param ? param.split(',').filter(Boolean) : [];
-  });
-
-  const isCaregiverRole = user?.roles.some((role) =>
-    ['CAREGIVER', 'NURSE_RN', 'NURSE_LPN', 'NURSE', 'CLINICAL'].includes(role)
-  ) ?? false;
-
-  // Default Schedule to "my visits only" for caregiver/RN roles when no
-  // explicit ?caregiver= param was present on mount. Runs once per mount
-  // (guarded by hasAppliedCaregiverDefault) as soon as myCaregiverId
-  // resolves. Admin/coordinator/family roles are unaffected (isCaregiverRole
-  // is false for them, so this never fires).
-  useEffect(() => {
-    if (
-      isCaregiverRole &&
-      myCaregiverId &&
-      !hadExplicitCaregiverParamOnMount.current &&
-      !hasAppliedCaregiverDefault.current
-    ) {
-      hasAppliedCaregiverDefault.current = true;
-      setSelectedCaregiverFilterIds([myCaregiverId]);
-    }
-  }, [isCaregiverRole, myCaregiverId]);
-
-  const isDefaultedToSelf =
-    isCaregiverRole &&
-    hasAppliedCaregiverDefault.current &&
-    selectedCaregiverFilterIds.length === 1 &&
-    selectedCaregiverFilterIds[0] === myCaregiverId;
-
-  const handleShowAllCaregivers = useCallback(() => {
-    hasAppliedCaregiverDefault.current = true; // don't re-apply the default after an explicit "show all"
-    setSelectedCaregiverFilterIds([]);
-  }, []);
-
-  // Sync state to URL search parameters
-  useEffect(() => {
-    const newParams = new URLSearchParams(searchParams);
-
-    if (selectedCaregiverFilterIds.length > 0) {
-      newParams.set('caregiver', selectedCaregiverFilterIds.join(','));
-    } else {
-      newParams.delete('caregiver');
-    }
-
-    if (selectedClientFilterIds.length > 0) {
-      newParams.set('client', selectedClientFilterIds.join(','));
-    } else {
-      newParams.delete('client');
-    }
-
-    if (selectedStatusFilterIds.length > 0) {
-      newParams.set('status', selectedStatusFilterIds.join(','));
-    } else {
-      newParams.delete('status');
-    }
-
-    setSearchParams(newParams, { replace: true });
-  }, [selectedCaregiverFilterIds, selectedClientFilterIds, selectedStatusFilterIds]);
-
-  const [selectedBranches] = useState<string[]>([]);
-  const [isCreateVisitModalOpen, setIsCreateVisitModalOpen] = useState(false);
-  const [createVisitSlotInfo, setCreateVisitSlotInfo] = useState<SlotInfo | null>(null);
-
-  // Week view UX controls
-  const [densityMode, setDensityMode] = useState<DensityMode>(() => {
-    const saved = localStorage.getItem('calendar-density');
-    return (saved as DensityMode) ?? 'comfortable';
-  });
-  const [timeRange, setTimeRange] = useState<TimeRange>(() => {
-    const saved = localStorage.getItem('calendar-time-range');
-    return (saved as TimeRange) ?? 'full';
-  });
-
-  const calendarRef = useRef<HTMLDivElement>(null);
-  const legendRef = useRef<HTMLDivElement>(null);
-
-  // Close legend popover on outside click
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (legendRef.current && !legendRef.current.contains(event.target as Node)) {
-        setShowLegendPopover(false);
-      }
-    };
-    if (showLegendPopover) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showLegendPopover]);
-
-  useEffect(() => {
-    localStorage.setItem('calendar-density', densityMode);
-  }, [densityMode]);
-
-  useEffect(() => {
-    localStorage.setItem('calendar-time-range', timeRange);
-  }, [timeRange]);
-
-  // Auto-scroll to current time on week view
-  useEffect(() => {
-    if (view !== 'week' || !calendarRef.current) {
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      const now = new Date();
-      const currentHour = now.getHours();
-      const timeSlotHeight = densityMode === 'comfortable' ? 60 : 40;
-      const { min } = TIME_RANGES[timeRange];
-      const scrollTo = Math.max(0, (currentHour - min - 1) * timeSlotHeight);
-
-      const scrollContainer = calendarRef.current?.querySelector('.rbc-time-content');
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollTo;
-      }
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [view, timeRange, densityMode]);
-
-  // Calculate date range for calendar based on current view
-  const { startDate, endDate } = useMemo(() => {
-    const start = moment(currentDate).startOf(view === 'month' ? 'month' : 'week').toDate();
-    const end = moment(currentDate).endOf(view === 'month' ? 'month' : 'week').toDate();
-    return { startDate: start, endDate: end };
-  }, [currentDate, view]);
-
-  // Fetch visits for calendar
-  const branchIds = selectedBranches.length > 0 ? selectedBranches : undefined;
-  const {
-    data: visits = [],
-    isLoading,
-    refetch,
-    isRefetching = false,
-  } = useCalendarVisits(startDate, endDate, branchIds) as any;
-
-  // Fetch caregiver availability
-  const {
-    data: caregiverAvailability = [],
-    isLoading: isLoadingAvailability,
-  } = useCaregiverAvailability(currentDate, branchIds);
-
-  // Fetch caregivers list for reassignment options
-  const { data: caregiversData } = useCaregivers();
-  const caregiversList = useMemo(() => {
-    if (!caregiversData?.items) return [];
-    return caregiversData.items;
-  }, [caregiversData]);
-
-  // Color map for caregivers
-  const caregiverColorMap = useMemo(() => {
-    const map = new Map<string, string>();
-    const uniqueCaregiverIds = new Set<string>();
-
-    for (const ca of caregiverAvailability) {
-      uniqueCaregiverIds.add(ca.caregiver_id);
-    }
-    for (const visit of visits) {
-      if (visit.assignedCaregiverId != null) {
-        uniqueCaregiverIds.add(visit.assignedCaregiverId);
-      }
-    }
-
-    for (const [index, caregiverId] of Array.from(uniqueCaregiverIds).entries()) {
-      map.set(caregiverId, CAREGIVER_COLORS[index % CAREGIVER_COLORS.length]!);
-    }
-
-    return map;
-  }, [visits, caregiverAvailability]);
-
-  // Distinct caregivers list for filter bar and availability rail
-  const allCaregivers = useMemo(() => {
-    const map = new Map<
-      string,
-      { id: string; name: string; color: string; visitCount: number; scheduledHours: number; role?: string }
-    >();
-
-    for (const ca of caregiverAvailability) {
-      const name = `${ca.first_name} ${ca.last_name}`.trim();
-      const hours = ca.visits.reduce((acc, v) => {
-        const start = moment(v.scheduled_start_time, 'HH:mm');
-        const end = moment(v.scheduled_end_time, 'HH:mm');
-        return acc + Math.max(0, end.diff(start, 'hours', true));
-      }, 0);
-
-      map.set(ca.caregiver_id, {
-        id: ca.caregiver_id,
-        name: name || 'Caregiver',
-        color: caregiverColorMap.get(ca.caregiver_id) ?? '#3B82F6',
-        visitCount: ca.visits.length,
-        scheduledHours: hours,
-        role: (ca as { role?: string }).role,
-      });
-    }
-
-    for (const v of visits) {
-      if (v.assignedCaregiverId && !map.has(v.assignedCaregiverId)) {
-        map.set(v.assignedCaregiverId, {
-          id: v.assignedCaregiverId,
-          name: 'Caregiver',
-          color: caregiverColorMap.get(v.assignedCaregiverId) ?? '#3B82F6',
-          visitCount: 0,
-          scheduledHours: 0,
-        });
-      }
-    }
-
-    return Array.from(map.values());
-  }, [caregiverAvailability, visits, caregiverColorMap]);
-
-  // Distinct clients list for filter bar
-  const allClients = useMemo(() => {
-    const map = new Map<string, { id: string; name: string }>();
-
-    for (const v of visits) {
-      if (v.clientId) {
-        const name =
-          v.clientFirstName && v.clientLastName
-            ? `${v.clientFirstName} ${v.clientLastName}`
-            : 'Client';
-        map.set(v.clientId, { id: v.clientId, name });
-      }
-    }
-
-    return Array.from(map.values());
-  }, [visits]);
-
-  // Weekly visit count
-  const weeklyVisitCount = useMemo(() => {
-    const weekStart = moment(currentDate).startOf('week');
-    const weekEnd = moment(currentDate).endOf('week');
-
-    return visits.filter((visit: Visit) => {
-      const visitDate = moment(visit.scheduledDate);
-      return visitDate.isSameOrAfter(weekStart) && visitDate.isSameOrBefore(weekEnd);
-    }).length;
-  }, [visits, currentDate]);
-
-  // Compute key metrics across all visits for the KPI row
-  const metrics = useMemo(() => {
-    let unassigned = 0;
-    let inProgress = 0;
-    let completed = 0;
-    let needsReview = 0;
-    let cancelled = 0;
-
-    for (const v of visits) {
-      const statusStr = (v.status as string) || '';
-      if (v.status === 'UNASSIGNED' || !v.assignedCaregiverId) {
-        unassigned++;
-      } else if (v.status === 'IN_PROGRESS') {
-        inProgress++;
-      } else if (v.status === 'COMPLETED') {
-        completed++;
-      } else if (statusStr === 'NEEDS_REVIEW' || v.requiresSupervision) {
-        needsReview++;
-      } else if (v.status === 'CANCELLED') {
-        cancelled++;
-      }
-    }
-
-    return {
-      total: visits.length,
-      weekly: weeklyVisitCount,
-      unassigned,
-      inProgress,
-      completed,
-      needsReview,
-      cancelled,
-    };
-  }, [visits, weeklyVisitCount]);
-
-  // Calculate days with visits for mini calendar and mobile date strip
-  const daysWithVisits = useMemo(() => {
-    const days = new Set<string>();
-    for (const visit of visits) {
-      const dateKey = moment(visit.scheduledDate).format('YYYY-MM-DD');
-      days.add(dateKey);
-    }
-    return days;
-  }, [visits]);
-
-  // Filter visits based on active KPI chips, filter bar, and search
-  const filteredVisits = useMemo(() => {
-    return visits.filter((visit: Visit) => {
-      // 1. KPI Chip Status Filter
-      if (statusFilter) {
-        if (statusFilter === 'UNASSIGNED') {
-          if (visit.status !== 'UNASSIGNED' && visit.assignedCaregiverId) return false;
-        } else if (statusFilter === 'NEEDS_REVIEW') {
-          if ((visit.status as string) !== 'NEEDS_REVIEW' && !visit.requiresSupervision) return false;
-        } else {
-          if (visit.status !== statusFilter) return false;
-        }
-      } else if (selectedStatusFilterIds.length > 0) {
-        if (!selectedStatusFilterIds.includes(visit.status)) {
-          return false;
-        }
-      }
-
-      // 2. Caregiver Filter
-      if (selectedCaregiverFilter) {
-        if (visit.assignedCaregiverId !== selectedCaregiverFilter) return false;
-      } else if (selectedCaregiverFilterIds.length > 0) {
-        if (!visit.assignedCaregiverId || !selectedCaregiverFilterIds.includes(visit.assignedCaregiverId)) {
-          return false;
-        }
-      }
-
-      // 3. Client Filter
-      if (selectedClientFilterIds.length > 0) {
-        if (!selectedClientFilterIds.includes(visit.clientId)) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [
-    visits,
-    statusFilter,
-    selectedStatusFilterIds,
-    selectedCaregiverFilter,
-    selectedCaregiverFilterIds,
-    selectedClientFilterIds,
-  ]);
-
-  // Calculate filtered KPI metrics
-
-  // Convert visits to calendar events with consistent status color tokens
-  const events: CalendarEvent[] = useMemo(() => {
-    return filteredVisits.map((visit: Visit) => {
-      const scheduledDate =
-        typeof visit.scheduledDate === 'string'
-          ? new Date(visit.scheduledDate)
-          : visit.scheduledDate;
-
-      const normalizedStart = normalizeTimeFormat(visit.scheduledStartTime);
-      const normalizedEnd = normalizeTimeFormat(visit.scheduledEndTime);
-      const [startHour, startMinute] = normalizedStart.split(':').map(Number);
-      const [endHour, endMinute] = normalizedEnd.split(':').map(Number);
-
-      const start = new Date(scheduledDate);
-      start.setHours(startHour ?? 0, startMinute ?? 0, 0, 0);
-
-      const end = new Date(scheduledDate);
-      end.setHours(endHour ?? 0, endMinute ?? 0, 0, 0);
-
-      const statusStr = (visit.status as string) || '';
-
-      let color = '#3B82F6';
-      if (visit.status === 'UNASSIGNED' || !visit.assignedCaregiverId) {
-        color = '#F59E0B'; // amber
-      } else if (visit.status === 'IN_PROGRESS') {
-        color = '#06B6D4'; // cyan
-      } else if (visit.status === 'COMPLETED') {
-        color = '#10B981'; // green
-      } else if (statusStr === 'NEEDS_REVIEW' || visit.requiresSupervision) {
-        color = '#8B5CF6'; // purple
-      } else if (visit.status === 'CANCELLED') {
-        color = '#9CA3AF'; // gray
-      } else if (visit.assignedCaregiverId != null) {
-        color = caregiverColorMap.get(visit.assignedCaregiverId) ?? '#3B82F6';
-      }
-
-      const clientName =
-        visit.clientFirstName != null && visit.clientLastName != null
-          ? `${visit.clientFirstName} ${visit.clientLastName}`
-          : 'Unknown Client';
-
-      return {
-        id: visit.id,
-        title: `${clientName} - ${visit.serviceTypeName}`,
-        start,
-        end,
-        resource: visit,
-        color,
-      };
-    });
-  }, [filteredVisits, caregiverColorMap]);
-
-  // Check conflicts and assign caregiver
-  const checkAndAssignCaregiver = useCallback(
+const useCaregiverAssignment = (
+  visitApi: ReturnType<typeof useVisitApi>,
+  queryClient: ReturnType<typeof useQueryClient>,
+  refetch: () => Promise<unknown>
+) => {
+  return useCallback(
     async (visitId: string, caregiverId: string) => {
       try {
         const conflictResult = await visitApi.checkConflicts(visitId, caregiverId);
@@ -674,8 +541,12 @@ export const CalendarView: React.FC = () => {
     },
     [visitApi, queryClient, refetch]
   );
+};
 
-  // Desktop Drag-and-drop handler
+const useCalendarDragDrop = (
+  checkAndAssignCaregiver: (visitId: string, caregiverId: string) => Promise<boolean>,
+  refetch: () => Promise<unknown>
+) => {
   const handleEventDrop = useCallback(
     async ({
       event,
@@ -729,10 +600,469 @@ export const CalendarView: React.FC = () => {
     [refetch]
   );
 
+  return { handleEventDrop, handleEventResize };
+};
+
+const CalendarLegendPopover: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const legendRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (legendRef.current && !legendRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative" ref={legendRef}>
+      <Button
+        variant={isOpen ? 'secondary' : 'outline'}
+        size="sm"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-semibold flex items-center gap-2"
+        aria-label="Toggle status legend"
+        data-testid="legend-toggle-button"
+      >
+        <Info className="h-4 w-4 text-blue-600" />
+        <span>Legend</span>
+      </Button>
+
+      {isOpen && (
+        <div
+          className="absolute right-0 sm:right-auto sm:left-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-200 p-4 z-50 animate-in fade-in zoom-in-95"
+          data-testid="legend-popover"
+        >
+          <div className="flex items-center justify-between pb-2 mb-3 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <Info className="h-4 w-4 text-blue-600" />
+              <h3 className="text-sm font-bold text-gray-900">Visit Status Legend</h3>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => setIsOpen(false)}
+              className="min-h-[36px] min-w-[36px]"
+              aria-label="Close legend"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <VisitStatusLegend compact={false} showTitle={false} />
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface CalendarKpiRowProps {
+  metrics: {
+    weekly: number;
+    unassigned: number;
+    inProgress: number;
+    completed: number;
+    needsReview: number;
+    cancelled: number;
+  };
+  statusFilter: string | null;
+  setStatusFilter: React.Dispatch<React.SetStateAction<string | null>>;
+  isAnyFilterActive: boolean;
+  isDefaultedToSelf: boolean;
+  handleShowAllCaregivers: () => void;
+  handleClearAllFilters: () => void;
+}
+
+const CalendarKpiRow: React.FC<CalendarKpiRowProps> = ({
+  metrics,
+  statusFilter,
+  setStatusFilter,
+  isAnyFilterActive,
+  isDefaultedToSelf,
+  handleShowAllCaregivers,
+  handleClearAllFilters,
+}) => {
+  return (
+    <div
+      role="region"
+      aria-label="Visit summary metrics"
+      className="flex items-center gap-2 overflow-x-auto pt-3 pb-1 sm:pb-0 sm:flex-wrap text-xs"
+    >
+      {/* Total / Weekly Visits */}
+      <Button
+        type="button"
+        variant={statusFilter === null && !isAnyFilterActive ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => setStatusFilter(null)}
+        className="min-h-[44px] gap-2 whitespace-nowrap"
+        title="Click to view all visits"
+      >
+        <CalendarIcon className="h-3.5 w-3.5" />
+        <span>{metrics.weekly} Visits This Week</span>
+      </Button>
+
+      {/* Unassigned: Amber Dashed Token */}
+      <Button
+        type="button"
+        variant={statusFilter === 'UNASSIGNED' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() =>
+          setStatusFilter((prev) => (prev === 'UNASSIGNED' ? null : 'UNASSIGNED'))
+        }
+        className="min-h-[44px] gap-2 whitespace-nowrap border-dashed"
+        title="Filter: Unassigned visits"
+        data-testid="kpi-unassigned"
+      >
+        <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+        <span>{metrics.unassigned} Unassigned</span>
+      </Button>
+
+      {/* In Progress: Cyan Token */}
+      <Button
+        type="button"
+        variant={statusFilter === 'IN_PROGRESS' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() =>
+          setStatusFilter((prev) => (prev === 'IN_PROGRESS' ? null : 'IN_PROGRESS'))
+        }
+        className="min-h-[44px] gap-2 whitespace-nowrap"
+        title="Filter: In Progress visits"
+        data-testid="kpi-in-progress"
+      >
+        <div className="w-2.5 h-2.5 rounded-full bg-cyan-500" />
+        <span>{metrics.inProgress} In Progress</span>
+      </Button>
+
+      {/* Completed: Green Token */}
+      <Button
+        type="button"
+        variant={statusFilter === 'COMPLETED' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() =>
+          setStatusFilter((prev) => (prev === 'COMPLETED' ? null : 'COMPLETED'))
+        }
+        className="min-h-[44px] gap-2 whitespace-nowrap"
+        title="Filter: Completed visits"
+        data-testid="kpi-completed"
+      >
+        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+        <span>{metrics.completed} Completed</span>
+      </Button>
+
+      {/* Needs Review: Purple Token */}
+      <Button
+        type="button"
+        variant={statusFilter === 'NEEDS_REVIEW' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() =>
+          setStatusFilter((prev) => (prev === 'NEEDS_REVIEW' ? null : 'NEEDS_REVIEW'))
+        }
+        className="min-h-[44px] gap-2 whitespace-nowrap"
+        title="Filter: Needs Review visits"
+        data-testid="kpi-needs-review"
+      >
+        <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+        <span>{metrics.needsReview} Needs Review</span>
+      </Button>
+
+      {/* Cancelled Token (if any) */}
+      {metrics.cancelled > 0 && (
+        <Button
+          type="button"
+          variant={statusFilter === 'CANCELLED' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() =>
+            setStatusFilter((prev) => (prev === 'CANCELLED' ? null : 'CANCELLED'))
+          }
+          className="min-h-[44px] gap-2 whitespace-nowrap"
+          title="Filter: Cancelled visits"
+        >
+          <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground opacity-60" />
+          <span>{metrics.cancelled} Cancelled</span>
+        </Button>
+      )}
+
+      {/* "Show all" — only shown while the caregiver default filter is
+          active; clears just the caregiver filter (distinct from
+          "Clear filters", which also resets status/client). */}
+      {isDefaultedToSelf && (
+        <Button
+          type="button"
+          variant="link"
+          size="sm"
+          onClick={handleShowAllCaregivers}
+          className="min-h-[44px] px-2.5 py-1 text-xs font-semibold underline flex items-center gap-1"
+          title="Show visits for all caregivers"
+        >
+          Show all
+        </Button>
+      )}
+
+      {/* Clear filters button */}
+      {isAnyFilterActive && (
+        <Button
+          type="button"
+          variant="link"
+          size="sm"
+          onClick={handleClearAllFilters}
+          className="min-h-[44px] px-2.5 py-1 text-xs font-semibold underline flex items-center gap-1"
+        >
+          Clear filters
+        </Button>
+      )}
+    </div>
+  );
+};
+
+export const CalendarView: React.FC = () => {
+  const { user } = useAuth();
+  const { caregiverId: myCaregiverId } = useMyCaregiverId();
+  const navigate = useNavigate();
+  const visitApi = useVisitApi();
+  const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // State for visit selection and quick actions
+  const [selectedVisitId, setSelectedVisitId] = useState<string | null>(null);
+  const [selectedVisitForAction, setSelectedVisitForAction] = useState<Visit | null>(null);
+
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [view, setView] = useState<View>('week');
+  const [showAvailability, setShowAvailability] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [isMobileFilterDrawerOpen, setIsMobileFilterDrawerOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'grid' | 'caregivers'>('grid');
+  const [reassignVisit, setReassignVisit] = useState<Visit | null>(null);
+
+  // Status and Caregiver filter chips (interactive KPI row)
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [selectedCaregiverFilter, setSelectedCaregiverFilter] = useState<string | null>(null);
+
+  const isCaregiverRole = user?.roles.some((role) =>
+    ['CAREGIVER', 'NURSE_RN', 'NURSE_LPN', 'NURSE', 'CLINICAL'].includes(role)
+  ) ?? false;
+
+  // Whether a ?caregiver= URL param was present on first render. Captured
+  // once so the caregiver-default effect below never fires after the user
+  // (or an explicit URL) has taken an action — explicit params/actions are
+  // always authoritative over the default.
+  const [hadExplicitCaregiverParamOnMount] = useState(() => searchParams.get('caregiver') !== null);
+  const [hasAppliedCaregiverDefault, setHasAppliedCaregiverDefault] = useState(() => {
+    return isCaregiverRole && Boolean(myCaregiverId) && searchParams.get('caregiver') === null;
+  });
+
+  // Filters state with URL synchronization
+  const [selectedCaregiverFilterIds, setSelectedCaregiverFilterIds] = useState<string[]>(() => {
+    const param = searchParams.get('caregiver');
+    if (param) return param.split(',').filter(Boolean);
+    if (isCaregiverRole && myCaregiverId) return [myCaregiverId];
+    return [];
+  });
+
+  const [selectedClientFilterIds, setSelectedClientFilterIds] = useState<string[]>(() => {
+    const param = searchParams.get('client');
+    return param ? param.split(',').filter(Boolean) : [];
+  });
+
+  const [selectedStatusFilterIds, setSelectedStatusFilterIds] = useState<string[]>(() => {
+    const param = searchParams.get('status');
+    return param ? param.split(',').filter(Boolean) : [];
+  });
+
+  // When myCaregiverId resolves asynchronously after mount, adjust state during render
+  // (React official pattern: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes)
+  const [prevMyCaregiverId, setPrevMyCaregiverId] = useState<string | undefined>(myCaregiverId);
+  if (myCaregiverId !== prevMyCaregiverId) {
+    setPrevMyCaregiverId(myCaregiverId);
+    if (
+      isCaregiverRole &&
+      myCaregiverId &&
+      !hadExplicitCaregiverParamOnMount &&
+      !hasAppliedCaregiverDefault
+    ) {
+      setHasAppliedCaregiverDefault(true);
+      setSelectedCaregiverFilterIds([myCaregiverId]);
+    }
+  }
+
+  const isDefaultedToSelf =
+    isCaregiverRole &&
+    hasAppliedCaregiverDefault &&
+    selectedCaregiverFilterIds.length === 1 &&
+    selectedCaregiverFilterIds[0] === myCaregiverId;
+
+  const handleShowAllCaregivers = useCallback(() => {
+    setHasAppliedCaregiverDefault(true); // don't re-apply the default after an explicit "show all"
+    setSelectedCaregiverFilterIds([]);
+  }, []);
+
+  // Sync state to URL search parameters
+  useEffect(() => {
+    const newParams = updateFilterSearchParams(
+      searchParams,
+      selectedCaregiverFilterIds,
+      selectedClientFilterIds,
+      selectedStatusFilterIds
+    );
+    setSearchParams(newParams, { replace: true });
+  }, [selectedCaregiverFilterIds, selectedClientFilterIds, selectedStatusFilterIds, searchParams, setSearchParams]);
+
+  const [selectedBranches] = useState<string[]>([]);
+  const [isCreateVisitModalOpen, setIsCreateVisitModalOpen] = useState(false);
+  const [createVisitSlotInfo, setCreateVisitSlotInfo] = useState<SlotInfo | null>(null);
+
+  // Week view UX controls
+  const [densityMode, setDensityMode] = useState<DensityMode>(() => {
+    const saved = localStorage.getItem('calendar-density');
+    return (saved as DensityMode | null) ?? 'comfortable';
+  });
+  const [timeRange, setTimeRange] = useState<TimeRange>(() => {
+    const saved = localStorage.getItem('calendar-time-range');
+    return (saved as TimeRange | null) ?? 'full';
+  });
+
+  const calendarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    localStorage.setItem('calendar-density', densityMode);
+  }, [densityMode]);
+
+  useEffect(() => {
+    localStorage.setItem('calendar-time-range', timeRange);
+  }, [timeRange]);
+
+  // Auto-scroll to current time on week view
+  useEffect(() => {
+    if (view !== 'week' || !calendarRef.current) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const timeSlotHeight = densityMode === 'comfortable' ? 60 : 40;
+      const { min } = TIME_RANGES[timeRange];
+      const scrollTo = Math.max(0, (currentHour - min - 1) * timeSlotHeight);
+
+      const scrollContainer = calendarRef.current?.querySelector('.rbc-time-content');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollTo;
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [view, timeRange, densityMode]);
+
+  // Calculate date range for calendar based on current view
+  const { startDate, endDate } = useMemo(() => {
+    const start = moment(currentDate).startOf(view === 'month' ? 'month' : 'week').toDate();
+    const end = moment(currentDate).endOf(view === 'month' ? 'month' : 'week').toDate();
+    return { startDate: start, endDate: end };
+  }, [currentDate, view]);
+
+  // Fetch visits for calendar
+  const branchIds = selectedBranches.length > 0 ? selectedBranches : undefined;
+  const {
+    data: visits = [],
+    isLoading,
+    refetch,
+    isRefetching = false,
+  } = useCalendarVisits(startDate, endDate, branchIds);
+
+  // Fetch caregiver availability
+  const {
+    data: caregiverAvailability = [],
+    isLoading: isLoadingAvailability,
+  } = useCaregiverAvailability(currentDate, branchIds);
+
+  // Fetch caregivers list for reassignment options
+  const { data: caregiversData } = useCaregivers();
+  const caregiversList = useMemo(() => {
+    if (!caregiversData?.items) return [];
+    return caregiversData.items;
+  }, [caregiversData]);
+
+  // Color map for caregivers
+  const caregiverColorMap = useMemo(
+    () => buildCaregiverColorMap(caregiverAvailability, visits),
+    [visits, caregiverAvailability]
+  );
+
+  // Distinct caregivers list for filter bar and availability rail
+  const allCaregivers = useMemo(
+    () => buildAllCaregiversList(caregiverAvailability, visits, caregiverColorMap),
+    [caregiverAvailability, visits, caregiverColorMap]
+  );
+
+  // Distinct clients list for filter bar
+  const allClients = useMemo(() => buildDistinctClients(visits), [visits]);
+
+  // Weekly visit count
+  const weeklyVisitCount = useMemo(
+    () => computeWeeklyVisits(visits, currentDate),
+    [visits, currentDate]
+  );
+
+  // Compute key metrics across all visits for the KPI row
+  const metrics = useMemo(() => {
+    const counts = computeVisitMetrics(visits);
+    return {
+      total: visits.length,
+      weekly: weeklyVisitCount,
+      ...counts,
+    };
+  }, [visits, weeklyVisitCount]);
+
+  // Calculate days with visits for mini calendar and mobile date strip
+  const daysWithVisits = useMemo(() => {
+    const days = new Set<string>();
+    for (const visit of visits) {
+      const dateKey = moment(visit.scheduledDate).format('YYYY-MM-DD');
+      days.add(dateKey);
+    }
+    return days;
+  }, [visits]);
+
+  // Filter visits based on active KPI chips, filter bar, and search
+  const filteredVisits = useMemo(() => {
+    return filterCalendarVisits(
+      visits,
+      statusFilter,
+      selectedStatusFilterIds,
+      selectedCaregiverFilter,
+      selectedCaregiverFilterIds,
+      selectedClientFilterIds
+    );
+  }, [
+    visits,
+    statusFilter,
+    selectedStatusFilterIds,
+    selectedCaregiverFilter,
+    selectedCaregiverFilterIds,
+    selectedClientFilterIds,
+  ]);
+
+  // Convert visits to calendar events with consistent status color tokens
+  const events: CalendarEvent[] = useMemo(() => {
+    return mapVisitsToEvents(filteredVisits, caregiverColorMap);
+  }, [filteredVisits, caregiverColorMap]);
+
+  // Check conflicts and assign caregiver
+  const checkAndAssignCaregiver = useCaregiverAssignment(visitApi, queryClient, refetch);
+
+  // Desktop Drag-and-drop handler
+  const { handleEventDrop, handleEventResize } = useCalendarDragDrop(checkAndAssignCaregiver, refetch);
+
   const handleSelectEvent = useCallback((event: CalendarEvent) => {
     setSelectedVisitId(event.resource.id);
     setSelectedVisitForAction(event.resource);
-    setReassignCaregiverId(event.resource.assignedCaregiverId ?? '');
   }, []);
 
   const orderedEvents = useMemo(
@@ -756,18 +1086,7 @@ export const CalendarView: React.FC = () => {
     setIsCreateVisitModalOpen(true);
   }, []);
 
-  const eventStyleGetter = useCallback((event: CalendarEvent) => {
-    return {
-      style: {
-        backgroundColor: event.color,
-        borderColor: event.color,
-        color: '#FFFFFF',
-        borderRadius: '4px',
-        opacity: event.resource.status === 'CANCELLED' ? 0.6 : 1,
-        border: event.resource.status === 'UNASSIGNED' ? '2px dashed #F59E0B' : '1px solid',
-      },
-    };
-  }, []);
+  const eventStyleGetter = useCallback((event: CalendarEvent) => getEventStyle(event), []);
 
   const handleClearAllFilters = useCallback(() => {
     setStatusFilter(null);
@@ -785,38 +1104,10 @@ export const CalendarView: React.FC = () => {
     selectedStatusFilterIds.length > 0;
 
   // 7-day strip days for mobile view
-  const weekStripDays = useMemo(() => {
-    const startOfWeek = moment(currentDate).startOf('week');
-    const days: Array<{
-      date: moment.Moment;
-      key: string;
-      dayName: string;
-      dayNum: string;
-      isSelected: boolean;
-      isToday: boolean;
-      hasVisits: boolean;
-    }> = [];
-
-    for (let i = 0; i < 7; i++) {
-      const day = moment(startOfWeek).add(i, 'days');
-      const dateKey = day.format('YYYY-MM-DD');
-      const isSelected = day.isSame(currentDate, 'day');
-      const isToday = day.isSame(moment(), 'day');
-      const hasVisits = daysWithVisits.has(dateKey);
-
-      days.push({
-        date: day,
-        key: dateKey,
-        dayName: day.format('ddd'),
-        dayNum: day.format('D'),
-        isSelected,
-        isToday,
-        hasVisits,
-      });
-    }
-
-    return days;
-  }, [currentDate, daysWithVisits]);
+  const weekStripDays = useMemo(
+    () => buildWeekStripDays(currentDate, daysWithVisits),
+    [currentDate, daysWithVisits]
+  );
 
   // Caregiver card items for CaregiverAvailabilityRail
   const caregiverCardItems = useMemo(() => {
@@ -875,45 +1166,7 @@ export const CalendarView: React.FC = () => {
             </Button>
 
             {/* Single Source of Truth: Legend Popover Toggle */}
-            <div className="relative" ref={legendRef}>
-              <Button
-                variant={showLegendPopover ? 'secondary' : 'outline'}
-                size="sm"
-                onClick={() => setShowLegendPopover((prev) => !prev)}
-                className="min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-semibold flex items-center gap-2"
-                aria-label="Toggle status legend"
-                data-testid="legend-toggle-button"
-              >
-                <Info className="h-4 w-4 text-blue-600" />
-                <span>Legend</span>
-              </Button>
-
-              {/* Legend Popover (Single Source of Truth) */}
-              {showLegendPopover && (
-                <div
-                  className="absolute right-0 sm:right-auto sm:left-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-200 p-4 z-50 animate-in fade-in zoom-in-95"
-                  data-testid="legend-popover"
-                >
-                  <div className="flex items-center justify-between pb-2 mb-3 border-b border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <Info className="h-4 w-4 text-blue-600" />
-                      <h3 className="text-sm font-bold text-gray-900">Visit Status Legend</h3>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      onClick={() => setShowLegendPopover(false)}
-                      className="min-h-[36px] min-w-[36px]"
-                      aria-label="Close legend"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <VisitStatusLegend compact={false} showTitle={false} />
-                </div>
-              )}
-            </div>
+            <CalendarLegendPopover />
 
             {/* Availability Panel Toggle Button */}
             <Button
@@ -931,7 +1184,9 @@ export const CalendarView: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => refetch()}
+              onClick={() => {
+                void refetch();
+              }}
               disabled={isLoading || isRefetching}
               className="min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-semibold flex items-center gap-2"
               aria-label="Refresh calendar"
@@ -945,134 +1200,15 @@ export const CalendarView: React.FC = () => {
         </div>
 
         {/* Row 2: Compact KPI Row with Consistent Color Tokens (Wraps on Mobile) */}
-        <div
-          role="region"
-          aria-label="Visit summary metrics"
-          className="flex items-center gap-2 overflow-x-auto pt-3 pb-1 sm:pb-0 sm:flex-wrap text-xs"
-        >
-          {/* Total / Weekly Visits */}
-          <Button
-            type="button"
-            variant={statusFilter === null && !isAnyFilterActive ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setStatusFilter(null)}
-            className="min-h-[44px] gap-2 whitespace-nowrap"
-            title="Click to view all visits"
-          >
-            <CalendarIcon className="h-3.5 w-3.5" />
-            <span>{metrics.weekly} Visits This Week</span>
-          </Button>
-
-          {/* Unassigned: Amber Dashed Token */}
-          <Button
-            type="button"
-            variant={statusFilter === 'UNASSIGNED' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() =>
-              setStatusFilter((prev) => (prev === 'UNASSIGNED' ? null : 'UNASSIGNED'))
-            }
-            className="min-h-[44px] gap-2 whitespace-nowrap border-dashed"
-            title="Filter: Unassigned visits"
-            data-testid="kpi-unassigned"
-          >
-            <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-            <span>{metrics.unassigned} Unassigned</span>
-          </Button>
-
-          {/* In Progress: Cyan Token */}
-          <Button
-            type="button"
-            variant={statusFilter === 'IN_PROGRESS' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() =>
-              setStatusFilter((prev) => (prev === 'IN_PROGRESS' ? null : 'IN_PROGRESS'))
-            }
-            className="min-h-[44px] gap-2 whitespace-nowrap"
-            title="Filter: In Progress visits"
-            data-testid="kpi-in-progress"
-          >
-            <div className="w-2.5 h-2.5 rounded-full bg-cyan-500" />
-            <span>{metrics.inProgress} In Progress</span>
-          </Button>
-
-          {/* Completed: Green Token */}
-          <Button
-            type="button"
-            variant={statusFilter === 'COMPLETED' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() =>
-              setStatusFilter((prev) => (prev === 'COMPLETED' ? null : 'COMPLETED'))
-            }
-            className="min-h-[44px] gap-2 whitespace-nowrap"
-            title="Filter: Completed visits"
-            data-testid="kpi-completed"
-          >
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span>{metrics.completed} Completed</span>
-          </Button>
-
-          {/* Needs Review: Purple Token */}
-          <Button
-            type="button"
-            variant={statusFilter === 'NEEDS_REVIEW' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() =>
-              setStatusFilter((prev) => (prev === 'NEEDS_REVIEW' ? null : 'NEEDS_REVIEW'))
-            }
-            className="min-h-[44px] gap-2 whitespace-nowrap"
-            title="Filter: Needs Review visits"
-            data-testid="kpi-needs-review"
-          >
-            <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-            <span>{metrics.needsReview} Needs Review</span>
-          </Button>
-
-          {/* Cancelled Token (if any) */}
-          {metrics.cancelled > 0 && (
-            <Button
-              type="button"
-              variant={statusFilter === 'CANCELLED' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() =>
-                setStatusFilter((prev) => (prev === 'CANCELLED' ? null : 'CANCELLED'))
-              }
-              className="min-h-[44px] gap-2 whitespace-nowrap"
-              title="Filter: Cancelled visits"
-            >
-              <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground opacity-60" />
-              <span>{metrics.cancelled} Cancelled</span>
-            </Button>
-          )}
-
-          {/* "Show all" — only shown while the caregiver default filter is
-              active; clears just the caregiver filter (distinct from
-              "Clear filters", which also resets status/client). */}
-          {isDefaultedToSelf && (
-            <Button
-              type="button"
-              variant="link"
-              size="sm"
-              onClick={handleShowAllCaregivers}
-              className="min-h-[44px] px-2.5 py-1 text-xs font-semibold underline flex items-center gap-1"
-              title="Show visits for all caregivers"
-            >
-              Show all
-            </Button>
-          )}
-
-          {/* Clear filters button */}
-          {isAnyFilterActive && (
-            <Button
-              type="button"
-              variant="link"
-              size="sm"
-              onClick={handleClearAllFilters}
-              className="min-h-[44px] px-2.5 py-1 text-xs font-semibold underline flex items-center gap-1"
-            >
-              Clear filters
-            </Button>
-          )}
-        </div>
+        <CalendarKpiRow
+          metrics={metrics}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          isAnyFilterActive={isAnyFilterActive}
+          isDefaultedToSelf={isDefaultedToSelf}
+          handleShowAllCaregivers={handleShowAllCaregivers}
+          handleClearAllFilters={handleClearAllFilters}
+        />
       </header>
 
       {/* Subheader Toolbar: View Switcher, Date Navigation, and Filters */}
@@ -1117,7 +1253,7 @@ export const CalendarView: React.FC = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => {
-                  const unit = view === 'month' ? 'month' : view === 'day' ? 'day' : 'week';
+                  const unit = getCalendarNavUnit(view);
                   setCurrentDate(moment(currentDate).subtract(1, unit).toDate());
                 }}
                 className="min-h-[44px] min-w-[44px]"
@@ -1140,7 +1276,7 @@ export const CalendarView: React.FC = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => {
-                  const unit = view === 'month' ? 'month' : view === 'day' ? 'day' : 'week';
+                  const unit = getCalendarNavUnit(view);
                   setCurrentDate(moment(currentDate).add(1, unit).toDate());
                 }}
                 className="min-h-[44px] min-w-[44px]"
@@ -1151,15 +1287,7 @@ export const CalendarView: React.FC = () => {
             </div>
 
             <span className="text-sm sm:text-base font-bold text-foreground ml-1">
-              {view === 'month'
-                ? moment(currentDate).format('MMMM YYYY')
-                : view === 'day'
-                ? moment(currentDate).format('dddd, MMMM D, YYYY')
-                : `${moment(currentDate).startOf('week').format('MMM D')} – ${moment(
-                    currentDate
-                  )
-                    .endOf('week')
-                    .format('MMM D, YYYY')}`}
+              {getCalendarPeriodTitle(view, currentDate)}
             </span>
           </div>
 
@@ -1264,9 +1392,7 @@ export const CalendarView: React.FC = () => {
               <Button
                 key={dayItem.key}
                 type="button"
-                variant={
-                  dayItem.isSelected ? 'default' : dayItem.isToday ? 'secondary' : 'outline'
-                }
+                variant={getStripButtonVariant(dayItem.isSelected, dayItem.isToday)}
                 size="sm"
                 onClick={() => {
                   setCurrentDate(dayItem.date.toDate());
@@ -1319,7 +1445,6 @@ export const CalendarView: React.FC = () => {
               onSelectVisit={(visit) => {
                 setSelectedVisitId(visit.id);
                 setSelectedVisitForAction(visit);
-                setReassignCaregiverId(visit.assignedCaregiverId ?? '');
               }}
               onReassignVisit={(visit) => setReassignVisit(visit)}
             />
@@ -1460,8 +1585,12 @@ export const CalendarView: React.FC = () => {
                   onView={setView}
                   date={currentDate}
                   onNavigate={setCurrentDate}
-                  onEventDrop={handleEventDrop}
-                  onEventResize={handleEventResize}
+                  onEventDrop={(args) => {
+                    void handleEventDrop(args);
+                  }}
+                  onEventResize={(args) => {
+                    void handleEventResize(args);
+                  }}
                   onSelectEvent={handleSelectEvent}
                   onSelectSlot={handleSelectSlot}
                   eventPropGetter={eventStyleGetter}
@@ -1505,7 +1634,9 @@ export const CalendarView: React.FC = () => {
             caregivers={caregiverCardItems}
             selectedCaregiverIds={selectedCaregiverFilterIds}
             onToggleCaregiver={handleToggleCaregiverInAvailability}
-            onAssignVisitToCaregiver={checkAndAssignCaregiver}
+            onAssignVisitToCaregiver={(visitId, caregiverId) => {
+              void checkAndAssignCaregiver(visitId, caregiverId);
+            }}
             isLoading={isLoadingAvailability}
           />
         </div>
@@ -1537,169 +1668,15 @@ export const CalendarView: React.FC = () => {
 
       {/* Tap-to-Reassign / Quick Action Modal (data-testid="visit-action-modal") */}
       {selectedVisitForAction && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
-          role="dialog"
-          aria-modal="true"
-          data-testid="visit-action-modal"
-        >
-          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-md w-full p-5 sm:p-6 animate-in fade-in zoom-in-95">
-            <div className="flex items-start justify-between pb-3 border-b border-gray-100">
-              <div>
-                <span
-                  className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider mb-1.5 ${
-                    selectedVisitForAction.status === 'UNASSIGNED' ||
-                    !selectedVisitForAction.assignedCaregiverId
-                      ? 'bg-amber-100 text-amber-800 border-2 border-dashed border-amber-400'
-                      : selectedVisitForAction.status === 'IN_PROGRESS'
-                      ? 'bg-cyan-100 text-cyan-800 border border-cyan-300'
-                      : selectedVisitForAction.status === 'COMPLETED'
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                      : (selectedVisitForAction.status as string) === 'NEEDS_REVIEW' ||
-                        selectedVisitForAction.requiresSupervision
-                      ? 'bg-purple-100 text-purple-800 border border-purple-300'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}
-                >
-                  {selectedVisitForAction.status === 'UNASSIGNED' ||
-                  !selectedVisitForAction.assignedCaregiverId
-                    ? 'UNASSIGNED'
-                    : selectedVisitForAction.status}
-                </span>
-                <h3 className="text-lg font-bold text-gray-900">
-                  {selectedVisitForAction.clientFirstName} {selectedVisitForAction.clientLastName}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  {selectedVisitForAction.serviceTypeName}
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => setSelectedVisitForAction(null)}
-                className="min-h-[44px] min-w-[44px]"
-                aria-label="Close modal"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-
-            {/* Visit Details */}
-            <div className="py-4 space-y-3 text-sm">
-              <div className="flex items-center gap-2.5 text-gray-700">
-                <CalendarIcon className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                <span>
-                  {moment(selectedVisitForAction.scheduledDate).format('dddd, MMMM D, YYYY')}
-                </span>
-              </div>
-              <div className="flex items-center gap-2.5 text-gray-700">
-                <Clock className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                <span>
-                  {selectedVisitForAction.scheduledStartTime} –{' '}
-                  {selectedVisitForAction.scheduledEndTime}
-                </span>
-              </div>
-              <div className="flex items-center gap-2.5 text-gray-700">
-                <User className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                <span>
-                  Current Caregiver:{' '}
-                  <strong className="text-gray-900">
-                    {caregiversList.find(
-                      (c) => c.id === selectedVisitForAction.assignedCaregiverId
-                    )?.firstName
-                      ? `${
-                          caregiversList.find(
-                            (c) => c.id === selectedVisitForAction.assignedCaregiverId
-                          )?.firstName
-                        } ${
-                          caregiversList.find(
-                            (c) => c.id === selectedVisitForAction.assignedCaregiverId
-                          )?.lastName
-                        }`
-                      : selectedVisitForAction.assignedCaregiverId
-                      ? 'Assigned'
-                      : 'Unassigned'}
-                  </strong>
-                </span>
-              </div>
-
-              {/* Reassign Caregiver Form */}
-              <div className="pt-3 border-t border-border">
-                <Label htmlFor="reassign-caregiver-select" className="block text-xs font-semibold text-foreground mb-1.5">
-                  Reassign Caregiver
-                </Label>
-                <Select
-                  value={reassignCaregiverId || 'UNASSIGNED'}
-                  onValueChange={(val) => setReassignCaregiverId(val === 'UNASSIGNED' ? '' : val)}
-                >
-                  <SelectTrigger
-                    id="reassign-caregiver-select"
-                    className="w-full text-sm min-h-[44px]"
-                    data-testid="reassign-caregiver-select"
-                  >
-                    <SelectValue placeholder="Unassigned (No Caregiver)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="UNASSIGNED">Unassigned (No Caregiver)</SelectItem>
-                    {caregiversList.map((cg) => (
-                      <SelectItem key={cg.id} value={cg.id}>
-                        {cg.firstName} {cg.lastName} ({cg.status || 'Active'})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="pt-3 border-t border-border flex flex-col sm:flex-row gap-2">
-              <Button
-                type="button"
-                variant="default"
-                size="default"
-                disabled={
-                  isReassigning ||
-                  reassignCaregiverId === (selectedVisitForAction.assignedCaregiverId ?? '')
-                }
-                onClick={async () => {
-                  if (!reassignCaregiverId) {
-                    toast('Unassigning requires removing caregiver assignment');
-                    return;
-                  }
-                  setIsReassigning(true);
-                  try {
-                    const success = await checkAndAssignCaregiver(
-                      selectedVisitForAction.id,
-                      reassignCaregiverId
-                    );
-                    if (success) {
-                      setSelectedVisitForAction(null);
-                    }
-                  } finally {
-                    setIsReassigning(false);
-                  }
-                }}
-                className="min-h-[44px] flex-1 font-semibold"
-                data-testid="reassign-submit-button"
-              >
-                {isReassigning ? 'Reassigning...' : 'Save Reassignment'}
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="default"
-                onClick={() => {
-                  navigate(`/visits/${selectedVisitForAction.id}`);
-                }}
-                className="min-h-[44px] font-medium"
-              >
-                Full Details
-              </Button>
-            </div>
-          </div>
-        </div>
+        <CalendarVisitActionModal
+          visit={selectedVisitForAction}
+          caregiversList={caregiversList}
+          onClose={() => setSelectedVisitForAction(null)}
+          onAssignCaregiver={checkAndAssignCaregiver}
+          onViewDetails={(id) => {
+            Promise.resolve(navigate(`/visits/${id}`)).catch(() => {});
+          }}
+        />
       )}
 
       {/* Visit details side panel */}
@@ -1725,7 +1702,7 @@ export const CalendarView: React.FC = () => {
           setCreateVisitSlotInfo(null);
         }}
         onSuccess={() => {
-          refetch();
+          void refetch();
         }}
         preSelectedDate={
           createVisitSlotInfo ? moment(createVisitSlotInfo.start).format('YYYY-MM-DD') : undefined

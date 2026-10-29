@@ -44,7 +44,7 @@ export const useCreateCarePlan = () => {
   return useMutation({
     mutationFn: (input: CreateCarePlanInput) => carePlanApi.createCarePlan(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['care-plans'] });
+      void queryClient.invalidateQueries({ queryKey: ['care-plans'] });
       toast.success('Care plan created successfully');
     },
     onError: (error: Error) => {
@@ -61,8 +61,8 @@ export const useUpdateCarePlan = () => {
     mutationFn: ({ id, input }: { id: string; input: UpdateCarePlanInput }) =>
       carePlanApi.updateCarePlan(id, input),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['care-plans'] });
-      queryClient.invalidateQueries({ queryKey: ['care-plans', data.id] });
+      void queryClient.invalidateQueries({ queryKey: ['care-plans'] });
+      void queryClient.invalidateQueries({ queryKey: ['care-plans', data.id] });
       toast.success('Care plan updated successfully');
     },
     onError: (error: Error) => {
@@ -78,8 +78,8 @@ export const useActivateCarePlan = () => {
   return useMutation({
     mutationFn: (id: string) => carePlanApi.activateCarePlan(id),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['care-plans'] });
-      queryClient.invalidateQueries({ queryKey: ['care-plans', data.id] });
+      void queryClient.invalidateQueries({ queryKey: ['care-plans'] });
+      void queryClient.invalidateQueries({ queryKey: ['care-plans', data.id] });
       toast.success('Care plan activated successfully');
     },
     onError: (error: Error) => {
@@ -96,16 +96,17 @@ export const useDeleteCarePlan = () => {
     mutationFn: async (id: string) => {
       try {
         await carePlanApi.deleteCarePlan(id);
-      } catch (error: any) {
+      } catch (error: unknown) {
         // If 404, the plan was already deleted on the server — treat as success
-        if (error?.status === 404 || error?.response?.data?.status === 404) {
+        const err = error as { status?: number; response?: { data?: { status?: number } } };
+        if (err.status === 404 || err.response?.data?.status === 404) {
           return;
         }
         throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['care-plans'] });
+      void queryClient.invalidateQueries({ queryKey: ['care-plans'] });
       toast.success('Care plan deleted successfully');
     },
     onError: (error: Error) => {
@@ -142,9 +143,9 @@ export const useCompleteTask = () => {
     mutationFn: ({ id, input }: { id: string; input: CompleteTaskInput }) =>
       carePlanApi.completeTask(id, input),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['tasks', data.id] });
-      queryClient.invalidateQueries({ queryKey: ['care-plans', data.carePlanId] });
+      void queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      void queryClient.invalidateQueries({ queryKey: ['tasks', data.id] });
+      void queryClient.invalidateQueries({ queryKey: ['care-plans', data.carePlanId] });
       toast.success('Task completed successfully');
     },
     onError: (error: Error) => {
@@ -170,8 +171,8 @@ export const useCreateProgressNote = () => {
   return useMutation({
     mutationFn: (input: CreateProgressNoteInput) => carePlanApi.createProgressNote(input),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['progress-notes', data.carePlanId] });
-      queryClient.invalidateQueries({ queryKey: ['care-plans', data.carePlanId] });
+      void queryClient.invalidateQueries({ queryKey: ['progress-notes', data.carePlanId] });
+      void queryClient.invalidateQueries({ queryKey: ['care-plans', data.carePlanId] });
       toast.success('Progress note added successfully');
     },
     onError: (error: Error) => {

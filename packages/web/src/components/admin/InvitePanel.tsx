@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button.js';
 import { Input } from '@/components/ui/input.js';
 import { Checkbox } from '@/components/ui/checkbox.js';
@@ -6,11 +6,32 @@ import { Label } from '@/components/ui/label.js';
 import { useApiClient } from '@/core/hooks';
 import './InvitePanel.css';
 
+interface PendingInvite {
+  inviteId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
+interface ApiResponse<T> {
+  data: {
+    data: T;
+  };
+}
+
+interface ApiErrorResponse {
+  response?: {
+    data?: {
+      error?: string;
+    };
+  };
+}
+
 interface InvitePanelProps {
   organizationId: string;
 }
 
-export function InvitePanel({ organizationId }: InvitePanelProps): React.JSX.Element {
+export function InvitePanel({ organizationId }: Readonly<InvitePanelProps>): React.JSX.Element {
   const api = useApiClient();
   const [formData, setFormData] = useState({
     email: '',
@@ -20,7 +41,7 @@ export function InvitePanel({ organizationId }: InvitePanelProps): React.JSX.Ele
     permissions: [] as string[],
     expiresInHours: 24,
   });
-  const [pendingInvites, setPendingInvites] = useState<any[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [generatedUrl, setGeneratedUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -35,25 +56,27 @@ export function InvitePanel({ organizationId }: InvitePanelProps): React.JSX.Ele
     'MANAGE_PAYROLL',
   ];
 
-  useEffect(() => {
-    loadPendingInvites();
-  }, [organizationId]);
-
-  const loadPendingInvites = async () => {
+  const loadPendingInvites = useCallback(async () => {
     try {
-      const response = await api.get(`/api/organizations/${organizationId}/invites?status=PENDING`) as any;
-      setPendingInvites(response.data.data.invites || []);
+      const response = (await api.get(
+        `/api/organizations/${organizationId}/invites?status=PENDING`
+      )) as ApiResponse<{ invites?: PendingInvite[] }>;
+      setPendingInvites(response.data.data.invites ?? []);
     } catch (error) {
       console.error('Failed to load invites', error);
     }
-  };
+  }, [api, organizationId]);
+
+  useEffect(() => {
+    void loadPendingInvites();
+  }, [loadPendingInvites]);
 
   const handleGenerateInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const response = await api.post(
+      const response = (await api.post(
         `/api/organizations/${organizationId}/invites/generate`,
         {
           email: formData.email,
@@ -63,7 +86,7 @@ export function InvitePanel({ organizationId }: InvitePanelProps): React.JSX.Ele
           permissions: formData.permissions,
           expiresInHours: formData.expiresInHours,
         }
-      ) as any;
+      )) as ApiResponse<{ inviteUrl: string }>;
 
       setGeneratedUrl(response.data.data.inviteUrl);
       setFormData({
@@ -75,15 +98,16 @@ export function InvitePanel({ organizationId }: InvitePanelProps): React.JSX.Ele
         expiresInHours: 24,
       });
       await loadPendingInvites();
-    } catch (error: any) {
-      setErrors({ submit: error.response?.data?.error || 'Failed to generate invite' });
+    } catch (error: unknown) {
+      const err = error as ApiErrorResponse;
+      setErrors({ submit: err.response?.data?.error ?? 'Failed to generate invite' });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleCopyUrl = () => {
-    navigator.clipboard.writeText(generatedUrl);
+    void navigator.clipboard.writeText(generatedUrl);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
   };
@@ -92,7 +116,7 @@ export function InvitePanel({ organizationId }: InvitePanelProps): React.JSX.Ele
     <div className="invite-panel">
       <h2>Invite Team Member</h2>
       
-      <form onSubmit={handleGenerateInvite}>
+      <form onSubmit={(e) => { void handleGenerateInvite(e); }}>
         <div className="form-group">
           <Label htmlFor="invite-email">Email *</Label>
           <Input

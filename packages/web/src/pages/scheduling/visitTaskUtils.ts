@@ -10,11 +10,35 @@ export interface VisitTaskItem {
   notes?: string;
 }
 
+interface RawTask {
+  id?: string;
+  name?: string;
+  title?: string;
+  category?: string;
+  status?: string;
+  completed?: boolean;
+  required?: boolean;
+  isOptional?: boolean;
+  completedAt?: string;
+  notes?: string;
+  completionNote?: string;
+}
+
+interface VisitWithTasks extends Visit {
+  tasks?: RawTask[];
+}
+
+function isTaskRequired(required: unknown, isOptional: unknown): boolean {
+  if (typeof required === 'boolean') return required;
+  if (typeof isOptional === 'boolean') return !isOptional;
+  return true;
+}
+
 export function formatTimeString(time?: Date | string | null): string | null {
   if (!time) return null;
   if (typeof time === 'string') {
     const trimmed = time.trim();
-    if (/^\d{1,2}:\d{2}(\s*(AM|PM))?$/i.test(trimmed)) {
+    if (/^\d{1,2}:\d{2}(\s*(am|pm))?$/i.test(trimmed)) {
       return trimmed;
     }
     const d = new Date(trimmed);
@@ -31,27 +55,27 @@ export function formatTimeString(time?: Date | string | null): string | null {
 
 export function deriveVisitTasks(
   visit: Visit | null,
-  externalTasks?: any[]
+  externalTasks?: RawTask[]
 ): VisitTaskItem[] {
   if (!visit) return [];
 
   // 1. External task instances (e.g. from care plan task instances API)
   if (externalTasks && externalTasks.length > 0) {
-    return externalTasks.map((t: any, idx: number) => ({
+    return externalTasks.map((t, idx: number) => ({
       id: t.id ?? `task-${idx + 1}`,
       title: t.name ?? t.title ?? 'Care Task',
       category: t.category,
       completed: t.status === 'COMPLETED' || Boolean(t.completed),
-      required: typeof t.required === 'boolean' ? t.required : (typeof t.isOptional === 'boolean' ? !t.isOptional : true),
+      required: isTaskRequired(t.required, t.isOptional),
       completedAt: t.completedAt ? (formatTimeString(t.completedAt) ?? undefined) : undefined,
       notes: t.notes ?? t.completionNote,
     }));
   }
 
   // 2. Embedded visit tasks
-  const visitTasks = (visit as any).tasks;
+  const visitTasks = (visit as VisitWithTasks).tasks;
   if (Array.isArray(visitTasks) && visitTasks.length > 0) {
-    return visitTasks.map((t: any, idx: number) => ({
+    return visitTasks.map((t, idx: number) => ({
       id: t.id ?? `task-${idx + 1}`,
       title: t.title ?? t.name ?? 'Care Task',
       category: t.category,
@@ -113,7 +137,7 @@ export function deriveVisitTasks(
 
   return baseTasks.map((t, idx) => {
     let completed = false;
-    let completedAt: string | undefined = undefined;
+    let completedAt: string | undefined;
 
     if (isCompleted) {
       completed = true;

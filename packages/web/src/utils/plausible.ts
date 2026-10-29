@@ -13,7 +13,7 @@
 
 export function initializePlausible(): void {
   const domain = import.meta.env.VITE_PLAUSIBLE_DOMAIN;
-  const apiHost = import.meta.env.VITE_PLAUSIBLE_API_HOST || 'https://plausible.io';
+  const apiHost = import.meta.env.VITE_PLAUSIBLE_API_HOST ?? 'https://plausible.io';
 
   // Skip if no domain configured
   if (!domain) {

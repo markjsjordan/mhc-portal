@@ -19,6 +19,12 @@ export interface ReassignVisitModalProps {
   onAssignCaregiver: (visitId: string, caregiverId: string) => Promise<boolean>;
 }
 
+const getCaregiverRowClass = (isSelected: boolean, isCurrent: boolean): string => {
+  if (isSelected) return 'bg-primary text-primary-foreground font-semibold';
+  if (isCurrent) return 'bg-muted text-muted-foreground';
+  return 'hover:bg-accent hover:text-accent-foreground text-foreground';
+};
+
 export const ReassignVisitModal: React.FC<ReassignVisitModalProps> = ({
   isOpen,
   onClose,
@@ -85,7 +91,11 @@ export const ReassignVisitModal: React.FC<ReassignVisitModalProps> = ({
           <div className="text-xs text-muted-foreground mt-1">
             Current Caregiver:{' '}
             <span className="font-medium text-foreground">
-              {currentCaregiver ? currentCaregiver.name : (visit.assignedCaregiverId ? 'Assigned' : 'Unassigned')}
+              {(() => {
+                if (currentCaregiver) return currentCaregiver.name;
+                if (visit.assignedCaregiverId) return 'Assigned';
+                return 'Unassigned';
+              })()}
             </span>
           </div>
         </div>
@@ -104,18 +114,12 @@ export const ReassignVisitModal: React.FC<ReassignVisitModalProps> = ({
                 <div
                   key={cg.id}
                   onClick={() => setSelectedCaregiverId(cg.id)}
-                  className={`flex items-center justify-between p-2.5 rounded-lg text-xs cursor-pointer transition-colors ${
-                    isSelected
-                      ? 'bg-primary text-primary-foreground font-semibold'
-                      : isCurrent
-                      ? 'bg-muted text-muted-foreground'
-                      : 'hover:bg-accent hover:text-accent-foreground text-foreground'
-                  }`}
+                  className={`flex items-center justify-between p-2.5 rounded-lg text-xs cursor-pointer transition-colors ${getCaregiverRowClass(isSelected, isCurrent)}`}
                 >
                   <div className="flex items-center gap-2">
                     <span
                       className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: cg.color || '#3B82F6' }}
+                      style={{ backgroundColor: cg.color ?? '#3B82F6' }}
                     />
                     <span>{cg.name}</span>
                   </div>
@@ -143,7 +147,9 @@ export const ReassignVisitModal: React.FC<ReassignVisitModalProps> = ({
             type="button"
             variant="default"
             size="sm"
-            onClick={handleConfirm}
+            onClick={() => {
+              void handleConfirm();
+            }}
             disabled={!selectedCaregiverId || selectedCaregiverId === visit.assignedCaregiverId || isSubmitting}
           >
             {isSubmitting ? 'Assigning...' : 'Assign Caregiver'}

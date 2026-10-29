@@ -87,7 +87,7 @@ function parseDateInput(value: Date | string | null | undefined): Date | null {
   if (typeof value === 'string') {
     const trimmed = value.trim();
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
-    if (match && match[1] && match[2] && match[3]) {
+    if (match?.[1] && match[2] && match[3]) {
       const year = Number(match[1]);
       const month = Number(match[2]) - 1;
       const day = Number(match[3]);
@@ -169,7 +169,12 @@ export function calculateSupervisoryCadence(input: SupervisoryCadenceInput): Sup
 
   const isOverdue = daysRemaining < 0;
   const isUpcoming = daysRemaining >= 0 && daysRemaining <= 14;
-  const status: SupervisionStatus = isOverdue ? 'OVERDUE' : isUpcoming ? 'UPCOMING' : 'OK';
+  let status: SupervisionStatus = 'OK';
+  if (isOverdue) {
+    status = 'OVERDUE';
+  } else if (isUpcoming) {
+    status = 'UPCOMING';
+  }
 
   const formattedDueDate = format(dueDate, 'MMM d, yyyy');
   const careLabel = isSkilled ? 'Skilled Nursing (RN)' : 'Personal Care';

@@ -183,8 +183,8 @@ export const VISIT_TYPES: Record<VisitType, VisitTypeConfig> = {
 };
 
 export const getVisitTypeConfig = (type: VisitType | string): VisitTypeConfig => {
-  const normalized = (type || '').toUpperCase() as VisitType;
-  return VISIT_TYPES[normalized] || VISIT_TYPES.REGULAR;
+  const normalized = (type || '').toUpperCase();
+  return (VISIT_TYPES as Record<string, VisitTypeConfig>)[normalized] ?? VISIT_TYPES.REGULAR;
 };
 
 /**

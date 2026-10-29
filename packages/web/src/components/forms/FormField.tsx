@@ -43,21 +43,13 @@ export function FormField<T extends FieldValues>({
   rows = 4,
   helperText,
   className = '',
-}: FormFieldProps<T>) {
+}: Readonly<FormFieldProps<T>>) {
   const error = errors?.[name];
   const errorMessage = error?.message as string | undefined;
 
-  return (
-    <div className={`mb-4 space-y-1 ${className}`}>
-      <Label
-        htmlFor={name}
-        className="block text-sm font-medium"
-      >
-        {label}
-        {required && <span className="text-destructive ml-1">*</span>}
-      </Label>
-
-      {type === 'select' ? (
+  const renderControl = (): React.JSX.Element => {
+    if (type === 'select') {
+      return (
         <NativeSelect
           id={name}
           disabled={disabled}
@@ -72,7 +64,11 @@ export function FormField<T extends FieldValues>({
             </option>
           ))}
         </NativeSelect>
-      ) : type === 'textarea' ? (
+      );
+    }
+
+    if (type === 'textarea') {
+      return (
         <Textarea
           id={name}
           {...register(name)}
@@ -82,17 +78,33 @@ export function FormField<T extends FieldValues>({
           className={error ? 'border-destructive focus-visible:ring-destructive' : ''}
           aria-invalid={error ? 'true' : 'false'}
         />
-      ) : (
-        <Input
-          id={name}
-          type={type}
-          {...register(name)}
-          disabled={disabled}
-          placeholder={placeholder}
-          className={error ? 'border-destructive focus-visible:ring-destructive' : ''}
-          aria-invalid={error ? 'true' : 'false'}
-        />
-      )}
+      );
+    }
+
+    return (
+      <Input
+        id={name}
+        type={type}
+        {...register(name)}
+        disabled={disabled}
+        placeholder={placeholder}
+        className={error ? 'border-destructive focus-visible:ring-destructive' : ''}
+        aria-invalid={error ? 'true' : 'false'}
+      />
+    );
+  };
+
+  return (
+    <div className={`mb-4 space-y-1 ${className}`}>
+      <Label
+        htmlFor={name}
+        className="block text-sm font-medium"
+      >
+        {label}
+        {required && <span className="text-destructive ml-1">*</span>}
+      </Label>
+
+      {renderControl()}
 
       {helperText && !error && (
         <p className="text-sm text-muted-foreground mt-1">{helperText}</p>
@@ -128,7 +140,7 @@ export function CheckboxField<T extends FieldValues>({
   disabled,
   helperText,
   className = '',
-}: CheckboxFieldProps<T>) {
+}: Readonly<CheckboxFieldProps<T>>) {
   const error = errors?.[name];
   const errorMessage = error?.message as string | undefined;
   const { onChange, onBlur, ref } = register(name);
@@ -143,7 +155,7 @@ export function CheckboxField<T extends FieldValues>({
           onCheckedChange={(checked) => {
             void onChange({ target: { name, value: checked } });
           }}
-          onBlur={onBlur}
+          onBlur={(e) => { void onBlur(e); }}
         />
         <Label htmlFor={name} className="text-sm font-normal cursor-pointer">
           {label}
@@ -186,7 +198,7 @@ export function RadioField<T extends FieldValues>({
   required,
   disabled,
   className = '',
-}: RadioFieldProps<T>) {
+}: Readonly<RadioFieldProps<T>>) {
   const error = errors?.[name];
   const errorMessage = error?.message as string | undefined;
   const { onChange } = register(name);

@@ -68,11 +68,11 @@ export const CaregiverSearch: React.FC<CaregiverSearchProps> = ({ filters, onFil
   React.useEffect(() => {
     const timer = setTimeout(() => {
       if ((filters.query ?? '') !== queryInput) {
-        onFiltersChange({ ...filters, query: queryInput || undefined });
+        onFiltersChange({ ...filters, query: queryInput.trim() !== '' ? queryInput : undefined });
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [queryInput]);
+  }, [queryInput, filters, onFiltersChange]);
 
   // Count active filters
   const activeFilterCount = React.useMemo(() => {
@@ -175,7 +175,7 @@ export const CaregiverSearch: React.FC<CaregiverSearchProps> = ({ filters, onFil
               onValueChange={(val) =>
                 onFiltersChange({
                   ...filters,
-                  status: val === 'ALL' ? undefined : [val as any],
+                  status: val === 'ALL' ? undefined : [val],
                 })
               }
             >
@@ -199,7 +199,7 @@ export const CaregiverSearch: React.FC<CaregiverSearchProps> = ({ filters, onFil
               onValueChange={(val) =>
                 onFiltersChange({
                   ...filters,
-                  role: val === 'ALL' ? undefined : [val as any],
+                  role: val === 'ALL' ? undefined : [val],
                 })
               }
             >
@@ -223,7 +223,7 @@ export const CaregiverSearch: React.FC<CaregiverSearchProps> = ({ filters, onFil
               onValueChange={(val) =>
                 onFiltersChange({
                   ...filters,
-                  complianceStatus: val === 'ALL' ? undefined : [val as any],
+                  complianceStatus: val === 'ALL' ? undefined : [val],
                 })
               }
             >

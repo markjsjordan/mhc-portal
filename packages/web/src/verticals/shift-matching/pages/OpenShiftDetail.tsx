@@ -102,7 +102,7 @@ export const OpenShiftDetail: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h3 className="text-sm font-medium text-gray-500 mb-1">Client</h3>
-              <p className="text-lg font-semibold">{shift.clientName || shift.clientId}</p>
+              <p className="text-lg font-semibold">{shift.clientName ?? shift.clientId}</p>
             </div>
 
             <div>

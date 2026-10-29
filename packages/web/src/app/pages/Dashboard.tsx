@@ -28,7 +28,7 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleSkipDemo = () => {
-    navigate('/clients/intake');
+    Promise.resolve(navigate('/clients/intake')).catch(() => {});
   };
 
   // Show loading state while checking demo data status
@@ -46,7 +46,7 @@ export const Dashboard: React.FC = () => {
       <div id="dashboard" className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Welcome to MHC Portal, {user?.name?.split(' ')[0]}!
+            Welcome to MHC Portal, {user?.name.split(' ')[0]}!
           </h1>
           <p className="mt-1 text-gray-600">
             Let&apos;s get started with your home healthcare management.
@@ -70,28 +70,28 @@ export const Dashboard: React.FC = () => {
       value: isStatsLoading ? '...' : String(activeClients),
       icon: <Users className="h-6 w-6 text-primary-600" />,
       change: 'Real-time',
-      onClick: () => navigate('/clients'),
+      onClick: () => { Promise.resolve(navigate('/clients')).catch(() => {}); },
     },
     {
       label: "Today's Visits",
       value: isStatsLoading ? '...' : String(todayVisits),
       icon: <Calendar className="h-6 w-6 text-green-600" />,
       change: 'Today',
-      onClick: () => navigate('/scheduling'),
+      onClick: () => { Promise.resolve(navigate('/scheduling')).catch(() => {}); },
     },
     {
       label: 'Pending Tasks',
       value: isStatsLoading ? '...' : String(pendingTasks),
       icon: <ClipboardList className="h-6 w-6 text-yellow-600" />,
       change: 'Needs review',
-      onClick: () => navigate('/tasks'),
+      onClick: () => { Promise.resolve(navigate('/tasks')).catch(() => {}); },
     },
     {
       label: 'Alerts',
       value: isStatsLoading ? '...' : String(alerts),
       icon: <AlertCircle className="h-6 w-6 text-red-600" />,
       change: 'Active',
-      onClick: () => navigate('/incidents'),
+      onClick: () => { Promise.resolve(navigate('/incidents')).catch(() => {}); },
     },
   ];
 
@@ -99,7 +99,7 @@ export const Dashboard: React.FC = () => {
     <div id="dashboard" className="space-y-6">
       <div id="family-dashboard">
         <h1 className="text-2xl font-bold text-gray-900">
-          Welcome back, {user?.name?.split(' ')[0]}
+          Welcome back, {user?.name.split(' ')[0]}
         </h1>
         <p className="mt-1 text-gray-600">
           Here&apos;s what&apos;s happening with your care operations today.
@@ -141,14 +141,14 @@ export const Dashboard: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate('/clients')}
+                      onClick={() => { Promise.resolve(navigate('/clients')).catch(() => {}); }}
                     >
                       View Clients
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate('/care-plans')}
+                      onClick={() => { Promise.resolve(navigate('/care-plans')).catch(() => {}); }}
                     >
                       View Care Plans
                     </Button>
@@ -174,14 +174,14 @@ export const Dashboard: React.FC = () => {
                     <Button
                       variant="default"
                       size="sm"
-                      onClick={() => navigate('/scheduling')}
+                      onClick={() => { Promise.resolve(navigate('/scheduling')).catch(() => {}); }}
                     >
                       Schedule New Visit
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate('/clients')}
+                      onClick={() => { Promise.resolve(navigate('/clients')).catch(() => {}); }}
                     >
                       View Clients
                     </Button>

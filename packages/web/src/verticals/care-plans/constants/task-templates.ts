@@ -191,7 +191,7 @@ export const getTemplatesByCategory = (category: keyof typeof TASK_TEMPLATE_CATE
     DOCUMENTATION: ['DOCUMENTATION'],
   };
 
-  const categories = categoryMap[category] || [];
+  const categories = categoryMap[category];
   return COMMON_TASK_TEMPLATES.filter(template => categories.includes(template.category));
 };
 

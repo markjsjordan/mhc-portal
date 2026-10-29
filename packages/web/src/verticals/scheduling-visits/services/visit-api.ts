@@ -48,10 +48,10 @@ export interface VisitApiService {
   getVisitById(visitId: string): Promise<Visit>;
   createVisit(data: CreateVisitPayload): Promise<Visit>;
   updateVisit(visitId: string, data: UpdateVisitPayload): Promise<Visit>;
-  createPattern(data: CreatePatternPayload): Promise<{ pattern: any; visits: Visit[]; generatedVisitsCount: number; exceptions: any[] }>;
+  createPattern(data: CreatePatternPayload): Promise<{ pattern: unknown; visits: Visit[]; generatedVisitsCount: number; exceptions: unknown[] }>;
   getPattern(id: string): Promise<PatternDetailsResponse>;
-  updatePattern(id: string, data: UpdatePatternPayload): Promise<any>;
-  listPatterns(clientId?: string): Promise<any[]>;
+  updatePattern(id: string, data: UpdatePatternPayload): Promise<unknown>;
+  listPatterns(clientId?: string): Promise<unknown[]>;
 }
 
 export interface CreatePatternPayload {
@@ -119,7 +119,7 @@ export interface UpdatePatternPayload {
 }
 
 export interface PatternDetailsResponse {
-  pattern: any;
+  pattern: unknown;
   visits: Visit[];
   totalVisits: number;
 }
@@ -224,8 +224,8 @@ export const createVisitApiService = (apiClient: ApiClient): VisitApiService => 
       return response.data;
     },
 
-    async createPattern(data: CreatePatternPayload): Promise<{ pattern: any; visits: Visit[]; generatedVisitsCount: number; exceptions: any[] }> {
-      const response = await apiClient.post<{ success: boolean; data: any }>(
+    async createPattern(data: CreatePatternPayload): Promise<{ pattern: unknown; visits: Visit[]; generatedVisitsCount: number; exceptions: unknown[] }> {
+      const response = await apiClient.post<{ success: boolean; data: { pattern: unknown; visits: Visit[]; generatedVisitsCount: number; exceptions: unknown[] } }>(
         '/api/visits/patterns',
         data
       );
@@ -239,19 +239,19 @@ export const createVisitApiService = (apiClient: ApiClient): VisitApiService => 
       return response.data;
     },
 
-    async updatePattern(id: string, data: UpdatePatternPayload): Promise<any> {
-      const response = await apiClient.put<{ success: boolean; data: any }>(
+    async updatePattern(id: string, data: UpdatePatternPayload): Promise<unknown> {
+      const response = await apiClient.put<{ success: boolean; data: unknown }>(
         `/api/visits/patterns/${id}`,
         data
       );
       return response.data;
     },
 
-    async listPatterns(clientId?: string): Promise<any[]> {
+    async listPatterns(clientId?: string): Promise<unknown[]> {
       const params = new URLSearchParams();
       if (clientId) params.append('client_id', clientId);
       const url = `/api/visits/patterns${params.toString() ? '?' + params.toString() : ''}`;
-      const response = await apiClient.get<{ success: boolean; data: any[] }>(url);
+      const response = await apiClient.get<{ success: boolean; data: unknown[] }>(url);
       return response.data;
     },
   };

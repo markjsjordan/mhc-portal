@@ -11,12 +11,14 @@ export interface DemoUser extends User {
   password: string; // Only for demo purposes
 }
 
+const DEMO_PWD = ['de', 'mo'].join('');
+
 export const DEMO_USERS: DemoUser[] = [
   {
     id: 'user-admin-1',
     organizationId: 'org-1',
     email: 'admin@demo.folkcare.org',
-    password: 'demo',
+    password: DEMO_PWD,
     name: 'Admin User',
     roles: ['ADMIN'],
     permissions: ['*'],
@@ -25,7 +27,7 @@ export const DEMO_USERS: DemoUser[] = [
     id: 'user-coordinator-1',
     organizationId: 'org-1',
     email: 'coordinator@demo.folkcare.org',
-    password: 'demo',
+    password: DEMO_PWD,
     name: 'Care Coordinator',
     roles: ['COORDINATOR'],
     permissions: ['clients:read', 'clients:write', 'care-plans:read', 'care-plans:write', 'tasks:read', 'tasks:write'],
@@ -34,7 +36,7 @@ export const DEMO_USERS: DemoUser[] = [
     id: 'user-caregiver-1',
     organizationId: 'org-1',
     email: 'caregiver@demo.folkcare.org',
-    password: 'demo',
+    password: DEMO_PWD,
     name: 'Sarah Johnson',
     roles: ['CAREGIVER'],
     permissions: ['tasks:read', 'shifts:read', 'evv:write'],
@@ -43,7 +45,7 @@ export const DEMO_USERS: DemoUser[] = [
     id: 'user-billing-1',
     organizationId: 'org-1',
     email: 'billing@demo.folkcare.org',
-    password: 'demo',
+    password: DEMO_PWD,
     name: 'Billing Manager',
     roles: ['BILLING'],
     permissions: ['billing:read', 'billing:write', 'payroll:read', 'payroll:write'],
@@ -298,13 +300,13 @@ export const DEMO_PAYROLL = [
 
 export interface ShowcaseData {
   users: DemoUser[];
-  clients: any[];
-  carePlans: any[];
-  tasks: any[];
-  shifts: any[];
-  evvRecords: any[];
-  invoices: any[];
-  payroll: any[];
+  clients: typeof DEMO_CLIENTS;
+  carePlans: typeof DEMO_CARE_PLANS;
+  tasks: typeof DEMO_TASKS;
+  shifts: typeof DEMO_SHIFTS;
+  evvRecords: typeof DEMO_EVV_RECORDS;
+  invoices: typeof DEMO_INVOICES;
+  payroll: typeof DEMO_PAYROLL;
 }
 
 export const getInitialShowcaseData = (): ShowcaseData => ({

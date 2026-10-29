@@ -18,7 +18,7 @@ export function useCreateGoal(carePlanId: string, options?: UseCreateGoalOptions
     },
     onSuccess: (goal) => {
       // Invalidate care plan query to refresh goals
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ['care-plans', carePlanId],
       });
 

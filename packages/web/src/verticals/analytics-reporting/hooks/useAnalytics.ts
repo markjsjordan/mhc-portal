@@ -146,7 +146,7 @@ export function useGenerateReport() {
     }) => analyticsApi.generateReport(reportType, filters),
     onSuccess: () => {
       // Invalidate reports list to refetch
-      queryClient.invalidateQueries({ queryKey: ['analytics', 'reports'] });
+      void queryClient.invalidateQueries({ queryKey: ['analytics', 'reports'] });
     },
   });
 }

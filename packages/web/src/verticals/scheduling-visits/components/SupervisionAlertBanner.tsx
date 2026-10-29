@@ -27,9 +27,9 @@ export const SupervisionAlertBanner: React.FC<SupervisionAlertBannerProps> = ({
     if (onSchedule) {
       onSchedule();
     } else if (cadence.clientId) {
-      navigate(`/scheduling/builder?clientId=${cadence.clientId}&visitType=SUPERVISION`);
+      Promise.resolve(navigate(`/scheduling/builder?clientId=${cadence.clientId}&visitType=SUPERVISION`)).catch(() => {});
     } else {
-      navigate('/scheduling/builder?visitType=SUPERVISION');
+      Promise.resolve(navigate('/scheduling/builder?visitType=SUPERVISION')).catch(() => {});
     }
   };
 

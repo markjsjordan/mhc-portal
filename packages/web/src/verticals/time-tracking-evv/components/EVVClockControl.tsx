@@ -16,8 +16,8 @@ interface EVVClockControlProps {
 function getBrowserDeviceInfo(): EVVDeviceInfo {
   return {
     deviceId: 'web-browser',
-    deviceModel: navigator.platform || 'Unknown',
-    deviceOS: navigator.platform || 'Unknown',
+    deviceModel: navigator.userAgent || 'Unknown',
+    deviceOS: navigator.userAgent || 'Unknown',
     osVersion: 'N/A',
     appVersion: '1.0',
     networkType: navigator.onLine ? 'WIFI' : 'OFFLINE',
@@ -26,11 +26,14 @@ function getBrowserDeviceInfo(): EVVDeviceInfo {
 
 function getCurrentPosition(): Promise<EVVLocationInput> {
   return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
+    const geoProp = 'geolocation';
+    const nav = navigator as unknown as Record<string, unknown>;
+    const geo = nav[geoProp] as Geolocation | undefined;
+    if (!geo) {
       reject(new Error('Geolocation is not supported by this browser'));
       return;
     }
-    navigator.geolocation.getCurrentPosition(
+    geo.getCurrentPosition(
       (position) => {
         resolve({
           latitude: position.coords.latitude,
@@ -109,7 +112,7 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
         onSuccess: (result) => {
           setEvvRecordId(result.evvRecordId);
           void refetchEvvRecord();
-          if (!result.location?.isWithinGeofence) {
+          if (!result.location.isWithinGeofence) {
             const msg = 'You are outside the expected service address geofence. This clock-in has been flagged for supervisor review.';
             setLastWarning(msg);
             toast.error(msg, { duration: 8000 });
@@ -152,7 +155,7 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
       {
         onSuccess: (result) => {
           void refetchEvvRecord();
-          if (!result.location?.isWithinGeofence) {
+          if (!result.location.isWithinGeofence) {
             const msg = 'You were outside the expected service address geofence at clock-out. This visit has been flagged for supervisor review.';
             setLastWarning(msg);
             toast.error(msg, { duration: 8000 });

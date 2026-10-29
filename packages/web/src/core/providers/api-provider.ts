@@ -14,7 +14,7 @@ import { createBillingApiService } from '@/verticals/billing-invoicing/services/
 import { createPayrollApiService } from '@/verticals/payroll-processing/services/payroll-api';
 import { createShiftMatchingApiService } from '@/verticals/shift-matching/services/shift-matching-api';
 
-import type { DataProvider, ProviderConfig } from './types';
+import type { DataProvider } from './types';
 
 /**
  * Creates an API-based data provider

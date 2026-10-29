@@ -7,19 +7,21 @@ const isValidRole = (role: string): role is PersonaRole => {
   return ['admin', 'coordinator', 'caregiver', 'patient'].includes(role);
 };
 
+const getInitialPersonaRole = (): PersonaRole | undefined => {
+  if (typeof window !== 'undefined') {
+    const stored = window.localStorage.getItem(CURRENT_ROLE_KEY);
+    if (stored !== null && isValidRole(stored)) {
+      return stored;
+    }
+  }
+  return undefined;
+};
+
 /**
  * Hook to get the current showcase persona/role
  */
 export const useShowcasePersona = (): PersonaRole | undefined => {
-  const [currentRole, setCurrentRole] = useState<PersonaRole | undefined>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = window.localStorage.getItem(CURRENT_ROLE_KEY);
-      if (stored !== null && isValidRole(stored)) {
-        return stored;
-      }
-    }
-    return undefined;
-  });
+  const [currentRole, setCurrentRole] = useState<PersonaRole | undefined>(getInitialPersonaRole);
 
   useEffect(() => {
     const handleStorageChange = () => {

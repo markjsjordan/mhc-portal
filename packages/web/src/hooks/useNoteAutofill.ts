@@ -83,7 +83,7 @@ export function useNoteAutofill(): UseNoteAutofillReturn {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          errorData.error || `Failed to fetch suggestions: ${response.statusText}`
+          errorData.error ?? `Failed to fetch suggestions: ${response.statusText}`
         );
       }
 

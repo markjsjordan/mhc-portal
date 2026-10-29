@@ -66,7 +66,7 @@ export const InvoiceSearch: React.FC<InvoiceSearchProps> = ({
           <Input
             id="invoice-start-date"
             type="date"
-            value={filters.startDate || ''}
+            value={filters.startDate ?? ''}
             onChange={(e) => handleFilterChange('startDate', e.target.value)}
           />
         </div>
@@ -78,7 +78,7 @@ export const InvoiceSearch: React.FC<InvoiceSearchProps> = ({
           <Input
             id="invoice-end-date"
             type="date"
-            value={filters.endDate || ''}
+            value={filters.endDate ?? ''}
             onChange={(e) => handleFilterChange('endDate', e.target.value)}
           />
         </div>
@@ -90,7 +90,7 @@ export const InvoiceSearch: React.FC<InvoiceSearchProps> = ({
           <Input
             id="invoice-min-amount"
             type="number"
-            value={filters.minAmount || ''}
+            value={filters.minAmount ?? ''}
             onChange={(e) =>
               handleFilterChange(
                 'minAmount',

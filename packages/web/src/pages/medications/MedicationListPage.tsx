@@ -91,7 +91,7 @@ export function MedicationListPage() {
     mutationFn: ({ medicationId }: { medicationId: string }) =>
       markAsTaken(medicationId, clientId!),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['medications', clientId] });
+      void queryClient.invalidateQueries({ queryKey: ['medications', clientId] });
     },
   });
 
@@ -122,6 +122,12 @@ export function MedicationListPage() {
 
   const needsRefill = (medication: Medication) => {
     return medication.refillsRemaining !== undefined && medication.refillsRemaining <= 1;
+  };
+
+  const getStatusVariant = (status: string): 'default' | 'secondary' | 'outline' => {
+    if (status === 'ACTIVE') return 'default';
+    if (status === 'DISCONTINUED') return 'secondary';
+    return 'outline';
   };
 
   if (isLoading) {
@@ -209,7 +215,7 @@ export function MedicationListPage() {
                           <h3 className="text-lg font-semibold text-gray-900">
                             {medication.medicationName}
                           </h3>
-                          <Badge variant={medication.status === 'ACTIVE' ? 'default' : medication.status === 'DISCONTINUED' ? 'secondary' : 'outline'}>
+                          <Badge variant={getStatusVariant(medication.status)}>
                             {medication.status}
                           </Badge>
                           {refillNeeded && (

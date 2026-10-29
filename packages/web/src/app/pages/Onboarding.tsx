@@ -188,6 +188,12 @@ interface ClientForm {
   zipCode: string;
 }
 
+const getStepBorderClass = (isComplete: boolean, isExpanded: boolean): string => {
+  if (isComplete) return 'border-green-200';
+  if (isExpanded) return 'border-green-500 ring-2 ring-green-200';
+  return 'border-gray-200';
+};
+
 export const Onboarding: React.FC = () => {
   const navigate = useNavigate();
   const { user, token } = useAuth();
@@ -305,12 +311,12 @@ export const Onboarding: React.FC = () => {
   };
 
   const handleSkipOnboarding = () => {
-    navigate('/dashboard');
+    Promise.resolve(navigate('/dashboard')).catch(() => {});
   };
 
   const handleCompleteOnboarding = () => {
     toast.success('Congratulations! Your agency is ready to go live.');
-    navigate('/dashboard');
+    Promise.resolve(navigate('/dashboard')).catch(() => {});
   };
 
   // Save organization profile
@@ -569,7 +575,7 @@ export const Onboarding: React.FC = () => {
 
             <div className="flex gap-3 pt-2">
               <Button
-                onClick={handleSaveOrgProfile}
+                onClick={() => { void handleSaveOrgProfile(); }}
                 disabled={isSaving || !orgProfile.street1 || !orgProfile.city || !orgProfile.state || !orgProfile.zipCode}
               >
                 {isSaving ? 'Saving...' : 'Save & Continue'}
@@ -595,7 +601,7 @@ export const Onboarding: React.FC = () => {
               <Button
                 onClick={() => {
                   void handleMarkComplete(step.id);
-                  navigate('/billing/payors');
+                  Promise.resolve(navigate('/billing/payors')).catch(() => {});
                 }}
               >
                 Add Payors
@@ -626,7 +632,7 @@ export const Onboarding: React.FC = () => {
               <Button
                 onClick={() => {
                   void handleMarkComplete(step.id);
-                  navigate('/settings/evv');
+                  Promise.resolve(navigate('/settings/evv')).catch(() => {});
                 }}
               >
                 Configure EVV
@@ -706,7 +712,7 @@ export const Onboarding: React.FC = () => {
 
             <div className="flex gap-3 pt-2">
               <Button
-                onClick={handleSaveCaregiver}
+                onClick={() => { void handleSaveCaregiver(); }}
                 disabled={isSaving || !caregiverForm.firstName || !caregiverForm.lastName || !caregiverForm.email}
               >
                 {isSaving ? 'Adding...' : 'Add Caregiver'}
@@ -832,7 +838,7 @@ export const Onboarding: React.FC = () => {
 
             <div className="flex gap-3 pt-2">
               <Button
-                onClick={handleSaveClient}
+                onClick={() => { void handleSaveClient(); }}
                 disabled={isSaving || !clientForm.firstName || !clientForm.lastName || !clientForm.street1 || !clientForm.city || !clientForm.state || !clientForm.zipCode}
               >
                 {isSaving ? 'Adding...' : 'Add Client'}
@@ -858,7 +864,7 @@ export const Onboarding: React.FC = () => {
               <Button
                 onClick={() => {
                   void handleMarkComplete(step.id);
-                  navigate('/schedule');
+                  Promise.resolve(navigate('/schedule')).catch(() => {});
                 }}
               >
                 Schedule Visit
@@ -884,7 +890,7 @@ export const Onboarding: React.FC = () => {
               <Button
                 onClick={() => {
                   void handleMarkComplete(step.id);
-                  navigate('/settings/team');
+                  Promise.resolve(navigate('/settings/team')).catch(() => {});
                 }}
               >
                 Invite Team
@@ -921,7 +927,9 @@ export const Onboarding: React.FC = () => {
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
           <Button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => {
+              Promise.resolve(navigate('/dashboard')).catch(() => {});
+            }}
           >
             Go to Dashboard
           </Button>
@@ -973,13 +981,7 @@ export const Onboarding: React.FC = () => {
           {steps.map((step) => (
             <div
               key={step.id}
-              className={`bg-white rounded-xl shadow-sm border ${
-                step.isComplete
-                  ? 'border-green-200'
-                  : expandedStep === step.id
-                  ? 'border-green-500 ring-2 ring-green-200'
-                  : 'border-gray-200'
-              }`}
+              className={`bg-white rounded-xl shadow-sm border ${getStepBorderClass(step.isComplete, expandedStep === step.id)}`}
             >
               <Button
                 variant="ghost"

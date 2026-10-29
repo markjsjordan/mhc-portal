@@ -6,3 +6,4 @@
 
 export * from './DemoModeBanner.js';
 export * from './DemoModeContext.js';
+export * from './DemoModeProvider.js';

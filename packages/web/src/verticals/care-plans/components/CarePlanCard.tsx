@@ -10,6 +10,13 @@ export interface CarePlanCardProps {
   compact?: boolean;
 }
 
+const getPriorityColor = (priority?: string): string => {
+  if (priority === 'URGENT') return 'text-red-600';
+  if (priority === 'HIGH') return 'text-orange-600';
+  if (priority === 'MEDIUM') return 'text-yellow-600';
+  return 'text-gray-600';
+};
+
 export const CarePlanCard: React.FC<CarePlanCardProps> = ({ carePlan, compact = false }) => {
   const [now] = useState(() => Date.now());
   
@@ -82,12 +89,7 @@ export const CarePlanCard: React.FC<CarePlanCardProps> = ({ carePlan, compact = 
 
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-gray-500">Priority:</span>
-              <span className={`text-xs font-medium ${
-                carePlan.priority === 'URGENT' ? 'text-red-600' :
-                carePlan.priority === 'HIGH' ? 'text-orange-600' :
-                carePlan.priority === 'MEDIUM' ? 'text-yellow-600' :
-                'text-gray-600'
-              }`}>
+              <span className={`text-xs font-medium ${getPriorityColor(carePlan.priority)}`}>
                 {carePlan.priority}
               </span>
             </div>

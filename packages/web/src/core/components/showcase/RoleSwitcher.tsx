@@ -44,7 +44,7 @@ export const RoleSwitcher: React.FC = () => {
       >
         <Users className="h-4 w-4" />
         <span className="text-sm font-medium">
-          {ROLES.find(r => r.id === currentRole)?.label || 'Care Coordinator'}
+          {ROLES.find(r => r.id === currentRole)?.label ?? 'Care Coordinator'}
         </span>
       </Button>
 

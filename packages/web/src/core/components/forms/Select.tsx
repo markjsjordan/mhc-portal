@@ -22,7 +22,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     { error, label, helperText, options, placeholder, className, id, required, ...props },
     ref
   ) => {
-    const selectId = id || `select-${label?.toLowerCase().replace(/\s/g, '-')}`;
+    const selectId = id ?? `select-${label?.toLowerCase().replace(/\s/g, '-')}`;
 
     return (
       <div className="w-full space-y-1">

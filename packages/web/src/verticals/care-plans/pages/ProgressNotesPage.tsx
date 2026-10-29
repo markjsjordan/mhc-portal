@@ -31,7 +31,7 @@ export const ProgressNotesPage: React.FC = () => {
         ...data,
       });
       setIsFormOpen(false);
-      refetch();
+      void refetch();
     } catch {
       // Error is handled by the mutation
     }
@@ -48,8 +48,8 @@ export const ProgressNotesPage: React.FC = () => {
   if (error) {
     return (
       <ErrorMessage
-        message={(error as Error)?.message || 'Failed to load progress notes'}
-        retry={refetch}
+        message={(error as Error).message || 'Failed to load progress notes'}
+        retry={() => { void refetch(); }}
       />
     );
   }
@@ -126,12 +126,12 @@ export const ProgressNotesPage: React.FC = () => {
           clientId={carePlan.clientId}
           isOpen={isFormOpen}
           onClose={() => setIsFormOpen(false)}
-          onSubmit={handleSubmit}
+          onSubmit={(data) => { void handleSubmit(data); }}
           isLoading={createProgressNote.isPending}
           authorInfo={{
             id: user.id,
             name: user.name,
-            role: user.roles[0] || 'STAFF',
+            role: user.roles[0] ?? 'STAFF',
           }}
         />
       )}

@@ -84,7 +84,7 @@ export const AdminDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Impersonation Banner */}
-      {user && user.roles?.includes('CAREGIVER') && (
+      {Boolean(user?.roles.includes('CAREGIVER')) && (
         <Alert variant="destructive">
           <AlertTitle>Impersonation Active</AlertTitle>
           <AlertDescription className="flex items-center justify-between">
@@ -114,7 +114,7 @@ export const AdminDashboard: React.FC = () => {
             Comprehensive system administration and state-specific configuration
           </p>
         </div>
-        {!user?.roles?.includes('CAREGIVER') && (
+        {!user?.roles.includes('CAREGIVER') && (
           <Button
             onClick={() => setIsLoginAsOpen(true)}
             className="flex items-center gap-2"
@@ -182,7 +182,7 @@ export const AdminDashboard: React.FC = () => {
                 user: {
                   id: caregiver.id,
                   email: caregiver.email,
-                  organizationId: user?.organizationId || '',
+                  organizationId: user?.organizationId ?? '',
                   name: caregiver.name,
                   roles: ['CAREGIVER'],
                   permissions: [],

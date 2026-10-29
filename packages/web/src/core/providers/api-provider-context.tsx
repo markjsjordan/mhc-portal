@@ -4,16 +4,10 @@
  * React context for accessing the current API provider throughout the app.
  */
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { ApiProvider, ApiProviderConfig } from './api-provider.interface';
 import { createApiProvider } from './api-provider-factory';
-
-interface ApiProviderContextValue {
-  provider: ApiProvider;
-  isReady: boolean;
-}
-
-const ApiProviderContext = createContext<ApiProviderContextValue | null>(null);
+import { ApiProviderContext } from './useApiProvider.js';
 
 interface ApiProviderProps {
   config: ApiProviderConfig;
@@ -32,7 +26,7 @@ export const ApiProviderProvider: React.FC<ApiProviderProps> = ({ config, childr
       setIsReady(true);
     };
 
-    initProvider();
+    void initProvider();
   }, [config]);
 
   if (!provider || !isReady) {
@@ -51,15 +45,4 @@ export const ApiProviderProvider: React.FC<ApiProviderProps> = ({ config, childr
       {children}
     </ApiProviderContext.Provider>
   );
-};
-
-export const useApiProvider = (): ApiProvider => {
-  const context = useContext(ApiProviderContext);
-  if (!context) {
-    throw new Error('useApiProvider must be used within ApiProviderProvider');
-  }
-  if (!context.isReady) {
-    throw new Error('API provider is not ready yet');
-  }
-  return context.provider;
 };

@@ -62,11 +62,9 @@ export function DemoModeBar() {
             {/* Organization info with stats */}
             <div className="text-sm opacity-90 hidden md:block">
               <span>Viewing {session.organizationName}</span>
-              {session.stats && (
-                <span className="ml-1">
-                  • {session.stats.clientCount} clients, {session.stats.caregiverCount} caregivers
-                </span>
-              )}
+              <span className="ml-1">
+                • {session.stats.clientCount} clients, {session.stats.caregiverCount} caregivers
+              </span>
             </div>
           </div>
 

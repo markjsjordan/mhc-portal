@@ -37,7 +37,7 @@ export const useCreateClient = () => {
   return useMutation({
     mutationFn: (input: CreateClientInput) => clientApi.createClient(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      void queryClient.invalidateQueries({ queryKey: ['clients'] });
       toast.success('Client created successfully');
     },
     onError: (error: Error) => {
@@ -54,8 +54,8 @@ export const useUpdateClient = () => {
     mutationFn: ({ id, input }: { id: string; input: UpdateClientInput }) =>
       clientApi.updateClient(id, input),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
-      queryClient.invalidateQueries({ queryKey: ['clients', data.id] });
+      void queryClient.invalidateQueries({ queryKey: ['clients'] });
+      void queryClient.invalidateQueries({ queryKey: ['clients', data.id] });
       toast.success('Client updated successfully');
     },
     onError: (error: Error) => {
@@ -71,7 +71,7 @@ export const useDeleteClient = () => {
   return useMutation({
     mutationFn: (id: string) => clientApi.deleteClient(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      void queryClient.invalidateQueries({ queryKey: ['clients'] });
       toast.success('Client deleted successfully');
     },
     onError: (error: Error) => {

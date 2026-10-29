@@ -22,7 +22,7 @@ export function AlertsList({
   alerts,
   onAlertClick,
   className = '',
-}: AlertsListProps) {
+}: Readonly<AlertsListProps>) {
   const getAlertIcon = (severity: ComplianceAlert['severity']) => {
     switch (severity) {
       case 'CRITICAL':

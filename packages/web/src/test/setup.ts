@@ -72,17 +72,18 @@ if (typeof window.confirm !== 'function') {
 
 // Mock pointer capture and scroll APIs for Radix UI in happy-dom
 if (typeof window !== 'undefined' && typeof window.HTMLElement !== 'undefined') {
-  if (!window.HTMLElement.prototype.hasPointerCapture) {
-    window.HTMLElement.prototype.hasPointerCapture = vi.fn(() => false);
+  const proto = window.HTMLElement.prototype as unknown as Record<string, unknown>;
+  if (typeof proto.hasPointerCapture !== 'function') {
+    proto.hasPointerCapture = vi.fn(() => false);
   }
-  if (!window.HTMLElement.prototype.setPointerCapture) {
-    window.HTMLElement.prototype.setPointerCapture = vi.fn();
+  if (typeof proto.setPointerCapture !== 'function') {
+    proto.setPointerCapture = vi.fn();
   }
-  if (!window.HTMLElement.prototype.releasePointerCapture) {
-    window.HTMLElement.prototype.releasePointerCapture = vi.fn();
+  if (typeof proto.releasePointerCapture !== 'function') {
+    proto.releasePointerCapture = vi.fn();
   }
-  if (!window.HTMLElement.prototype.scrollIntoView) {
-    window.HTMLElement.prototype.scrollIntoView = vi.fn();
+  if (typeof proto.scrollIntoView !== 'function') {
+    proto.scrollIntoView = vi.fn();
   }
 }
 

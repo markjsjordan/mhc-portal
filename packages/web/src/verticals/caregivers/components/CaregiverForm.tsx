@@ -14,7 +14,7 @@
  * without them the service layer still rejects with a clean 400, but the
  * create flow would never actually succeed for a real user.
  */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Input } from '@/components/ui/input.js';
 import { Button } from '@/components/ui/button.js';
 import { Label } from '@/components/ui/label.js';
@@ -27,61 +27,13 @@ import {
 } from '@/components/ui/select.js';
 import { useBranches } from '@/verticals/client-demographics/hooks/index.js';
 import { Search, ChevronDown, Check, X } from 'lucide-react';
+import type { CaregiverFormValues } from '../types/form.js';
 
-export interface CaregiverFormValues {
-  firstName: string;
-  lastName: string;
-  middleName: string;
-  preferredName: string;
-  email: string;
-  phoneNumber: string;
-  phoneType: 'MOBILE' | 'HOME' | 'WORK';
-  dateOfBirth: string;
-  employmentType: 'FULL_TIME' | 'PART_TIME' | 'PER_DIEM' | 'CONTRACT' | 'TEMPORARY' | 'SEASONAL';
-  hireDate: string;
-  role: string;
-  status: string;
-  branchIdsRaw: string;
-  primaryBranchId: string;
-  payRateAmount: string;
-  payRateUnit: 'HOURLY' | 'VISIT' | 'DAILY' | 'SALARY';
-  payRateEffectiveDate: string;
-  addressLine1: string;
-  addressLine2: string;
-  addressCity: string;
-  addressState: string;
-  addressPostalCode: string;
-  emergencyContactName: string;
-  emergencyContactRelationship: string;
-  emergencyContactPhone: string;
-}
+export type { CaregiverFormValues };
 
-export const EMPTY_CAREGIVER_FORM: CaregiverFormValues = {
-  firstName: '',
-  lastName: '',
-  middleName: '',
-  preferredName: '',
-  email: '',
-  phoneNumber: '',
-  phoneType: 'MOBILE',
-  dateOfBirth: '',
-  employmentType: 'FULL_TIME',
-  hireDate: '',
-  role: 'CAREGIVER',
-  status: 'ACTIVE',
-  branchIdsRaw: '',
-  primaryBranchId: '',
-  payRateAmount: '',
-  payRateUnit: 'HOURLY',
-  payRateEffectiveDate: '',
-  addressLine1: '',
-  addressLine2: '',
-  addressCity: '',
-  addressState: '',
-  addressPostalCode: '',
-  emergencyContactName: '',
-  emergencyContactRelationship: '',
-  emergencyContactPhone: '',
+const formatBranchLabel = (branch?: { name: string; code?: string }, fallbackId = ''): string => {
+  if (!branch) return fallbackId;
+  return branch.code ? `${branch.name} (${branch.code})` : branch.name;
 };
 
 export interface SelectOption {
@@ -155,9 +107,13 @@ export const CaregiverForm: React.FC<CaregiverFormProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // If backend returns branches, use them. Otherwise provide a default Main branch fallback
-  const availableBranches = fetchedBranches.length > 0
-    ? fetchedBranches
-    : [{ id: '00000000-0000-0000-0000-000000000002', name: 'Main Branch', code: 'MAIN' }];
+  const availableBranches = useMemo(
+    () =>
+      fetchedBranches.length > 0
+        ? fetchedBranches
+        : [{ id: '00000000-0000-0000-0000-000000000002', name: 'Main Branch', code: 'MAIN' }],
+    [fetchedBranches]
+  );
 
   const set = <K extends keyof CaregiverFormValues>(key: K, value: CaregiverFormValues[K]) => {
     onChange({ ...values, [key]: value });
@@ -187,8 +143,8 @@ export const CaregiverForm: React.FC<CaregiverFormProps> = ({
     if (availableBranches.length > 0 && selectedBranchIds.length === 0 && !values.primaryBranchId) {
       const mainBranch =
         availableBranches.find(
-          (b) => b.name?.toLowerCase().includes('main') || b.code?.toLowerCase().includes('main')
-        ) || availableBranches[0];
+          (b) => b.name.toLowerCase().includes('main') || (b.code ? b.code.toLowerCase().includes('main') : false)
+        ) ?? availableBranches[0];
 
       if (mainBranch) {
         onChange({
@@ -208,7 +164,7 @@ export const CaregiverForm: React.FC<CaregiverFormProps> = ({
     if (exists) {
       nextBranchIds = selectedBranchIds.filter((id) => id !== branchId);
       if (nextPrimary === branchId) {
-        nextPrimary = nextBranchIds[0] || '';
+        nextPrimary = nextBranchIds[0] ?? '';
       }
     } else {
       nextBranchIds = [...selectedBranchIds, branchId];
@@ -238,7 +194,7 @@ export const CaregiverForm: React.FC<CaregiverFormProps> = ({
 
   const filteredBranches = availableBranches.filter((b) => {
     const q = branchSearch.toLowerCase();
-    return b.name?.toLowerCase().includes(q) || b.code?.toLowerCase().includes(q);
+    return b.name.toLowerCase().includes(q) || (b.code ? b.code.toLowerCase().includes(q) : false);
   });
 
   return (
@@ -609,7 +565,7 @@ export const CaregiverForm: React.FC<CaregiverFormProps> = ({
                 ) : (
                   selectedBranchIds.map((branchId) => {
                     const branch = availableBranches.find((b) => b.id === branchId);
-                    const name = branch ? `${branch.name}${branch.code ? ` (${branch.code})` : ''}` : branchId;
+                    const name = formatBranchLabel(branch, branchId);
                     const isPrimary = values.primaryBranchId === branchId;
                     return (
                       <span
@@ -710,7 +666,7 @@ export const CaregiverForm: React.FC<CaregiverFormProps> = ({
               <SelectContent>
                 {selectedBranchIds.map((branchId) => {
                   const b = availableBranches.find((item) => item.id === branchId);
-                  const name = b ? `${b.name}${b.code ? ` (${b.code})` : ''}` : branchId;
+                  const name = formatBranchLabel(b, branchId);
                   return (
                     <SelectItem key={branchId} value={branchId}>
                       {name}

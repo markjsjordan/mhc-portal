@@ -21,7 +21,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
   onSelect,
 }) => {
   const categoryColor =
-    categoryColors[template.category] || 'bg-gray-100 text-gray-800';
+    categoryColors[template.category] ?? 'bg-gray-100 text-gray-800';
 
   return (
     <div className="border rounded-lg p-6 hover:shadow-lg transition cursor-pointer bg-white">

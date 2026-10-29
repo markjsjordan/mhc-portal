@@ -55,7 +55,7 @@ export const VisitStatusLegend: React.FC<VisitStatusLegendProps> = ({
       <div className="flex flex-wrap items-center gap-4">
         {legendItems.map((item) => (
           <div key={item.label} className="flex items-center gap-2">
-            <div className={`w-4 h-4 rounded ${item.color} ${item.border} ${item.opacity || ''}`}></div>
+            <div className={`w-4 h-4 rounded ${item.color} ${item.border} ${item.opacity ?? ''}`}></div>
             <span className="text-xs text-gray-600">{item.label}</span>
           </div>
         ))}
@@ -74,7 +74,7 @@ export const VisitStatusLegend: React.FC<VisitStatusLegendProps> = ({
       <div className="space-y-2">
         {legendItems.map((item) => (
           <div key={item.label} className="flex items-start gap-3">
-            <div className={`w-5 h-5 rounded mt-0.5 flex-shrink-0 ${item.color} ${item.border} ${item.opacity || ''}`}></div>
+            <div className={`w-5 h-5 rounded mt-0.5 flex-shrink-0 ${item.color} ${item.border} ${item.opacity ?? ''}`}></div>
             <div className="flex-1">
               <div className="text-sm font-medium text-gray-900">{item.label}</div>
               <div className="text-xs text-gray-500">{item.description}</div>

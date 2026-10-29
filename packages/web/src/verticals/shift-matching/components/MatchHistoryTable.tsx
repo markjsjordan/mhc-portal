@@ -145,7 +145,7 @@ export const MatchHistoryTable: React.FC<MatchHistoryTableProps> = ({
           r.caregiverName,
           r.matchScore,
           r.outcome,
-          r.responseTimeMinutes || 'N/A',
+          r.responseTimeMinutes ?? 'N/A',
           r.overrideReason ?? ''
         ].join(',')
       )

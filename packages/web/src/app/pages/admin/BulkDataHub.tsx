@@ -119,6 +119,26 @@ const CAREGIVER_TARGET_FIELDS = [
   { key: 'status', label: 'Status (ACTIVE/INACTIVE)', required: false },
 ];
 
+const getStepClass = (isCurrent: boolean, isPassed: boolean): string => {
+  if (isCurrent) return 'border-blue-600 bg-blue-50 text-blue-700';
+  if (isPassed) return 'border-green-200 bg-green-50 text-green-700';
+  return 'border-gray-200 bg-white text-gray-400';
+};
+
+const getRowBgClass = (hasErrors: boolean, hasDup: boolean): string => {
+  if (hasErrors) return 'bg-red-50/40';
+  if (hasDup) return 'bg-purple-50/40';
+  return 'hover:bg-gray-50/50';
+};
+
+const renderRowBadge = (hasErrors: boolean, hasDup: boolean) => {
+  if (hasErrors) return <Badge variant="destructive">Invalid</Badge>;
+  if (hasDup) {
+    return <Badge className="bg-yellow-100 text-yellow-800 border-transparent hover:bg-yellow-100">Duplicate</Badge>;
+  }
+  return <Badge className="bg-green-100 text-green-800 border-transparent hover:bg-green-100">Valid</Badge>;
+};
+
 export const BulkDataHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'import' | 'export'>('import');
 
@@ -158,9 +178,9 @@ export const BulkDataHub: React.FC = () => {
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    if (e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
-      if (file && file.name.endsWith('.csv')) {
+      if (file?.name.endsWith('.csv')) {
         handleFileSelected(file);
       } else {
         setErrorMessage('Please upload a valid .csv file.');
@@ -210,9 +230,9 @@ export const BulkDataHub: React.FC = () => {
     setDetectedPreset(detected);
 
     for (const header of rawHeaders) {
-      const norm = header.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const norm = header.toLowerCase().replace(/[^\da-z]/g, '');
       const match = targetFields.find((tf) => {
-        const tfNorm = tf.key.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const tfNorm = tf.key.toLowerCase().replace(/[^\da-z]/g, '');
         return tfNorm === norm || norm.includes(tfNorm) || tfNorm.includes(norm);
       });
       if (match) {
@@ -469,13 +489,7 @@ export const BulkDataHub: React.FC = () => {
               return (
                 <div
                   key={s.id}
-                  className={`flex items-center justify-center py-2.5 px-3 rounded-lg border font-medium text-center ${
-                    isCurrent
-                      ? 'border-blue-600 bg-blue-50 text-blue-700'
-                      : isPassed
-                      ? 'border-green-200 bg-green-50 text-green-700'
-                      : 'border-gray-200 bg-white text-gray-400'
-                  }`}
+                  className={`flex items-center justify-center py-2.5 px-3 rounded-lg border font-medium text-center ${getStepClass(isCurrent, isPassed)}`}
                 >
                   {isPassed ? <Check className="h-4 w-4 mr-1 text-green-600" /> : null}
                   {s.label}
@@ -536,7 +550,7 @@ export const BulkDataHub: React.FC = () => {
                     accept=".csv"
                     className="hidden"
                     onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) {
+                      if (e.target.files?.[0]) {
                         handleFileSelected(e.target.files[0]);
                       }
                     }}
@@ -662,7 +676,7 @@ export const BulkDataHub: React.FC = () => {
                   <Button
                     variant="default"
                     disabled={isProcessing || Object.keys(mappings).length === 0}
-                    onClick={handleRunValidationPreview}
+                    onClick={() => { void handleRunValidationPreview(); }}
                   >
                     {isProcessing ? (
                       <>
@@ -791,19 +805,11 @@ export const BulkDataHub: React.FC = () => {
                         return (
                           <tr
                             key={row.rowNumber}
-                            className={`${
-                              hasErrors ? 'bg-red-50/40' : hasDup ? 'bg-purple-50/40' : 'hover:bg-gray-50/50'
-                            }`}
+                            className={getRowBgClass(hasErrors, hasDup)}
                           >
                             <td className="px-3 py-2 font-mono text-gray-500">{row.rowNumber}</td>
                             <td className="px-3 py-2">
-                              {hasErrors ? (
-                                <Badge variant="destructive">Invalid</Badge>
-                              ) : hasDup ? (
-                                <Badge className="bg-yellow-100 text-yellow-800 border-transparent hover:bg-yellow-100">Duplicate</Badge>
-                              ) : (
-                                <Badge className="bg-green-100 text-green-800 border-transparent hover:bg-green-100">Valid</Badge>
-                              )}
+                              {renderRowBadge(hasErrors, hasDup)}
                             </td>
                             <td className="px-3 py-2 font-mono font-medium text-gray-900">{idVal}</td>
                             <td className="px-3 py-2 font-medium text-gray-900">{nameVal}</td>
@@ -839,7 +845,7 @@ export const BulkDataHub: React.FC = () => {
                   <Button
                     variant="default"
                     disabled={isProcessing || previewResult.validRows === 0}
-                    onClick={handleConfirmAndCommit}
+                    onClick={() => { void handleConfirmAndCommit(); }}
                   >
                     {isProcessing ? (
                       <>
@@ -1030,7 +1036,7 @@ export const BulkDataHub: React.FC = () => {
               <Button
                 variant="default"
                 disabled={isExporting}
-                onClick={handleGenerateAuditPack}
+                onClick={() => { void handleGenerateAuditPack(); }}
               >
                 {isExporting ? (
                   <>

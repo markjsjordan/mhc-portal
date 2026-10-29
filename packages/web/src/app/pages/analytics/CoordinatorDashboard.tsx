@@ -29,6 +29,12 @@ import { useClients } from '@/verticals/client-demographics/hooks/useClients';
 
 const REAL_TIME_REFRESH_INTERVAL = 60000; // 60 seconds
 
+function getExceptionBadgeClass(status: string): string {
+  if (status === 'PENDING') return 'bg-amber-100 text-amber-800 border-amber-200';
+  if (status === 'APPROVED') return 'bg-green-100 text-green-800 border-green-200';
+  return 'bg-red-100 text-red-800 border-red-200';
+}
+
 export function CoordinatorDashboard() {
   const navigate = useNavigate();
 
@@ -74,7 +80,7 @@ export function CoordinatorDashboard() {
   });
   const activeClientsCount = activeClientsResult?.total;
 
-  const isLoading = statsLoading ?? alertsLoading ?? exceptionsLoading;
+  const isLoading = statsLoading || alertsLoading || exceptionsLoading;
   const error = statsError ?? alertsError ?? exceptionsError;
 
   if (error) {
@@ -115,7 +121,7 @@ export function CoordinatorDashboard() {
               value={activeClientsLoading || activeClientsCount === undefined ? '—' : activeClientsCount}
               subtitle="Your caseload"
               icon={<Users className="h-8 w-8 text-primary-600" />}
-              onClick={() => navigate('/clients')}
+              onClick={() => { Promise.resolve(navigate('/clients')).catch(() => {}); }}
             />
             <KPICard
               title="In Progress"
@@ -188,13 +194,7 @@ export function CoordinatorDashboard() {
                       </div>
                       <Badge
                         variant="outline"
-                        className={
-                          exception.status === 'PENDING'
-                            ? 'bg-amber-100 text-amber-800 border-amber-200'
-                            : exception.status === 'APPROVED'
-                            ? 'bg-green-100 text-green-800 border-green-200'
-                            : 'bg-red-100 text-red-800 border-red-200'
-                        }
+                        className={getExceptionBadgeClass(exception.status)}
                       >
                         {exception.status}
                       </Badge>

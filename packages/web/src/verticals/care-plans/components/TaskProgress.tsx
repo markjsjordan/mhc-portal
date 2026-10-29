@@ -8,6 +8,13 @@ export interface TaskProgressProps {
   showLabel?: boolean;
 }
 
+const getProgressColor = (isComplete: boolean, percentage: number): string => {
+  if (isComplete) return 'bg-green-500';
+  if (percentage >= 75) return 'bg-blue-500';
+  if (percentage >= 50) return 'bg-yellow-500';
+  return 'bg-red-500';
+};
+
 export const TaskProgress: React.FC<TaskProgressProps> = ({
   completed,
   total,
@@ -32,15 +39,7 @@ export const TaskProgress: React.FC<TaskProgressProps> = ({
         <div className="overflow-hidden h-3 text-xs flex rounded-full bg-gray-200">
           <div
             style={{ width: `${percentage}%` }}
-            className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center transition-all duration-500 ${
-              isComplete
-                ? 'bg-green-500'
-                : percentage >= 75
-                ? 'bg-blue-500'
-                : percentage >= 50
-                ? 'bg-yellow-500'
-                : 'bg-red-500'
-            }`}
+            className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center transition-all duration-500 ${getProgressColor(isComplete, percentage)}`}
           />
         </div>
       </div>

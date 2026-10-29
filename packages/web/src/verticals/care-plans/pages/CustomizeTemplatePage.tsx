@@ -70,7 +70,7 @@ export const CustomizeTemplatePage: React.FC = () => {
       });
 
       // Navigate to care plans list on success
-      navigate('/care-plans');
+      Promise.resolve(navigate('/care-plans')).catch(() => {});
     } catch {
       // Error is handled by the mutation
     }
@@ -87,7 +87,7 @@ export const CustomizeTemplatePage: React.FC = () => {
   if (error || !template) {
     return (
       <ErrorMessage
-        message={(error as Error)?.message || 'Template not found'}
+        message={(error as Error).message || 'Template not found'}
       />
     );
   }
@@ -244,7 +244,7 @@ export const CustomizeTemplatePage: React.FC = () => {
             <Button variant="outline">Cancel</Button>
           </Link>
           <Button
-            onClick={handleCreateCarePlan}
+            onClick={() => { void handleCreateCarePlan(); }}
             disabled={
               createFromTemplate.isPending || !clientId || enabledTasksCount === 0
             }

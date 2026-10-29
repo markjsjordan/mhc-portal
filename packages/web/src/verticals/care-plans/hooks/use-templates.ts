@@ -86,7 +86,7 @@ export const useCreateFromTemplate = () => {
       return apiClient.post<CarePlan>('/api/care-plans/from-template', input);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['care-plans'] });
+      void queryClient.invalidateQueries({ queryKey: ['care-plans'] });
       toast.success('Care plan created from template successfully');
     },
     onError: (error: Error) => {

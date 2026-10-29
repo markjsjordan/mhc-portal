@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
-import { DataProviderContextProvider } from '@/core/providers/context';
+import { DataProviderContextProvider } from '@/core/providers/DataProviderContextProvider';
 import { RoleProvider } from './contexts/RoleContext';
 import { TourProvider } from './components/tours/TourProvider';
 import { createMockProvider } from './providers/mock-provider';

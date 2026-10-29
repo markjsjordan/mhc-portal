@@ -31,22 +31,22 @@ export const ClientSearch: React.FC<ClientSearchProps> = ({ filters, onFiltersCh
   const [showAdvanced, setShowAdvanced] = React.useState(false);
 
   // Search input state with 300ms debounce
-  const [queryInput, setQueryInput] = React.useState(filters.query || '');
+  const [queryInput, setQueryInput] = React.useState(filters.query ?? '');
   const [prevQuery, setPrevQuery] = React.useState(filters.query);
 
   if (filters.query !== prevQuery) {
     setPrevQuery(filters.query);
-    setQueryInput(filters.query || '');
+    setQueryInput(filters.query ?? '');
   }
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      if ((filters.query || '') !== queryInput) {
-        onFiltersChange({ ...filters, query: queryInput || undefined });
+      if ((filters.query ?? '') !== queryInput) {
+        onFiltersChange({ ...filters, query: queryInput.trim() !== '' ? queryInput : undefined });
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [queryInput]);
+  }, [queryInput, filters, onFiltersChange]);
 
   // Count active filters
   const activeFilterCount = React.useMemo(() => {
@@ -135,7 +135,7 @@ export const ClientSearch: React.FC<ClientSearchProps> = ({ filters, onFiltersCh
           <div className="space-y-1.5">
             <Label htmlFor="client-search-status" className="text-sm font-medium text-foreground">Status</Label>
             <Select
-              value={currentStatusValue || 'ALL'}
+              value={currentStatusValue !== '' ? currentStatusValue : 'ALL'}
               onValueChange={(val) =>
                 onFiltersChange({
                   ...filters,
@@ -159,7 +159,7 @@ export const ClientSearch: React.FC<ClientSearchProps> = ({ filters, onFiltersCh
             <Label htmlFor="client-search-city" className="text-sm font-medium text-foreground">City</Label>
             <Input
               id="client-search-city"
-              value={filters.city || ''}
+              value={filters.city ?? ''}
               onChange={(e) => onFiltersChange({ ...filters, city: e.target.value })}
               placeholder="Filter by city..."
             />
@@ -168,7 +168,7 @@ export const ClientSearch: React.FC<ClientSearchProps> = ({ filters, onFiltersCh
             <Label htmlFor="client-search-state" className="text-sm font-medium text-foreground">State</Label>
             <Input
               id="client-search-state"
-              value={filters.state || ''}
+              value={filters.state ?? ''}
               onChange={(e) => onFiltersChange({ ...filters, state: e.target.value })}
               placeholder="Filter by state..."
             />

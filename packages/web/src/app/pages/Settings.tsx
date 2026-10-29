@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Card } from '@folkcare/shared-components';
@@ -31,7 +31,7 @@ const profileSchema = z.object({
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required').min(8, 'Password must be 8 or more characters'),
-  newPassword: z.string().min(1, 'New password is required').min(8, 'Password must be 8 or more characters').regex(/[A-Z]/, 'Password must contain at least one uppercase letter').regex(/[a-z]/, 'Password must contain at least one lowercase letter').regex(/[0-9]/, 'Password must contain at least one number'),
+  newPassword: z.string().min(1, 'New password is required').min(8, 'Password must be 8 or more characters').regex(/[A-Z]/, 'Password must contain at least one uppercase letter').regex(/[a-z]/, 'Password must contain at least one lowercase letter').regex(/\d/, 'Password must contain at least one number'),
   confirmPassword: z.string().min(1, 'Please confirm your password'),
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: "New password and confirmation must match",
@@ -182,7 +182,7 @@ function ProfileSettings({ userProfile, isLoading, onSuccess, onError }: Setting
     formState: { errors },
     reset,
   } = useForm<ProfileFormData>({
-    resolver: zodResolver(profileSchema as any),
+    resolver: zodResolver(profileSchema),
     defaultValues: {
       firstName: userProfile?.firstName ?? '',
       lastName: userProfile?.lastName ?? '',
@@ -296,7 +296,7 @@ function AccountSettings({ onSuccess, onError }: Readonly<Omit<SettingsSectionPr
     formState: { errors },
     reset,
   } = useForm<PasswordFormData>({
-    resolver: zodResolver(passwordSchema as any),
+    resolver: zodResolver(passwordSchema),
     defaultValues: {
       currentPassword: '',
       newPassword: '',
@@ -396,15 +396,18 @@ function PreferencesSettings({ onSuccess, onError }: Readonly<Omit<SettingsSecti
   const {
     handleSubmit,
     reset,
-    watch,
+    control,
     setValue,
   } = useForm<PreferencesFormData>({
-    resolver: zodResolver(preferencesSchema as any),
+    resolver: zodResolver(preferencesSchema),
     defaultValues: {
       emailNotifications: true,
       pushNotifications: false,
     },
   });
+
+  const emailNotifications = useWatch({ control, name: 'emailNotifications' });
+  const pushNotifications = useWatch({ control, name: 'pushNotifications' });
 
   React.useEffect(() => {
     if (preferences) {
@@ -457,7 +460,7 @@ function PreferencesSettings({ onSuccess, onError }: Readonly<Omit<SettingsSecti
             <div className="flex items-center gap-3">
               <Checkbox
                 id="emailNotifications"
-                checked={watch('emailNotifications')}
+                checked={emailNotifications}
                 onCheckedChange={(checked) =>
                   setValue('emailNotifications', Boolean(checked), { shouldDirty: true })
                 }
@@ -470,7 +473,7 @@ function PreferencesSettings({ onSuccess, onError }: Readonly<Omit<SettingsSecti
             <div className="flex items-center gap-3">
               <Checkbox
                 id="pushNotifications"
-                checked={watch('pushNotifications')}
+                checked={pushNotifications}
                 onCheckedChange={(checked) =>
                   setValue('pushNotifications', Boolean(checked), { shouldDirty: true })
                 }
@@ -535,7 +538,7 @@ interface TeamSettingsProps {
 }
 
 const inviteSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  email: z.email('Please enter a valid email address'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   role: z.enum(['ORG_ADMIN', 'BRANCH_ADMIN', 'COORDINATOR', 'CAREGIVER', 'BILLING', 'SCHEDULER', 'NURSE_RN']),
@@ -546,11 +549,33 @@ type InviteFormData = z.infer<typeof inviteSchema>;
 const editMemberSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Please enter a valid email address'),
+  email: z.email('Please enter a valid email address'),
   role: z.enum(['ORG_ADMIN', 'BRANCH_ADMIN', 'COORDINATOR', 'CAREGIVER', 'BILLING', 'SCHEDULER', 'NURSE_RN']),
 });
 
 type EditMemberFormData = z.infer<typeof editMemberSchema>;
+
+const getMemberRole = (roles: string[]): EditMemberFormData['role'] => {
+  const firstRole = roles[0];
+  if (firstRole && ['ORG_ADMIN', 'BRANCH_ADMIN', 'COORDINATOR', 'CAREGIVER', 'BILLING', 'SCHEDULER', 'NURSE_RN'].includes(firstRole)) {
+    return firstRole as EditMemberFormData['role'];
+  }
+  return 'CAREGIVER';
+};
+
+const getRoleLabel = (role: string): string => {
+  const roleLabels: Record<string, string> = {
+    ORG_ADMIN: 'Organization Administrator',
+    BRANCH_ADMIN: 'Branch Administrator',
+    ADMIN: 'Administrator',
+    COORDINATOR: 'Care Coordinator',
+    CAREGIVER: 'Caregiver',
+    BILLING: 'Billing Specialist',
+    BILLING_SPECIALIST: 'Billing Specialist',
+    SCHEDULER: 'Scheduler',
+  };
+  return roleLabels[role] ?? role;
+};
 
 interface EditMemberModalProps {
   readonly member: TeamMember;
@@ -575,12 +600,12 @@ function EditMemberModal({
     formState: { errors },
     reset,
   } = useForm<EditMemberFormData>({
-    resolver: zodResolver(editMemberSchema as any),
+    resolver: zodResolver(editMemberSchema),
     defaultValues: {
       firstName: member.firstName,
       lastName: member.lastName,
       email: member.email,
-      role: (member.roles[0] as EditMemberFormData['role']) ?? 'CAREGIVER',
+      role: getMemberRole(member.roles),
     },
   });
 
@@ -590,9 +615,9 @@ function EditMemberModal({
       firstName: member.firstName,
       lastName: member.lastName,
       email: member.email,
-      role: (member.roles[0] as EditMemberFormData['role']) ?? 'CAREGIVER',
+      role: getMemberRole(member.roles),
     });
-  }, [member.id, reset]);
+  }, [member.firstName, member.lastName, member.email, member.roles, reset]);
 
   if (!isOpen) return null;
 
@@ -697,6 +722,98 @@ function EditMemberModal({
   );
 }
 
+const TeamMemberList: React.FC<{
+  isLoading: boolean;
+  teamMembers?: TeamMember[];
+  onEditMember: (member: TeamMember) => void;
+  onInviteFirst: () => void;
+}> = ({ isLoading, teamMembers, onEditMember, onInviteFirst }) => {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  if (teamMembers && teamMembers.length > 0) {
+    return (
+      <div className="divide-y divide-gray-200">
+        {teamMembers.map((member) => (
+          <div
+            key={member.id}
+            className="py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4"
+          >
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="h-10 w-10 shrink-0 rounded-full bg-primary-100 flex items-center justify-center">
+                <span className="text-primary-700 font-medium">
+                  {member.firstName[0]}{member.lastName[0]}
+                </span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {member.firstName} {member.lastName}
+                </p>
+                <p className="text-sm text-gray-500 truncate">{member.email}</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between md:justify-end gap-3 md:gap-4 w-full md:w-auto">
+              <div className="flex flex-wrap items-center gap-2 md:gap-4">
+                <div className="flex flex-wrap gap-1">
+                  {member.roles.map((role) => (
+                    <span
+                      key={role}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800"
+                    >
+                      {getRoleLabel(role)}
+                    </span>
+                  ))}
+                </div>
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    member.status === 'ACTIVE'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
+                  {member.status}
+                </span>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-primary shrink-0"
+                onClick={() => onEditMember(member)}
+                title="Edit member"
+                aria-label={`Edit ${member.firstName} ${member.lastName}`}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-center py-8">
+      <Users className="mx-auto h-12 w-12 text-gray-400" />
+      <h3 className="mt-2 text-sm font-medium text-gray-900">No team members yet</h3>
+      <p className="mt-1 text-sm text-gray-500">
+        Invite team members to start collaborating.
+      </p>
+      <div className="mt-6">
+        <Button onClick={onInviteFirst}>
+          <UserPlus className="h-4 w-4 mr-2" />
+          Invite your first team member
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps) {
   const apiClient = useApiClient();
   const queryClient = useQueryClient();
@@ -731,7 +848,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
     formState: { errors },
     reset,
   } = useForm<InviteFormData>({
-    resolver: zodResolver(inviteSchema as any),
+    resolver: zodResolver(inviteSchema),
     defaultValues: {
       email: '',
       firstName: '',
@@ -848,20 +965,6 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
     }
   };
 
-  const getRoleLabel = (role: string): string => {
-    const roleLabels: Record<string, string> = {
-      ORG_ADMIN: 'Organization Administrator',
-      BRANCH_ADMIN: 'Branch Administrator',
-      ADMIN: 'Administrator',
-      COORDINATOR: 'Care Coordinator',
-      CAREGIVER: 'Caregiver',
-      BILLING: 'Billing Specialist',
-      BILLING_SPECIALIST: 'Billing Specialist',
-      SCHEDULER: 'Scheduler',
-    };
-    return roleLabels[role] ?? role;
-  };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'PENDING':
@@ -897,85 +1000,15 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
           }
         />
         <Card.Content>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-            </div>
-          ) : teamMembers && teamMembers.length > 0 ? (
-            <div className="divide-y divide-gray-200">
-              {teamMembers.map((member) => (
-                <div
-                  key={member.id}
-                  className="py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4"
-                >
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className="h-10 w-10 shrink-0 rounded-full bg-primary-100 flex items-center justify-center">
-                      <span className="text-primary-700 font-medium">
-                        {member.firstName[0]}{member.lastName[0]}
-                      </span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {member.firstName} {member.lastName}
-                      </p>
-                      <p className="text-sm text-gray-500 truncate">{member.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between md:justify-end gap-3 md:gap-4 w-full md:w-auto">
-                    <div className="flex flex-wrap items-center gap-2 md:gap-4">
-                      <div className="flex flex-wrap gap-1">
-                        {member.roles.map((role) => (
-                          <span
-                            key={role}
-                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800"
-                          >
-                            {getRoleLabel(role)}
-                          </span>
-                        ))}
-                      </div>
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          member.status === 'ACTIVE'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {member.status}
-                      </span>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="text-muted-foreground hover:text-primary shrink-0"
-                      onClick={() => {
-                        setEditMemberError(null);
-                        setEditingMember(member);
-                      }}
-                      title="Edit member"
-                      aria-label={`Edit ${member.firstName} ${member.lastName}`}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Users className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No team members yet</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Invite team members to start collaborating.
-              </p>
-              <div className="mt-6">
-                <Button onClick={() => setShowInviteModal(true)}>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Invite your first team member
-                </Button>
-              </div>
-            </div>
-          )}
+          <TeamMemberList
+            isLoading={isLoading}
+            teamMembers={teamMembers}
+            onEditMember={(member) => {
+              setEditMemberError(null);
+              setEditingMember(member);
+            }}
+            onInviteFirst={() => setShowInviteModal(true)}
+          />
         </Card.Content>
       </Card>
 

@@ -33,24 +33,22 @@ export const CarePlanFilters: React.FC<CarePlanFiltersProps> = ({
   filters,
   onFiltersChange,
 }) => {
-  const [queryInput, setQueryInput] = React.useState(filters.query || '');
+  const [queryInput, setQueryInput] = React.useState(filters.query ?? '');
 
   // Sync input when filters change externally
   React.useEffect(() => {
-    if (filters.query !== queryInput) {
-      setQueryInput(filters.query || '');
-    }
+    setQueryInput(filters.query ?? '');
   }, [filters.query]);
 
   // Debounced query update
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      if ((filters.query || '') !== queryInput) {
+      if ((filters.query ?? '') !== queryInput) {
         onFiltersChange({ ...filters, query: queryInput || undefined });
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [queryInput]);
+  }, [queryInput, filters, onFiltersChange]);
 
   const activeCount = React.useMemo(() => {
     let count = 0;
@@ -63,7 +61,7 @@ export const CarePlanFilters: React.FC<CarePlanFiltersProps> = ({
 
   const toggleStatus = (value: string) => {
     const status = value as CarePlanStatus;
-    const current = filters.status || [];
+    const current = filters.status ?? [];
     const updated = current.includes(status)
       ? current.filter((s) => s !== status)
       : [...current, status];
@@ -75,7 +73,7 @@ export const CarePlanFilters: React.FC<CarePlanFiltersProps> = ({
 
   const togglePriority = (value: string) => {
     const priority = value as Priority;
-    const current = filters.priority || [];
+    const current = filters.priority ?? [];
     const updated = current.includes(priority)
       ? current.filter((p) => p !== priority)
       : [...current, priority];

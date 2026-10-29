@@ -145,7 +145,7 @@ export const VisitDetail: React.FC = () => {
   const { id: pathId } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const queryId = searchParams.get('id');
-  const visitId = pathId || queryId || undefined;
+  const visitId = (pathId ?? queryId) ?? undefined;
   const navigate = useNavigate();
 
   const { data: visit, isLoading: isVisitLoading, error: visitError, refetch } = useVisit(visitId);
@@ -165,7 +165,7 @@ export const VisitDetail: React.FC = () => {
   });
 
   // EVV clock-in record id — set after a successful clock-in from this page
-  const [evvRecordId, setEvvRecordId] = useState<string | undefined>(undefined);
+  const [evvRecordId, setEvvRecordId] = useState<string | undefined>();
 
   // Draft care plan tasks state
   const [convertedTasks, setConvertedTasks] = useState<DraftCarePlanTask[] | null>(null);
@@ -214,14 +214,14 @@ export const VisitDetail: React.FC = () => {
     if (!client && !visit) return null;
 
     const state =
-      client?.primaryAddress?.state ||
-      visit?.address?.state ||
+      client?.primaryAddress.state ??
+      visit?.address.state ??
       'FL';
 
-    const serviceType = visit?.serviceTypeName || 'Skilled Nursing';
+    const serviceType = visit?.serviceTypeName ?? 'Skilled Nursing';
 
     return calculateSupervisoryCadence({
-      clientId: visit?.clientId || client?.id,
+      clientId: visit?.clientId ?? client?.id,
       state,
       serviceType,
       initialVisitDate: visit?.scheduledDate ? new Date(visit.scheduledDate) : new Date(),
@@ -253,8 +253,8 @@ export const VisitDetail: React.FC = () => {
         { name: 'Atorvastatin', dosage: '20mg', frequency: 'Daily (Bedtime)' },
         { name: 'Metformin', dosage: '500mg', frequency: 'Twice daily with meals' },
       ],
-      serviceTypes: [visit?.serviceTypeName || 'Skilled Nursing'],
-      state: client?.primaryAddress?.state || visit?.address?.state || 'FL',
+      serviceTypes: [visit?.serviceTypeName ?? 'Skilled Nursing'],
+      state: client?.primaryAddress.state ?? visit?.address.state ?? 'FL',
     };
 
     const generated = convertAssessmentFindingsToDraftTasks(findings);
@@ -298,8 +298,10 @@ export const VisitDetail: React.FC = () => {
           </Button>
         </Link>
         <ErrorMessage
-          message={(visitError as Error)?.message || `Visit with ID "${visitId}" not found`}
-          retry={refetch}
+          message={(visitError as Error).message || `Visit with ID "${visitId}" not found`}
+          retry={() => {
+            void refetch();
+          }}
         />
       </div>
     );
@@ -310,11 +312,12 @@ export const VisitDetail: React.FC = () => {
   const progressPercent = Math.round((completedCount / checklist.length) * 100);
 
   const statusColor = VISIT_STATUS_COLORS[visit.status];
-  const clientName = visit.clientFirstName && visit.clientLastName
-    ? `${visit.clientFirstName} ${visit.clientLastName}`
-    : client
-    ? `${client.firstName} ${client.lastName}`
-    : 'Client';
+  let clientName = 'Client';
+  if (visit.clientFirstName && visit.clientLastName) {
+    clientName = `${visit.clientFirstName} ${visit.clientLastName}`;
+  } else if (client) {
+    clientName = `${client.firstName} ${client.lastName}`;
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12">
@@ -341,11 +344,13 @@ export const VisitDetail: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() =>
-              navigate(
-                `/scheduling/builder?clientId=${visit.clientId}&visitType=SUPERVISION`
-              )
-            }
+            onClick={() => {
+              Promise.resolve(
+                navigate(
+                  `/scheduling/builder?clientId=${visit.clientId}&visitType=SUPERVISION`
+                )
+              ).catch(() => {});
+            }}
           >
             <Stethoscope className="h-4 w-4 mr-2 text-blue-600" />
             Schedule Supervision Visit
@@ -376,11 +381,13 @@ export const VisitDetail: React.FC = () => {
       {cadenceResult && cadenceResult.showAlert && (
         <SupervisionAlertBanner
           cadence={cadenceResult}
-          onSchedule={() =>
-            navigate(
-              `/scheduling/builder?clientId=${visit.clientId}&visitType=SUPERVISION`
-            )
-          }
+          onSchedule={() => {
+            Promise.resolve(
+              navigate(
+                `/scheduling/builder?clientId=${visit.clientId}&visitType=SUPERVISION`
+              )
+            ).catch(() => {});
+          }}
         />
       )}
 
@@ -467,7 +474,7 @@ export const VisitDetail: React.FC = () => {
             <div className="truncate">
               <p className="text-xs text-gray-500 font-medium">Service Address</p>
               <p className="text-sm font-semibold text-gray-900 truncate">
-                {visit.address?.city}, {visit.address?.state} {visit.address?.postalCode}
+                {visit.address.city}, {visit.address.state} {visit.address.postalCode}
               </p>
             </div>
           </div>
@@ -593,11 +600,13 @@ export const VisitDetail: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() =>
-                navigate(
-                  `/scheduling/builder?clientId=${visit.clientId}&visitType=SUPERVISION`
-                )
-              }
+              onClick={() => {
+                Promise.resolve(
+                  navigate(
+                    `/scheduling/builder?clientId=${visit.clientId}&visitType=SUPERVISION`
+                  )
+                ).catch(() => {});
+              }}
             >
               <PlusCircle className="h-4 w-4 mr-2 text-blue-600" />
               Schedule Supervision Visit
@@ -622,11 +631,11 @@ export const VisitDetail: React.FC = () => {
                 </p>
                 <p
                   className={`text-xs font-semibold mt-1 ${
-                    cadenceResult.isOverdue
-                      ? 'text-red-600'
-                      : cadenceResult.isUpcoming
-                      ? 'text-amber-600'
-                      : 'text-emerald-600'
+                    (() => {
+                      if (cadenceResult.isOverdue) return 'text-red-600';
+                      if (cadenceResult.isUpcoming) return 'text-amber-600';
+                      return 'text-emerald-600';
+                    })()
                   }`}
                 >
                   {cadenceResult.isOverdue
@@ -691,11 +700,11 @@ export const VisitDetail: React.FC = () => {
                           </span>
                           <span
                             className={`text-xs font-semibold px-2 py-0.5 rounded ${
-                              task.priority === 'URGENT'
-                                ? 'bg-red-100 text-red-800'
-                                : task.priority === 'HIGH'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-gray-100 text-gray-700'
+                              (() => {
+                                if (task.priority === 'URGENT') return 'bg-red-100 text-red-800';
+                                if (task.priority === 'HIGH') return 'bg-amber-100 text-amber-800';
+                                return 'bg-gray-100 text-gray-700';
+                              })()
                             }`}
                           >
                             {task.priority}
@@ -733,7 +742,7 @@ export const VisitDetail: React.FC = () => {
       )}
 
       {/* Edit Visit Modal */}
-      {visit && isEditModalOpen && (
+      {isEditModalOpen && (
         <EditVisitModal
           visit={visit}
           isOpen={isEditModalOpen}

@@ -172,7 +172,7 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleCopy(ediContent || "")}
+                    onClick={() => handleCopy(ediContent ?? "")}
                     className="gap-1"
                   >
                     {copied ? (
@@ -186,8 +186,8 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
                     size="sm"
                     onClick={() =>
                       downloadTextFile(
-                        `claim-${selectedClaim?.claimNumber || "batch"}.837p`,
-                        ediContent || "",
+                        `claim-${selectedClaim?.claimNumber ?? "batch"}.837p`,
+                        ediContent ?? "",
                         "text/plain",
                       )
                     }
@@ -200,7 +200,7 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
               </div>
 
               <div className="bg-gray-900 rounded-lg p-4 font-mono text-xs text-green-400 overflow-x-auto border border-gray-800 shadow-inner max-h-[380px]">
-                <pre>{ediContent || "Loading 837P preview..."}</pre>
+                <pre>{ediContent ?? "Loading 837P preview..."}</pre>
               </div>
             </div>
           )}
@@ -423,7 +423,7 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
                   onClick={() =>
                     downloadTextFile(
                       "claims-queue-export.csv",
-                      csvContent || "",
+                      csvContent ?? "",
                       "text/csv",
                     )
                   }
@@ -436,7 +436,7 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
 
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
                 <div className="max-h-[350px] overflow-auto font-mono text-xs p-4 bg-gray-50">
-                  <pre>{csvContent || "Loading CSV export data..."}</pre>
+                  <pre>{csvContent ?? "Loading CSV export data..."}</pre>
                 </div>
               </div>
             </div>

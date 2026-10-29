@@ -53,14 +53,14 @@ export function AICaregiverSuggestions({
   requiredSkills = [],
   onAssign,
   onClose,
-}: AICaregiverSuggestionsProps) {
+}: Readonly<AICaregiverSuggestionsProps>) {
   const [suggestions, setSuggestions] = useState<CaregiverSuggestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedSuggestion, setSelectedSuggestion] = useState<CaregiverSuggestion | null>(null);
 
   useEffect(() => {
-    loadSuggestions();
+    void loadSuggestions();
   }, [visitId]);
 
   async function loadSuggestions() {
@@ -322,12 +322,12 @@ function ScoreBar({
   score,
   max,
   className = '',
-}: {
+}: Readonly<{
   label: string;
   score: number;
   max: number;
   className?: string;
-}) {
+}>) {
   const percentage = (score / max) * 100;
   return (
     <div className={className}>

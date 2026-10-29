@@ -26,7 +26,7 @@ export interface CarePlanFormValues {
 
 const blankToUndefined = (value: string | undefined): string | undefined => {
   const trimmed = value?.trim();
-  return trimmed ? trimmed : undefined;
+  return (trimmed?.length ?? 0) > 0 ? trimmed : undefined;
 };
 
 /**

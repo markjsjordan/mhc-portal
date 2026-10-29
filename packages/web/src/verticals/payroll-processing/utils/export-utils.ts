@@ -262,7 +262,7 @@ export function downloadFile(content: string, filename: string, mimeType: string
  */
 export function exportPayStubsToCSV(payStubs: PayStub[], filename?: string): void {
   const csv = formatPayrollDataForCSV(payStubs);
-  const defaultFilename = filename || `paystubs_${new Date().toISOString().split('T')[0]}.csv`;
+  const defaultFilename = filename ?? `paystubs_${new Date().toISOString().split('T')[0]}.csv`;
   downloadFile(csv, defaultFilename, 'text/csv');
 }
 
@@ -271,7 +271,7 @@ export function exportPayStubsToCSV(payStubs: PayStub[], filename?: string): voi
  */
 export function exportToADP(payStubs: PayStub[], filename?: string): void {
   const data = formatPayrollDataForADP(payStubs);
-  const defaultFilename = filename || `adp_payroll_${new Date().toISOString().split('T')[0]}.txt`;
+  const defaultFilename = filename ?? `adp_payroll_${new Date().toISOString().split('T')[0]}.txt`;
   downloadFile(data, defaultFilename, 'text/plain');
 }
 
@@ -280,7 +280,7 @@ export function exportToADP(payStubs: PayStub[], filename?: string): void {
  */
 export function exportToPaychex(payStubs: PayStub[], filename?: string): void {
   const data = formatPayrollDataForPaychex(payStubs);
-  const defaultFilename = filename || `paychex_payroll_${new Date().toISOString().split('T')[0]}.csv`;
+  const defaultFilename = filename ?? `paychex_payroll_${new Date().toISOString().split('T')[0]}.csv`;
   downloadFile(data, defaultFilename, 'text/csv');
 }
 
@@ -290,11 +290,11 @@ export function exportToPaychex(payStubs: PayStub[], filename?: string): void {
 export function exportToQuickBooks(payRun: PayRun, payStubs: PayStub[], format: 'desktop' | 'online' = 'online', filename?: string): void {
   if (format === 'desktop') {
     const data = formatPayrollDataForQuickBooksIIF(payRun, payStubs);
-    const defaultFilename = filename || `quickbooks_payroll_${new Date().toISOString().split('T')[0]}.iif`;
+    const defaultFilename = filename ?? `quickbooks_payroll_${new Date().toISOString().split('T')[0]}.iif`;
     downloadFile(data, defaultFilename, 'text/plain');
   } else {
     const data = formatPayrollDataForQuickBooksOnline(payStubs);
-    const defaultFilename = filename || `quickbooks_payroll_${new Date().toISOString().split('T')[0]}.csv`;
+    const defaultFilename = filename ?? `quickbooks_payroll_${new Date().toISOString().split('T')[0]}.csv`;
     downloadFile(data, defaultFilename, 'text/csv');
   }
 }

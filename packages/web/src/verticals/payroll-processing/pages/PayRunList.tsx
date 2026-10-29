@@ -35,6 +35,28 @@ export const PayRunList: React.FC = () => {
 
   const payRuns = payRunData?.items ?? [];
 
+  const renderSummary = (): React.JSX.Element | null => {
+    if (isSummaryLoading) {
+      return (
+        <div className="flex justify-center items-center py-6">
+          <LoadingSpinner size="md" />
+        </div>
+      );
+    }
+    if (summaryError) {
+      return (
+        <ErrorMessage
+          message={(summaryError as Error).message || 'Failed to load payroll summary'}
+          retry={() => { refetchSummary().catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to refresh payroll summary'); }); }}
+        />
+      );
+    }
+    if (summary) {
+      return <PayrollSummaryCard summary={summary} />;
+    }
+    return null;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -78,18 +100,7 @@ export const PayRunList: React.FC = () => {
         onCreated={() => { refetch().catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to refresh pay runs'); }); }}
       />
 
-      {isSummaryLoading ? (
-        <div className="flex justify-center items-center py-6">
-          <LoadingSpinner size="md" />
-        </div>
-      ) : summaryError ? (
-        <ErrorMessage
-          message={(summaryError as Error).message || 'Failed to load payroll summary'}
-          retry={() => { refetchSummary().catch((err: unknown) => { toast.error(err instanceof Error ? err.message : 'Failed to refresh payroll summary'); }); }}
-        />
-      ) : summary ? (
-        <PayrollSummaryCard summary={summary} />
-      ) : null}
+      {renderSummary()}
 
       <PayRunSearch filters={filters} onFiltersChange={setFilters} />
 

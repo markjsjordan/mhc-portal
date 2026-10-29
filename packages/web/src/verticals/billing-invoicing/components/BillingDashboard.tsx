@@ -174,7 +174,7 @@ export const BillingDashboard: React.FC = () => {
     setExportModalOpen(true);
   };
 
-  if (isLoadingClaims && !claimsQueueData) {
+  if (isLoadingClaims) {
     return (
       <div className="flex justify-center items-center py-16">
         <LoadingSpinner size="lg" />
@@ -341,27 +341,38 @@ export const BillingDashboard: React.FC = () => {
       {/* TAB 2: INVOICES LIST VIEW */}
       {activeViewTab === 'invoices' && (
         <div className="space-y-4">
-          {isLoadingInvoices ? (
-            <div className="flex justify-center py-12">
-              <LoadingSpinner size="md" />
-            </div>
-          ) : (invoiceData?.items ?? []).length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center text-muted-foreground">
-                <FileText className="h-10 w-10 mx-auto text-gray-300 mb-2" />
-                <p className="text-sm font-semibold text-gray-900">No invoices generated yet</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Go to the Claims Queue and click &quot;Generate Invoices for Verified Visits&quot; to batch bill compliant visits.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {(invoiceData?.items ?? []).map((invoice) => (
-                <InvoiceCard key={invoice.id} invoice={invoice} />
-              ))}
-            </div>
-          )}
+          {(() => {
+            if (isLoadingInvoices) {
+              return (
+                <div className="flex justify-center py-12">
+                  <LoadingSpinner size="md" />
+                </div>
+              );
+            }
+
+            const items = invoiceData?.items ?? [];
+            if (items.length === 0) {
+              return (
+                <Card>
+                  <CardContent className="p-12 text-center text-muted-foreground">
+                    <FileText className="h-10 w-10 mx-auto text-gray-300 mb-2" />
+                    <p className="text-sm font-semibold text-gray-900">No invoices generated yet</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Go to the Claims Queue and click &quot;Generate Invoices for Verified Visits&quot; to batch bill compliant visits.
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            }
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {items.map((invoice) => (
+                  <InvoiceCard key={invoice.id} invoice={invoice} />
+                ))}
+              </div>
+            );
+          })()}
         </div>
       )}
 

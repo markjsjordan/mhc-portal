@@ -15,7 +15,7 @@ export const CreateCarePlanPage: React.FC = () => {
   const handleSubmit = async (data: CreateCarePlanInput) => {
     try {
       await createCarePlan.mutateAsync(data);
-      navigate('/care-plans');
+      Promise.resolve(navigate('/care-plans')).catch(() => {});
     } catch {
       // Error is handled by the mutation
     }
@@ -24,7 +24,7 @@ export const CreateCarePlanPage: React.FC = () => {
   if (createCarePlan.isError) {
     return (
       <ErrorMessage
-        message={(createCarePlan.error as Error)?.message || 'Failed to create care plan'}
+        message={(createCarePlan.error as Error).message || 'Failed to create care plan'}
         retry={() => createCarePlan.reset()}
       />
     );
@@ -54,7 +54,7 @@ export const CreateCarePlanPage: React.FC = () => {
       <Card className="w-full overflow-x-hidden">
         <CardContent className="p-6">
           <CarePlanForm
-            onSubmit={handleSubmit}
+            onSubmit={(data) => { void handleSubmit(data); }}
             isLoading={createCarePlan.isPending}
           />
         </CardContent>

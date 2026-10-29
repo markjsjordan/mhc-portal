@@ -107,9 +107,17 @@ const MatchSuggestionCard: React.FC<MatchSuggestionCardProps> = ({
   const medal = getMedal(rank);
   const qualityColor = getMatchQualityColor(candidate.matchQuality);
   const scoreColor = getMatchScoreColor(candidate.overallScore);
+  let rankBorderColor = 'border-transparent';
+  if (rank === 1) {
+    rankBorderColor = 'border-yellow-400';
+  } else if (rank === 2) {
+    rankBorderColor = 'border-gray-300';
+  } else if (rank === 3) {
+    rankBorderColor = 'border-orange-300';
+  }
 
   return (
-    <div className={`bg-white rounded-lg shadow hover:shadow-md transition-shadow border-2 ${rank === 1 ? 'border-yellow-400' : rank === 2 ? 'border-gray-300' : rank === 3 ? 'border-orange-300' : 'border-transparent'}`}>
+    <div className={`bg-white rounded-lg shadow hover:shadow-md transition-shadow border-2 ${rankBorderColor}`}>
       {/* Main card content */}
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
@@ -297,18 +305,26 @@ const MatchSuggestionCard: React.FC<MatchSuggestionCardProps> = ({
               <div>
                 <h4 className="text-sm font-semibold text-gray-900 mb-3">Why This Match?</h4>
                 <ul className="space-y-2 text-sm">
-                  {candidate.matchReasons.map((reason, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className={`mt-1 flex-shrink-0 ${
-                        reason.impact === 'POSITIVE' ? 'text-green-600' : 
-                        reason.impact === 'NEGATIVE' ? 'text-red-600' : 
-                        'text-gray-400'
-                      }`}>
-                        {reason.impact === 'POSITIVE' ? '✓' : reason.impact === 'NEGATIVE' ? '✗' : '•'}
-                      </span>
-                      <span className="text-gray-700">{reason.description}</span>
-                    </li>
-                  ))}
+                  {candidate.matchReasons.map((reason, idx) => {
+                    let impactClass = 'text-gray-400';
+                    let impactSymbol = '•';
+                    if (reason.impact === 'POSITIVE') {
+                      impactClass = 'text-green-600';
+                      impactSymbol = '✓';
+                    } else if (reason.impact === 'NEGATIVE') {
+                      impactClass = 'text-red-600';
+                      impactSymbol = '✗';
+                    }
+
+                    return (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className={`mt-1 flex-shrink-0 ${impactClass}`}>
+                          {impactSymbol}
+                        </span>
+                        <span className="text-gray-700">{reason.description}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             </div>

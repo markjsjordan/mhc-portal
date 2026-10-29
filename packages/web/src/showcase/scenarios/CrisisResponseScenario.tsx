@@ -4,7 +4,6 @@
  * A time-sensitive scenario demonstrating emergency response protocols
  */
 
-import React from 'react';
 import { AlertTriangle, Phone, FileText, UserPlus, CheckCircle } from 'lucide-react';
 import { Scenario } from '../types';
 import { NarrationBox } from './components/NarrationBox';
@@ -12,7 +11,7 @@ import { ActionButtons } from './components/ActionButtons';
 
 // Step Components
 
-const AlertNotification: React.FC = () => (
+const renderAlertNotification = () => (
   <div className="space-y-6">
     <NarrationBox
       text="At 2:30 PM, you receive an urgent alert from your mobile app. Your caregiver Emily Rodriguez has reported that Margaret Thompson, age 82, has fallen at home."
@@ -44,7 +43,7 @@ const AlertNotification: React.FC = () => (
   </div>
 );
 
-const IncidentReportView: React.FC = () => (
+const renderIncidentReportView = () => (
   <div className="space-y-6">
     <NarrationBox
       text="You open the incident report filed by Emily. She reports that Margaret slipped in the bathroom while Emily was helping her prepare lunch. Margaret did not lose consciousness but appears shaken."
@@ -82,7 +81,7 @@ const IncidentReportView: React.FC = () => (
   </div>
 );
 
-const ContactFamily: React.FC = () => (
+const renderContactFamily = () => (
   <div className="space-y-6">
     <NarrationBox
       text="Agency protocol requires immediate family notification for any fall incident. You pull up Margaret's emergency contact information and prepare to call her daughter Sarah."
@@ -113,7 +112,7 @@ const ContactFamily: React.FC = () => (
   </div>
 );
 
-const ScheduleRNAssessment: React.FC = () => (
+const renderScheduleRNAssessment = () => (
   <div className="space-y-6">
     <NarrationBox
       text="You coordinate an urgent RN assessment visit. Your agency policy requires a registered nurse to evaluate any client who has experienced a fall within 24 hours."
@@ -155,7 +154,7 @@ const ScheduleRNAssessment: React.FC = () => (
   </div>
 );
 
-const UpdateCarePlan: React.FC = () => (
+const renderUpdateCarePlan = () => (
   <div className="space-y-6">
     <NarrationBox
       text="Based on this incident, you update Margaret's care plan to include fall prevention interventions. These changes will be reviewed by the RN during the assessment visit."
@@ -198,7 +197,7 @@ const UpdateCarePlan: React.FC = () => (
   </div>
 );
 
-const CompletionScreen: React.FC = () => (
+const renderCompletionScreen = () => (
   <div className="space-y-6">
     <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-8 text-white text-center">
       <CheckCircle className="h-16 w-16 mx-auto mb-4" />
@@ -275,41 +274,41 @@ export const crisisResponseScenario: Scenario = {
   steps: [
     {
       id: 'alert-received',
-      component: <AlertNotification />,
+      component: renderAlertNotification(),
       narration: 'At 2:30 PM, you receive an urgent alert...',
       actions: ['View Incident Report', 'Call 911 Immediately', 'Contact Family First'],
       nextOnAction: 'View Incident Report',
     },
     {
       id: 'incident-review',
-      component: <IncidentReportView />,
+      component: renderIncidentReportView(),
       narration: "Emily's report indicates Margaret slipped in the bathroom...",
       actions: ['Contact Emergency Contact', 'Schedule Urgent RN Assessment', 'Continue Monitoring Only'],
       nextOnAction: 'Contact Emergency Contact',
     },
     {
       id: 'contact-family',
-      component: <ContactFamily />,
+      component: renderContactFamily(),
       narration: 'Protocol requires immediate family notification...',
       actions: ['Schedule RN Assessment Visit', 'Update Care Plan', 'Document in System'],
       nextOnAction: 'Schedule RN Assessment Visit',
     },
     {
       id: 'schedule-rn',
-      component: <ScheduleRNAssessment />,
+      component: renderScheduleRNAssessment(),
       narration: 'You coordinate an urgent RN assessment visit...',
       actions: ['Update Care Plan with Fall Interventions', 'File Compliance Report', 'Notify Supervisor'],
       nextOnAction: 'Update Care Plan with Fall Interventions',
     },
     {
       id: 'update-care-plan',
-      component: <UpdateCarePlan />,
+      component: renderUpdateCarePlan(),
       narration: 'You update the care plan with fall prevention interventions...',
       actions: ['Complete Scenario'],
     },
     {
       id: 'completion',
-      component: <CompletionScreen />,
+      component: renderCompletionScreen(),
       narration: 'Scenario complete!',
       actions: [],
     },

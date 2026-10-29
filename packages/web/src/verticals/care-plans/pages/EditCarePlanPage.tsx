@@ -21,13 +21,13 @@ export const EditCarePlanPage: React.FC = () => {
       // Convert CreateCarePlanInput to UpdateCarePlanInput if needed
       const updateData: UpdateCarePlanInput = {
         name: 'name' in data ? data.name : undefined,
-        goals: 'goals' in data ? data.goals as any : undefined,
-        interventions: 'interventions' in data ? data.interventions as any : undefined,
-        taskTemplates: 'taskTemplates' in data ? data.taskTemplates as any : undefined,
+        goals: 'goals' in data ? (data.goals as UpdateCarePlanInput['goals']) : undefined,
+        interventions: 'interventions' in data ? (data.interventions as UpdateCarePlanInput['interventions']) : undefined,
+        taskTemplates: 'taskTemplates' in data ? (data.taskTemplates as UpdateCarePlanInput['taskTemplates']) : undefined,
         notes: 'notes' in data ? data.notes : undefined,
       };
       await updateCarePlan.mutateAsync({ id, input: updateData });
-      navigate(`/care-plans/${id}`);
+      Promise.resolve(navigate(`/care-plans/${id}`)).catch(() => {});
     } catch {
       // Error is handled by the mutation
     }
@@ -44,8 +44,8 @@ export const EditCarePlanPage: React.FC = () => {
   if (error || !carePlan) {
     return (
       <ErrorMessage
-        message={(error as Error)?.message || 'Failed to load care plan'}
-        retry={refetch}
+        message={(error as Error).message || 'Failed to load care plan'}
+        retry={() => { void refetch(); }}
       />
     );
   }
@@ -53,7 +53,7 @@ export const EditCarePlanPage: React.FC = () => {
   if (updateCarePlan.isError) {
     return (
       <ErrorMessage
-        message={(updateCarePlan.error as Error)?.message || 'Failed to update care plan'}
+        message={(updateCarePlan.error as Error).message || 'Failed to update care plan'}
         retry={() => updateCarePlan.reset()}
       />
     );
@@ -84,7 +84,7 @@ export const EditCarePlanPage: React.FC = () => {
         <CardContent className="p-6">
           <CarePlanForm
             initialData={carePlan}
-            onSubmit={handleSubmit}
+            onSubmit={(formData) => { void handleSubmit(formData); }}
             isLoading={updateCarePlan.isPending}
           />
         </CardContent>

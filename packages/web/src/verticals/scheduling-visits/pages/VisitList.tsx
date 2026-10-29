@@ -43,6 +43,47 @@ const getDefaultFilters = (): VisitSearchFilters => ({
 
 type SummaryFilterType = 'today' | 'upcoming' | 'unassigned' | 'completed';
 
+const matchesSummaryFilter = (
+  v: Visit,
+  activeSummaryFilter: SummaryFilterType | null,
+  scheduledDateStr: string,
+  scheduledDateObj: Date,
+  todayStr: string
+): boolean => {
+  if (activeSummaryFilter === 'today') {
+    return scheduledDateStr === todayStr;
+  }
+  if (activeSummaryFilter === 'upcoming') {
+    return (
+      scheduledDateObj >= new Date() &&
+      v.status !== 'COMPLETED' &&
+      v.status !== 'CANCELLED'
+    );
+  }
+  if (activeSummaryFilter === 'unassigned') {
+    return v.status === 'UNASSIGNED' || !v.assignedCaregiverId;
+  }
+  if (activeSummaryFilter === 'completed') {
+    return v.status === 'COMPLETED';
+  }
+  return true;
+};
+
+const matchesSearchQuery = (v: Visit, debouncedSearch: string): boolean => {
+  if (!debouncedSearch) return true;
+  const clientName = `${v.clientFirstName ?? ''} ${v.clientLastName ?? ''}`.toLowerCase();
+  const serviceName = v.serviceTypeName.toLowerCase();
+  const visitNum = v.visitNumber.toLowerCase();
+  const address = `${v.address.line1} ${v.address.city} ${v.address.state} ${v.address.postalCode}`.toLowerCase();
+
+  return (
+    clientName.includes(debouncedSearch) ||
+    serviceName.includes(debouncedSearch) ||
+    visitNum.includes(debouncedSearch) ||
+    address.includes(debouncedSearch)
+  );
+};
+
 export const VisitList: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [page, setPage] = useState(1);
@@ -80,7 +121,7 @@ export const VisitList: React.FC = () => {
   const [queryFilters] = useState<VisitSearchFilters>(getDefaultFilters);
   const { data: visits, isLoading, error, refetch } = useVisits(queryFilters);
 
-  const visitList: Visit[] = visits ?? [];
+  const visitList: Visit[] = useMemo(() => visits ?? [], [visits]);
   const totalVisits = visitList.length;
 
   // Compute today's date string YYYY-MM-DD
@@ -95,7 +136,7 @@ export const VisitList: React.FC = () => {
 
     const now = new Date();
 
-    visitList.forEach((v) => {
+    for (const v of visitList) {
       const scheduledDateStr =
         v.scheduledDate instanceof Date
           ? v.scheduledDate.toISOString().split('T')[0]!
@@ -120,7 +161,7 @@ export const VisitList: React.FC = () => {
       if (v.status === 'COMPLETED') {
         completedCount++;
       }
-    });
+    }
 
     return { todayCount, upcomingCount, unassignedCount, completedCount };
   }, [visitList, todayStr]);
@@ -136,39 +177,12 @@ export const VisitList: React.FC = () => {
       const scheduledDateObj =
         v.scheduledDate instanceof Date ? v.scheduledDate : new Date(v.scheduledDate);
 
-      // 1. Summary Card Filter
-      if (activeSummaryFilter === 'today') {
-        if (scheduledDateStr !== todayStr) return false;
-      } else if (activeSummaryFilter === 'upcoming') {
-        if (
-          scheduledDateObj < new Date() ||
-          v.status === 'COMPLETED' ||
-          v.status === 'CANCELLED'
-        ) {
-          return false;
-        }
-      } else if (activeSummaryFilter === 'unassigned') {
-        if (v.status !== 'UNASSIGNED' && Boolean(v.assignedCaregiverId)) {
-          return false;
-        }
-      } else if (activeSummaryFilter === 'completed') {
-        if (v.status !== 'COMPLETED') return false;
+      if (!matchesSummaryFilter(v, activeSummaryFilter, scheduledDateStr, scheduledDateObj, todayStr)) {
+        return false;
       }
 
-      // 2. Debounced Search Query
-      if (debouncedSearch) {
-        const clientName = `${v.clientFirstName || ''} ${v.clientLastName || ''}`.toLowerCase();
-        const serviceName = (v.serviceTypeName || '').toLowerCase();
-        const visitNum = (v.visitNumber || '').toLowerCase();
-        const address = `${v.address?.line1 || ''} ${v.address?.city || ''} ${v.address?.state || ''} ${v.address?.postalCode || ''}`.toLowerCase();
-
-        const matches =
-          clientName.includes(debouncedSearch) ||
-          serviceName.includes(debouncedSearch) ||
-          visitNum.includes(debouncedSearch) ||
-          address.includes(debouncedSearch);
-
-        if (!matches) return false;
+      if (!matchesSearchQuery(v, debouncedSearch)) {
+        return false;
       }
 
       // 3. Status Filter
@@ -204,8 +218,8 @@ export const VisitList: React.FC = () => {
   // Active filter count for dropdown badge
   const activeAdvancedFilterCount = useMemo(() => {
     return (
-      (advancedFilters.status?.length || 0) +
-      (advancedFilters.visitType?.length || 0) +
+      (advancedFilters.status?.length ?? 0) +
+      (advancedFilters.visitType?.length ?? 0) +
       (advancedFilters.dateFrom ? 1 : 0) +
       (advancedFilters.dateTo ? 1 : 0)
     );
@@ -240,9 +254,12 @@ export const VisitList: React.FC = () => {
   }, [filteredVisits, startIndex, endIndex]);
 
   // Reset pagination to page 1 whenever filters change
-  useEffect(() => {
+  const filterKey = `${debouncedSearch}-${activeSummaryFilter ?? ''}-${JSON.stringify(advancedFilters)}-${pageSize}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
     setPage(1);
-  }, [debouncedSearch, activeSummaryFilter, advancedFilters, pageSize]);
+  }
 
   if (isLoading) {
     return (
@@ -278,11 +295,13 @@ export const VisitList: React.FC = () => {
             )}
           </div>
           <p className="text-gray-600 mt-1">
-            {totalVisits === 0
-              ? 'No visits scheduled'
-              : hasAnyFilterActive
-                ? `Showing ${filteredCount} of ${totalVisits} visits (${startIndex + 1}–${endIndex} shown)`
-                : `${totalVisits} total visits (${startIndex + 1}–${endIndex} shown)`}
+            {(() => {
+              if (totalVisits === 0) return 'No visits scheduled';
+              if (hasAnyFilterActive) {
+                return `Showing ${filteredCount} of ${totalVisits} visits (${startIndex + 1}–${endIndex} shown)`;
+              }
+              return `${totalVisits} total visits (${startIndex + 1}–${endIndex} shown)`;
+            })()}
           </p>
         </div>
 
@@ -554,9 +573,9 @@ export const VisitList: React.FC = () => {
               </span>
             ))}
 
-            {(advancedFilters.dateFrom || advancedFilters.dateTo) && (
+            {(advancedFilters.dateFrom ?? advancedFilters.dateTo) && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground font-medium">
-                Date: {String(advancedFilters.dateFrom || 'Any')} to {String(advancedFilters.dateTo || 'Any')}
+                Date: {String(advancedFilters.dateFrom ?? 'Any')} to {String(advancedFilters.dateTo ?? 'Any')}
                 <Button
                   type="button"
                   variant="ghost"
@@ -590,13 +609,14 @@ export const VisitList: React.FC = () => {
       </div>
 
       {/* Visits List or Empty State */}
-      {totalVisits === 0 ? (
+      {totalVisits === 0 && (
         <EmptyState
           title="No visits scheduled"
           description="Visits will appear here once they are scheduled in the system. Check back later or contact your coordinator to schedule visits."
           icon={<Calendar className="h-12 w-12 text-gray-400" />}
         />
-      ) : filteredVisits.length === 0 ? (
+      )}
+      {totalVisits > 0 && filteredVisits.length === 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4 text-gray-500">
             <Search className="w-6 h-6" />
@@ -611,7 +631,8 @@ export const VisitList: React.FC = () => {
             </Button>
           </div>
         </div>
-      ) : (
+      )}
+      {totalVisits > 0 && filteredVisits.length > 0 && (
         <>
           <div
             data-testid="visit-list"

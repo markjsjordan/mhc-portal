@@ -23,7 +23,7 @@ export const VisitCard: React.FC<VisitCardProps> = ({ visit, compact = false, on
     if (onClick) {
       onClick();
     } else {
-      navigate(`/scheduling/visits/${visit.id}`);
+      Promise.resolve(navigate(`/scheduling/visits/${visit.id}`)).catch(() => {});
     }
   };
 
@@ -57,7 +57,7 @@ export const VisitCard: React.FC<VisitCardProps> = ({ visit, compact = false, on
       orange: 'bg-orange-100 text-orange-800',
       red: 'bg-red-100 text-red-800',
     };
-    return `${baseClasses} ${colorClasses[statusColor] || colorClasses.gray}`;
+    return `${baseClasses} ${colorClasses[statusColor] ?? colorClasses.gray}`;
   };
 
   if (compact) {

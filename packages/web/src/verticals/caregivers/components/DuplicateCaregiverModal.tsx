@@ -75,7 +75,7 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
   });
 
   const duplicateMutation = useMutation({
-    mutationFn: (payload: any) => caregiverApi.duplicateCaregiver(caregiver.id, payload),
+    mutationFn: (payload: Record<string, unknown>) => caregiverApi.duplicateCaregiver(caregiver.id, payload),
     onSuccess: (newCaregiver) => {
       toast.success(
         <div>
@@ -88,7 +88,7 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
         toast.error(err instanceof Error ? err.message : 'Navigation failed');
       });
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { error?: string; message?: string } } }) => {
       if (error.response?.data?.error === 'DUPLICATE_EMAIL') {
         toast.error('Email already in use');
       } else {

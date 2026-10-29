@@ -64,6 +64,27 @@ const getDefaultFilters = (): FilterValues => ({
   },
 });
 
+function getRandomOffset(): number {
+  if (typeof crypto !== 'undefined') {
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    return (arr[0]! / 0xffffffff) * 10;
+  }
+  return 5;
+}
+
+function getCoordinatorBadge(rate: number): React.JSX.Element {
+  if (rate >= 90) return <Badge className="bg-green-100 text-green-800 border-transparent hover:bg-green-100">Excellent</Badge>;
+  if (rate >= 85) return <Badge variant="secondary">Good</Badge>;
+  return <Badge variant="destructive">Needs Improvement</Badge>;
+}
+
+function getMetricBarColor(value: number, target: number): string {
+  if (value >= target) return 'bg-green-600';
+  if (value >= target - 5) return 'bg-yellow-500';
+  return 'bg-red-600';
+}
+
 export function ReportsPage() {
   const [filters, setFilters] = useState<FilterValues>(getDefaultFilters);
   const [exportFormat, setExportFormat] = useState<'PDF' | 'EXCEL' | null>(null);
@@ -107,7 +128,7 @@ export function ReportsPage() {
 
   const clientSatisfactionTrendsData = revenueTrends?.map((point) => ({
     month: point.month,
-    satisfaction: 85 + Math.random() * 10, // Mock data - would come from client surveys
+    satisfaction: 85 + getRandomOffset(), // Mock data - would come from client surveys
   })) ?? [];
 
   // Export handlers
@@ -179,7 +200,7 @@ export function ReportsPage() {
           <div className="flex gap-3">
             <Button
               variant="secondary"
-              onClick={handleExportPDF}
+              onClick={() => { void handleExportPDF(); }}
               disabled={exportFormat === 'PDF'}
               className="flex items-center gap-2"
             >
@@ -188,7 +209,7 @@ export function ReportsPage() {
             </Button>
             <Button
               variant="default"
-              onClick={handleExportExcel}
+              onClick={() => { void handleExportExcel(); }}
               disabled={exportFormat === 'EXCEL'}
               className="flex items-center gap-2"
             >
@@ -425,13 +446,7 @@ export function ReportsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {coordinator.rate >= 90 ? (
-                            <Badge className="bg-green-100 text-green-800 border-transparent hover:bg-green-100">Excellent</Badge>
-                          ) : coordinator.rate >= 85 ? (
-                            <Badge variant="secondary">Good</Badge>
-                          ) : (
-                            <Badge variant="destructive">Needs Improvement</Badge>
-                          )}
+                          {getCoordinatorBadge(coordinator.rate)}
                         </td>
                       </tr>
                     ))}
@@ -464,13 +479,7 @@ export function ReportsPage() {
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                       <div
-                        className={`h-2.5 rounded-full ${
-                          metric.value >= metric.target
-                            ? 'bg-green-600'
-                            : metric.value >= metric.target - 5
-                            ? 'bg-yellow-500'
-                            : 'bg-red-600'
-                        }`}
+                        className={`h-2.5 rounded-full ${getMetricBarColor(metric.value, metric.target)}`}
                         style={{ width: `${metric.value}%` }}
                       />
                     </div>

@@ -34,7 +34,7 @@ export const TaskDetailPage: React.FC = () => {
 
   const handleCompletionSuccess = () => {
     setShowCompletionModal(false);
-    refetch();
+    void refetch();
   };
 
   if (isLoading) {
@@ -48,8 +48,8 @@ export const TaskDetailPage: React.FC = () => {
   if (error || !task) {
     return (
       <ErrorMessage
-        message={(error as Error)?.message || 'Failed to load task'}
-        retry={refetch}
+        message={(error as Error).message || 'Failed to load task'}
+        retry={() => { void refetch(); }}
       />
     );
   }

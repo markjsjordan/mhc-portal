@@ -53,6 +53,12 @@ import {
   WifiOff,
 } from 'lucide-react';
 
+function getPeriodByIndex(index: number): string {
+  if (index === 0) return 'current';
+  if (index === 1) return 'last';
+  return String(index);
+}
+
 interface VisitCardProps {
   clientName: string;
   visitType: string;
@@ -623,20 +629,20 @@ export const CaregiverDashboard: React.FC = () => {
 
   // Navigation handlers to avoid void operator issues
   const handleNavigateToCredentials = useCallback(() => {
-    navigate('/settings/profile');
+    Promise.resolve(navigate('/settings/profile')).catch(() => {});
   }, [navigate]);
 
   const handleNavigateToSchedule = useCallback(() => {
-    navigate('/scheduling');
+    Promise.resolve(navigate('/scheduling')).catch(() => {});
   }, [navigate]);
 
   const handleNavigateToTimeTracking = useCallback(() => {
-    navigate('/time-tracking');
+    Promise.resolve(navigate('/time-tracking')).catch(() => {});
   }, [navigate]);
 
   const handleNavigateToTraining = useCallback(() => {
     if (user?.id) {
-      navigate(`/caregivers/${user.id}/training`);
+      Promise.resolve(navigate(`/caregivers/${user.id}/training`)).catch(() => {});
     }
     // else: no user id available yet -- button left as a no-op until auth resolves
   }, [navigate, user?.id]);
@@ -851,7 +857,7 @@ export const CaregiverDashboard: React.FC = () => {
                 onNavigate={() => window.open(`https://maps.google.com/?q=${encodeURIComponent(visit.address)}`, '_blank', 'noopener,noreferrer')}
                 onCheckIn={async () => handleCheckIn(index)}
                 onCheckOut={async () => handleCheckOut(index)}
-                onViewDetails={() => { navigate('/scheduling/calendar'); }}
+                onViewDetails={() => { Promise.resolve(navigate('/scheduling/calendar')).catch(() => {}); }}
                 onCall={visit.clientPhone ? () => { window.location.href = `tel:${visit.clientPhone ?? ''}`; } : undefined}
               />
             ))
@@ -898,8 +904,7 @@ export const CaregiverDashboard: React.FC = () => {
               key={index}
               {...timesheet}
               onClick={() => { 
-                const period = index === 0 ? 'current' : index === 1 ? 'last' : String(index);
-                navigate(`/time-tracking?period=${period}`);
+                Promise.resolve(navigate(`/time-tracking?period=${getPeriodByIndex(index)}`)).catch(() => {});
               }}
             />
           ))}

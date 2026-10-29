@@ -19,6 +19,11 @@ interface LoginAsModalProps {
 type SortColumn = 'first_name' | 'last_name' | 'email';
 type SortOrder = 'asc' | 'desc';
 
+const getAriaSort = (currentSortBy: string, column: string, sortOrder: 'asc' | 'desc') => {
+  if (currentSortBy !== column) return 'none';
+  return sortOrder === 'asc' ? 'ascending' : 'descending';
+};
+
 export const LoginAsModal: React.FC<LoginAsModalProps> = ({
   isOpen,
   onClose,
@@ -54,10 +59,10 @@ export const LoginAsModal: React.FC<LoginAsModalProps> = ({
 
       const response = await apiClient.get<PaginatedCaregivers>(`/api/caregivers?${queryString}`);
 
-      if (response && Array.isArray(response.items)) {
+      if (Array.isArray(response.items)) {
         setCaregivers(response.items);
-        setTotal(response.total ?? 0);
-        setTotalPages(response.totalPages ?? 1);
+        setTotal(response.total);
+        setTotalPages(response.totalPages);
       } else {
         setCaregivers([]);
         setTotal(0);
@@ -115,13 +120,9 @@ export const LoginAsModal: React.FC<LoginAsModalProps> = ({
           caregiverId: caregiver.id,
         });
 
-        if (response && response.data) {
-          const caregiverInfo = response.data.caregiver;
-          onImpersonateStart(response.data.accessToken, caregiverInfo);
-          onClose();
-        } else {
-          setImpersonationError('Failed to start impersonation session');
-        }
+        const caregiverInfo = response.data.caregiver;
+        onImpersonateStart(response.data.accessToken, caregiverInfo);
+        onClose();
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to start impersonation';
         setImpersonationError(message);
@@ -187,7 +188,7 @@ export const LoginAsModal: React.FC<LoginAsModalProps> = ({
                     scope="col"
                     className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                     onClick={() => handleSort('first_name')}
-                    aria-sort={sortBy === 'first_name' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
+                    aria-sort={getAriaSort(sortBy, 'first_name', sortOrder)}
                   >
                     <div className="flex items-center gap-1">
                       <span>First Name</span>
@@ -204,7 +205,7 @@ export const LoginAsModal: React.FC<LoginAsModalProps> = ({
                     scope="col"
                     className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                     onClick={() => handleSort('last_name')}
-                    aria-sort={sortBy === 'last_name' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
+                    aria-sort={getAriaSort(sortBy, 'last_name', sortOrder)}
                   >
                     <div className="flex items-center gap-1">
                       <span>Last Name</span>
@@ -221,7 +222,7 @@ export const LoginAsModal: React.FC<LoginAsModalProps> = ({
                     scope="col"
                     className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                     onClick={() => handleSort('email')}
-                    aria-sort={sortBy === 'email' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
+                    aria-sort={getAriaSort(sortBy, 'email', sortOrder)}
                   >
                     <div className="flex items-center gap-1">
                       <span>Email</span>
@@ -250,7 +251,11 @@ export const LoginAsModal: React.FC<LoginAsModalProps> = ({
                     return (
                       <tr
                         key={caregiver.id}
-                        onClick={() => !isImpersonating && handleSelectCaregiver(caregiver)}
+                        onClick={() => {
+                          if (!isImpersonating) {
+                            void handleSelectCaregiver(caregiver);
+                          }
+                        }}
                         className={`transition-colors ${
                           isImpersonating
                             ? 'cursor-not-allowed opacity-50'

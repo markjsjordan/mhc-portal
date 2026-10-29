@@ -45,7 +45,7 @@ export interface BillingApiService {
 
 /** Billing routes return `{ error }`; surface that text instead of the HTTP status line. */
 export const billingErrorMessage = (error: unknown, fallback: string): string => {
-  const serverMessage = (error as { response?: { data?: { error?: unknown } } })?.response?.data?.error;
+  const serverMessage = (error as { response?: { data?: { error?: unknown } } }).response?.data?.error;
   if (typeof serverMessage === 'string' && serverMessage.length > 0) return serverMessage;
   return error instanceof Error && error.message ? error.message : fallback;
 };

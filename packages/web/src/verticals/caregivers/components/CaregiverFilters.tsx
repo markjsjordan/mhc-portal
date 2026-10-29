@@ -50,17 +50,17 @@ export const CaregiverFilters: React.FC<CaregiverFiltersProps> = ({
     if (filters.query !== queryInput) {
       setQueryInput(filters.query ?? '');
     }
-  }, [filters.query]);
+  }, [filters.query, queryInput]);
 
   // Debounced query update
   React.useEffect(() => {
     const timer = setTimeout(() => {
       if ((filters.query ?? '') !== queryInput) {
-        onFiltersChange({ ...filters, query: queryInput || undefined });
+        onFiltersChange({ ...filters, query: queryInput.trim() !== '' ? queryInput : undefined });
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [queryInput]);
+  }, [queryInput, filters, onFiltersChange]);
 
   const activeCount = React.useMemo(() => {
     let count = 0;

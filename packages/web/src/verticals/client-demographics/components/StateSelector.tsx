@@ -75,7 +75,7 @@ export const StateSelector = React.forwardRef<HTMLButtonElement, StateSelectorPr
         )}
         <div className="relative">
           <Select
-            value={value || undefined}
+            value={value && value.trim() !== '' ? value : undefined}
             onValueChange={(val) => onChange?.(val)}
             disabled={disabled}
           >

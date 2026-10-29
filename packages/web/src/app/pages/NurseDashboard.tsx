@@ -445,7 +445,7 @@ export const NurseDashboard: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate('/care-plans?filter=review-due')}
+              onClick={() => { Promise.resolve(navigate('/care-plans?filter=review-due')).catch(() => {}); }}
             >
               View All
             </Button>
@@ -496,7 +496,7 @@ export const NurseDashboard: React.FC = () => {
             <Button
               variant="outline"
               className="justify-start"
-              onClick={() => navigate('/scheduling')}
+              onClick={() => { Promise.resolve(navigate('/scheduling')).catch(() => {}); }}
             >
               <Calendar className="h-5 w-5 mr-2" />
               Schedule Supervision Visit
@@ -504,7 +504,7 @@ export const NurseDashboard: React.FC = () => {
             <Button
               variant="outline"
               className="justify-start"
-              onClick={() => navigate('/care-plans/new')}
+              onClick={() => { Promise.resolve(navigate('/care-plans/new')).catch(() => {}); }}
             >
               <ClipboardList className="h-5 w-5 mr-2" />
               Create Care Plan
@@ -513,7 +513,7 @@ export const NurseDashboard: React.FC = () => {
             <Button
               variant="outline"
               className="justify-start"
-              onClick={() => navigate('/analytics/reports')}
+              onClick={() => { Promise.resolve(navigate('/analytics/reports')).catch(() => {}); }}
             >
               <FileText className="h-5 w-5 mr-2" />
               Clinical Reports

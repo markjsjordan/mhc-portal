@@ -79,7 +79,7 @@ export const DeviceSimulator: React.FC<DeviceSimulatorProps> = ({
   defaultDevice = 'iphone-15-pro',
 }) => {
   const [currentDevice, setCurrentDevice] = useState<DeviceConfig>(
-    () => DEVICE_CONFIGS.find(d => d.id === defaultDevice) || DEVICE_CONFIGS[0]!
+    () => DEVICE_CONFIGS.find(d => d.id === defaultDevice) ?? DEVICE_CONFIGS[0]!
   );
   const [isLandscape, setIsLandscape] = useState(false);
   const [showDeviceSelector, setShowDeviceSelector] = useState(false);

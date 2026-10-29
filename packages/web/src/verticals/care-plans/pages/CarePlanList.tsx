@@ -26,12 +26,12 @@ export const CarePlanList: React.FC = () => {
     return (
       <ErrorMessage
         message={(error as Error).message || 'Failed to load care plans'}
-        retry={refetch}
+        retry={() => { void refetch(); }}
       />
     );
   }
 
-  const carePlans = data?.items || [];
+  const carePlans = data?.items ?? [];
 
   return (
     <div className="space-y-6">
@@ -39,7 +39,7 @@ export const CarePlanList: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Care Plans</h1>
           <p className="text-gray-600 mt-1">
-            {data?.total || 0} total care plans
+            {data?.total ?? 0} total care plans
           </p>
         </div>
         <div className="flex gap-2">

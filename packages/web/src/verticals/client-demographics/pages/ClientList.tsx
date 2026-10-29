@@ -36,12 +36,14 @@ export const ClientList: React.FC = () => {
     return (
       <ErrorMessage
         message={(error as Error).message || 'Failed to load clients'}
-        retry={refetch}
+        retry={() => {
+          void refetch();
+        }}
       />
     );
   }
 
-  const clients = data?.items || [];
+  const clients = data?.items ?? [];
 
   return (
     <div className="space-y-6">
@@ -49,7 +51,7 @@ export const ClientList: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
           <p className="text-gray-600 mt-1">
-            {data?.total || 0} total clients
+            {data?.total ?? 0} total clients
           </p>
         </div>
         <div className="flex gap-2 items-center">
@@ -116,7 +118,9 @@ export const ClientList: React.FC = () => {
                 <Button
                   variant="default"
                   size="lg"
-                  onClick={() => navigate('/clients/intake')}
+                  onClick={() => {
+                    Promise.resolve(navigate('/clients/intake')).catch(() => {});
+                  }}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Client
@@ -129,7 +133,9 @@ export const ClientList: React.FC = () => {
               <Button
                 variant="outline"
                 size="lg"
-                onClick={() => navigate('/clients/new/intake')}
+                onClick={() => {
+                  Promise.resolve(navigate('/clients/new/intake')).catch(() => {});
+                }}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Client

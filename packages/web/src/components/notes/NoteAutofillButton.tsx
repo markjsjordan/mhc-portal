@@ -13,7 +13,7 @@
 
 import { useState, useEffect } from 'react';
 import { Sparkles, Loader2, AlertCircle } from 'lucide-react';
-import { Popover } from '@headlessui/react';
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import { Button } from '@/components/ui/button.js';
 import { useNoteAutofill, type AutofillSuggestions } from '../../hooks/useNoteAutofill';
 
@@ -40,20 +40,20 @@ export function NoteAutofillButton({
   onApplyPhrase,
   onApplyNoteStarter,
   className = '',
-}: NoteAutofillButtonProps) {
+}: Readonly<NoteAutofillButtonProps>) {
   const { suggestions, loading, error, fetchSuggestions, clearSuggestions } = useNoteAutofill();
   const [isOpen, setIsOpen] = useState(false);
 
   // Fetch suggestions when component mounts or visitId changes
   useEffect(() => {
     if (visitId && isOpen && !suggestions && !loading) {
-      fetchSuggestions({ visitId, clientId, caregiverId });
+      void fetchSuggestions({ visitId, clientId, caregiverId });
     }
   }, [visitId, clientId, caregiverId, isOpen, suggestions, loading, fetchSuggestions]);
 
   const handleRefresh = () => {
     clearSuggestions();
-    fetchSuggestions({ visitId, clientId, caregiverId });
+    void fetchSuggestions({ visitId, clientId, caregiverId });
   };
 
   return (
@@ -66,7 +66,7 @@ export function NoteAutofillButton({
 
         return (
           <>
-            <Popover.Button
+            <PopoverButton
               className={`
                 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium
                 text-purple-700 bg-purple-50 border border-purple-200
@@ -78,9 +78,9 @@ export function NoteAutofillButton({
             >
               <Sparkles className="h-4 w-4" />
               <span>Auto-fill Suggestions</span>
-            </Popover.Button>
+            </PopoverButton>
 
-            <Popover.Panel className="absolute z-10 mt-2 w-96 max-w-sm">
+            <PopoverPanel className="absolute z-10 mt-2 w-96 max-w-sm">
               <div className="rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 bg-white overflow-hidden">
                 {/* Header */}
                 <div className="px-4 py-3 bg-purple-50 border-b border-purple-100 flex items-center justify-between">
@@ -129,7 +129,7 @@ export function NoteAutofillButton({
                   )}
                 </div>
               </div>
-            </Popover.Panel>
+            </PopoverPanel>
           </>
         );
       }}
@@ -146,13 +146,13 @@ function SuggestionsContent({
   onApplyMood,
   onApplyPhrase,
   onApplyNoteStarter,
-}: {
+}: Readonly<{
   suggestions: AutofillSuggestions;
   onApplyActivity?: (activity: string) => void;
   onApplyMood?: (mood: string) => void;
   onApplyPhrase?: (phrase: string) => void;
   onApplyNoteStarter?: (starter: string) => void;
-}) {
+}>) {
   if (suggestions.analyzedNotesCount === 0) {
     return (
       <div className="text-center py-6 text-gray-500">
@@ -253,11 +253,11 @@ function SuggestionSection({
   title,
   icon,
   children,
-}: {
+}: Readonly<{
   title: string;
   icon?: React.ReactNode;
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <div className="space-y-2">
       <h4 className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">

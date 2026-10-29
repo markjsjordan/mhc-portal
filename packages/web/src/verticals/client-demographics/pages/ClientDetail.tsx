@@ -23,7 +23,7 @@ export const ClientDetail: React.FC = () => {
 
     try {
       await deleteClient.mutateAsync(client.id);
-      navigate('/clients');
+      await navigate('/clients');
     } catch {
       // Error is handled by mutation
     }
@@ -40,8 +40,10 @@ export const ClientDetail: React.FC = () => {
   if (error || !client) {
     return (
       <ErrorMessage
-        message={(error as Error)?.message || 'Failed to load client'}
-        retry={refetch}
+        message={(error as Error).message || 'Failed to load client'}
+        retry={() => {
+          void refetch();
+        }}
       />
     );
   }
@@ -64,7 +66,7 @@ export const ClientDetail: React.FC = () => {
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            {client.preferredName || fullName}
+            {client.preferredName ?? fullName}
           </h1>
           <p className="text-gray-600 mt-1">{client.clientNumber}</p>
         </div>
@@ -81,7 +83,9 @@ export const ClientDetail: React.FC = () => {
               </Link>
               <Button
                 variant="destructive"
-                onClick={handleDelete}
+                onClick={() => {
+                  void handleDelete();
+                }}
                 disabled={deleteClient.isPending}
               >
                 <Trash2 className="h-4 w-4 mr-1.5" />
@@ -152,7 +156,7 @@ export const ClientDetail: React.FC = () => {
                     <p className="text-sm text-gray-900">{client.email}</p>
                   </div>
                 )}
-                {client.primaryAddress ? (
+                {client.primaryAddress.line1 ? (
                   <div className="flex items-start gap-3">
                     <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
                     <div>
@@ -166,20 +170,6 @@ export const ClientDetail: React.FC = () => {
                       </p>
                     </div>
                   </div>
-                ) : (client as { address?: { line1?: string; street?: string; city?: string; state?: string; postalCode?: string; zip?: string } }).address ? (
-                  <div className="flex items-start gap-3">
-                    <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-gray-900">
-                        {(client as { address?: { line1?: string; street?: string } }).address?.line1 || (client as { address?: { line1?: string; street?: string } }).address?.street}
-                      </p>
-                      <p className="text-sm text-gray-900">
-                        {(client as { address?: { city?: string; state?: string; postalCode?: string; zip?: string } }).address?.city},{' '}
-                        {(client as { address?: { city?: string; state?: string; postalCode?: string; zip?: string } }).address?.state}{' '}
-                        {(client as { address?: { city?: string; state?: string; postalCode?: string; zip?: string } }).address?.postalCode || (client as { address?: { city?: string; state?: string; postalCode?: string; zip?: string } }).address?.zip}
-                      </p>
-                    </div>
-                  </div>
                 ) : (
                   <div className="flex items-start gap-3">
                     <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
@@ -190,7 +180,7 @@ export const ClientDetail: React.FC = () => {
             </CardContent>
           </Card>
 
-          {client.emergencyContacts && client.emergencyContacts.length > 0 && (
+          {client.emergencyContacts.length > 0 && (
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-medium">Emergency Contacts</CardTitle>

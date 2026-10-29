@@ -224,10 +224,10 @@ export function convertAssessmentFindingsToDraftTasks(
 
   // 9. IADL: Medication
   const medLevel = findings.iadls?.medication;
-  const hasMeds = (findings.medications && findings.medications.length > 0) || false;
+  const hasMeds = (findings.medications && findings.medications.length > 0) ?? false;
   if (medLevel === 'assistance' || medLevel === 'dependent' || hasMeds) {
     const medSummary = hasMeds
-      ? findings.medications!.map((m) => `${m.name} (${m.dosage || 'prescribed dose'})`).join(', ')
+      ? findings.medications!.map((m) => `${m.name} (${m.dosage ?? 'prescribed dose'})`).join(', ')
       : 'Prescribed medication regimen';
 
     add(
@@ -334,7 +334,7 @@ export function convertAssessmentFindingsToDraftTasks(
   );
 
   // 14. Mandated Supervisory Visit Cadence Task
-  const stateCode = (findings.state || 'FL').toUpperCase();
+  const stateCode = (findings.state ?? 'FL').toUpperCase();
   const isSkilled =
     findings.serviceTypes?.some((t) => t.toLowerCase().includes('skilled') || t.toLowerCase().includes('nursing')) ??
     (findings.conditions && findings.conditions.length > 2);

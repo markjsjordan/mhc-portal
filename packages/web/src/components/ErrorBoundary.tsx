@@ -44,11 +44,11 @@ export class ErrorBoundary extends React.Component<Props, State> {
     if (this.state.hasError) {
       const fallback: ReactNode = this.props.fallback;
       const errorUi: ReactNode = (
-        fallback || (
+        fallback ?? (
           <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6 text-destructive">
             <h2 className="text-lg font-semibold mb-2">Something went wrong</h2>
             <p className="text-sm mb-4">
-              {this.state.error?.message || 'An unexpected error occurred'}
+              {this.state.error?.message ?? 'An unexpected error occurred'}
             </p>
             {process.env.NODE_ENV === 'development' && (
               <details className="mt-3 cursor-pointer text-xs">

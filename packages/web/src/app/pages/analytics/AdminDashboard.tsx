@@ -64,7 +64,7 @@ export function AdminDashboard() {
   } = useAllCaregiverPerformance(filters);
 
   const isLoading = kpisLoading || alertsLoading || trendsLoading || performanceLoading;
-  const error = kpisError || alertsError || trendsError || performanceError;
+  const error = kpisError ?? alertsError ?? trendsError ?? performanceError;
 
   const handleFiltersChange = (newFilters: FilterValues) => {
     setFilters(newFilters);

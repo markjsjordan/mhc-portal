@@ -36,10 +36,10 @@ export const TemplatePreviewModal: React.FC<TemplatePreviewModalProps> = ({
   if (!isOpen) return null;
 
   const categoryColor =
-    categoryColors[template.category] || 'bg-muted text-muted-foreground';
+    categoryColors[template.category] ?? 'bg-muted text-muted-foreground';
 
   const handleUseTemplate = () => {
-    navigate(`/care-plans/from-template/${template.id}`);
+    Promise.resolve(navigate(`/care-plans/from-template/${template.id}`)).catch(() => {});
   };
 
   return (

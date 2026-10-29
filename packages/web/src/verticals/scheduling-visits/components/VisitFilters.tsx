@@ -45,7 +45,7 @@ export const VisitFilters: React.FC<VisitFiltersProps> = ({
   }, [isOpen]);
 
   const toggleStatus = (status: VisitStatus) => {
-    const current = filters.status || [];
+    const current = filters.status ?? [];
     const updated = current.includes(status)
       ? current.filter((s) => s !== status)
       : [...current, status];
@@ -56,7 +56,7 @@ export const VisitFilters: React.FC<VisitFiltersProps> = ({
   };
 
   const toggleVisitType = (type: VisitType) => {
-    const current = filters.visitType || [];
+    const current = filters.visitType ?? [];
     const updated = current.includes(type)
       ? current.filter((t) => t !== type)
       : [...current, type];
@@ -252,7 +252,10 @@ export const VisitFilters: React.FC<VisitFiltersProps> = ({
 
           <div className="pt-3 border-t border-border flex justify-between items-center">
             <span className="text-xs text-muted-foreground">
-              {activeCount === 0 ? 'No filters applied' : `${activeCount} filter${activeCount > 1 ? 's' : ''} applied`}
+              {(() => {
+                if (activeCount === 0) return 'No filters applied';
+                return `${activeCount} filter${activeCount > 1 ? 's' : ''} applied`;
+              })()}
             </span>
             <Button
               type="button"

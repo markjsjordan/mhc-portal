@@ -6,12 +6,14 @@
  */
 
 // Old DataProvider pattern (from PR #60)
-export * from './types';
-export * from './context';
+export * from './types.js';
+export * from './context.js';
+export * from './DataProviderContextProvider.js';
 
 // New API Provider pattern (from PR #61)
 export * from './api-provider.interface';
-export * from './api-provider-context';
+export * from './api-provider-context.js';
+export * from './useApiProvider.js';
 export * from './production-api-provider';
 export * from './showcase-api-provider';
 export * from './showcase-data';

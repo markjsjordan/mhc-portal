@@ -34,7 +34,7 @@ export const NarrationBox: React.FC<NarrationBoxProps> = ({
           </div>
         </div>
         <div className="flex-1">
-          {(time || role) && (
+          {(time ?? role) && (
             <div className="flex items-center gap-3 text-sm text-purple-200 mb-2">
               {time && <span>🕐 {time}</span>}
               {role && <span>👤 {role}</span>}

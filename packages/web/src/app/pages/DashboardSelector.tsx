@@ -16,7 +16,7 @@ export const DashboardSelector: React.FC = () => {
       const dashboardRoute = getDashboardRoute(user.roles);
       // Only redirect if not already at root
       if (window.location.pathname === '/') {
-        navigate(dashboardRoute, { replace: true });
+        Promise.resolve(navigate(dashboardRoute, { replace: true })).catch(() => {});
       }
     }
   }, [user, navigate]);

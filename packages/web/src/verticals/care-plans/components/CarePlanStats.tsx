@@ -22,7 +22,7 @@ export const CarePlanStats: React.FC<CarePlanStatsProps> = ({ carePlan }) => {
   const atRiskGoalsCount = carePlan.goals.filter(goal => goal.status === 'AT_RISK').length;
   const notStartedGoalsCount = carePlan.goals.filter(goal => goal.status === 'NOT_STARTED').length;
   const averageGoalProgress = carePlan.goals.length > 0 
-    ? carePlan.goals.reduce((sum, goal) => sum + (goal.progressPercentage || 0), 0) / carePlan.goals.length 
+    ? carePlan.goals.reduce((sum, goal) => sum + (goal.progressPercentage ?? 0), 0) / carePlan.goals.length 
     : 0;
 
   // Calculate intervention statistics
@@ -45,6 +45,19 @@ export const CarePlanStats: React.FC<CarePlanStatsProps> = ({ carePlan }) => {
       case 'EXPIRED':
       case 'NON_COMPLIANT':
         return 'text-red-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
+  const getPriorityColor = (priority?: string) => {
+    switch (priority) {
+      case 'URGENT':
+        return 'text-red-600';
+      case 'HIGH':
+        return 'text-orange-600';
+      case 'MEDIUM':
+        return 'text-yellow-600';
       default:
         return 'text-gray-600';
     }
@@ -168,12 +181,7 @@ export const CarePlanStats: React.FC<CarePlanStatsProps> = ({ carePlan }) => {
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
               <span className="text-sm text-gray-600">Priority:</span>
-              <span className={`text-sm font-medium ${
-                carePlan.priority === 'URGENT' ? 'text-red-600' :
-                carePlan.priority === 'HIGH' ? 'text-orange-600' :
-                carePlan.priority === 'MEDIUM' ? 'text-yellow-600' :
-                'text-gray-600'
-              }`}>
+              <span className={`text-sm font-medium ${getPriorityColor(carePlan.priority)}`}>
                 {carePlan.priority}
               </span>
             </div>

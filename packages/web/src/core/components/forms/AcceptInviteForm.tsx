@@ -131,7 +131,7 @@ export function AcceptInviteForm({
         <p className="text-sm text-muted-foreground">Email: {inviteDetails.email}</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1">
             <Label htmlFor="firstName" className="text-sm font-medium">

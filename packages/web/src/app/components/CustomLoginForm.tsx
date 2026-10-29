@@ -108,7 +108,7 @@ export const CustomLoginForm: React.FC<CustomLoginFormProps> = ({ onLoginSuccess
         onLoginSuccess();
       }
       
-      navigate(dashboardRoute);
+      Promise.resolve(navigate(dashboardRoute)).catch(() => {});
     } catch (error: unknown) {
       // Enhanced error handling for rate limiting
       if (error instanceof Error) {

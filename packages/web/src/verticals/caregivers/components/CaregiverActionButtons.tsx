@@ -41,7 +41,7 @@ const CaregiverMoreMenu: React.FC<{
       }
     };
 
-    if (!isOpen) return undefined;
+    if (!isOpen) return;
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, onOpenChange]);
@@ -115,13 +115,20 @@ export const CaregiverActionButtons: React.FC<CaregiverActionButtonsProps> = ({
   const [moreOpen, setMoreOpen] = useState(false);
 
   // Permission checks
-  const canEdit = user?.permissions?.includes('CAREGIVER_WRITE') ?? false;
-  const canDelete = user?.permissions?.includes('CAREGIVER_DELETE') ?? false;
-  const canDuplicate = user?.permissions?.includes('CAREGIVER_CREATE') ?? false;
-  const canViewHistory = user?.permissions?.includes('AUDIT_READ') ?? false;
+  const canEdit = user?.permissions.includes('CAREGIVER_WRITE') ?? false;
+  const canDelete = user?.permissions.includes('CAREGIVER_DELETE') ?? false;
+  const canDuplicate = user?.permissions.includes('CAREGIVER_CREATE') ?? false;
+  const canViewHistory = user?.permissions.includes('AUDIT_READ') ?? false;
 
   // Status-based rules
   const isDeletable = caregiver.status !== 'TERMINATED' && caregiver.status !== 'RETIRED';
+
+  let deleteButtonTitle: string | undefined;
+  if (!isDeletable) {
+    deleteButtonTitle = `Cannot delete ${caregiver.status} caregiver`;
+  } else if (!canDelete) {
+    deleteButtonTitle = 'Insufficient permissions';
+  }
 
   return (
     <div className="flex items-center gap-2">
@@ -142,13 +149,7 @@ export const CaregiverActionButtons: React.FC<CaregiverActionButtonsProps> = ({
         variant="destructive"
         size="sm"
         aria-label="Delete caregiver"
-        title={
-          !isDeletable
-            ? `Cannot delete ${caregiver.status} caregiver`
-            : !canDelete
-              ? 'Insufficient permissions'
-              : undefined
-        }
+        title={deleteButtonTitle}
       >
         <Trash2 className="h-4 w-4 mr-1.5" />
         Delete

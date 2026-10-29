@@ -94,7 +94,7 @@ export function InviteMemberForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
       <div className="space-y-1">
         <Label htmlFor="email" className="text-sm font-medium">
           Email Address <span className="text-destructive">*</span>

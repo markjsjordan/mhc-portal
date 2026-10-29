@@ -42,7 +42,7 @@ export function useIdleLogout(timeoutMs: number = IDLE_LOGOUT_TIMEOUT_MS): void 
         console.error('Idle logout: server-side logout failed:', error);
       } finally {
         clearLocalAuth();
-        navigate('/login', { replace: true });
+        Promise.resolve(navigate('/login', { replace: true })).catch(() => {});
       }
     };
 

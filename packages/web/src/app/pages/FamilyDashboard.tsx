@@ -12,7 +12,7 @@ export const FamilyDashboard: React.FC = () => {
 
   useEffect(() => {
     // Redirect to family portal
-    navigate('/family-portal', { replace: true });
+    Promise.resolve(navigate('/family-portal', { replace: true })).catch(() => {});
   }, [navigate]);
 
   return (

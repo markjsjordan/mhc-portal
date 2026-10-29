@@ -57,8 +57,6 @@ export const useCalendarVisits = (startDate: Date, endDate: Date, branchIds?: st
     retry: (failureCount, error) => {
       // Don't retry if it's a 403 or 401 (auth issues)
       if (
-        typeof error === 'object' &&
-        error != null &&
         'status' in error &&
         (error.status === 403 || error.status === 401)
       ) {
@@ -95,8 +93,6 @@ export const useCaregiverAvailability = (date: Date, branchIds?: string[]) => {
     gcTime: 5 * 60 * 1000, // 5 minutes
     retry: (failureCount, error) => {
       if (
-        typeof error === 'object' &&
-        error != null &&
         'status' in error &&
         (error.status === 403 || error.status === 401)
       ) {
@@ -164,10 +160,10 @@ export const useUpdateVisit = () => {
   return useMutation({
     mutationFn: ({ visitId, data }: { visitId: string; data: UpdateVisitPayload }) =>
       visitApi.updateVisit(visitId, data),
-    onSuccess: (_, { visitId }) => {
-      queryClient.invalidateQueries({ queryKey: ['visits', 'detail', visitId] });
-      queryClient.invalidateQueries({ queryKey: ['visits'] });
-      queryClient.invalidateQueries({ queryKey: ['visits', 'calendar'] });
+    onSuccess: async (_, { visitId }) => {
+      await queryClient.invalidateQueries({ queryKey: ['visits', 'detail', visitId] });
+      await queryClient.invalidateQueries({ queryKey: ['visits'] });
+      await queryClient.invalidateQueries({ queryKey: ['visits', 'calendar'] });
     },
   });
 };

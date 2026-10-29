@@ -25,7 +25,7 @@ export function VoiceNoteRecorder({
   onTranscriptionComplete,
   onCancel,
   maxDurationSeconds = 300,
-}: VoiceNoteRecorderProps) {
+}: Readonly<VoiceNoteRecorderProps>) {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -48,7 +48,7 @@ export function VoiceNoteRecorder({
         setRecordingDuration(prev => {
           const newDuration = prev + 1;
           if (newDuration >= maxDurationSeconds) {
-            stopRecording();
+            void stopRecording();
           }
           return newDuration;
         });
@@ -73,7 +73,8 @@ export function VoiceNoteRecorder({
       audioChunks.current = [];
 
       // Check browser support
-      if (!navigator.mediaDevices?.getUserMedia) {
+      const mediaDevices = navigator.mediaDevices as unknown as { getUserMedia?: unknown };
+      if (typeof mediaDevices.getUserMedia !== 'function') {
         setErrorMessage('Your browser does not support audio recording');
         return;
       }
@@ -203,7 +204,7 @@ export function VoiceNoteRecorder({
       <Button
         type="button"
         variant="ghost"
-        onClick={isRecording ? stopRecording : startRecording}
+        onClick={() => { void (isRecording ? stopRecording() : startRecording()); }}
         className={`
           relative w-32 h-32 rounded-full flex items-center justify-center
           transition-all duration-300 mb-8 p-0

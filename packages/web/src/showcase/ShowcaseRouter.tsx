@@ -30,18 +30,20 @@ const isValidRole = (role: string): role is PersonaRole => {
   return ['admin', 'coordinator', 'caregiver', 'patient'].includes(role);
 };
 
+const getInitialRouterRole = (): PersonaRole | undefined => {
+  if (typeof window !== 'undefined') {
+    const stored = window.localStorage.getItem(CURRENT_ROLE_KEY);
+    if (stored !== null && isValidRole(stored)) {
+      return stored;
+    }
+  }
+  return undefined;
+};
+
 export const ShowcaseRouter: React.FC = () => {
   const navigate = useNavigate();
   const [showRoleSelector, setShowRoleSelector] = useState(false);
-  const [currentRole, setCurrentRole] = useState<PersonaRole | undefined>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = window.localStorage.getItem(CURRENT_ROLE_KEY);
-      if (stored !== null && isValidRole(stored)) {
-        return stored;
-      }
-    }
-    return undefined;
-  });
+  const [currentRole, setCurrentRole] = useState<PersonaRole | undefined>(getInitialRouterRole);
 
   const handleRoleSelect = (roleId: string) => {
     if (isValidRole(roleId)) {

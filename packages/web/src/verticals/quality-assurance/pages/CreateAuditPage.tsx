@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft } from 'lucide-react';
@@ -88,10 +88,10 @@ export const CreateAuditPage: React.FC = () => {
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     formState: { errors },
   } = useForm<AuditFormData>({
-    resolver: zodResolver(auditSchema as any),
+    resolver: zodResolver(auditSchema),
     defaultValues: {
       title: '',
       description: '',
@@ -103,6 +103,10 @@ export const CreateAuditPage: React.FC = () => {
       leadAuditorId: '',
     },
   });
+
+  const auditType = useWatch({ control, name: 'auditType' });
+  const priority = useWatch({ control, name: 'priority' });
+  const scope = useWatch({ control, name: 'scope' });
 
   const onFormSubmit = async (data: AuditFormData) => {
     const input: CreateAuditInput = { ...data };
@@ -119,7 +123,7 @@ export const CreateAuditPage: React.FC = () => {
   if (createAudit.isError) {
     return (
       <ErrorMessage
-        message={(createAudit.error as Error)?.message || 'Failed to create audit'}
+        message={(createAudit.error as Error).message || 'Failed to create audit'}
         retry={() => createAudit.reset()}
       />
     );
@@ -183,7 +187,7 @@ export const CreateAuditPage: React.FC = () => {
                   Audit Type <span className="text-destructive">*</span>
                 </Label>
                 <Select
-                  value={watch('auditType')}
+                  value={auditType}
                   onValueChange={(val) =>
                     setValue('auditType', val as AuditFormData['auditType'], {
                       shouldValidate: true,
@@ -211,7 +215,7 @@ export const CreateAuditPage: React.FC = () => {
                   Priority <span className="text-destructive">*</span>
                 </Label>
                 <Select
-                  value={watch('priority')}
+                  value={priority}
                   onValueChange={(val) =>
                     setValue('priority', val as AuditFormData['priority'], {
                       shouldValidate: true,
@@ -239,7 +243,7 @@ export const CreateAuditPage: React.FC = () => {
                   Scope <span className="text-destructive">*</span>
                 </Label>
                 <Select
-                  value={watch('scope')}
+                  value={scope}
                   onValueChange={(val) =>
                     setValue('scope', val as AuditFormData['scope'], {
                       shouldValidate: true,

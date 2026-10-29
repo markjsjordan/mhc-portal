@@ -22,7 +22,8 @@ export const MatchAnalyticsDashboard: React.FC = () => {
   const shiftMatchingApi = useShiftMatchingApi();
 
   const { dateFrom, dateTo } = useMemo(() => {
-    const days = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90;
+    const daysMap = { '7d': 7, '30d': 30, '90d': 90 } as const;
+    const days = daysMap[dateRange];
     const to = new Date();
     const from = new Date(to.getTime() - days * 24 * 60 * 60 * 1000);
     return { dateFrom: from.toISOString(), dateTo: to.toISOString() };

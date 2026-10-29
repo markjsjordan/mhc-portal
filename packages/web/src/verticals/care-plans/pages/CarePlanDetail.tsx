@@ -20,6 +20,19 @@ import { formatDate } from '@/core/utils';
 import { useCarePlan, useActivateCarePlan, useUpdateCarePlan, useDeleteCarePlan } from '../hooks';
 import { useClient } from '@/verticals/client-demographics/hooks';
 
+const getDeleteDisabledReason = (status?: string): string | undefined => {
+  if (status === 'ACTIVE') return 'Cannot delete an active care plan. Please discontinue it first.';
+  if (status === 'COMPLETED') return 'Completed care plans are retained for clinical and compliance records and cannot be deleted.';
+  return undefined;
+};
+
+const getPriorityColor = (priority?: string): string => {
+  if (priority === 'URGENT') return 'text-red-600';
+  if (priority === 'HIGH') return 'text-orange-600';
+  if (priority === 'MEDIUM') return 'text-yellow-600';
+  return 'text-gray-600';
+};
+
 export const CarePlanDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -36,18 +49,14 @@ export const CarePlanDetail: React.FC = () => {
   const canEditCarePlans = can('care-plans:update') || can('care-plans:*') || can('care_plans:write');
 
   const isDeleteDisabled = carePlan?.status === 'ACTIVE' || carePlan?.status === 'COMPLETED';
-  const deleteDisabledReason = carePlan?.status === 'ACTIVE'
-    ? 'Cannot delete an active care plan. Please discontinue it first.'
-    : carePlan?.status === 'COMPLETED'
-    ? 'Completed care plans are retained for clinical and compliance records and cannot be deleted.'
-    : undefined;
+  const deleteDisabledReason = getDeleteDisabledReason(carePlan?.status);
 
   const handleActivate = async () => {
     if (!carePlan) return;
     
     try {
       await activateCarePlan.mutateAsync(carePlan.id);
-      refetch();
+      void refetch();
     } catch {
       // Error is handled by the mutation
     }
@@ -61,7 +70,7 @@ export const CarePlanDetail: React.FC = () => {
         id: carePlan.id,
         input: { status: 'DISCONTINUED' },
       });
-      refetch();
+      void refetch();
     } catch {
       // Error is handled by the mutation
     }
@@ -72,7 +81,7 @@ export const CarePlanDetail: React.FC = () => {
     
     try {
       await deleteCarePlan.mutateAsync(carePlan.id);
-      navigate('/care-plans');
+      Promise.resolve(navigate('/care-plans')).catch(() => {});
     } catch {
       // Error is handled by the mutation
     }
@@ -89,8 +98,8 @@ export const CarePlanDetail: React.FC = () => {
   if (error || !carePlan) {
     return (
       <ErrorMessage
-        message={(error as Error)?.message || 'Failed to load care plan'}
-        retry={refetch}
+        message={(error as Error).message || 'Failed to load care plan'}
+        retry={() => { void refetch(); }}
       />
     );
   }
@@ -131,7 +140,7 @@ export const CarePlanDetail: React.FC = () => {
             <>
               {carePlan.status === 'DRAFT' && (
                 <Button
-                  onClick={handleActivate}
+                  onClick={() => { void handleActivate(); }}
                   disabled={activateCarePlan.isPending}
                 >
                   <Play className="h-4 w-4 mr-2" />
@@ -141,7 +150,7 @@ export const CarePlanDetail: React.FC = () => {
               {carePlan.status === 'ACTIVE' && (
                 <Button
                   variant="outline"
-                  onClick={handleDiscontinue}
+                  onClick={() => { void handleDiscontinue(); }}
                   disabled={updateCarePlan.isPending}
                 >
                   Discontinue
@@ -175,7 +184,7 @@ export const CarePlanDetail: React.FC = () => {
       </div>
 
       {/* Alerts */}
-      {(isExpiringSoon || isOverdue) && (
+      {(isExpiringSoon ?? isOverdue) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {isExpiringSoon && (
             <div className="flex items-center gap-3 p-4 bg-orange-50 border border-orange-200 rounded-md">
@@ -252,12 +261,7 @@ export const CarePlanDetail: React.FC = () => {
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Priority</dt>
                   <dd className="mt-1">
-                    <span className={`text-sm font-medium ${
-                      carePlan.priority === 'URGENT' ? 'text-red-600' :
-                      carePlan.priority === 'HIGH' ? 'text-orange-600' :
-                      carePlan.priority === 'MEDIUM' ? 'text-yellow-600' :
-                      'text-gray-600'
-                    }`}>
+                    <span className={`text-sm font-medium ${getPriorityColor(carePlan.priority)}`}>
                       {carePlan.priority}
                     </span>
                   </dd>
@@ -488,7 +492,7 @@ export const CarePlanDetail: React.FC = () => {
               <h3 className="text-lg font-semibold text-gray-900">Delete Care Plan</h3>
             </div>
             <p className="text-sm text-gray-700 mb-3">
-              Are you sure you want to delete the <span className="font-semibold">{carePlan.planType.replace(/_/g, ' ')}</span> care plan for <span className="font-semibold">{client ? (client.preferredName || `${client.firstName} ${client.lastName}`) : 'this client'}</span> ({carePlan.planNumber})?
+              Are you sure you want to delete the <span className="font-semibold">{carePlan.planType.replace(/_/g, ' ')}</span> care plan for <span className="font-semibold">{client ? (client.preferredName ?? `${client.firstName} ${client.lastName}`) : 'this client'}</span> ({carePlan.planNumber})?
             </p>
             <p className="text-xs text-gray-500 mb-5">
               This action will soft-delete the care plan and remove it from active views while retaining the record for compliance and audit retention requirements.
@@ -503,7 +507,7 @@ export const CarePlanDetail: React.FC = () => {
               </Button>
               <Button
                 variant="destructive"
-                onClick={handleDelete}
+                onClick={() => { void handleDelete(); }}
                 disabled={deleteCarePlan.isPending}
               >
                 Delete Plan

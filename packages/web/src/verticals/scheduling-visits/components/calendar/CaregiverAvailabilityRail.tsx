@@ -22,6 +22,18 @@ export interface CaregiverAvailabilityRailProps {
   isLoading?: boolean;
 }
 
+const getCardBorderClass = (isDragOver: boolean, isSelected: boolean): string => {
+  if (isDragOver) return 'border-blue-500 bg-blue-50 ring-2 ring-blue-400';
+  if (isSelected) return 'border-teal-500 bg-teal-50/20 ring-2 ring-teal-500 shadow-sm';
+  return 'border-gray-200 hover:border-gray-300 hover:shadow-sm bg-white';
+};
+
+const getCompactCardBorderClass = (isDragOver: boolean, isSelected: boolean): string => {
+  if (isDragOver) return 'border-blue-500 bg-blue-50 ring-1 ring-blue-400';
+  if (isSelected) return 'border-teal-500 bg-teal-50/20 ring-1 ring-teal-500';
+  return 'border-gray-150 hover:bg-gray-50';
+};
+
 export const CaregiverAvailabilityRail: React.FC<CaregiverAvailabilityRailProps> = ({
   isOpen,
   onClose,
@@ -106,13 +118,7 @@ export const CaregiverAvailabilityRail: React.FC<CaregiverAvailabilityRailProps>
                 onDragOver={(e) => handleDragOver(e, cg.id)}
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, cg.id)}
-                className={`p-3 rounded-xl border transition-all cursor-pointer relative ${
-                  isDragOver
-                    ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-400'
-                    : isSelected
-                    ? 'border-teal-500 bg-teal-50/20 ring-2 ring-teal-500 shadow-sm'
-                    : 'border-gray-200 hover:border-gray-300 hover:shadow-sm bg-white'
-                }`}
+                className={`p-3 rounded-xl border transition-all cursor-pointer relative ${getCardBorderClass(isDragOver, isSelected)}`}
               >
                 <div className="flex items-center gap-2.5">
                   {/* Avatar */}
@@ -190,13 +196,7 @@ export const CaregiverAvailabilityRail: React.FC<CaregiverAvailabilityRailProps>
                       onDragOver={(e) => handleDragOver(e, cg.id)}
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, cg.id)}
-                      className={`p-2 rounded-lg border text-xs cursor-pointer transition-colors ${
-                        isDragOver
-                          ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-400'
-                          : isSelected
-                          ? 'border-teal-500 bg-teal-50/20 ring-1 ring-teal-500'
-                          : 'border-gray-150 hover:bg-gray-50'
-                      }`}
+                      className={`p-2 rounded-lg border text-xs cursor-pointer transition-colors ${getCompactCardBorderClass(isDragOver, isSelected)}`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-gray-800 truncate">

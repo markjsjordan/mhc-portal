@@ -95,8 +95,8 @@ export const adminTour: Tour = {
       placement: 'right',
       highlightElement: true,
       action: () => {
-        const link = document.querySelector('[data-tour="state-config-link"]') as HTMLElement;
-        if (link) link.click();
+        const link = document.querySelector<HTMLElement>('[data-tour="state-config-link"]');
+        link?.click();
       },
     },
     {

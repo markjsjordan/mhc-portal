@@ -16,5 +16,6 @@ export * from './TemplateCard';
 export * from './TemplatePreviewModal';
 export * from './TaskStatusBadge';
 export * from './TaskCategoryIcon';
+export * from '../utils/taskCategoryUtils.js';
 export * from './TaskFrequency';
 export * from './TaskProgress';

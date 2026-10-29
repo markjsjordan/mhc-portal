@@ -5,8 +5,8 @@ import { describe, test, expect, vi } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithQueryClient as render } from '@/test/renderWithQueryClient';
-import { CaregiverForm, EMPTY_CAREGIVER_FORM } from '../CaregiverForm';
-import type { CaregiverFormValues } from '../CaregiverForm';
+import { CaregiverForm } from '../CaregiverForm';
+import { EMPTY_CAREGIVER_FORM, type CaregiverFormValues } from '../../types/form.js';
 
 vi.mock('@/verticals/client-demographics/hooks/index.js', () => ({
   useBranches: () => ({

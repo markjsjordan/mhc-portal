@@ -18,7 +18,7 @@ export const ScenarioButton: React.FC = () => {
   if (isActive) return null;
 
   const handleClick = () => {
-    navigate('/scenarios');
+    Promise.resolve(navigate('/scenarios')).catch(() => {});
   };
 
   return (

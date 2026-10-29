@@ -23,14 +23,7 @@ export interface CalendarFilterBarProps {
   onClearAll: () => void;
 }
 
-export const STATUS_OPTIONS = [
-  { id: 'UNASSIGNED', label: 'Unassigned', dotColor: 'bg-muted-foreground' },
-  { id: 'ASSIGNED', label: 'Assigned', dotColor: 'bg-blue-600' },
-  { id: 'IN_PROGRESS', label: 'In Progress', dotColor: 'bg-cyan-500' },
-  { id: 'COMPLETED', label: 'Completed', dotColor: 'bg-emerald-500' },
-  { id: 'NEEDS_REVIEW', label: 'Needs Review', dotColor: 'bg-amber-500' },
-  { id: 'CANCELLED', label: 'Cancelled', dotColor: 'bg-destructive' },
-];
+import { STATUS_OPTIONS } from './filter-constants.js';
 
 export const CalendarFilterBar: React.FC<CalendarFilterBarProps> = ({
   allCaregivers,
@@ -150,7 +143,7 @@ export const CalendarFilterBar: React.FC<CalendarFilterBarProps> = ({
                         <div className="flex items-center gap-2 min-w-0">
                           <span
                             className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: cg.color || '#3B82F6' }}
+                            style={{ backgroundColor: cg.color ?? '#3B82F6' }}
                           />
                           <span className="truncate font-medium">
                             {cg.name}
@@ -282,16 +275,16 @@ export const CalendarFilterBar: React.FC<CalendarFilterBarProps> = ({
               >
                 <span
                   className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: caregiver?.color || '#3B82F6' }}
+                  style={{ backgroundColor: caregiver?.color ?? '#3B82F6' }}
                 />
-                <span>{caregiver?.name || cgId}</span>
+                <span>{caregiver?.name ?? cgId}</span>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon-xs"
                   onClick={() => toggleCaregiver(cgId)}
                   className="ml-1 h-4 w-4 p-0 hover:bg-transparent text-primary hover:text-primary"
-                  aria-label={`Remove ${caregiver?.name || cgId} filter`}
+                  aria-label={`Remove ${caregiver?.name ?? cgId} filter`}
                 >
                   <X className="w-3.5 h-3.5" />
                 </Button>
@@ -308,14 +301,14 @@ export const CalendarFilterBar: React.FC<CalendarFilterBarProps> = ({
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground border border-border"
               >
                 <span className="w-2 h-2 rounded-full bg-primary" />
-                <span>{client?.name || clId}</span>
+                <span>{client?.name ?? clId}</span>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon-xs"
                   onClick={() => toggleClient(clId)}
                   className="ml-1 h-4 w-4 p-0 hover:bg-transparent"
-                  aria-label={`Remove ${client?.name || clId} filter`}
+                  aria-label={`Remove ${client?.name ?? clId} filter`}
                 >
                   <X className="w-3.5 h-3.5" />
                 </Button>

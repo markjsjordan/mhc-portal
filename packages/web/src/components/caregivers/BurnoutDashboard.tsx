@@ -41,6 +41,13 @@ interface BurnoutRiskAssessment {
   trendDirection: 'IMPROVING' | 'STABLE' | 'WORSENING';
 }
 
+function getSeverityBarColor(severity: string): string {
+  if (severity === 'CRITICAL') return 'bg-red-600';
+  if (severity === 'HIGH') return 'bg-orange-600';
+  if (severity === 'MODERATE') return 'bg-yellow-600';
+  return 'bg-green-600';
+}
+
 export function BurnoutDashboard() {
   const [assessments, setAssessments] = useState<BurnoutRiskAssessment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +56,7 @@ export function BurnoutDashboard() {
   const [filterLevel, setFilterLevel] = useState<'ALL' | 'MODERATE' | 'HIGH' | 'CRITICAL'>('ALL');
 
   useEffect(() => {
-    loadAssessments();
+    void loadAssessments();
   }, []);
 
   async function loadAssessments() {
@@ -131,7 +138,7 @@ export function BurnoutDashboard() {
           </div>
           <Button
             type="button"
-            onClick={loadAssessments}
+            onClick={() => { void loadAssessments(); }}
           >
             Refresh
           </Button>
@@ -326,12 +333,7 @@ export function BurnoutDashboard() {
                             <div className="mt-2">
                               <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div
-                                  className={`h-2 rounded-full ${
-                                    factor.severity === 'CRITICAL' ? 'bg-red-600' :
-                                    factor.severity === 'HIGH' ? 'bg-orange-600' :
-                                    factor.severity === 'MODERATE' ? 'bg-yellow-600' :
-                                    'bg-green-600'
-                                  }`}
+                                  className={`h-2 rounded-full ${getSeverityBarColor(factor.severity)}`}
                                   style={{ width: `${(factor.score / 10) * 100}%` }}
                                 />
                               </div>

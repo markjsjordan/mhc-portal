@@ -20,7 +20,7 @@ interface RevenueChartProps {
   className?: string;
 }
 
-export function RevenueChart({ data, className = '' }: RevenueChartProps) {
+export function RevenueChart({ data, className = '' }: Readonly<RevenueChartProps>) {
   // Format data for the chart
   const chartData = data.map((point) => ({
     name: `${point.month} ${point.year}`,

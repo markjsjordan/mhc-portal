@@ -59,7 +59,7 @@ export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
     const animationDuration = Math.max(1000, Math.min(3000, duration)); // Clamp between 1-3s
 
     const animate = (currentTime: number) => {
-      if (!startTime) startTime = currentTime;
+      startTime ??= currentTime;
       const progress = Math.min((currentTime - startTime) / animationDuration, 1);
 
       // Easing function (ease-out)

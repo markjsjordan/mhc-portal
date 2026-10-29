@@ -10,7 +10,7 @@ export interface CheckboxProps
 }
 
 export const Checkbox = React.forwardRef<
-  React.ElementRef<typeof ShadcnCheckbox>,
+  React.ComponentRef<typeof ShadcnCheckbox>,
   CheckboxProps
 >(({ onCheckedChange, ...props }, ref) => {
   return (

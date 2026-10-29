@@ -166,7 +166,7 @@ export function SyncStatusBadge() {
         <CloudOff className="w-4 h-4" />
         <span>{status.pendingCount} pending sync</span>
         <Button
-          onClick={handleSyncNow}
+          onClick={() => { void handleSyncNow(); }}
           variant="link"
           size="xs"
           className="ml-1 h-auto p-0 underline"

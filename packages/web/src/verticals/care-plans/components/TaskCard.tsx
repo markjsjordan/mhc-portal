@@ -125,7 +125,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <div className="mt-4">
             <Button
               size="sm"
-              onClick={handleComplete}
+              onClick={() => { void handleComplete(); }}
               disabled={completeTask.isPending}
               className="w-full"
             >

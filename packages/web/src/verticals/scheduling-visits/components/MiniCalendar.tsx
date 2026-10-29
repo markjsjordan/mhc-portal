@@ -102,13 +102,14 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
       {/* Calendar Days */}
       <div className="grid grid-cols-7 gap-1">
         {calendarDays.map((day, index) => {
-          const variant = !day.isCurrentMonth
-            ? 'ghost'
-            : day.isSelected
-            ? 'default'
-            : day.isToday
-            ? 'secondary'
-            : 'ghost';
+          let variant: 'ghost' | 'default' | 'secondary' = 'ghost';
+          if (day.isCurrentMonth) {
+            if (day.isSelected) {
+              variant = 'default';
+            } else if (day.isToday) {
+              variant = 'secondary';
+            }
+          }
 
           return (
             <div key={index} className="relative flex items-center justify-center">

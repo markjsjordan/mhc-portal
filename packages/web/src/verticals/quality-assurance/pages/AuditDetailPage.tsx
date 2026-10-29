@@ -177,10 +177,10 @@ export const AuditDetailPage: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
-            Findings ({audit.findings?.length || 0})
+            Findings ({audit.findings.length || 0})
           </h2>
         </div>
-        {audit.findings && audit.findings.length > 0 ? (
+        {audit.findings.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {audit.findings.map((finding) => (
               <FindingCard key={finding.id} finding={finding} />
@@ -199,10 +199,10 @@ export const AuditDetailPage: React.FC = () => {
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">
-            Corrective Actions ({audit.correctiveActions?.length || 0})
+            Corrective Actions ({audit.correctiveActions.length || 0})
           </h2>
         </div>
-        {audit.correctiveActions && audit.correctiveActions.length > 0 ? (
+        {audit.correctiveActions.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {audit.correctiveActions.map((action) => (
               <CorrectiveActionCard key={action.id} action={action} />

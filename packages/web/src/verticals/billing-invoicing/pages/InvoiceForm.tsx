@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft } from 'lucide-react';
@@ -118,6 +118,12 @@ function parseBillableItemIds(raw: string | undefined): string[] {
     .filter((s) => s.length > 0);
 }
 
+const getSubmitButtonLabel = (isPending: boolean, isEditMode: boolean): string => {
+  if (isPending) return 'Saving...';
+  if (isEditMode) return 'Save Changes';
+  return 'Create Invoice';
+};
+
 export const InvoiceForm: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
@@ -129,17 +135,17 @@ export const InvoiceForm: React.FC = () => {
 
   const isPending = createInvoice.isPending || updateInvoice.isPending;
   const isError = createInvoice.isError || updateInvoice.error;
-  const error = createInvoice.error || updateInvoice.error;
+  const error = createInvoice.error ?? updateInvoice.error;
 
   const {
     register,
     handleSubmit,
     reset,
-    watch,
+    control,
     setValue,
     formState: { errors },
   } = useForm<InvoiceFormData>({
-    resolver: zodResolver(invoiceFormSchema as any),
+    resolver: zodResolver(invoiceFormSchema),
     defaultValues: {
       clientId: '',
       payerId: '',
@@ -157,8 +163,8 @@ export const InvoiceForm: React.FC = () => {
     },
   });
 
-  const payerType = watch('payerType');
-  const status = watch('status');
+  const payerType = useWatch({ control, name: 'payerType' });
+  const status = useWatch({ control, name: 'status' });
 
   // Pre-populate defaultValues in edit mode once the invoice loads
   React.useEffect(() => {
@@ -168,17 +174,17 @@ export const InvoiceForm: React.FC = () => {
         payerId: existingInvoice.payerId,
         payerType: existingInvoice.payerType,
         payerName: existingInvoice.payerName,
-        invoiceDate: existingInvoice.invoiceDate?.slice(0, 10) ?? '',
-        dueDate: existingInvoice.dueDate?.slice(0, 10) ?? '',
-        periodStart: existingInvoice.periodStart?.slice(0, 10) ?? '',
-        periodEnd: existingInvoice.periodEnd?.slice(0, 10) ?? '',
-        billableItemIdsRaw: (existingInvoice.lineItems || [])
+        invoiceDate: existingInvoice.invoiceDate.slice(0, 10),
+        dueDate: existingInvoice.dueDate.slice(0, 10),
+        periodStart: existingInvoice.periodStart.slice(0, 10),
+        periodEnd: existingInvoice.periodEnd.slice(0, 10),
+        billableItemIdsRaw: existingInvoice.lineItems
           .map((item) => item.billableItemId)
           .join('\n'),
         notes: existingInvoice.notes ?? '',
         status: existingInvoice.status,
-        taxAmount: String(existingInvoice.taxAmount ?? ''),
-        discountAmount: String(existingInvoice.discountAmount ?? ''),
+        taxAmount: String(existingInvoice.taxAmount),
+        discountAmount: String(existingInvoice.discountAmount),
       });
     }
   }, [isEditMode, existingInvoice, reset]);
@@ -229,7 +235,7 @@ export const InvoiceForm: React.FC = () => {
   if (isError) {
     return (
       <ErrorMessage
-        message={(error as Error)?.message || 'Failed to save invoice'}
+        message={(error as Error).message || 'Failed to save invoice'}
         retry={() => {
           createInvoice.reset();
           updateInvoice.reset();
@@ -501,7 +507,7 @@ export const InvoiceForm: React.FC = () => {
 
             <div className="flex items-center gap-3 pt-4">
               <Button type="submit" disabled={isPending} data-testid="invoice-submit">
-                {isPending ? 'Saving...' : isEditMode ? 'Save Changes' : 'Create Invoice'}
+                {getSubmitButtonLabel(isPending, isEditMode)}
               </Button>
               <Link to={isEditMode && id ? `/billing/${id}` : '/billing'}>
                 <Button type="button" variant="ghost">

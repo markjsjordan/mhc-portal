@@ -54,7 +54,7 @@ export function DemoModeBanner({
   onReset,
   onSwitchPersona,
   className = '',
-}: DemoModeBannerProps): React.ReactElement | null {
+}: Readonly<DemoModeBannerProps>): React.ReactElement | null {
   if (!isActive) {
     return null;
   }
@@ -171,7 +171,7 @@ export function DemoModeWatermark({
   text = 'DEMO',
   opacity = 0.05,
   show = true,
-}: DemoModeWatermarkProps): React.ReactElement | null {
+}: Readonly<DemoModeWatermarkProps>): React.ReactElement | null {
   if (!show) {
     return null;
   }
@@ -233,7 +233,7 @@ export function DemoModeContextBadge({
   context,
   size = 'small',
   position = 'top-right',
-}: DemoModeContextBadgeProps): React.ReactElement {
+}: Readonly<DemoModeContextBadgeProps>): React.ReactElement {
   const sizeStyles = {
     small: { fontSize: '0.625rem', padding: '0.125rem 0.375rem' },
     medium: { fontSize: '0.75rem', padding: '0.25rem 0.5rem' },
@@ -247,9 +247,9 @@ export function DemoModeContextBadge({
     'bottom-left': { bottom: '0.5rem', left: '0.5rem' },
   };
 
-  const displayText = stateCode
-    ? `${stateCode.toUpperCase()} DEMO${context ? ` - ${context}` : ''}`
-    : `DEMO${context ? ` - ${context}` : ''}`;
+  const contextSuffix = context ? ` - ${context}` : '';
+  const prefix = stateCode ? `${stateCode.toUpperCase()} DEMO` : 'DEMO';
+  const displayText = `${prefix}${contextSuffix}`;
 
   return (
     <div

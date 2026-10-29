@@ -272,7 +272,7 @@ export function IncidentListPage() {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
                           <p className="text-gray-500">Client</p>
-                          <p className="font-medium text-gray-900">{incident.clientName || 'Unknown'}</p>
+                          <p className="font-medium text-gray-900">{incident.clientName ?? 'Unknown'}</p>
                         </div>
                         <div>
                           <p className="text-gray-500">Location</p>
@@ -287,7 +287,7 @@ export function IncidentListPage() {
                         <div>
                           <p className="text-gray-500">Reported By</p>
                           <p className="font-medium text-gray-900">
-                            {incident.reportedByName || 'Unknown'}
+                            {incident.reportedByName ?? 'Unknown'}
                           </p>
                         </div>
                       </div>

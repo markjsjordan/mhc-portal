@@ -67,7 +67,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       {metadata && (
         <div className="mb-6 text-center">{metadata}</div>
       )}
-      {(action || secondaryAction) && (
+      {(action ?? secondaryAction) && (
         <div className="flex flex-col sm:flex-row gap-3 items-center">
           {action && <div>{action}</div>}
           {secondaryAction && <div>{secondaryAction}</div>}

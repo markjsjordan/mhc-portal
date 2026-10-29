@@ -8,7 +8,7 @@ interface DeductionsListProps {
 }
 
 export const DeductionsList: React.FC<DeductionsListProps> = ({ deductions }) => {
-  if (!deductions || deductions.length === 0) {
+  if (deductions.length === 0) {
     return null;
   }
 
@@ -26,9 +26,7 @@ export const DeductionsList: React.FC<DeductionsListProps> = ({ deductions }) =>
       category = 'Health Savings';
     }
 
-    if (!groups[category]) {
-      groups[category] = [];
-    }
+    groups[category] ??= [];
     groups[category]!.push(deduction);
     return groups;
   }, {} as Record<string, Deduction[]>);

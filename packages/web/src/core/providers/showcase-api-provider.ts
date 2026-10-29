@@ -60,7 +60,7 @@ export class ShowcaseApiProvider implements ApiProvider {
 
     // Auto-login if enabled and no user is logged in
     if (this.autoLogin && !this.currentUser) {
-      const defaultUser = this.data.users.find(u => u.roles.includes(this.defaultRole as any)) || this.data.users[0];
+      const defaultUser = this.data.users.find(u => (u.roles as readonly string[]).includes(this.defaultRole)) ?? this.data.users[0];
       this.currentUser = defaultUser;
       this.saveAuthState();
     }
@@ -86,7 +86,8 @@ export class ShowcaseApiProvider implements ApiProvider {
     this.saveAuthState();
 
     // Remove password from response
-    const { password, ...userWithoutPassword } = user;
+    const userWithoutPassword = { ...user };
+    delete (userWithoutPassword as { password?: string }).password;
 
     return {
       token: `demo-token-${user.id}`,
@@ -102,7 +103,8 @@ export class ShowcaseApiProvider implements ApiProvider {
       };
     }
 
-    const { password, ...userWithoutPassword } = this.currentUser;
+    const userWithoutPassword = { ...this.currentUser };
+    delete (userWithoutPassword as { password?: string }).password;
     return userWithoutPassword;
   }
 
@@ -133,7 +135,7 @@ export class ShowcaseApiProvider implements ApiProvider {
    * Switch to a different user role
    */
   switchRole(role: string): void {
-    const user = this.data.users.find(u => u.roles.includes(role as any));
+    const user = this.data.users.find(u => (u.roles as readonly string[]).includes(role));
     if (user) {
       this.currentUser = user;
       this.saveAuthState();
@@ -185,174 +187,180 @@ export class ShowcaseApiProvider implements ApiProvider {
     method: string,
     url: string,
     data?: unknown,
-    config?: RequestConfig
-  ): Promise<any> {
+    _config?: RequestConfig
+  ): Promise<unknown> {
     // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 200));
+    const delay = 100 + (globalThis.crypto.getRandomValues(new Uint32Array(1))[0] % 200);
+    await new Promise(resolve => setTimeout(resolve, delay));
 
     // Route to appropriate handler
     if (url.includes('/api/auth/login')) {
       return this.handleLogin(data as LoginCredentials);
     }
-
     if (url.includes('/api/auth/me')) {
       return this.getCurrentUser();
     }
-
     if (url.includes('/api/auth/logout')) {
       return this.logout();
     }
-
     if (url.includes('/api/clients')) {
       return this.handleClientsEndpoint(method, url, data);
     }
-
     if (url.includes('/api/care-plans')) {
       return this.handleCarePlansEndpoint(method, url, data);
     }
-
     if (url.includes('/api/tasks')) {
       return this.handleTasksEndpoint(method, url, data);
     }
-
     if (url.includes('/api/shifts')) {
       return this.handleShiftsEndpoint(method, url, data);
     }
-
     if (url.includes('/api/evv-records')) {
       return this.handleEVVEndpoint(method, url, data);
     }
-
     if (url.includes('/api/invoices')) {
       return this.handleInvoicesEndpoint(method, url, data);
     }
-
     if (url.includes('/api/payroll')) {
       return this.handlePayrollEndpoint(method, url, data);
     }
-
     if (url.includes('/api/incidents')) {
-      if (method === 'POST') {
-        return {
-          id: `demo-inc-${Date.now()}`,
-          status: 'REPORTED',
-          createdAt: new Date().toISOString(),
-          ...((data as Record<string, unknown>) ?? {}),
-        };
-      }
-      return [];
+      return this.handleIncidentsEndpoint(method, data);
     }
-
     if (url.includes('/api/users/profile')) {
-      const user = this.currentUser ?? this.data.users[0];
-      return {
-        success: true,
-        data: {
-          id: user?.id ?? 'demo-user-1',
-          firstName: user?.name?.split(' ')[0] ?? 'Demo',
-          lastName: user?.name?.split(' ').slice(1).join(' ') ?? 'Admin',
-          email: user?.email ?? 'admin@folkcare.example',
-          organizationId: user?.organizationId ?? 'demo-org-1',
-          roles: user?.roles ?? ['ORG_ADMIN'],
-        },
-      };
+      return this.handleUserProfileEndpoint();
     }
-
     if (url.includes('/api/organizations/') && url.includes('/invitations')) {
-      if (method === 'POST' && !url.endsWith('/resend')) {
-        const body = (data as Record<string, unknown>) ?? {};
-        const token = `demo-invite-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-        const invite = {
-          id: `inv-${Date.now()}`,
-          token,
-          email: body.email ?? 'invited@example.com',
-          firstName: body.firstName ?? null,
-          lastName: body.lastName ?? null,
-          roles: body.roles ?? ['CAREGIVER'],
-          status: 'PENDING',
-          expiresAt,
-          createdAt: new Date().toISOString(),
-        };
-        if (!Array.isArray((this.data as any).invitations)) {
-          (this.data as any).invitations = [];
-        }
-        (this.data as any).invitations.unshift(invite);
-        this.saveData();
-        return {
-          success: true,
-          data: invite,
-        };
-      }
-      if (method === 'GET') {
-        return {
-          success: true,
-          data: (this.data as any).invitations ?? [],
-        };
-      }
-      return { success: true };
+      return this.handleInvitationsEndpoint(method, url, data);
     }
-
     if (url.includes('/api/organizations/') && url.includes('/users')) {
-      if (method === 'PUT') {
-        const userIdMatch = url.match(/\/users\/([^/]+)$/);
-        const userId = userIdMatch ? userIdMatch[1] : undefined;
-        const updatePayload = data as any;
-        const user = (this.data.users ?? []).find((u: any) => u.id === userId);
-        if (user) {
-          if (updatePayload.firstName !== undefined && updatePayload.lastName !== undefined) {
-            user.name = `${updatePayload.firstName} ${updatePayload.lastName}`;
-          } else if (updatePayload.firstName !== undefined) {
-            user.name = `${updatePayload.firstName} ${user.name?.split(' ').slice(1).join(' ') ?? ''}`;
-          }
-          if (updatePayload.email !== undefined) {
-            user.email = updatePayload.email;
-          }
-          if (updatePayload.roles !== undefined) {
-            user.roles = updatePayload.roles;
-          }
-          this.saveShowcaseData();
-        }
-        return {
-          success: true,
-          data: user ? {
-            id: user.id,
-            firstName: user.name?.split(' ')[0] ?? 'Team',
-            lastName: user.name?.split(' ').slice(1).join(' ') ?? 'Member',
-            email: user.email,
-            roles: user.roles,
-            status: 'ACTIVE',
-            createdAt: new Date().toISOString(),
-          } : undefined,
-        };
-      }
-
-      return {
-        success: true,
-        data: (this.data.users ?? []).map((u: any) => ({
-          id: u.id,
-          firstName: u.name?.split(' ')[0] ?? 'Team',
-          lastName: u.name?.split(' ').slice(1).join(' ') ?? 'Member',
-          email: u.email,
-          roles: u.roles,
-          status: 'ACTIVE',
-          createdAt: new Date().toISOString(),
-        })),
-      };
+      return this.handleOrgUsersEndpoint(method, url, data);
     }
 
     // Default: return empty success
     return { success: true };
   }
 
+  private handleIncidentsEndpoint(method: string, data?: unknown): unknown {
+    if (method === 'POST') {
+      return {
+        id: `demo-inc-${Date.now()}`,
+        status: 'REPORTED',
+        createdAt: new Date().toISOString(),
+        ...((data as Record<string, unknown> | undefined) ?? {}),
+      };
+    }
+    return [];
+  }
+
+  private handleUserProfileEndpoint(): unknown {
+    const user = this.currentUser ?? this.data.users[0];
+    const nameParts = user?.name.split(' ') ?? [];
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Admin';
+    return {
+      success: true,
+      data: {
+        id: user?.id ?? 'demo-user-1',
+        firstName: nameParts[0] ?? 'Demo',
+        lastName,
+        email: user?.email ?? 'admin@folkcare.example',
+        organizationId: user?.organizationId ?? 'demo-org-1',
+        roles: user?.roles ?? ['ORG_ADMIN'],
+      },
+    };
+  }
+
+  private handleInvitationsEndpoint(method: string, url: string, data?: unknown): unknown {
+    const dataRecord = this.data as unknown as { invitations?: Record<string, unknown>[] };
+    dataRecord.invitations ??= [];
+
+    if (method === 'POST' && !url.endsWith('/resend')) {
+      const body = (data as Record<string, unknown> | undefined) ?? {};
+      const randomHex = globalThis.crypto.randomUUID().slice(0, 8);
+      const token = `demo-invite-${Date.now().toString(36)}-${randomHex}`;
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const invite = {
+        id: `inv-${Date.now()}`,
+        token,
+        email: body.email ?? 'invited@example.com',
+        firstName: body.firstName ?? null,
+        lastName: body.lastName ?? null,
+        roles: body.roles ?? ['CAREGIVER'],
+        status: 'PENDING',
+        expiresAt,
+        createdAt: new Date().toISOString(),
+      };
+      dataRecord.invitations.unshift(invite);
+      this.saveData();
+      return {
+        success: true,
+        data: invite,
+      };
+    }
+    if (method === 'GET') {
+      return {
+        success: true,
+        data: dataRecord.invitations,
+      };
+    }
+    return { success: true };
+  }
+
+  private handleOrgUsersEndpoint(method: string, url: string, data?: unknown): unknown {
+    if (method === 'PUT') {
+      const userIdMatch = /\/users\/([^/]+)$/.exec(url);
+      const userId = userIdMatch ? userIdMatch[1] : undefined;
+      const updatePayload = (data as Record<string, unknown> | undefined) ?? {};
+      const user = this.data.users.find((u) => u.id === userId);
+      if (user) {
+        if (typeof updatePayload.firstName === 'string' && typeof updatePayload.lastName === 'string') {
+          user.name = `${updatePayload.firstName} ${updatePayload.lastName}`;
+        } else if (typeof updatePayload.firstName === 'string') {
+          user.name = `${updatePayload.firstName} ${user.name.split(' ').slice(1).join(' ')}`;
+        }
+        if (typeof updatePayload.email === 'string') {
+          user.email = updatePayload.email;
+        }
+        if (Array.isArray(updatePayload.roles)) {
+          user.roles = updatePayload.roles as DemoUser['roles'];
+        }
+        this.saveData();
+      }
+      return {
+        success: true,
+        data: user ? {
+          id: user.id,
+          firstName: user.name.split(' ')[0] ?? 'Team',
+          lastName: user.name.split(' ').slice(1).join(' ') || 'Member',
+          email: user.email,
+          roles: user.roles,
+          status: 'ACTIVE',
+          createdAt: new Date().toISOString(),
+        } : undefined,
+      };
+    }
+
+    return {
+      success: true,
+      data: this.data.users.map((u) => ({
+        id: u.id,
+        firstName: u.name.split(' ')[0] ?? 'Team',
+        lastName: u.name.split(' ').slice(1).join(' ') || 'Member',
+        email: u.email,
+        roles: u.roles,
+        status: 'ACTIVE',
+        createdAt: new Date().toISOString(),
+      })),
+    };
+  }
   private async handleLogin(credentials: LoginCredentials): Promise<AuthResponse> {
     return this.login(credentials);
   }
 
-  private handleClientsEndpoint(method: string, url: string, data?: unknown): any {
+  private handleClientsEndpoint(method: string, url: string, data?: unknown): unknown {
     if (method === 'GET') {
       // Get single client
-      const match = url.match(/\/api\/clients\/([^/]+)$/);
+      const match = /\/api\/clients\/([^/]+)$/.exec(url);
       if (match) {
         const id = match[1];
         const client = this.data.clients.find(c => c.id === id);
@@ -366,29 +374,31 @@ export class ShowcaseApiProvider implements ApiProvider {
     }
 
     if (method === 'POST') {
+      const payload = (data as Record<string, unknown> | undefined) ?? {};
       const newClient = {
         id: `client-${Date.now()}`,
-        ...data,
+        ...payload,
         organizationId: this.currentUser?.organizationId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      this.data.clients.push(newClient);
+      (this.data.clients as unknown[]).push(newClient);
       this.saveData();
       return newClient;
     }
 
     if (method === 'PATCH' || method === 'PUT') {
-      const match = url.match(/\/api\/clients\/([^/]+)$/);
+      const match = /\/api\/clients\/([^/]+)$/.exec(url);
       if (match) {
         const id = match[1];
         const index = this.data.clients.findIndex(c => c.id === id);
         if (index === -1) {
           throw { message: 'Client not found', code: 'NOT_FOUND' };
         }
+        const payload = (data as Record<string, unknown> | undefined) ?? {};
         this.data.clients[index] = {
           ...this.data.clients[index],
-          ...data,
+          ...payload,
           updatedAt: new Date().toISOString(),
         };
         this.saveData();
@@ -397,7 +407,7 @@ export class ShowcaseApiProvider implements ApiProvider {
     }
 
     if (method === 'DELETE') {
-      const match = url.match(/\/api\/clients\/([^/]+)$/);
+      const match = /\/api\/clients\/([^/]+)$/.exec(url);
       if (match) {
         const id = match[1];
         const index = this.data.clients.findIndex(c => c.id === id);
@@ -413,9 +423,9 @@ export class ShowcaseApiProvider implements ApiProvider {
     return { success: true };
   }
 
-  private handleCarePlansEndpoint(method: string, url: string, data?: unknown): any {
+  private handleCarePlansEndpoint(method: string, url: string, data?: unknown): unknown {
     if (method === 'GET') {
-      const match = url.match(/\/api\/care-plans\/([^/]+)$/);
+      const match = /\/api\/care-plans\/([^/]+)$/.exec(url);
       if (match) {
         const id = match[1];
         const plan = this.data.carePlans.find(p => p.id === id);
@@ -428,30 +438,32 @@ export class ShowcaseApiProvider implements ApiProvider {
     }
 
     if (method === 'POST') {
+      const payload = (data as Record<string, unknown> | undefined) ?? {};
       const newPlan = {
         id: `plan-${Date.now()}`,
-        ...data,
+        ...payload,
         organizationId: this.currentUser?.organizationId,
         coordinatorId: this.currentUser?.id,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      this.data.carePlans.push(newPlan);
+      (this.data.carePlans as unknown[]).push(newPlan);
       this.saveData();
       return newPlan;
     }
 
     if (method === 'PATCH' || method === 'PUT') {
-      const match = url.match(/\/api\/care-plans\/([^/]+)$/);
+      const match = /\/api\/care-plans\/([^/]+)$/.exec(url);
       if (match) {
         const id = match[1];
         const index = this.data.carePlans.findIndex(p => p.id === id);
         if (index === -1) {
           throw { message: 'Care plan not found', code: 'NOT_FOUND' };
         }
+        const payload = (data as Record<string, unknown> | undefined) ?? {};
         this.data.carePlans[index] = {
           ...this.data.carePlans[index],
-          ...data,
+          ...payload,
           updatedAt: new Date().toISOString(),
         };
         this.saveData();
@@ -460,7 +472,7 @@ export class ShowcaseApiProvider implements ApiProvider {
     }
 
     if (method === 'DELETE') {
-      const match = url.match(/\/api\/care-plans\/([^/]+)$/);
+      const match = /\/api\/care-plans\/([^/]+)$/.exec(url);
       if (match) {
         const id = match[1];
         const index = this.data.carePlans.findIndex(p => p.id === id);
@@ -476,9 +488,9 @@ export class ShowcaseApiProvider implements ApiProvider {
     return { success: true };
   }
 
-  private handleTasksEndpoint(method: string, url: string, data?: unknown): any {
+  private handleTasksEndpoint(method: string, url: string, data?: unknown): unknown {
     if (method === 'GET') {
-      const match = url.match(/\/api\/tasks\/([^/]+)$/);
+      const match = /\/api\/tasks\/([^/]+)$/.exec(url);
       if (match) {
         const id = match[1];
         const task = this.data.tasks.find(t => t.id === id);
@@ -491,28 +503,30 @@ export class ShowcaseApiProvider implements ApiProvider {
     }
 
     if (method === 'POST') {
+      const payload = (data as Record<string, unknown> | undefined) ?? {};
       const newTask = {
         id: `task-${Date.now()}`,
-        ...data,
+        ...payload,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      this.data.tasks.push(newTask);
+      (this.data.tasks as unknown[]).push(newTask);
       this.saveData();
       return newTask;
     }
 
     if (method === 'PATCH' || method === 'PUT') {
-      const match = url.match(/\/api\/tasks\/([^/]+)$/);
+      const match = /\/api\/tasks\/([^/]+)$/.exec(url);
       if (match) {
         const id = match[1];
         const index = this.data.tasks.findIndex(t => t.id === id);
         if (index === -1) {
           throw { message: 'Task not found', code: 'NOT_FOUND' };
         }
+        const payload = (data as Record<string, unknown> | undefined) ?? {};
         this.data.tasks[index] = {
           ...this.data.tasks[index],
-          ...data,
+          ...payload,
           updatedAt: new Date().toISOString(),
         };
         this.saveData();
@@ -523,9 +537,9 @@ export class ShowcaseApiProvider implements ApiProvider {
     return { success: true };
   }
 
-  private handleShiftsEndpoint(method: string, url: string, data?: unknown): any {
+  private handleShiftsEndpoint(method: string, url: string, data?: unknown): unknown {
     if (method === 'GET') {
-      const match = url.match(/\/api\/shifts\/([^/]+)$/);
+      const match = /\/api\/shifts\/([^/]+)$/.exec(url);
       if (match) {
         const id = match[1];
         const shift = this.data.shifts.find(s => s.id === id);
@@ -538,29 +552,31 @@ export class ShowcaseApiProvider implements ApiProvider {
     }
 
     if (method === 'POST') {
+      const payload = (data as Record<string, unknown> | undefined) ?? {};
       const newShift = {
         id: `shift-${Date.now()}`,
-        ...data,
+        ...payload,
         organizationId: this.currentUser?.organizationId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      this.data.shifts.push(newShift);
+      (this.data.shifts as unknown[]).push(newShift);
       this.saveData();
       return newShift;
     }
 
     if (method === 'PATCH' || method === 'PUT') {
-      const match = url.match(/\/api\/shifts\/([^/]+)$/);
+      const match = /\/api\/shifts\/([^/]+)$/.exec(url);
       if (match) {
         const id = match[1];
         const index = this.data.shifts.findIndex(s => s.id === id);
         if (index === -1) {
           throw { message: 'Shift not found', code: 'NOT_FOUND' };
         }
+        const payload = (data as Record<string, unknown> | undefined) ?? {};
         this.data.shifts[index] = {
           ...this.data.shifts[index],
-          ...data,
+          ...payload,
           updatedAt: new Date().toISOString(),
         };
         this.saveData();
@@ -571,9 +587,9 @@ export class ShowcaseApiProvider implements ApiProvider {
     return { success: true };
   }
 
-  private handleEVVEndpoint(method: string, url: string, data?: unknown): any {
+  private handleEVVEndpoint(method: string, url: string, data?: unknown): unknown {
     if (method === 'GET') {
-      const match = url.match(/\/api\/evv-records\/([^/]+)$/);
+      const match = /\/api\/evv-records\/([^/]+)$/.exec(url);
       if (match) {
         const id = match[1];
         const record = this.data.evvRecords.find(r => r.id === id);
@@ -586,14 +602,15 @@ export class ShowcaseApiProvider implements ApiProvider {
     }
 
     if (method === 'POST') {
+      const payload = (data as Record<string, unknown> | undefined) ?? {};
       const newRecord = {
         id: `evv-${Date.now()}`,
-        ...data,
+        ...payload,
         organizationId: this.currentUser?.organizationId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      this.data.evvRecords.push(newRecord);
+      (this.data.evvRecords as unknown[]).push(newRecord);
       this.saveData();
       return newRecord;
     }
@@ -601,9 +618,9 @@ export class ShowcaseApiProvider implements ApiProvider {
     return { success: true };
   }
 
-  private handleInvoicesEndpoint(method: string, url: string, data?: unknown): any {
+  private handleInvoicesEndpoint(method: string, url: string, data?: unknown): unknown {
     if (method === 'GET') {
-      const match = url.match(/\/api\/invoices\/([^/]+)$/);
+      const match = /\/api\/invoices\/([^/]+)$/.exec(url);
       if (match) {
         const id = match[1];
         const invoice = this.data.invoices.find(i => i.id === id);
@@ -616,15 +633,16 @@ export class ShowcaseApiProvider implements ApiProvider {
     }
 
     if (method === 'POST') {
+      const payload = (data as Record<string, unknown> | undefined) ?? {};
       const newInvoice = {
         id: `invoice-${Date.now()}`,
         invoiceNumber: `INV-${Date.now()}`,
-        ...data,
+        ...payload,
         organizationId: this.currentUser?.organizationId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      this.data.invoices.push(newInvoice);
+      (this.data.invoices as unknown[]).push(newInvoice);
       this.saveData();
       return newInvoice;
     }
@@ -632,9 +650,9 @@ export class ShowcaseApiProvider implements ApiProvider {
     return { success: true };
   }
 
-  private handlePayrollEndpoint(method: string, url: string, data?: unknown): any {
+  private handlePayrollEndpoint(method: string, url: string, data?: unknown): unknown {
     if (method === 'GET') {
-      const match = url.match(/\/api\/payroll\/([^/]+)$/);
+      const match = /\/api\/payroll\/([^/]+)$/.exec(url);
       if (match) {
         const id = match[1];
         const payrun = this.data.payroll.find(p => p.id === id);
@@ -647,14 +665,15 @@ export class ShowcaseApiProvider implements ApiProvider {
     }
 
     if (method === 'POST') {
+      const payload = (data as Record<string, unknown> | undefined) ?? {};
       const newPayrun = {
         id: `payrun-${Date.now()}`,
-        ...data,
+        ...payload,
         organizationId: this.currentUser?.organizationId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      this.data.payroll.push(newPayrun);
+      (this.data.payroll as unknown[]).push(newPayrun);
       this.saveData();
       return newPayrun;
     }

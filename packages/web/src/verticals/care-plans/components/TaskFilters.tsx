@@ -50,24 +50,22 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
   filters,
   onFiltersChange,
 }) => {
-  const [queryInput, setQueryInput] = React.useState(filters.query || '');
+  const [queryInput, setQueryInput] = React.useState(filters.query ?? '');
 
   // Sync input when filters change externally
   React.useEffect(() => {
-    if (filters.query !== queryInput) {
-      setQueryInput(filters.query || '');
-    }
+    setQueryInput(filters.query ?? '');
   }, [filters.query]);
 
   // Debounced query update
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      if ((filters.query || '') !== queryInput) {
+      if ((filters.query ?? '') !== queryInput) {
         onFiltersChange({ ...filters, query: queryInput || undefined });
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [queryInput]);
+  }, [queryInput, filters, onFiltersChange]);
 
   const activeCount = React.useMemo(() => {
     let count = 0;
@@ -80,7 +78,7 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
 
   const toggleStatus = (value: string) => {
     const status = value as TaskStatus;
-    const current = filters.status || [];
+    const current = filters.status ?? [];
     const updated = current.includes(status)
       ? current.filter((s) => s !== status)
       : [...current, status];
@@ -92,7 +90,7 @@ export const TaskFilters: React.FC<TaskFiltersProps> = ({
 
   const toggleCategory = (value: string) => {
     const category = value as TaskCategory;
-    const current = filters.category || [];
+    const current = filters.category ?? [];
     const updated = current.includes(category)
       ? current.filter((c) => c !== category)
       : [...current, category];

@@ -83,7 +83,7 @@ export const ClaimsQueueTable: React.FC<ClaimsQueueTableProps> = ({
         return (
           <span
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-900 border border-rose-300"
-            title={rejectionReason || 'Claim rejected by payor'}
+            title={rejectionReason ?? 'Claim rejected by payor'}
           >
             <AlertCircle className="h-3.5 w-3.5 text-rose-700" />
             REJECTED

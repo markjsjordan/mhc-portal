@@ -33,7 +33,7 @@ export const TaskClientPicker: React.FC<TaskClientPickerProps> = ({ onSelectClie
       {!isLoading && error && (
         <ErrorMessage
           message={(error as Error).message || 'Failed to load clients'}
-          retry={refetch}
+          retry={() => { void refetch(); }}
         />
       )}
 

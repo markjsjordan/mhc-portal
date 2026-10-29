@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search, X, Check } from 'lucide-react';
 import type { FilterOption } from './CalendarFilterBar.js';
-import { STATUS_OPTIONS } from './CalendarFilterBar.js';
+import { STATUS_OPTIONS } from './filter-constants.js';
 import { Button } from '@/components/ui/button.js';
 import { Input } from '@/components/ui/input.js';
 import { Label } from '@/components/ui/label.js';
@@ -131,16 +131,16 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
                     >
                       <span
                         className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: cg?.color || '#3B82F6' }}
+                        style={{ backgroundColor: cg?.color ?? '#3B82F6' }}
                       />
-                      <span>{cg?.name || id}</span>
+                      <span>{cg?.name ?? id}</span>
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon-xs"
                         onClick={() => toggleCaregiver(id)}
                         className="ml-1 h-3.5 w-3.5 p-0 hover:bg-transparent text-primary hover:text-primary"
-                        aria-label={`Remove ${cg?.name || id} filter`}
+                        aria-label={`Remove ${cg?.name ?? id} filter`}
                       >
                         <X className="w-3 h-3" />
                       </Button>
@@ -198,14 +198,14 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground border border-border"
                     >
                       <span className="w-2 h-2 rounded-full bg-primary" />
-                      <span>{cl?.name || id}</span>
+                      <span>{cl?.name ?? id}</span>
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon-xs"
                         onClick={() => toggleClient(id)}
                         className="ml-1 h-3.5 w-3.5 p-0 hover:bg-transparent"
-                        aria-label={`Remove ${cl?.name || id} filter`}
+                        aria-label={`Remove ${cl?.name ?? id} filter`}
                       >
                         <X className="w-3 h-3" />
                       </Button>

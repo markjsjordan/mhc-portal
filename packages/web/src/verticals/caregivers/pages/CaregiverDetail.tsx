@@ -46,7 +46,7 @@ export const CaregiverDetail: React.FC = () => {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <ErrorMessage
-          message={(error as Error)?.message || 'Failed to load caregiver'}
+          message={(error as Error).message || 'Failed to load caregiver'}
           retry={() => {
             refetch().catch((err: unknown) => {
               toast.error(err instanceof Error ? err.message : 'Failed to reload caregiver');
@@ -119,19 +119,17 @@ export const CaregiverDetail: React.FC = () => {
               <Mail className="h-4 w-4 text-gray-400" />
               <span>{caregiver.email}</span>
             </div>
-            {caregiver.primaryPhone && (
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <Phone className="h-4 w-4 text-gray-400" />
-                <span>{formatPhone(caregiver.primaryPhone.number)}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <Phone className="h-4 w-4 text-gray-400" />
+              <span>{formatPhone(caregiver.primaryPhone.number)}</span>
+            </div>
             <div className="flex items-center gap-2 text-sm text-gray-700">
               <Calendar className="h-4 w-4 text-gray-400" />
               <span>Hired: {formatDate(caregiver.hireDate)}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-700">
               <Briefcase className="h-4 w-4 text-gray-400" />
-              <span>Type: {caregiver.employmentType?.replace(/_/g, ' ')}</span>
+              <span>Type: {caregiver.employmentType.replace(/_/g, ' ')}</span>
             </div>
             {caregiver.dateOfBirth && (
               <div className="flex items-center gap-2 text-sm text-gray-700">
@@ -139,12 +137,10 @@ export const CaregiverDetail: React.FC = () => {
                 <span>DOB: {formatDate(caregiver.dateOfBirth)}</span>
               </div>
             )}
-            {caregiver.employmentStatus && (
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <Briefcase className="h-4 w-4 text-gray-400" />
-                <span>Status: {caregiver.employmentStatus.replace(/_/g, ' ')}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <Briefcase className="h-4 w-4 text-gray-400" />
+              <span>Status: {caregiver.employmentStatus.replace(/_/g, ' ')}</span>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -173,7 +169,7 @@ export const CaregiverDetail: React.FC = () => {
           <CardTitle className="text-lg font-medium">Credentials</CardTitle>
         </CardHeader>
         <CardContent>
-          {caregiver.credentials && caregiver.credentials.length > 0 ? (
+          {caregiver.credentials.length > 0 ? (
             <div className="space-y-3">
               {caregiver.credentials.map((credential) => (
                 <div
@@ -210,7 +206,7 @@ export const CaregiverDetail: React.FC = () => {
           </Link>
         </CardHeader>
         <CardContent>
-          {caregiver.training && caregiver.training.length > 0 ? (
+          {caregiver.training.length > 0 ? (
             <div className="space-y-3">
               {caregiver.training.map((record) => (
                 <div
@@ -233,38 +229,34 @@ export const CaregiverDetail: React.FC = () => {
         </CardContent>
       </Card>
 
-      {caregiver && (
-        <>
-          <EditCaregiverModal
-            isOpen={isEditModalOpen}
-            caregiver={caregiver}
-            onClose={() => setIsEditModalOpen(false)}
-            onSuccess={() => {
-              refetch().catch((err: unknown) => {
-                toast.error(err instanceof Error ? err.message : 'Failed to refresh caregiver');
-              });
-              setIsEditModalOpen(false);
-            }}
-          />
+      <EditCaregiverModal
+        isOpen={isEditModalOpen}
+        caregiver={caregiver}
+        onClose={() => setIsEditModalOpen(false)}
+        onSuccess={() => {
+          refetch().catch((err: unknown) => {
+            toast.error(err instanceof Error ? err.message : 'Failed to refresh caregiver');
+          });
+          setIsEditModalOpen(false);
+        }}
+      />
 
-          <DeleteCaregiverConfirmation
-            isOpen={isDeleteModalOpen}
-            caregiver={caregiver}
-            onClose={() => setIsDeleteModalOpen(false)}
-            onSuccess={() => {
-              Promise.resolve(navigate('/caregivers')).catch((err: unknown) => {
-                toast.error(err instanceof Error ? err.message : 'Navigation failed');
-              });
-            }}
-          />
+      <DeleteCaregiverConfirmation
+        isOpen={isDeleteModalOpen}
+        caregiver={caregiver}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onSuccess={() => {
+          Promise.resolve(navigate('/caregivers')).catch((err: unknown) => {
+            toast.error(err instanceof Error ? err.message : 'Navigation failed');
+          });
+        }}
+      />
 
-          <DuplicateCaregiverModal
-            isOpen={isDuplicateModalOpen}
-            caregiver={caregiver}
-            onClose={() => setIsDuplicateModalOpen(false)}
-          />
-        </>
-      )}
+      <DuplicateCaregiverModal
+        isOpen={isDuplicateModalOpen}
+        caregiver={caregiver}
+        onClose={() => setIsDuplicateModalOpen(false)}
+      />
     </div>
   );
 };

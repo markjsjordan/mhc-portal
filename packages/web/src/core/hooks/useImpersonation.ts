@@ -4,7 +4,7 @@
 
 import { useAuth } from './auth';
 import { useApiClient } from './api';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 export interface ImpersonationSession {
   adminUserId: string;
@@ -19,7 +19,7 @@ export const useImpersonation = () => {
 
   // For now, we'll track impersonation status by checking if the user's email
   // is different from what we'd expect. In a full implementation, we'd parse the JWT.
-  const isImpersonating = false; // Placeholder - would need JWT parsing to implement properly
+  const [isImpersonating] = useState(false); // Placeholder - would need JWT parsing to implement properly
 
   // Get impersonation details
   const impersonation: ImpersonationSession | null = null;
@@ -27,7 +27,7 @@ export const useImpersonation = () => {
   // End impersonation session
   const endImpersonation = useCallback(async () => {
     if (!isImpersonating) {
-      return Promise.resolve();
+      return;
     }
 
     try {
@@ -36,7 +36,7 @@ export const useImpersonation = () => {
       // In a real app, we'd want to restore the admin's session
       localStorage.removeItem('auth-storage');
       window.location.reload();
-      return Promise.resolve();
+      return;
     } catch (error) {
       console.error('Failed to end impersonation:', error);
       throw error;
@@ -49,23 +49,23 @@ export const useImpersonation = () => {
       try {
         const response = await apiClient.post<{
           success: boolean;
-          data: {
-            accessToken: string;
-            expiresIn: number;
-            caregiver: { id: string; email: string; name: string };
+          data?: {
+            accessToken?: string;
+            expiresIn?: number;
+            caregiver?: { id: string; email: string; name: string };
           };
         }>('/api/auth/impersonate/start', {
           caregiverId,
         });
 
-        if (response?.data?.accessToken && response.data.caregiver) {
+        if (response.data?.accessToken && response.data.caregiver) {
           // Update auth with the new token
           login(
             {
               id: response.data.caregiver.id,
               email: response.data.caregiver.email,
               name: response.data.caregiver.name,
-              organizationId: user?.organizationId || '',
+              organizationId: user?.organizationId ?? '',
               roles: ['CAREGIVER'],
               permissions: [],
             },
@@ -73,7 +73,7 @@ export const useImpersonation = () => {
           );
           return response.data;
         }
-        return undefined;
+        return;
       } catch (error) {
         console.error('Failed to start impersonation:', error);
         throw error;

@@ -19,7 +19,7 @@ export function TopPerformersTable({
   limit = 5,
   className = '',
   onCaregiverClick,
-}: TopPerformersTableProps) {
+}: Readonly<TopPerformersTableProps>) {
   // Sort by performance score and take top N
   const topPerformers = [...caregivers]
     .sort((a, b) => b.performanceScore - a.performanceScore)

@@ -37,6 +37,18 @@ import {
 } from '@/verticals/analytics-reporting/hooks/useAnalytics';
 import { LoginAsModal } from './admin/components/index.js';
 
+function getEvvIcon(rate: number): React.JSX.Element {
+  if (rate >= 0.95) return <CheckCircle className="h-6 w-6 text-green-600" />;
+  if (rate >= 0.85) return <AlertCircle className="h-6 w-6 text-yellow-600" />;
+  return <AlertCircle className="h-6 w-6 text-red-600" />;
+}
+
+function getEvvTrend(rate: number): 'up' | 'neutral' | 'down' {
+  if (rate >= 0.95) return 'up';
+  if (rate >= 0.85) return 'neutral';
+  return 'down';
+}
+
 interface StatCardProps {
   label: string;
   value: string | number;
@@ -197,7 +209,7 @@ export const AdministratorDashboard: React.FC = () => {
   } = useComplianceAlerts(alertFilters);
 
   const isLoading = kpisLoading || alertsLoading;
-  const error = kpisError || alertsError;
+  const error = kpisError ?? alertsError;
 
   if (isLoading) {
     return (
@@ -244,13 +256,9 @@ export const AdministratorDashboard: React.FC = () => {
     {
       label: 'EVV Compliance',
       value: `${Math.round((kpis?.evvCompliance.complianceRate ?? 0) * 100)}%`,
-      icon: (kpis?.evvCompliance.complianceRate ?? 0) >= 0.95 
-        ? <CheckCircle className="h-6 w-6 text-green-600" />
-        : (kpis?.evvCompliance.complianceRate ?? 0) >= 0.85
-        ? <AlertCircle className="h-6 w-6 text-yellow-600" />
-        : <AlertCircle className="h-6 w-6 text-red-600" />,
+      icon: getEvvIcon(kpis?.evvCompliance.complianceRate ?? 0),
       change: `${kpis?.evvCompliance.compliantVisits ?? 0} of ${kpis?.evvCompliance.totalVisits ?? 0} compliant`,
-      trend: (kpis?.evvCompliance.complianceRate ?? 0) >= 0.95 ? ('up' as const) : ((kpis?.evvCompliance.complianceRate ?? 0) >= 0.85 ? ('neutral' as const) : ('down' as const)),
+      trend: getEvvTrend(kpis?.evvCompliance.complianceRate ?? 0),
     },
   ];
 
@@ -317,15 +325,18 @@ export const AdministratorDashboard: React.FC = () => {
         severity: severityMap[alert.severity] ?? 'info',
         count: alert.count,
         onClick: () => {
-          // Navigate to appropriate page based on alert type
+          let path = '';
           if (alert.type.includes('CREDENTIAL') || alert.type.includes('TRAINING') || alert.type.includes('BACKGROUND')) {
-            navigate('/caregivers');
+            path = '/caregivers';
           } else if (alert.type.includes('AUTHORIZATION') || alert.type.includes('ASSESSMENT')) {
-            navigate('/clients');
+            path = '/clients';
           } else if (alert.type.includes('VISIT') || alert.type.includes('CARE_PLAN')) {
-            navigate('/scheduling');
+            path = '/scheduling';
           } else if (alert.type.includes('EVV')) {
-            navigate('/time-tracking');
+            path = '/time-tracking';
+          }
+          if (path) {
+            Promise.resolve(navigate(path)).catch(() => {});
           }
         },
       };
@@ -373,7 +384,7 @@ export const AdministratorDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Impersonation Banner */}
-      {user && user.roles?.includes('CAREGIVER') && (
+      {user && user.roles.includes('CAREGIVER') && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0" />
           <div className="flex-1">
@@ -409,7 +420,7 @@ export const AdministratorDashboard: React.FC = () => {
             Organization-wide overview and compliance monitoring
           </p>
         </div>
-        {!user?.roles?.includes('CAREGIVER') && (
+        {!user?.roles.includes('CAREGIVER') && (
           <Button
             onClick={() => setIsLoginAsOpen(true)}
             variant="default"
@@ -439,7 +450,7 @@ export const AdministratorDashboard: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate('/compliance')}
+            onClick={() => { Promise.resolve(navigate('/compliance')).catch(() => {}); }}
           >
             View All
           </Button>
@@ -488,7 +499,7 @@ export const AdministratorDashboard: React.FC = () => {
               <Button
                 variant="default"
                 size="sm"
-                onClick={() => navigate('/admin/activity')}
+                onClick={() => { Promise.resolve(navigate('/admin/activity')).catch(() => {}); }}
               >
                 View Activity Log
               </Button>
@@ -509,7 +520,7 @@ export const AdministratorDashboard: React.FC = () => {
                 user: {
                   id: caregiver.id,
                   email: caregiver.email,
-                  organizationId: user?.organizationId || '',
+                  organizationId: user?.organizationId ?? '',
                   name: caregiver.name,
                   roles: ['CAREGIVER'],
                   permissions: [],

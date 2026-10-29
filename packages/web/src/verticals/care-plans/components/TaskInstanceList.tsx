@@ -278,7 +278,7 @@ export const TaskInstanceList: React.FC<TaskInstanceListProps> = ({
     return (
       <ErrorMessage
         message={(error as Error).message || 'Failed to load tasks'}
-        retry={refetch}
+        retry={() => { void refetch(); }}
       />
     );
   }
@@ -427,7 +427,7 @@ export const TaskInstanceList: React.FC<TaskInstanceListProps> = ({
               <TaskCard
                 task={task}
                 showCompleteButton={can('tasks:write') && task.status === 'SCHEDULED'}
-                onCompleted={() => refetch()}
+                onCompleted={() => { void refetch(); }}
               />
             </div>
           ))}

@@ -50,6 +50,48 @@ export interface OnboardingEmptyStateProps {
   icon?: React.ReactNode;
 }
 
+function renderPrimaryAction({
+  showDemoDataOption,
+  onLoadDemoData,
+  isLoadingDemoData,
+  canAdd,
+  onAddResource,
+  resourceSingular,
+}: {
+  showDemoDataOption?: boolean;
+  onLoadDemoData?: () => void;
+  isLoadingDemoData?: boolean;
+  canAdd: boolean;
+  onAddResource?: () => void;
+  resourceSingular: string;
+}): React.JSX.Element | null {
+  if (showDemoDataOption && onLoadDemoData) {
+    return (
+      <Button
+        onClick={onLoadDemoData}
+        disabled={isLoadingDemoData}
+        size="lg"
+        variant="default"
+      >
+        <Sparkles className="h-4 w-4 mr-2" />
+        {isLoadingDemoData ? 'Loading...' : 'Load Sample Data'}
+      </Button>
+    );
+  }
+  if (canAdd && onAddResource) {
+    return (
+      <Button
+        onClick={onAddResource}
+        size="lg"
+      >
+        <Plus className="h-4 w-4 mr-2" />
+        Add {resourceSingular.charAt(0).toUpperCase() + resourceSingular.slice(1)}
+      </Button>
+    );
+  }
+  return null;
+}
+
 export const OnboardingEmptyState: React.FC<OnboardingEmptyStateProps> = ({
   resourceType,
   resourceSingular,
@@ -62,7 +104,7 @@ export const OnboardingEmptyState: React.FC<OnboardingEmptyStateProps> = ({
   icon,
 }) => {
   const defaultDescription = 
-    description || 
+    description ?? 
     `Get started by ${showDemoDataOption ? 'loading sample data to explore the platform, or by ' : ''}adding your first ${resourceSingular}.`;
 
   return (
@@ -71,36 +113,20 @@ export const OnboardingEmptyState: React.FC<OnboardingEmptyStateProps> = ({
       description={defaultDescription}
       icon={icon}
       size="lg"
-      action={
-        showDemoDataOption && onLoadDemoData ? (
-          <Button
-            onClick={onLoadDemoData}
-            disabled={isLoadingDemoData}
-            size="lg"
-            variant="default"
-          >
-            <Sparkles className="h-4 w-4 mr-2" />
-            {isLoadingDemoData ? 'Loading...' : 'Load Sample Data'}
-          </Button>
-        ) : canAdd && onAddResource ? (
-          <Button
-            onClick={onAddResource}
-            size="lg"
-            disabled={!canAdd}
-            title={!canAdd ? `You do not have permission to create ${resourceType}` : undefined}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add {resourceSingular.charAt(0).toUpperCase() + resourceSingular.slice(1)}
-          </Button>
-        ) : null
-      }
+      action={renderPrimaryAction({
+        showDemoDataOption,
+        onLoadDemoData,
+        isLoadingDemoData,
+        canAdd,
+        onAddResource,
+        resourceSingular,
+      })}
       secondaryAction={
         showDemoDataOption && onLoadDemoData && canAdd && onAddResource ? (
           <Button
             variant="outline"
             onClick={onAddResource}
-            disabled={!canAdd || isLoadingDemoData}
-            title={!canAdd ? `You do not have permission to create ${resourceType}` : undefined}
+            disabled={isLoadingDemoData}
           >
             <Plus className="h-4 w-4 mr-2" />
             Add {resourceSingular.charAt(0).toUpperCase() + resourceSingular.slice(1)}

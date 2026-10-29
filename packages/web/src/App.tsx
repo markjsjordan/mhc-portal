@@ -30,7 +30,7 @@ import {
   CarePlanPage,
   HealthUpdatesPage
 } from './verticals/family-engagement/pages';
-import { GlobalSearch, useGlobalSearch } from './components/search/GlobalSearch';
+import { GlobalSearch, useGlobalSearch } from './components/search/index.js';
 
 // Lazy loaded dashboards
 const AdministratorDashboard = React.lazy(() => import('./app/pages/AdministratorDashboard').then((m) => ({ default: m.AdministratorDashboard })));
@@ -112,8 +112,8 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false, // Prevent aggressive refetching
       retry: (failureCount, error) => {
         // Don't retry on 429 (rate limit) or 4xx client errors
-        const status = (error as any)?.response?.status;
-        if (status === 429 || (status >= 400 && status < 500)) {
+        const status = (error as { response?: { status?: number } } | null)?.response?.status;
+        if (typeof status === 'number' && (status === 429 || (status >= 400 && status < 500))) {
           return false;
         }
         // Retry once for 5xx server errors or network issues
@@ -129,6 +129,22 @@ const queryClient = new QueryClient({
 function AppRoutes() {
   const { isAuthenticated, user } = useAuth();
   const { isOpen, closeSearch } = useGlobalSearch();
+
+  const renderRootElement = () => {
+    if (!isAuthenticated) {
+      return <Navigate to="/login" replace />;
+    }
+    if (user?.roles.includes('FAMILY') || user?.roles.includes('CLIENT')) {
+      return <Navigate to="/family-portal" replace />;
+    }
+    return (
+      <ProtectedRoute>
+        <AppShell>
+          <DashboardSelector />
+        </AppShell>
+      </ProtectedRoute>
+    );
+  };
 
   // 401 handling is now done via onAuthFailure callback in api-provider-factory
   // (see packages/web/src/core/providers/api-provider-factory.ts)
@@ -184,19 +200,7 @@ function AppRoutes() {
       />
       <Route
         path="/"
-        element={
-          !isAuthenticated ? (
-            <Navigate to="/login" replace />
-          ) : user?.roles.includes('FAMILY') || user?.roles.includes('CLIENT') ? (
-            <Navigate to="/family-portal" replace />
-          ) : (
-            <ProtectedRoute>
-              <AppShell>
-                <DashboardSelector />
-              </AppShell>
-            </ProtectedRoute>
-          )
-        }
+        element={renderRootElement()}
       />
       <Route
         path="/dashboard"

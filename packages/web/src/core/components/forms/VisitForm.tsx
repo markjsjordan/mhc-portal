@@ -17,6 +17,19 @@ import {
   SelectValue,
 } from '@/components/ui/select.js';
 
+interface ClientItem {
+  id: string;
+  firstName?: string;
+  first_name?: string;
+  lastName?: string;
+  last_name?: string;
+}
+
+interface ServiceTypeItem {
+  id: string;
+  name: string;
+}
+
 interface VisitFormData {
   clientId: string;
   caregiverId?: string;
@@ -53,16 +66,14 @@ export const VisitForm: React.FC<VisitFormProps> = ({
     clientId: '',
     serviceTypeId: '',
     visitType: initialVisitType,
-    scheduledDate: initialDate || new Date().toISOString().split('T')[0]!,
+    scheduledDate: initialDate ?? new Date().toISOString().split('T')[0]!,
     scheduledStartTime: initialStartTime,
     scheduledEndTime: initialEndTime,
   });
 
   React.useEffect(() => {
-    if (initialVisitType) {
-      setVisitType(initialVisitType);
-      setFormData((prev) => ({ ...prev, visitType: initialVisitType }));
-    }
+    setVisitType(initialVisitType);
+    setFormData((prev) => ({ ...prev, visitType: initialVisitType }));
   }, [initialVisitType]);
 
   const [errors, setErrors] = useState<Partial<Record<keyof VisitFormData, string>>>({});
@@ -73,7 +84,7 @@ export const VisitForm: React.FC<VisitFormProps> = ({
     queryFn: async () => {
       const response = await apiClient.get<unknown>('/api/clients?limit=100');
       // API returns { data: { items } }; showcase returns a bare array.
-      return extractList<any>(response);
+      return extractList<ClientItem>(response);
     },
   });
 
@@ -82,7 +93,7 @@ export const VisitForm: React.FC<VisitFormProps> = ({
     queryKey: ['service-types'],
     queryFn: async () => {
       const response = await apiClient.get<unknown>('/api/service-types?limit=100');
-      return extractList<any>(response);
+      return extractList<ServiceTypeItem>(response);
     },
   });
 
@@ -95,10 +106,6 @@ export const VisitForm: React.FC<VisitFormProps> = ({
 
     if (!formData.serviceTypeId) {
       newErrors.serviceTypeId = 'Service type is required';
-    }
-
-    if (!formData.visitType) {
-      newErrors.visitType = 'Visit type is required';
     }
 
     if (!formData.scheduledDate) {
@@ -166,7 +173,7 @@ export const VisitForm: React.FC<VisitFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
       {/* Client Selection */}
       <div className="space-y-1">
         <Label htmlFor="visit-client" className="text-sm font-medium">
@@ -184,7 +191,7 @@ export const VisitForm: React.FC<VisitFormProps> = ({
             <SelectValue placeholder="Select a client" />
           </SelectTrigger>
           <SelectContent>
-            {clients.map((client: any) => (
+            {clients.map((client) => (
               <SelectItem key={client.id} value={client.id}>
                 {client.firstName ?? client.first_name} {client.lastName ?? client.last_name}
               </SelectItem>
@@ -211,7 +218,7 @@ export const VisitForm: React.FC<VisitFormProps> = ({
             <SelectValue placeholder="Select a service type" />
           </SelectTrigger>
           <SelectContent>
-            {serviceTypes.map((type: any) => (
+            {serviceTypes.map((type) => (
               <SelectItem key={type.id} value={type.id}>
                 {type.name}
               </SelectItem>
@@ -285,7 +292,7 @@ export const VisitForm: React.FC<VisitFormProps> = ({
         <Input
           id="visit-address"
           type="text"
-          value={formData.address || ''}
+          value={formData.address ?? ''}
           onChange={(e) => handleChange('address', e.target.value)}
           placeholder="Service address"
         />
@@ -296,7 +303,7 @@ export const VisitForm: React.FC<VisitFormProps> = ({
         <Label htmlFor="visit-notes" className="text-sm font-medium">Internal Notes</Label>
         <Textarea
           id="visit-notes"
-          value={formData.notes || ''}
+          value={formData.notes ?? ''}
           onChange={(e) => handleChange('notes', e.target.value)}
           placeholder="Internal notes"
           rows={3}
@@ -308,7 +315,7 @@ export const VisitForm: React.FC<VisitFormProps> = ({
         <Label htmlFor="visit-instructions" className="text-sm font-medium">Client Instructions</Label>
         <Textarea
           id="visit-instructions"
-          value={formData.clientInstructions || ''}
+          value={formData.clientInstructions ?? ''}
           onChange={(e) => handleChange('clientInstructions', e.target.value)}
           placeholder="Instructions for caregiver"
           rows={3}
