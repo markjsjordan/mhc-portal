@@ -192,7 +192,6 @@ export const ComparisonTable: React.FC = () => {
         </p>
         <Button
           onClick={() => window.open('https://folk.care', '_blank', 'noopener,noreferrer')}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 h-auto"
         >
           Visit Full Demo →
         </Button>

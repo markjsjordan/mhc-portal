@@ -148,9 +148,8 @@ export function DemoModeBar() {
             {/* Exit demo button */}
             <Button
               onClick={() => void endSession()}
-              variant="ghost"
+              variant="destructive"
               size="sm"
-              className="bg-red-500/80 hover:bg-red-500 text-white px-3 py-1.5 h-auto font-medium"
             >
               Exit Demo
             </Button>

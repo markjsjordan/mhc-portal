@@ -140,11 +140,6 @@ export const NoteSummarizer: React.FC<NoteSummarizerProps> = ({
                 size="sm"
                 variant={strategy === s ? 'default' : 'outline'}
                 onClick={() => setStrategy(s as any)}
-                className={`px-2 py-1 text-xs rounded border transition-colors ${
-                  strategy === s
-                    ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
-                    : 'bg-white text-gray-700 border-gray-300 hover:border-purple-400'
-                }`}
               >
                 {s === 'BULLET_POINTS' ? 'Bullets' : s.charAt(0) + s.slice(1).toLowerCase()}
               </Button>
@@ -183,7 +178,7 @@ export const NoteSummarizer: React.FC<NoteSummarizerProps> = ({
           type="button"
           onClick={handleSummarize}
           disabled={summarizeMutation.isPending}
-          className="w-full px-4 py-2 text-sm font-semibold text-white bg-purple-600 rounded-md hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          className="w-full"
         >
           {summarizeMutation.isPending ? (
             <span className="flex items-center justify-center gap-2">
