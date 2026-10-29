@@ -3,6 +3,8 @@
  * Provides methods to interact with the analytics and reporting backend
  */
 
+import type { ApiClient } from '@/core/services';
+import { useAuthStore } from '@/core/hooks/auth';
 import type {
   OperationalKPIs,
   ComplianceAlert,
@@ -26,33 +28,33 @@ export interface AnalyticsFilters {
 }
 
 export class AnalyticsApiService {
-  constructor(private baseUrl: string) {}
+  private apiClient?: ApiClient;
+  private baseUrl: string;
+
+  constructor(clientOrBaseUrl?: ApiClient | string) {
+    if (typeof clientOrBaseUrl === 'string') {
+      this.baseUrl = clientOrBaseUrl;
+    } else if (clientOrBaseUrl) {
+      this.apiClient = clientOrBaseUrl;
+      this.baseUrl = '';
+    } else {
+      this.baseUrl = '';
+    }
+  }
 
   /**
-   * Get auth headers with token
+   * Get auth headers with token from in-memory Zustand auth store
    */
   private getAuthHeaders(): Record<string, string> {
-    // Zustand persists auth under 'auth-storage' key
-    const authStorage = globalThis.localStorage?.getItem('auth-storage');
-    let token: string | null = null;
-    
-    if (authStorage) {
-      try {
-        const parsed = JSON.parse(authStorage);
-        token = parsed.state?.token ?? null;
-      } catch (e) {
-        console.error('Failed to parse auth storage:', e);
-      }
-    }
-    
+    const token = useAuthStore.getState().token;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-    
+
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     return headers;
   }
 
@@ -64,12 +66,17 @@ export class AnalyticsApiService {
       startDate: filters.dateRange.startDate.toISOString(),
       endDate: filters.dateRange.endDate.toISOString(),
     });
-    
+
     if (filters.branchId) {
       params.append('branchId', filters.branchId);
     }
 
-    const response = await fetch(`${this.baseUrl}/api/analytics/kpis?${params.toString()}`, {
+    const path = `/api/analytics/kpis?${params.toString()}`;
+    if (this.apiClient) {
+      return this.apiClient.get<OperationalKPIs>(path);
+    }
+
+    const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
       credentials: 'include',
@@ -87,17 +94,21 @@ export class AnalyticsApiService {
    */
   async getComplianceAlerts(filters: AnalyticsFilters): Promise<ComplianceAlert[]> {
     const params = new URLSearchParams();
-    
+
     if (filters.branchId) {
       params.append('branchId', filters.branchId);
     }
 
     const queryString = params.toString();
-    const url = queryString 
-      ? `${this.baseUrl}/api/analytics/compliance-alerts?${queryString}`
-      : `${this.baseUrl}/api/analytics/compliance-alerts`;
+    const path = queryString
+      ? `/api/analytics/compliance-alerts?${queryString}`
+      : '/api/analytics/compliance-alerts';
 
-    const response = await fetch(url, {
+    if (this.apiClient) {
+      return this.apiClient.get<ComplianceAlert[]>(path);
+    }
+
+    const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
       credentials: 'include',
@@ -115,17 +126,21 @@ export class AnalyticsApiService {
    */
   async getRevenueTrends(filters: AnalyticsFilters): Promise<RevenueTrendDataPoint[]> {
     const params = new URLSearchParams();
-    
+
     if (filters.branchId) {
       params.append('branchId', filters.branchId);
     }
 
     const queryString = params.toString();
-    const url = queryString 
-      ? `${this.baseUrl}/api/analytics/revenue-trends?${queryString}`
-      : `${this.baseUrl}/api/analytics/revenue-trends`;
+    const path = queryString
+      ? `/api/analytics/revenue-trends?${queryString}`
+      : '/api/analytics/revenue-trends';
 
-    const response = await fetch(url, {
+    if (this.apiClient) {
+      return this.apiClient.get<RevenueTrendDataPoint[]>(path);
+    }
+
+    const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
       credentials: 'include',
@@ -150,14 +165,17 @@ export class AnalyticsApiService {
       endDate: filters.dateRange.endDate.toISOString(),
     });
 
-    const response = await fetch(
-      `${this.baseUrl}/api/analytics/caregiver-performance/${caregiverId}?${params.toString()}`,
-      {
-        method: 'GET',
-        headers: this.getAuthHeaders(),
-        credentials: 'include',
-      }
-    );
+    const path = `/api/analytics/caregiver-performance/${caregiverId}?${params.toString()}`;
+
+    if (this.apiClient) {
+      return this.apiClient.get<CaregiverPerformance>(path);
+    }
+
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+      credentials: 'include',
+    });
 
     if (!response.ok) {
       throw new Error('Failed to fetch caregiver performance');
@@ -176,12 +194,18 @@ export class AnalyticsApiService {
       startDate: filters.dateRange.startDate.toISOString(),
       endDate: filters.dateRange.endDate.toISOString(),
     });
-    
+
     if (filters.branchId) {
       params.append('branchId', filters.branchId);
     }
 
-    const response = await fetch(`${this.baseUrl}/api/analytics/caregiver-performance?${params.toString()}`, {
+    const path = `/api/analytics/caregiver-performance?${params.toString()}`;
+
+    if (this.apiClient) {
+      return this.apiClient.get<CaregiverPerformance[]>(path);
+    }
+
+    const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
       credentials: 'include',
@@ -199,17 +223,21 @@ export class AnalyticsApiService {
    */
   async getEVVExceptions(filters: AnalyticsFilters): Promise<VisitException[]> {
     const params = new URLSearchParams();
-    
+
     if (filters.branchId) {
       params.append('branchId', filters.branchId);
     }
 
     const queryString = params.toString();
-    const url = queryString 
-      ? `${this.baseUrl}/api/analytics/evv-exceptions?${queryString}`
-      : `${this.baseUrl}/api/analytics/evv-exceptions`;
+    const path = queryString
+      ? `/api/analytics/evv-exceptions?${queryString}`
+      : '/api/analytics/evv-exceptions';
 
-    const response = await fetch(url, {
+    if (this.apiClient) {
+      return this.apiClient.get<VisitException[]>(path);
+    }
+
+    const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
       credentials: 'include',
@@ -226,7 +254,13 @@ export class AnalyticsApiService {
    * Get dashboard statistics
    */
   async getDashboardStats(): Promise<DashboardStats> {
-    const response = await fetch(`${this.baseUrl}/api/analytics/dashboard-stats`, {
+    const path = '/api/analytics/dashboard-stats';
+
+    if (this.apiClient) {
+      return this.apiClient.get<DashboardStats>(path);
+    }
+
+    const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
       credentials: 'include',
@@ -246,10 +280,17 @@ export class AnalyticsApiService {
     reportType: ReportType,
     filters: AnalyticsFilters
   ): Promise<Report> {
-    const response = await fetch(`${this.baseUrl}/api/analytics/reports/generate`, {
+    const path = '/api/analytics/reports/generate';
+    const payload = { reportType, ...filters };
+
+    if (this.apiClient) {
+      return this.apiClient.post<Report>(path, payload);
+    }
+
+    const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
-      body: JSON.stringify({ reportType, ...filters }),
+      body: JSON.stringify(payload),
       credentials: 'include',
     });
 
@@ -264,8 +305,14 @@ export class AnalyticsApiService {
    * Get list of generated reports
    */
   async getReports(filters?: Partial<AnalyticsFilters>): Promise<Report[]> {
-    const queryParams = filters ? `?${new URLSearchParams(filters as any)}` : '';
-    const response = await fetch(`${this.baseUrl}/api/analytics/reports${queryParams}`, {
+    const queryParams = filters ? `?${new URLSearchParams(filters as Record<string, string>)}` : '';
+    const path = `/api/analytics/reports${queryParams}`;
+
+    if (this.apiClient) {
+      return this.apiClient.get<Report[]>(path);
+    }
+
+    const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
       credentials: 'include',
@@ -285,14 +332,17 @@ export class AnalyticsApiService {
     reportId: string,
     format: ExportFormat
   ): Promise<Blob> {
-    const response = await fetch(
-      `${this.baseUrl}/api/analytics/reports/${reportId}/export?format=${format}`,
-      {
-        method: 'GET',
-        headers: this.getAuthHeaders(),
-        credentials: 'include',
-      }
-    );
+    const path = `/api/analytics/reports/${reportId}/export?format=${format}`;
+
+    if (this.apiClient) {
+      return this.apiClient.get<Blob>(path, { responseType: 'blob' });
+    }
+
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+      credentials: 'include',
+    });
 
     if (!response.ok) {
       throw new Error('Failed to export report');
@@ -301,3 +351,6 @@ export class AnalyticsApiService {
     return response.blob();
   }
 }
+
+export const createAnalyticsApiService = (apiClient: ApiClient): AnalyticsApiService =>
+  new AnalyticsApiService(apiClient);
