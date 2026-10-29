@@ -161,7 +161,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isDesktopOpen
     // Messages: the API authorizes by role (PermissionService), so show it to
     // staff roles even when the stored permission list predates messages:*.
     if (item.path === '/messages') {
-      const messagingRoles = ['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN', 'COORDINATOR', 'CAREGIVER'];
+      const messagingRoles = ['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN', 'COORDINATOR', 'CAREGIVER', 'NURSE', 'NURSE_RN', 'NURSE_LPN', 'CLINICAL'];
       return can('messages:view') || !!user?.roles.some((role) => messagingRoles.includes(role));
     }
 
