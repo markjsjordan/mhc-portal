@@ -23,6 +23,7 @@ function isDomainError(error: unknown): error is ValidationError | PermissionErr
 function handleError(error: unknown, res: Response, operation: string): void {
   if (isDomainError(error)) {
     if (error instanceof ValidationError) {
+      console.error(`[${operation}] Validation error:`, JSON.stringify(error.context, null, 2));
       res.status(400).json({ error: error.message, details: error.context });
     } else if (error instanceof PermissionError) {
       res.status(403).json({ error: error.message });
@@ -31,10 +32,10 @@ function handleError(error: unknown, res: Response, operation: string): void {
     }
   } else if (error instanceof Error && error.name === 'ZodError') {
     // Handle Zod validation errors that slip through
-    console.error(`Validation error ${operation}:`, error);
+    console.error(`[${operation}] Zod validation error:`, JSON.stringify((error as any).errors, null, 2));
     res.status(400).json({ error: 'Validation failed', details: (error as any).errors });
   } else {
-    console.error(`Error ${operation}:`, error);
+    console.error(`[${operation}] Unexpected error:`, error);
     res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -135,9 +136,15 @@ export function createCarePlanHandlers(service: CarePlanService, templateService
     async createCarePlan(req: Request, res: Response) {
       try {
         const context = getUserContext(req);
+        
+        // Log the incoming payload for debugging
+        console.log('[createCarePlan] Received payload:', JSON.stringify(req.body, null, 2));
+        
         const carePlan = await service.createCarePlan(req.body, context);
         res.status(201).json(carePlan);
       } catch (error: unknown) {
+        // Log the full error details for debugging
+        console.error('[createCarePlan] Error:', error);
         handleError(error, res, 'creating care plan');
       }
     },
