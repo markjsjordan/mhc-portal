@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export function useRegisterSW(_options?: any) {
+export function useRegisterSW(_options?: unknown) {
   const [needRefresh, setNeedRefresh] = useState(false);
   const [offlineReady, setOfflineReady] = useState(false);
   const updateServiceWorker = async (_reloadPage: boolean = true) => {};

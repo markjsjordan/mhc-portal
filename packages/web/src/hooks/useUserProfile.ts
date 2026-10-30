@@ -88,9 +88,12 @@ export function useUserProfile() {
       // Update synced timestamp
       queryClient.setQueryData(['profileSyncedAt'], new Date());
     },
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: unknown) => {
       // Don't retry version conflicts
-      if (error?.response?.data?.code === 'VERSION_CONFLICT') {
+      if (error && typeof error === 'object' && 'response' in error && 
+          error.response && typeof error.response === 'object' && 'data' in error.response &&
+          error.response.data && typeof error.response.data === 'object' && 'code' in error.response.data &&
+          error.response.data.code === 'VERSION_CONFLICT') {
         return false;
       }
       return failureCount < 3;
