@@ -179,6 +179,90 @@ export class PermissionService {
       'READ_ONLY',
       new Set(['clients:read', 'reports:read'])
     );
+
+    // Nurse - clinical care access
+    this.rolePermissions.set(
+      'NURSE',
+      new Set([
+        'clients:read',
+        'clients:update',
+        'care-plans:read',
+        'care-plans:update',
+        'visits:read',
+        'visits:update',
+        'tasks:read',
+        'tasks:update',
+        'notes:create',
+        'notes:read',
+        'incidents:read',
+        'incidents:create',
+        'messages:view',
+        'messages:send',
+      ])
+    );
+
+    // Registered Nurse (RN) - same as NURSE
+    this.rolePermissions.set(
+      'NURSE_RN',
+      new Set([
+        'clients:read',
+        'clients:update',
+        'care-plans:read',
+        'care-plans:update',
+        'visits:read',
+        'visits:update',
+        'tasks:read',
+        'tasks:update',
+        'notes:create',
+        'notes:read',
+        'incidents:read',
+        'incidents:create',
+        'messages:view',
+        'messages:send',
+      ])
+    );
+
+    // Licensed Practical Nurse (LPN) - same as NURSE
+    this.rolePermissions.set(
+      'NURSE_LPN',
+      new Set([
+        'clients:read',
+        'clients:update',
+        'care-plans:read',
+        'care-plans:update',
+        'visits:read',
+        'visits:update',
+        'tasks:read',
+        'tasks:update',
+        'notes:create',
+        'notes:read',
+        'incidents:read',
+        'incidents:create',
+        'messages:view',
+        'messages:send',
+      ])
+    );
+
+    // Clinical staff - same as NURSE
+    this.rolePermissions.set(
+      'CLINICAL',
+      new Set([
+        'clients:read',
+        'clients:update',
+        'care-plans:read',
+        'care-plans:update',
+        'visits:read',
+        'visits:update',
+        'tasks:read',
+        'tasks:update',
+        'notes:create',
+        'notes:read',
+        'incidents:read',
+        'incidents:create',
+        'messages:view',
+        'messages:send',
+      ])
+    );
   }
 
   /**

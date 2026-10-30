@@ -59,6 +59,10 @@ describe('PermissionService', () => {
         'HR',
         'AUDITOR',
         'READ_ONLY',
+        'NURSE',
+        'NURSE_RN',
+        'NURSE_LPN',
+        'CLINICAL',
       ];
 
       expectedRoles.forEach(role => {
@@ -374,6 +378,52 @@ describe('PermissionService', () => {
         expect(permissionService.hasPermission(context, 'clients:write')).toBe(false);
         expect(permissionService.hasPermission(context, 'schedules:write')).toBe(false);
         expect(permissionService.hasPermission(context, 'billing:write')).toBe(false);
+      });
+    });
+
+    describe('NURSE, NURSE_RN, NURSE_LPN, and CLINICAL', () => {
+      const nurseRoles: Role[] = ['NURSE', 'NURSE_RN', 'NURSE_LPN', 'CLINICAL'];
+      const expectedNursePermissions = [
+        'clients:read',
+        'clients:update',
+        'care-plans:read',
+        'care-plans:update',
+        'visits:read',
+        'visits:update',
+        'tasks:read',
+        'tasks:update',
+        'notes:create',
+        'notes:read',
+        'incidents:read',
+        'incidents:create',
+        'messages:view',
+        'messages:send',
+      ];
+
+      it.each(nurseRoles)('should grant clinical permissions for %s', (role) => {
+        const context = createMockUserContext({
+          roles: [role],
+          permissions: [],
+        });
+
+        expectedNursePermissions.forEach((perm) => {
+          expect(permissionService.hasPermission(context, perm)).toBe(true);
+        });
+
+        const rolePerms = permissionService.getPermissionsForRoles([role]);
+        expect(rolePerms).toEqual(expect.arrayContaining(expectedNursePermissions));
+        expect(rolePerms).toHaveLength(expectedNursePermissions.length);
+      });
+
+      it.each(nurseRoles)('should not grant administrative or billing permissions for %s', (role) => {
+        const context = createMockUserContext({
+          roles: [role],
+          permissions: [],
+        });
+
+        expect(permissionService.hasPermission(context, 'billing:read')).toBe(false);
+        expect(permissionService.hasPermission(context, 'admin:access')).toBe(false);
+        expect(permissionService.hasPermission(context, 'clients:delete')).toBe(false);
       });
     });
   });
