@@ -10,6 +10,10 @@ vi.mock('../../hooks/useVisits', () => ({
   useVisit: (id: string | undefined) => mockUseVisit(id),
 }));
 
+vi.mock('@/verticals/caregivers', () => ({
+  useCaregiver: () => ({ data: undefined, isLoading: false }),
+}));
+
 const visit: Visit = {
   id: 'visit-1',
   organizationId: 'org-1',
@@ -97,5 +101,25 @@ describe('VisitDetailsPanel', () => {
     client.setQueryData(['visits', 'detail', 'visit-1'], visit);
     unmount();
     expect(client.getQueryData(['visits', 'detail', 'visit-1'])).toBeUndefined();
+  });
+
+  test('renders caregiver full name when assigned and Unassigned when unassigned', () => {
+    mockUseVisit.mockReturnValue({
+      data: {
+        ...visit,
+        assignedCaregiverId: 'cg-1',
+        caregiverFirstName: 'Elena',
+        caregiverLastName: 'Rostova',
+      },
+      isLoading: false,
+      error: null,
+    });
+    const { unmount } = renderPanel();
+    expect(screen.getByText('Elena Rostova')).toBeInTheDocument();
+    unmount();
+
+    mockUseVisit.mockReturnValue({ data: visit, isLoading: false, error: null });
+    renderPanel();
+    expect(screen.getByText('Unassigned')).toBeInTheDocument();
   });
 });

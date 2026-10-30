@@ -93,6 +93,11 @@ export const ReassignVisitModal: React.FC<ReassignVisitModalProps> = ({
             <span className="font-medium text-foreground">
               {(() => {
                 if (currentCaregiver) return currentCaregiver.name;
+                if (visit.caregiverFirstName && visit.caregiverLastName) {
+                  return `${visit.caregiverFirstName} ${visit.caregiverLastName}`;
+                }
+                if (visit.caregiverName) return visit.caregiverName;
+                if (visit.assignedCaregiverName) return visit.assignedCaregiverName;
                 if (visit.assignedCaregiverId) return 'Assigned';
                 return 'Unassigned';
               })()}

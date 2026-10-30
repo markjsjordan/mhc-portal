@@ -33,8 +33,14 @@ export interface Visit {
 
   // Assignment
   assignedCaregiverId?: string;
+  assignedCaregiverName?: string;
   assignedAt?: Date | string;
   assignmentMethod?: AssignmentMethod;
+
+  // Caregiver info (denormalized for display)
+  caregiverFirstName?: string;
+  caregiverLastName?: string;
+  caregiverName?: string;
 
   // Client info (denormalized for display)
   clientFirstName?: string;

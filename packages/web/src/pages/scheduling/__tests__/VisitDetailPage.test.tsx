@@ -353,4 +353,36 @@ describe('VisitDetailPage', () => {
     // Progress updates back to 1 of 4 (25%)
     expect(screen.getByText(/1 of 4 completed \(25%\)/i)).toBeInTheDocument();
   });
+
+  it('displays caregiver full name in plain English and never shows raw caregiver ID', () => {
+    mockVisitData = {
+      id: 'vis-cg-name-1',
+      visitNumber: 'VST-CG-01',
+      clientId: 'client-1',
+      clientFirstName: 'Margaret',
+      clientLastName: 'Thompson',
+      scheduledDate: '2026-10-25',
+      scheduledStartTime: '09:00 AM',
+      scheduledEndTime: '11:00 AM',
+      scheduledDuration: 120,
+      serviceTypeId: 'svc-personal-care',
+      serviceTypeName: 'Personal Care & Assistance',
+      visitType: 'REGULAR',
+      status: 'SCHEDULED',
+      assignedCaregiverId: 'cg-201',
+      caregiverFirstName: 'Sarah',
+      caregiverLastName: 'Jenkins',
+      address: {
+        line1: '789 Oak Ave',
+        city: 'Portland',
+        state: 'OR',
+        postalCode: '97201',
+      },
+    } as any;
+
+    renderPage('vis-cg-name-1');
+
+    expect(screen.getByText('Sarah Jenkins')).toBeInTheDocument();
+    expect(screen.queryByText(/ID:\s*cg-201/i)).not.toBeInTheDocument();
+  });
 });

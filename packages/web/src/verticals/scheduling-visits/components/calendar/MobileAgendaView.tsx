@@ -58,7 +58,12 @@ export const MobileAgendaView: React.FC<MobileAgendaViewProps> = ({
 
           let caregiverDisplayName = 'Unassigned';
           if (visit.assignedCaregiverId) {
-            caregiverDisplayName = caregiverNameMap?.get(visit.assignedCaregiverId) ?? 'Assigned';
+            const visitCgName =
+              visit.caregiverFirstName && visit.caregiverLastName
+                ? `${visit.caregiverFirstName} ${visit.caregiverLastName}`
+                : visit.caregiverName ?? visit.assignedCaregiverName;
+            caregiverDisplayName =
+              visitCgName ?? caregiverNameMap?.get(visit.assignedCaregiverId) ?? 'Assigned';
           }
 
           let statusColor = caregiverColor;

@@ -93,6 +93,8 @@ export const VisitDetailPage: React.FC = () => {
         accessInstructions: 'Building callbox #0412. Apartment on 4th floor, elevator to left. Dog friendly.',
       },
       assignedCaregiverId: 'cg-201',
+      caregiverFirstName: 'Sarah',
+      caregiverLastName: 'Jenkins',
       assignmentMethod: 'PREFERRED',
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -338,6 +340,15 @@ export const VisitDetailPage: React.FC = () => {
   })();
 
   const caregiverName = (() => {
+    if (visit.caregiverFirstName && visit.caregiverLastName) {
+      return `${visit.caregiverFirstName} ${visit.caregiverLastName}`;
+    }
+    if (visit.caregiverName) {
+      return visit.caregiverName;
+    }
+    if (visit.assignedCaregiverName) {
+      return visit.assignedCaregiverName;
+    }
     if (caregiver) {
       return `${caregiver.firstName} ${caregiver.lastName}`;
     }
@@ -663,7 +674,6 @@ export const VisitDetailPage: React.FC = () => {
                   <div className="min-w-0 flex-1">
                     <p className="text-base font-bold text-gray-900 truncate">{caregiverName}</p>
                     <p className="text-xs text-indigo-600 font-medium">CNA / Caregiver Lead</p>
-                    <p className="text-xs text-gray-500 font-mono mt-0.5">ID: {visit.assignedCaregiverId}</p>
                   </div>
                 </div>
 
