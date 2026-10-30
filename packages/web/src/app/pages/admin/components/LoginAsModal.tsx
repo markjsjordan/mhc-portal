@@ -9,6 +9,7 @@ import { useApiClient } from '@/core/hooks/api.js';
 import { useAuth } from '@/core/hooks/auth.js';
 import type { CaregiverListItem, PaginatedCaregivers } from '@/verticals/caregivers/types/index.js';
 import { Button } from '@/components/ui/button.js';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table.js';
 
 interface LoginAsModalProps {
   isOpen: boolean;
@@ -181,12 +182,11 @@ export const LoginAsModal: React.FC<LoginAsModalProps> = ({
               <Loader className="h-8 w-8 text-blue-500 animate-spin" />
             </div>
           ) : (
-            <table className="w-full text-left border-collapse">
-              <thead className="sticky top-0 bg-gray-50 z-10 border-b border-gray-200 shadow-sm">
-                <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+            <Table>
+              <TableHeader className="sticky top-0 bg-gray-50 z-10 border-b border-gray-200 shadow-sm">
+                <TableRow>
+                  <TableHead
+                    className="cursor-pointer hover:bg-gray-100 select-none"
                     onClick={() => handleSort('first_name')}
                     aria-sort={getAriaSort(sortBy, 'first_name', sortOrder)}
                   >
@@ -200,10 +200,9 @@ export const LoginAsModal: React.FC<LoginAsModalProps> = ({
                         )
                       )}
                     </div>
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-gray-100 select-none"
                     onClick={() => handleSort('last_name')}
                     aria-sort={getAriaSort(sortBy, 'last_name', sortOrder)}
                   >
@@ -217,10 +216,9 @@ export const LoginAsModal: React.FC<LoginAsModalProps> = ({
                         )
                       )}
                     </div>
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-gray-100 select-none"
                     onClick={() => handleSort('email')}
                     aria-sort={getAriaSort(sortBy, 'email', sortOrder)}
                   >
@@ -234,22 +232,22 @@ export const LoginAsModal: React.FC<LoginAsModalProps> = ({
                         )
                       )}
                     </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {caregivers.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="px-6 py-12 text-center text-sm text-gray-500">
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center text-sm text-gray-500 py-12">
                       No caregivers found
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   caregivers.map((caregiver) => {
                     const isThisCaregiverImpersonating =
                       selectedCaregiverId === caregiver.id && isImpersonating;
                     return (
-                      <tr
+                      <TableRow
                         key={caregiver.id}
                         onClick={() => {
                           if (!isImpersonating) {
@@ -262,26 +260,26 @@ export const LoginAsModal: React.FC<LoginAsModalProps> = ({
                             : 'cursor-pointer hover:bg-blue-50'
                         }`}
                       >
-                        <td className="px-6 py-3.5 text-sm text-gray-900 font-medium whitespace-nowrap">
+                        <TableCell className="text-sm text-gray-900 font-medium">
                           {caregiver.firstName || '—'}
-                        </td>
-                        <td className="px-6 py-3.5 text-sm text-gray-900 font-medium whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-900 font-medium">
                           {caregiver.lastName || '—'}
-                        </td>
-                        <td className="px-6 py-3.5 text-sm text-gray-600 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-600">
                           <div className="flex items-center justify-between gap-2">
                             <span className="truncate">{caregiver.email || '—'}</span>
                             {isThisCaregiverImpersonating && (
                               <Loader className="h-4 w-4 text-blue-500 animate-spin flex-shrink-0" />
                             )}
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           )}
         </div>
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card.js';
 import { Button } from '@/components/ui/button.js';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs.js';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table.js';
 import { Shield, FileText, Eye, Download, AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface AuditLogEntry {
@@ -194,62 +195,48 @@ export const ComplianceCenter: React.FC = () => {
               Export
             </Button>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Timestamp
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Action
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Resource
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    IP Address
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {MOCK_AUDIT_LOGS.map((log) => (
-                  <tr key={log.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDuration(log.timestamp)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {log.userName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
-                        {log.action}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
-                      {log.resource}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
-                      {log.ipAddress}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {log.status === 'success' ? (
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                      ) : (
-                        <AlertTriangle className="h-5 w-5 text-red-600" />
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Timestamp</TableHead>
+                <TableHead>User</TableHead>
+                <TableHead>Action</TableHead>
+                <TableHead>Resource</TableHead>
+                <TableHead>IP Address</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {MOCK_AUDIT_LOGS.map((log) => (
+                <TableRow key={log.id}>
+                  <TableCell className="text-sm text-gray-900">
+                    {formatDuration(log.timestamp)}
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-900">
+                    {log.userName}
+                  </TableCell>
+                  <TableCell>
+                    <span className="inline-flex px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+                      {log.action}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-600 font-mono">
+                    {log.resource}
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-600 font-mono">
+                    {log.ipAddress}
+                  </TableCell>
+                  <TableCell>
+                    {log.status === 'success' ? (
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <AlertTriangle className="h-5 w-5 text-red-600" />
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </Card>
       </TabsContent>
 
@@ -268,61 +255,47 @@ export const ComplianceCenter: React.FC = () => {
               Export
             </Button>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Timestamp
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    PHI Accessed
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Client
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Purpose
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {MOCK_HIPAA_LOGS.map((log) => (
-                  <tr key={log.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDuration(log.timestamp)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {log.userName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded">
-                        {log.phi_accessed}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {log.clientName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {log.purpose}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                        <Eye className="h-4 w-4" />
-                        View
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Timestamp</TableHead>
+                <TableHead>User</TableHead>
+                <TableHead>PHI Accessed</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead>Purpose</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {MOCK_HIPAA_LOGS.map((log) => (
+                <TableRow key={log.id}>
+                  <TableCell className="text-sm text-gray-900">
+                    {formatDuration(log.timestamp)}
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-900">
+                    {log.userName}
+                  </TableCell>
+                  <TableCell>
+                    <span className="inline-flex px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded">
+                      {log.phi_accessed}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-900">
+                    {log.clientName}
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-600">
+                    {log.purpose}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    <Button variant="ghost" size="sm" className="flex items-center gap-1">
+                      <Eye className="h-4 w-4" />
+                      View
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </Card>
       </TabsContent>
 

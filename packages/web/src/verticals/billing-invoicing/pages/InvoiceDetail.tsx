@@ -6,6 +6,15 @@ import { LoadingSpinner, ErrorMessage } from '@/core/components';
 import { Button } from '@/components/ui/button.js';
 import { Card, CardContent } from '@/components/ui/card.js';
 import { Badge } from '@/components/ui/badge.js';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableFooter,
+} from '@/components/ui/table.js';
 import { usePermissions } from '@/core/hooks';
 import { 
   useInvoice, 
@@ -158,20 +167,20 @@ export const InvoiceDetail: React.FC = () => {
 
           <div className="pt-6 border-t">
             <h3 className="text-lg font-semibold mb-4">Line Items</h3>
-            <table className="w-full">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Service</th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Date</th>
-                  <th className="px-4 py-2 text-center text-sm font-medium text-gray-700">Units</th>
-                  <th className="px-4 py-2 text-right text-sm font-medium text-gray-700">Rate</th>
-                  <th className="px-4 py-2 text-right text-sm font-medium text-gray-700">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
+            <Table className="w-full">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="px-4 py-2 text-left text-sm font-medium text-gray-700">Service</TableHead>
+                  <TableHead className="px-4 py-2 text-left text-sm font-medium text-gray-700">Date</TableHead>
+                  <TableHead className="px-4 py-2 text-center text-sm font-medium text-gray-700">Units</TableHead>
+                  <TableHead className="px-4 py-2 text-right text-sm font-medium text-gray-700">Rate</TableHead>
+                  <TableHead className="px-4 py-2 text-right text-sm font-medium text-gray-700">Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {invoice.lineItems.map((item) => (
-                  <tr key={item.id} className="hover:bg-muted/30">
-                    <td className="px-4 py-3">
+                  <TableRow key={item.id} className="hover:bg-muted/30">
+                    <TableCell className="px-4 py-3">
                       <div>
                         <p className="font-medium">{item.serviceDescription}</p>
                         <p className="text-sm text-gray-500">{item.serviceCode}</p>
@@ -179,59 +188,59 @@ export const InvoiceDetail: React.FC = () => {
                           <p className="text-xs text-gray-400">{item.clientName}</p>
                         )}
                       </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-sm">
                       {new Date(item.serviceDate).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 text-center">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-center">
                       {item.units} {item.unitType.toLowerCase()}
-                    </td>
-                    <td className="px-4 py-3 text-right">{formatCurrency(item.unitRate)}</td>
-                    <td className="px-4 py-3 text-right font-medium">{formatCurrency(item.total)}</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-right">{formatCurrency(item.unitRate)}</TableCell>
+                    <TableCell className="px-4 py-3 text-right font-medium">{formatCurrency(item.total)}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-              <tfoot className="border-t-2">
-                <tr>
-                  <td colSpan={4} className="px-4 py-2 text-right font-medium">Subtotal:</td>
-                  <td className="px-4 py-2 text-right">{formatCurrency(invoice.subtotal)}</td>
-                </tr>
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TableCell colSpan={4} className="px-4 py-2 text-right font-medium">Subtotal:</TableCell>
+                  <TableCell className="px-4 py-2 text-right">{formatCurrency(invoice.subtotal)}</TableCell>
+                </TableRow>
                 {invoice.taxAmount > 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-2 text-right">Tax:</td>
-                    <td className="px-4 py-2 text-right">{formatCurrency(invoice.taxAmount)}</td>
-                  </tr>
+                  <TableRow>
+                    <TableCell colSpan={4} className="px-4 py-2 text-right">Tax:</TableCell>
+                    <TableCell className="px-4 py-2 text-right">{formatCurrency(invoice.taxAmount)}</TableCell>
+                  </TableRow>
                 )}
                 {invoice.discountAmount > 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-2 text-right">Discount:</td>
-                    <td className="px-4 py-2 text-right text-red-600">-{formatCurrency(invoice.discountAmount)}</td>
-                  </tr>
+                  <TableRow>
+                    <TableCell colSpan={4} className="px-4 py-2 text-right">Discount:</TableCell>
+                    <TableCell className="px-4 py-2 text-right text-red-600">-{formatCurrency(invoice.discountAmount)}</TableCell>
+                  </TableRow>
                 )}
                 {invoice.adjustmentAmount !== 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-2 text-right">Adjustments:</td>
-                    <td className="px-4 py-2 text-right">{formatCurrency(invoice.adjustmentAmount)}</td>
-                  </tr>
+                  <TableRow>
+                    <TableCell colSpan={4} className="px-4 py-2 text-right">Adjustments:</TableCell>
+                    <TableCell className="px-4 py-2 text-right">{formatCurrency(invoice.adjustmentAmount)}</TableCell>
+                  </TableRow>
                 )}
-                <tr className="text-lg font-bold">
-                  <td colSpan={4} className="px-4 py-3 text-right">Total:</td>
-                  <td className="px-4 py-3 text-right">{formatCurrency(invoice.totalAmount)}</td>
-                </tr>
+                <TableRow className="text-lg font-bold">
+                  <TableCell colSpan={4} className="px-4 py-3 text-right">Total:</TableCell>
+                  <TableCell className="px-4 py-3 text-right">{formatCurrency(invoice.totalAmount)}</TableCell>
+                </TableRow>
                 {invoice.paidAmount > 0 && (
                   <>
-                    <tr className="text-green-600">
-                      <td colSpan={4} className="px-4 py-2 text-right">Amount Paid:</td>
-                      <td className="px-4 py-2 text-right">-{formatCurrency(invoice.paidAmount)}</td>
-                    </tr>
-                    <tr className="text-lg font-bold text-red-600">
-                      <td colSpan={4} className="px-4 py-3 text-right">Balance Due:</td>
-                      <td className="px-4 py-3 text-right">{formatCurrency(invoice.balanceDue)}</td>
-                    </tr>
+                    <TableRow className="text-green-600">
+                      <TableCell colSpan={4} className="px-4 py-2 text-right">Amount Paid:</TableCell>
+                      <TableCell className="px-4 py-2 text-right">-{formatCurrency(invoice.paidAmount)}</TableCell>
+                    </TableRow>
+                    <TableRow className="text-lg font-bold text-red-600">
+                      <TableCell colSpan={4} className="px-4 py-3 text-right">Balance Due:</TableCell>
+                      <TableCell className="px-4 py-3 text-right">{formatCurrency(invoice.balanceDue)}</TableCell>
+                    </TableRow>
                   </>
                 )}
-              </tfoot>
-            </table>
+              </TableFooter>
+            </Table>
           </div>
 
           {invoice.notes && (

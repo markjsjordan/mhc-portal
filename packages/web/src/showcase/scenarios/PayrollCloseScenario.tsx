@@ -12,6 +12,7 @@ import { Scenario } from '../types';
 import { NarrationBox } from './components/NarrationBox';
 import { ActionButtons } from './components/ActionButtons';
 import { Button } from '@/components/ui/button';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table.js';
 
 // Step Components
 
@@ -152,90 +153,88 @@ const ApproveOvertime: React.FC = () => (
         <h3 className="text-lg font-bold text-gray-900">Overtime Approval</h3>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="text-left p-3 font-semibold">Caregiver</th>
-              <th className="text-right p-3 font-semibold">Regular Hrs</th>
-              <th className="text-right p-3 font-semibold">OT Hrs</th>
-              <th className="text-right p-3 font-semibold">Rate</th>
-              <th className="text-right p-3 font-semibold">OT Pay</th>
-              <th className="text-left p-3 font-semibold">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-b border-gray-100">
-              <td className="p-3">Emily Rodriguez</td>
-              <td className="text-right p-3">160.0</td>
-              <td className="text-right p-3 font-bold text-orange-600">12.5</td>
-              <td className="text-right p-3">$17.00</td>
-              <td className="text-right p-3 font-bold">$318.75</td>
-              <td className="p-3">
-                <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
-                  ✓ Approved
-                </span>
-              </td>
-            </tr>
-            <tr className="border-b border-gray-100">
-              <td className="p-3">Marcus Johnson</td>
-              <td className="text-right p-3">160.0</td>
-              <td className="text-right p-3 font-bold text-orange-600">8.0</td>
-              <td className="text-right p-3">$16.50</td>
-              <td className="text-right p-3 font-bold">$198.00</td>
-              <td className="p-3">
-                <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
-                  ✓ Approved
-                </span>
-              </td>
-            </tr>
-            <tr className="border-b border-gray-100">
-              <td className="p-3">Jennifer Martinez</td>
-              <td className="text-right p-3">160.0</td>
-              <td className="text-right p-3 font-bold text-orange-600">6.5</td>
-              <td className="text-right p-3">$18.00</td>
-              <td className="text-right p-3 font-bold">$175.50</td>
-              <td className="p-3">
-                <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
-                  ✓ Approved
-                </span>
-              </td>
-            </tr>
-            <tr className="border-b border-gray-100">
-              <td className="p-3">Lisa Chen</td>
-              <td className="text-right p-3">160.0</td>
-              <td className="text-right p-3 font-bold text-orange-600">5.0</td>
-              <td className="text-right p-3">$17.50</td>
-              <td className="text-right p-3 font-bold">$131.25</td>
-              <td className="p-3">
-                <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
-                  ✓ Approved
-                </span>
-              </td>
-            </tr>
-            <tr className="border-b border-gray-100">
-              <td className="p-3">David Kim</td>
-              <td className="text-right p-3">160.0</td>
-              <td className="text-right p-3 font-bold text-orange-600">4.25</td>
-              <td className="text-right p-3">$16.00</td>
-              <td className="text-right p-3 font-bold">$102.00</td>
-              <td className="p-3">
-                <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
-                  ✓ Approved
-                </span>
-              </td>
-            </tr>
-            <tr className="bg-gray-50 font-bold">
-              <td className="p-3">TOTAL OVERTIME</td>
-              <td className="text-right p-3">-</td>
-              <td className="text-right p-3 text-orange-600">36.25</td>
-              <td className="text-right p-3">-</td>
-              <td className="text-right p-3 text-green-700">$925.50</td>
-              <td className="p-3">-</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <Table className="text-sm">
+        <TableHeader>
+          <TableRow className="bg-gray-50">
+            <TableHead>Caregiver</TableHead>
+            <TableHead className="text-right">Regular Hrs</TableHead>
+            <TableHead className="text-right">OT Hrs</TableHead>
+            <TableHead className="text-right">Rate</TableHead>
+            <TableHead className="text-right">OT Pay</TableHead>
+            <TableHead>Status</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow>
+            <TableCell>Emily Rodriguez</TableCell>
+            <TableCell className="text-right">160.0</TableCell>
+            <TableCell className="text-right font-bold text-orange-600">12.5</TableCell>
+            <TableCell className="text-right">$17.00</TableCell>
+            <TableCell className="text-right font-bold">$318.75</TableCell>
+            <TableCell>
+              <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
+                ✓ Approved
+              </span>
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Marcus Johnson</TableCell>
+            <TableCell className="text-right">160.0</TableCell>
+            <TableCell className="text-right font-bold text-orange-600">8.0</TableCell>
+            <TableCell className="text-right">$16.50</TableCell>
+            <TableCell className="text-right font-bold">$198.00</TableCell>
+            <TableCell>
+              <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
+                ✓ Approved
+              </span>
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Jennifer Martinez</TableCell>
+            <TableCell className="text-right">160.0</TableCell>
+            <TableCell className="text-right font-bold text-orange-600">6.5</TableCell>
+            <TableCell className="text-right">$18.00</TableCell>
+            <TableCell className="text-right font-bold">$175.50</TableCell>
+            <TableCell>
+              <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
+                ✓ Approved
+              </span>
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Lisa Chen</TableCell>
+            <TableCell className="text-right">160.0</TableCell>
+            <TableCell className="text-right font-bold text-orange-600">5.0</TableCell>
+            <TableCell className="text-right">$17.50</TableCell>
+            <TableCell className="text-right font-bold">$131.25</TableCell>
+            <TableCell>
+              <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
+                ✓ Approved
+              </span>
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>David Thompson</TableCell>
+            <TableCell className="text-right">160.0</TableCell>
+            <TableCell className="text-right font-bold text-orange-600">4.25</TableCell>
+            <TableCell className="text-right">$16.00</TableCell>
+            <TableCell className="text-right font-bold">$102.00</TableCell>
+            <TableCell>
+              <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
+                ✓ Approved
+              </span>
+            </TableCell>
+          </TableRow>
+          <TableRow className="bg-gray-50 font-bold">
+            <TableCell>TOTAL OVERTIME</TableCell>
+            <TableCell className="text-right">-</TableCell>
+            <TableCell className="text-right text-orange-600">36.25</TableCell>
+            <TableCell className="text-right">-</TableCell>
+            <TableCell className="text-right text-green-700">$925.50</TableCell>
+            <TableCell>-</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
 
     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

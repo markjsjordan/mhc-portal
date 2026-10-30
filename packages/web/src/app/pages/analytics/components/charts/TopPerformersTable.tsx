@@ -6,6 +6,7 @@
 import { Award, TrendingUp } from 'lucide-react';
 import type { CaregiverPerformance } from '@/types/analytics-types';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table.js';
 
 interface TopPerformersTableProps {
   caregivers: CaregiverPerformance[];
@@ -13,6 +14,12 @@ interface TopPerformersTableProps {
   className?: string;
   onCaregiverClick?: (caregiverId: string) => void;
 }
+
+const getEvvBadgeClass = (rate: number) => {
+  if (rate >= 95) return 'bg-green-50 text-green-700 border-green-200';
+  if (rate >= 85) return 'bg-amber-50 text-amber-700 border-amber-200';
+  return 'bg-red-50 text-red-700 border-red-200';
+};
 
 export function TopPerformersTable({
   caregivers,
@@ -26,42 +33,28 @@ export function TopPerformersTable({
     .slice(0, limit);
 
   return (
-    <div className={`overflow-x-auto ${className}`}>
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Rank
-            </th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Caregiver
-            </th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Visits
-            </th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              On-Time %
-            </th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              EVV Compliance
-            </th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Score
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+    <div className={className}>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Rank</TableHead>
+            <TableHead>Caregiver</TableHead>
+            <TableHead>Visits</TableHead>
+            <TableHead>On-Time %</TableHead>
+            <TableHead>EVV Compliance</TableHead>
+            <TableHead>Score</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {topPerformers.map((caregiver, index) => (
-            <tr
+            <TableRow
               key={caregiver.caregiverId}
-              className={`hover:bg-gray-50 ${
-                onCaregiverClick ? 'cursor-pointer' : ''
-              }`}
+              className={onCaregiverClick ? 'cursor-pointer' : ''}
               onClick={() =>
                 onCaregiverClick?.(caregiver.caregiverId)
               }
             >
-              <td className="px-4 py-3 whitespace-nowrap">
+              <TableCell>
                 <div className="flex items-center">
                   {index === 0 && (
                     <Award className="h-5 w-5 text-yellow-500 mr-1" />
@@ -70,18 +63,18 @@ export function TopPerformersTable({
                     {index + 1}
                   </span>
                 </div>
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap">
+              </TableCell>
+              <TableCell>
                 <div className="text-sm font-medium text-gray-900">
                   {caregiver.caregiverName}
                 </div>
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap">
+              </TableCell>
+              <TableCell>
                 <div className="text-sm text-gray-900">
                   {caregiver.visitsCompleted}
                 </div>
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap">
+              </TableCell>
+              <TableCell>
                 <div className="flex items-center">
                   <span className="text-sm text-gray-900">
                     {caregiver.onTimePercentage.toFixed(1)}%
@@ -90,33 +83,27 @@ export function TopPerformersTable({
                     <TrendingUp className="h-4 w-4 text-green-500 ml-1" />
                   )}
                 </div>
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap">
+              </TableCell>
+              <TableCell>
                 <Badge
                   variant="outline"
-                  className={
-                    caregiver.evvComplianceRate >= 95
-                      ? 'bg-green-50 text-green-700 border-green-200'
-                      : caregiver.evvComplianceRate >= 85
-                      ? 'bg-amber-50 text-amber-700 border-amber-200'
-                      : 'bg-red-50 text-red-700 border-red-200'
-                  }
+                  className={getEvvBadgeClass(caregiver.evvComplianceRate)}
                 >
                   {caregiver.evvComplianceRate.toFixed(1)}%
                 </Badge>
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap">
+              </TableCell>
+              <TableCell>
                 <div className="flex items-center">
                   <div className="text-sm font-bold text-primary-600">
                     {caregiver.performanceScore.toFixed(0)}
                   </div>
                   <div className="ml-2 text-xs text-gray-500">/100</div>
                 </div>
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
       {topPerformers.length === 0 && (
         <div className="text-center py-8 text-gray-500">
           No performance data available
