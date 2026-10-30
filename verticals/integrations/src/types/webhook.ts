@@ -56,9 +56,67 @@ export type WebhookEventType = (typeof WEBHOOK_EVENTS)[keyof typeof WEBHOOK_EVEN
 export const WebhookStatusSchema = z.enum(['active', 'inactive', 'suspended']);
 export type WebhookStatus = z.infer<typeof WebhookStatusSchema>;
 
+function isPrivateOrRestrictedHost(hostname: string): boolean {
+  const normalized = hostname.toLowerCase().replaceAll(/(^\[)|(\]$)/g, '');
+
+  if (
+    normalized === 'localhost' ||
+    normalized.endsWith('.localhost') ||
+    normalized === '0.0.0.0' ||
+    normalized === '::1' ||
+    normalized.startsWith('fe80:') ||
+    normalized.startsWith('fc') ||
+    normalized.startsWith('fd')
+  ) {
+    return true;
+  }
+
+  const ipv4Match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(normalized);
+  if (ipv4Match) {
+    const octets = ipv4Match.slice(1, 5).map(Number);
+    if (octets.some((o) => Number.isNaN(o) || o < 0 || o > 255)) {
+      return true;
+    }
+    const [a, b] = octets;
+    // Loopback 127.0.0.0/8, Unspecified 0.0.0.0/8
+    if (a === 127 || a === 0) return true;
+    // Private RFC 1918: 10.0.0.0/8
+    if (a === 10) return true;
+    // Private RFC 1918: 172.16.0.0/12
+    if (a === 172 && b !== undefined && b >= 16 && b <= 31) return true;
+    // Private RFC 1918: 192.168.0.0/16
+    if (a === 192 && b === 168) return true;
+    // Link-local / cloud metadata: 169.254.0.0/16
+    if (a === 169 && b === 254) return true;
+  }
+
+  return false;
+}
+
+export const SecureWebhookUrlSchema = z
+  .string()
+  .url()
+  .refine((val) => val.startsWith('https://'), {
+    message: 'Webhook URL must use HTTPS (https://) to protect ePHI in transit',
+  })
+  .refine(
+    (val) => {
+      try {
+        const parsed = new globalThis.URL(val);
+        return !isPrivateOrRestrictedHost(parsed.hostname);
+      } catch {
+        return false;
+      }
+    },
+    {
+      message:
+        'Webhook URL cannot target localhost, loopback, link-local, or private RFC 1918 addresses',
+    }
+  );
+
 export const CreateWebhookSchema = z.object({
   name: z.string().min(1).max(100),
-  url: z.string().url(),
+  url: SecureWebhookUrlSchema,
   events: z.array(z.string()).min(1),
   description: z.string().max(500).optional(),
   headers: z.record(z.string(), z.string()).optional(),

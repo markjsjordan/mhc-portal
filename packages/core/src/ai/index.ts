@@ -74,6 +74,15 @@ export type {
 
 export { DEFAULT_MODEL_TIERS, SAFETY_CRITICAL_FEATURES } from './types.js';
 
+// HIPAA Safe Harbor Gateway
+export {
+  HIPAAAIGateway,
+  deidentifyPromptForHIPAA,
+  assertAIBAAAttested,
+  REDACTED_TOKENS,
+  type SafeHarborRedactionOptions,
+} from './hipaa-ai-gateway.js';
+
 // Providers
 export { AnthropicProvider, createAnthropicProvider } from './providers/anthropic-provider.js';
 export { CloudflareProvider, createCloudflareProvider } from './providers/cloudflare-provider.js';

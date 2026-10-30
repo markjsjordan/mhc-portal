@@ -2,7 +2,8 @@
  * Visit Notes Validation Tests
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { VoiceTranscriptionService } from '../services/voice-transcription-service';
 import {
   createVisitNoteSchema,
   updateVisitNoteSchema,
@@ -669,6 +670,30 @@ describe('Visit Notes Validation', () => {
       const emptyFilters = {};
       const result = templateSearchFiltersSchema.safeParse(emptyFilters);
       expect(result.success).toBe(true);
+    });
+  });
+
+  describe('VoiceTranscriptionService HIPAA-005 Production BAA Gate', () => {
+    const originalEnv = process.env;
+
+    beforeEach(() => {
+      process.env = { ...originalEnv };
+    });
+
+    afterEach(() => {
+      process.env = originalEnv;
+    });
+
+    it('blocks Cloudflare Workers AI voice transcription in production when CLOUDFLARE_AI_BAA_ATTESTED is not true', async () => {
+      process.env.NODE_ENV = 'production';
+      delete process.env.CLOUDFLARE_AI_BAA_ATTESTED;
+
+      const service = new VoiceTranscriptionService();
+      service.setCloudflareCredentials('acct-123', 'token-123');
+
+      await expect(
+        service.transcribeAudio(Buffer.from('fake-audio'), 'audio/wav', 'cloudflare')
+      ).rejects.toThrow(/CLOUDFLARE_AI_BAA_ATTESTED/);
     });
   });
 });

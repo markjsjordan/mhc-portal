@@ -301,6 +301,15 @@ describe('State EVV Configuration Helpers', () => {
       // At least 3 unique aggregators (Sandata, Tellus, HHAeXchange)
       expect(endpoints.size).toBeGreaterThanOrEqual(3);
     });
+
+    it('should use official api.hhaexchange.com domain for TX and FL', () => {
+      expect(STATE_EVV_CONFIGS.TX.aggregatorEndpoint).toBe(
+        'https://api.hhaexchange.com/evv/v2/visits'
+      );
+      expect(STATE_EVV_CONFIGS.FL.aggregatorEndpoint).toBe(
+        'https://api.hhaexchange.com/evv/v2/visits'
+      );
+    });
   });
 
   describe('Grace Period Variations', () => {
