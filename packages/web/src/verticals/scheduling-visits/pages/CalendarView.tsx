@@ -330,7 +330,11 @@ const CustomEvent: React.FC<CustomEventProps> = ({ event, densityMode }) => {
           </div>
           {event.resource.assignedCaregiverId && (
             <div className="mt-2 pt-2 border-t border-gray-700 text-gray-300">
-              Caregiver Assigned
+              {event.resource.caregiverFirstName && event.resource.caregiverLastName
+                ? `${event.resource.caregiverFirstName} ${event.resource.caregiverLastName}`
+                : event.resource.caregiverName ??
+                  event.resource.assignedCaregiverName ??
+                  'Caregiver Assigned'}
             </div>
           )}
           {event.resource.status === 'UNASSIGNED' && (
@@ -430,9 +434,13 @@ const buildAllCaregiversList = (
 
   for (const v of visits) {
     if (v.assignedCaregiverId && !map.has(v.assignedCaregiverId)) {
+      const visitCaregiverName =
+        v.caregiverFirstName && v.caregiverLastName
+          ? `${v.caregiverFirstName} ${v.caregiverLastName}`
+          : v.caregiverName ?? v.assignedCaregiverName ?? 'Caregiver';
       map.set(v.assignedCaregiverId, {
         id: v.assignedCaregiverId,
-        name: 'Caregiver',
+        name: visitCaregiverName,
         color: caregiverColorMap.get(v.assignedCaregiverId) ?? '#3B82F6',
         visitCount: 0,
         scheduledHours: 0,

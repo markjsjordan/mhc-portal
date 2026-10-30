@@ -247,8 +247,13 @@ export class ScheduleRepository {
 
   async getVisitById(id: UUID): Promise<Visit | null> {
     const query = `
-      SELECT * FROM visits
-      WHERE id = $1 AND deleted_at IS NULL
+      SELECT 
+        v.*,
+        cg.first_name as caregiver_first_name,
+        cg.last_name as caregiver_last_name
+      FROM visits v
+      LEFT JOIN caregivers cg ON v.assigned_caregiver_id = cg.id
+      WHERE v.id = $1 AND v.deleted_at IS NULL
     `;
     const result = await this.pool.query(query, [id]);
     return result.rows[0] ? this.mapRowToVisit(result.rows[0]) : null;
@@ -346,7 +351,7 @@ export class ScheduleRepository {
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     // Count total
-    const countQuery = `SELECT COUNT(*) FROM visits ${whereClause}`;
+    const countQuery = `SELECT COUNT(*) FROM visits v ${whereClause}`;
     const countResult = await this.pool.query(countQuery, values);
     const total = parseInt(countResult.rows[0].count, 10);
 
@@ -356,9 +361,14 @@ export class ScheduleRepository {
     const sortOrder = pagination.sortOrder ?? 'asc';
 
     const dataQuery = `
-      SELECT * FROM visits
+      SELECT 
+        v.*,
+        cg.first_name as caregiver_first_name,
+        cg.last_name as caregiver_last_name
+      FROM visits v
+      LEFT JOIN caregivers cg ON v.assigned_caregiver_id = cg.id
       ${whereClause}
-      ORDER BY ${sortBy} ${sortOrder}
+      ORDER BY v.${sortBy} ${sortOrder}
       LIMIT $${paramCount} OFFSET $${paramCount + 1}
     `;
     values.push(pagination.limit, offset);
@@ -376,72 +386,72 @@ export class ScheduleRepository {
   }
 
   private buildSearchConditions(filters: VisitSearchFilters): { conditions: string[]; values: unknown[]; paramCount: number } {
-    const conditions: string[] = ['deleted_at IS NULL'];
+    const conditions: string[] = ['v.deleted_at IS NULL'];
     const values: unknown[] = [];
     let paramCount = 1;
 
     if (filters.organizationId !== undefined && filters.organizationId !== null) {
-      conditions.push(`organization_id = $${paramCount++}`);
+      conditions.push(`v.organization_id = $${paramCount++}`);
       values.push(filters.organizationId);
     }
 
     if (filters.branchId !== undefined && filters.branchId !== null) {
-      conditions.push(`branch_id = $${paramCount++}`);
+      conditions.push(`v.branch_id = $${paramCount++}`);
       values.push(filters.branchId);
     }
 
     if (filters.branchIds !== undefined && filters.branchIds !== null && filters.branchIds.length > 0) {
-      conditions.push(`branch_id = ANY($${paramCount++})`);
+      conditions.push(`v.branch_id = ANY($${paramCount++})`);
       values.push(filters.branchIds);
     }
 
     if (filters.clientId !== undefined && filters.clientId !== null) {
-      conditions.push(`client_id = $${paramCount++}`);
+      conditions.push(`v.client_id = $${paramCount++}`);
       values.push(filters.clientId);
     }
 
     if (filters.clientIds !== undefined && filters.clientIds !== null && filters.clientIds.length > 0) {
-      conditions.push(`client_id = ANY($${paramCount++})`);
+      conditions.push(`v.client_id = ANY($${paramCount++})`);
       values.push(filters.clientIds);
     }
 
     if (filters.caregiverId !== undefined && filters.caregiverId !== null) {
-      conditions.push(`assigned_caregiver_id = $${paramCount++}`);
+      conditions.push(`v.assigned_caregiver_id = $${paramCount++}`);
       values.push(filters.caregiverId);
     }
 
     if (filters.status !== undefined && filters.status !== null && filters.status.length > 0) {
-      conditions.push(`status = ANY($${paramCount++})`);
+      conditions.push(`v.status = ANY($${paramCount++})`);
       values.push(filters.status);
     }
 
     if (filters.visitType !== undefined && filters.visitType !== null && filters.visitType.length > 0) {
-      conditions.push(`visit_type = ANY($${paramCount++})`);
+      conditions.push(`v.visit_type = ANY($${paramCount++})`);
       values.push(filters.visitType);
     }
 
     if (filters.dateFrom !== undefined && filters.dateFrom !== null) {
-      conditions.push(`scheduled_date >= $${paramCount++}`);
+      conditions.push(`v.scheduled_date >= $${paramCount++}`);
       values.push(filters.dateFrom);
     }
 
     if (filters.dateTo !== undefined && filters.dateTo !== null) {
-      conditions.push(`scheduled_date <= $${paramCount++}`);
+      conditions.push(`v.scheduled_date <= $${paramCount++}`);
       values.push(filters.dateTo);
     }
 
     if (filters.isUnassigned !== undefined && filters.isUnassigned !== null && filters.isUnassigned) {
-      conditions.push(`assigned_caregiver_id IS NULL`);
+      conditions.push(`v.assigned_caregiver_id IS NULL`);
     }
 
     if (filters.isUrgent !== undefined && filters.isUrgent !== null && filters.isUrgent) {
-      conditions.push(`is_urgent = true`);
+      conditions.push(`v.is_urgent = true`);
     }
 
     if (filters.query !== undefined && filters.query !== null && filters.query !== '') {
       conditions.push(`(
-        visit_number ILIKE $${paramCount} OR
-        to_tsvector('english', client_instructions || ' ' || caregiver_instructions) 
+        v.visit_number ILIKE $${paramCount} OR
+        to_tsvector('english', v.client_instructions || ' ' || v.caregiver_instructions) 
         @@ plainto_tsquery('english', $${paramCount})
       )`);
       values.push(`%${filters.query}%`);
@@ -462,9 +472,12 @@ export class ScheduleRepository {
         v.*,
         c.first_name as client_first_name,
         c.last_name as client_last_name,
-        c.primary_phone as client_phone
+        c.primary_phone as client_phone,
+        cg.first_name as caregiver_first_name,
+        cg.last_name as caregiver_last_name
       FROM visits v
       LEFT JOIN clients c ON v.client_id = c.id
+      LEFT JOIN caregivers cg ON v.assigned_caregiver_id = cg.id
       WHERE v.organization_id = $1
         AND v.scheduled_date >= $2
         AND v.scheduled_date <= $3
@@ -533,9 +546,12 @@ export class ScheduleRepository {
         v.*,
         c.first_name as client_first_name,
         c.last_name as client_last_name,
-        c.primary_phone as client_phone
+        c.primary_phone as client_phone,
+        cg.first_name as caregiver_first_name,
+        cg.last_name as caregiver_last_name
       FROM visits v
       LEFT JOIN clients c ON v.client_id = c.id
+      LEFT JOIN caregivers cg ON v.assigned_caregiver_id = cg.id
       WHERE v.assigned_caregiver_id = $1
         AND v.scheduled_date >= $2
         AND v.scheduled_date <= $3
@@ -633,6 +649,8 @@ export class ScheduleRepository {
       version: row.version,
       deletedAt: row.deleted_at,
       deletedBy: row.deleted_by,
+      caregiverFirstName: row.caregiver_first_name,
+      caregiverLastName: row.caregiver_last_name,
     };
   }
 }

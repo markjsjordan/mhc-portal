@@ -25,6 +25,7 @@ import { Checkbox } from '@/components/ui/checkbox.js';
 import { formatDate } from '@/core/utils';
 import { useVisit } from '../hooks/useVisits';
 import { useClient } from '@/verticals/client-demographics/hooks';
+import { useCaregiver } from '@/verticals/caregivers';
 import { usePermissions } from '@/core/hooks';
 import { EditVisitModal } from '../components/EditVisitModal';
 import {
@@ -150,6 +151,7 @@ export const VisitDetail: React.FC = () => {
 
   const { data: visit, isLoading: isVisitLoading, error: visitError, refetch } = useVisit(visitId);
   const { data: client, isLoading: isClientLoading } = useClient(visit?.clientId);
+  const { data: caregiver } = useCaregiver(visit?.assignedCaregiverId ?? undefined);
 
   // Assessment completion checklist state
   const [checklist, setChecklist] = useState<ChecklistItem[]>(() => {
@@ -319,6 +321,17 @@ export const VisitDetail: React.FC = () => {
     clientName = `${client.firstName} ${client.lastName}`;
   }
 
+  const caregiverDisplayName = (() => {
+    if (!visit.assignedCaregiverId) return 'Unassigned';
+    if (visit.caregiverFirstName && visit.caregiverLastName) {
+      return `${visit.caregiverFirstName} ${visit.caregiverLastName}`;
+    }
+    if (visit.caregiverName) return visit.caregiverName;
+    if (visit.assignedCaregiverName) return visit.assignedCaregiverName;
+    if (caregiver) return `${caregiver.firstName} ${caregiver.lastName}`;
+    return 'Caregiver Assigned';
+  })();
+
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12">
       {/* Header Navigation */}
@@ -464,7 +477,7 @@ export const VisitDetail: React.FC = () => {
             <div>
               <p className="text-xs text-gray-500 font-medium">Assigned Caregiver</p>
               <p className="text-sm font-semibold text-gray-900">
-                {visit.assignedCaregiverId ? 'Caregiver Assigned' : 'Unassigned'}
+                {caregiverDisplayName}
               </p>
             </div>
           </div>

@@ -63,7 +63,13 @@ export const CalendarVisitActionModal: React.FC<CalendarVisitActionModalProps> =
   if (!visit) return null;
 
   const currentCg = caregiversList.find((c) => c.id === visit.assignedCaregiverId);
-  const currentCaregiverName = currentCg?.firstName ? `${currentCg.firstName} ${currentCg.lastName}` : undefined;
+  const currentCaregiverName = (() => {
+    if (currentCg?.firstName) return `${currentCg.firstName} ${currentCg.lastName}`;
+    if (visit.caregiverFirstName && visit.caregiverLastName) {
+      return `${visit.caregiverFirstName} ${visit.caregiverLastName}`;
+    }
+    return visit.caregiverName ?? visit.assignedCaregiverName;
+  })();
 
   const handleSaveReassignment = async () => {
     if (!reassignCaregiverId) {

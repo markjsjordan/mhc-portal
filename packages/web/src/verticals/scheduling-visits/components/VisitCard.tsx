@@ -44,6 +44,19 @@ export const VisitCard: React.FC<VisitCardProps> = ({ visit, compact = false, on
     return 'Client';
   };
 
+  const getCaregiverName = () => {
+    if (visit.caregiverFirstName && visit.caregiverLastName) {
+      return `${visit.caregiverFirstName} ${visit.caregiverLastName}`;
+    }
+    if (visit.caregiverName) {
+      return visit.caregiverName;
+    }
+    if (visit.assignedCaregiverName) {
+      return visit.assignedCaregiverName;
+    }
+    return null;
+  };
+
   const getStatusBadgeClasses = () => {
     const baseClasses = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium flex-shrink-0';
     const colorClasses: Record<string, string> = {
@@ -191,10 +204,12 @@ export const VisitCard: React.FC<VisitCardProps> = ({ visit, compact = false, on
           <div className="flex items-center text-gray-600 min-w-0">
             <User className="h-3.5 w-3.5 mr-2 text-gray-400 flex-shrink-0" />
             {visit.assignedCaregiverId ? (
-              <span className="text-gray-700 font-medium truncate">Caregiver Assigned</span>
+              <span className="text-gray-700 font-medium truncate">
+                {getCaregiverName() ?? 'Caregiver Assigned'}
+              </span>
             ) : (
               <span className="text-amber-700 font-medium bg-amber-50 px-1.5 py-0.2 rounded text-[11px]">
-                Caregiver Unassigned
+                Unassigned
               </span>
             )}
           </div>

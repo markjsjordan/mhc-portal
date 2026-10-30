@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { X, ChevronLeft, ChevronRight, Clock, MapPin, Phone, User, AlertCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button.js';
 import { useVisit } from '../hooks/useVisits';
+import { useCaregiver } from '@/verticals/caregivers';
 import { VisitTypeBadge } from './VisitTypeBadge';
 
 export interface VisitDetailsPanelProps {
@@ -40,6 +41,7 @@ export const VisitDetailsPanel: React.FC<VisitDetailsPanelProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const { data: visit, isLoading, error } = useVisit(visitId);
+  const { data: caregiver } = useCaregiver(visit?.assignedCaregiverId ?? undefined);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previouslyFocused = useRef<Element | null>(null);
 
@@ -75,6 +77,19 @@ export const VisitDetailsPanel: React.FC<VisitDetailsPanelProps> = ({
     visit?.clientFirstName && visit.clientLastName
       ? `${visit.clientFirstName} ${visit.clientLastName}`
       : 'Unknown Client';
+
+  const caregiverDisplay = (() => {
+    if (!visit?.assignedCaregiverId) return 'Unassigned';
+    if (visit.caregiverFirstName && visit.caregiverLastName) {
+      return `${visit.caregiverFirstName} ${visit.caregiverLastName}`;
+    }
+    if (visit.caregiverName) return visit.caregiverName;
+    if (visit.assignedCaregiverName) return visit.assignedCaregiverName;
+    if (caregiver?.firstName && caregiver.lastName) {
+      return `${caregiver.firstName} ${caregiver.lastName}`;
+    }
+    return `Assigned (${visit.assignmentMethod ?? 'MANUAL'})`;
+  })();
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end" data-testid="visit-details-panel">
@@ -185,7 +200,7 @@ export const VisitDetailsPanel: React.FC<VisitDetailsPanelProps> = ({
                 <h3 className="flex items-center gap-2 font-medium text-gray-900">
                   <User className="h-4 w-4 text-gray-500" /> Caregiver
                 </h3>
-                <p>{visit.assignedCaregiverId ? `Assigned (${visit.assignmentMethod ?? 'MANUAL'})` : 'Unassigned'}</p>
+                <p>{caregiverDisplay}</p>
                 {visit.requiresSupervision && <p className="text-amber-700">Requires supervision</p>}
               </section>
 

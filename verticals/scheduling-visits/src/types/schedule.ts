@@ -206,6 +206,10 @@ export interface Visit extends Entity, SoftDeletable {
   assignedBy?: UUID;
   assignmentMethod: AssignmentMethod;
 
+  // Caregiver info (denormalized for display)
+  caregiverFirstName?: string;
+  caregiverLastName?: string;
+
   // Location
   address: VisitAddress;
   locationVerification?: LocationVerification;
@@ -658,4 +662,6 @@ export interface VisitWithClient extends Visit {
     type: string;
     canReceiveSMS: boolean;
   };
+  caregiverFirstName?: string;
+  caregiverLastName?: string;
 }
