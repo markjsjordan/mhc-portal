@@ -136,6 +136,22 @@ export function createCaregiverRouter(db: Database): Router {
       const context = getUserContext(req);
       const service = new CaregiverService(db);
 
+      // HIPAA-003: Reject cross-tenant organizationId override attempts for non-SUPER_ADMIN
+      const queryOrgId = req.query['organizationId'];
+      if (
+        typeof queryOrgId === 'string' &&
+        queryOrgId !== '' &&
+        !context.roles.includes('SUPER_ADMIN') &&
+        context.organizationId !== undefined &&
+        queryOrgId !== context.organizationId
+      ) {
+        res.status(403).json({
+          error: 'PERMISSION_DENIED',
+          message: 'Cross-tenant access denied: cannot query another organization',
+        });
+        return;
+      }
+
       // CRITICAL SECURITY: Force organization ID to match authenticated user
       // Never allow query parameters to override organization scoping
       const filters: CaregiverSearchFilters = {
@@ -203,6 +219,22 @@ export function createCaregiverRouter(db: Database): Router {
     try {
       const context = getUserContext(req);
       const service = new CaregiverService(db);
+
+      // HIPAA-003: Reject cross-tenant organizationId override attempts for non-SUPER_ADMIN
+      const bodyOrgId = req.body?.['organizationId'];
+      if (
+        typeof bodyOrgId === 'string' &&
+        bodyOrgId !== '' &&
+        !context.roles.includes('SUPER_ADMIN') &&
+        context.organizationId !== undefined &&
+        bodyOrgId !== context.organizationId
+      ) {
+        res.status(403).json({
+          error: 'PERMISSION_DENIED',
+          message: 'Cross-tenant access denied: cannot create caregiver for another organization',
+        });
+        return;
+      }
 
       // Safe date parsing with validation
       const parseDate = (dateStr: unknown): Date => {

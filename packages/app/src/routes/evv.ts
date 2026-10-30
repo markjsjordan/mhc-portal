@@ -59,6 +59,23 @@ export function createEVVRouter(db: Database): Router {
     router.use((req, res, next) => authMiddleware.auditImpersonatedActions(req, res, next));
   }
 
+  const buildEVVSearchFilters = (req: Request, organizationId: string): Record<string, unknown> => {
+    const filters: Record<string, unknown> = { organizationId };
+    if (typeof req.query.branchId === 'string' && req.query.branchId !== '') {
+      filters.branchId = req.query.branchId;
+    }
+    if (typeof req.query.caregiverId === 'string' && req.query.caregiverId !== '') {
+      filters.caregiverId = req.query.caregiverId;
+    }
+    if (typeof req.query.clientId === 'string' && req.query.clientId !== '') {
+      filters.clientId = req.query.clientId;
+    }
+    if (typeof req.query.status === 'string' && req.query.status !== '') {
+      filters.status = [req.query.status];
+    }
+    return filters;
+  };
+
   /**
    * GET /api/evv
    * Search EVV records with filters
@@ -71,22 +88,14 @@ export function createEVVRouter(db: Database): Router {
         return;
       }
 
-      const filters: Record<string, unknown> = {
-        organizationId: orgId,
-      };
-      
-      if (typeof req.query.branchId === 'string' && req.query.branchId !== '') {
-        filters.branchId = req.query.branchId;
+      const queryOrgId = typeof req.query.organizationId === 'string' && req.query.organizationId !== '' ? req.query.organizationId : undefined;
+      const isSuperAdmin = req.user?.roles?.includes('SUPER_ADMIN') ?? false;
+      if (queryOrgId !== undefined && !isSuperAdmin && queryOrgId !== orgId) {
+        res.status(403).json({ error: 'Cross-tenant access denied' });
+        return;
       }
-      if (typeof req.query.caregiverId === 'string' && req.query.caregiverId !== '') {
-        filters.caregiverId = req.query.caregiverId;
-      }
-      if (typeof req.query.clientId === 'string' && req.query.clientId !== '') {
-        filters.clientId = req.query.clientId;
-      }
-      if (typeof req.query.status === 'string' && req.query.status !== '') {
-        filters.status = [req.query.status];
-      }
+
+      const filters = buildEVVSearchFilters(req, isSuperAdmin && queryOrgId !== undefined ? queryOrgId : orgId);
 
       const pagination = {
         page: parseInt((typeof req.query.page === 'string' && req.query.page !== '') ? req.query.page : '1', 10),
@@ -119,8 +128,16 @@ export function createEVVRouter(db: Database): Router {
       }
 
       const record = await evvRepository.getEVVRecordById(id);
-      
-      if (record === null) {
+      const isSuperAdmin = req.user?.roles?.includes('SUPER_ADMIN') ?? false;
+      const userOrgId = req.user?.organizationId;
+
+      if (
+        record === null ||
+        (!isSuperAdmin &&
+          userOrgId !== undefined &&
+          Boolean(record.organizationId) &&
+          record.organizationId !== userOrgId)
+      ) {
         res.status(404).json({ error: 'EVV record not found' });
         return;
       }

@@ -360,5 +360,14 @@ describe('Caregiver Routes', () => {
         expect.anything()
       );
     });
+
+    it('should reject cross-tenant organizationId query override with 403', async () => {
+      const response = await request(app).get(
+        '/api/caregivers?organizationId=999e4567-e89b-12d3-a456-426614174999'
+      );
+
+      expect(response.status).toBe(403);
+      expect(mockSearchCaregivers).not.toHaveBeenCalled();
+    });
   });
 });

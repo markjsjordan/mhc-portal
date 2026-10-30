@@ -157,6 +157,7 @@ export class CaregiverService {
     if (!existing) {
       throw new NotFoundError(`Caregiver not found: ${id}`);
     }
+    this.checkOrganizationalAccess(existing, context);
 
     // Update compliance status if credentials or training changed
     let updates: Partial<Caregiver> = { ...input };
@@ -181,6 +182,7 @@ export class CaregiverService {
     if (!caregiver) {
       throw new NotFoundError(`Caregiver not found: ${id}`);
     }
+    this.checkOrganizationalAccess(caregiver, context);
 
     // Filter sensitive data based on permissions
     return this.filterSensitiveData(caregiver, context);
@@ -196,13 +198,19 @@ export class CaregiverService {
   ): Promise<Caregiver> {
     this.checkPermission(context, 'caregivers:read');
 
+    const effectiveOrgId =
+      !context.roles.includes('SUPER_ADMIN') && context.organizationId
+        ? context.organizationId
+        : organizationId;
+
     const caregiver = await this.repository.findByEmployeeNumber(
       employeeNumber,
-      organizationId
+      effectiveOrgId
     );
     if (!caregiver) {
       throw new NotFoundError(`Caregiver not found: ${employeeNumber}`);
     }
+    this.checkOrganizationalAccess(caregiver, context);
 
     return this.filterSensitiveData(caregiver, context);
   }
@@ -476,6 +484,7 @@ export class CaregiverService {
     if (!caregiver) {
       throw new NotFoundError(`Caregiver not found: ${id}`);
     }
+    this.checkOrganizationalAccess(caregiver, context);
 
     // Check if caregiver has active assignments (would be in scheduling vertical)
     // For now, just perform the delete
@@ -842,8 +851,11 @@ export class CaregiverService {
   ): CaregiverSearchFilters {
     const effectiveFilters = { ...filters };
 
-    // Always filter by organization
-    if (!effectiveFilters.organizationId) {
+    // Always enforce authenticated user's organization for non-SUPER_ADMIN
+    if (
+      (!context.roles.includes('SUPER_ADMIN') && context.organizationId) ||
+      !effectiveFilters.organizationId
+    ) {
       effectiveFilters.organizationId = context.organizationId;
     }
 
@@ -859,6 +871,25 @@ export class CaregiverService {
     }
 
     return effectiveFilters;
+  }
+
+  /**
+   * Verify caregiver belongs to the caller's organization
+   */
+  private checkOrganizationalAccess(
+    caregiver: Caregiver,
+    context: UserContext
+  ): void {
+    if (context.roles.includes('SUPER_ADMIN')) {
+      return;
+    }
+    if (
+      context.organizationId &&
+      caregiver.organizationId &&
+      caregiver.organizationId !== context.organizationId
+    ) {
+      throw new PermissionError('No access to this organization');
+    }
   }
 
   /**
