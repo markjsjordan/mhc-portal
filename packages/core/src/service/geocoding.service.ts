@@ -143,9 +143,18 @@ export class GeocodingService {
 
   /**
    * Geocode with Nominatim (OpenStreetMap)
-   * NOTE: Rate-limited, not recommended for production
+   * NOTE: Rate-limited, not recommended for production. Blocked in production unless GEOCODING_BAA_ATTESTED === 'true'.
    */
   private async geocodeWithNominatim(address: string): Promise<GeocodingResult | null> {
+    if (
+      process.env.NODE_ENV === 'production' &&
+      process.env.GEOCODING_BAA_ATTESTED !== 'true'
+    ) {
+      throw new Error(
+        "HIPAA-005 violation: Outbound geocoding to public nominatim.openstreetmap.org is blocked in production unless GEOCODING_BAA_ATTESTED === 'true'."
+      );
+    }
+
     try {
       const url = new globalThis.URL('https://nominatim.openstreetmap.org/search');
       url.searchParams.set('q', address);

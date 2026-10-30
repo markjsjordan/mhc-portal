@@ -37,6 +37,8 @@ export interface GenerateTextOptions {
   systemPrompt?: string;
   /** Stop sequences to end generation */
   stopSequences?: string[];
+  /** Optional patient/client names to scrub via HIPAA Safe Harbor de-identification */
+  patientNames?: string[];
 }
 
 /**

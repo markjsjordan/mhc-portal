@@ -152,6 +152,16 @@ export class VoiceTranscriptionService {
     audioBuffer: Buffer | Uint8Array,
     mimeType: string
   ): Promise<TranscriptionResult> {
+    if (
+      process.env.NODE_ENV === 'production' &&
+      process.env.CLOUDFLARE_AI_BAA_ATTESTED !== 'true'
+    ) {
+      throw new ValidationError(
+        "HIPAA-005 violation: Outbound voice transcription to Cloudflare Workers AI is blocked in production unless CLOUDFLARE_AI_BAA_ATTESTED === 'true'.",
+        { provider: 'cloudflare', baaAttested: false }
+      );
+    }
+
     const startTime = Date.now();
 
     const response = await globalThis.fetch(

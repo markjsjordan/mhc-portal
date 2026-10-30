@@ -15,6 +15,7 @@
  */
 
 import { z } from 'zod';
+import { deidentifyPromptForHIPAA } from '../hipaa-ai-gateway.js';
 import type {
   AIProvider,
   AIProviderType,
@@ -43,7 +44,9 @@ const EMBEDDING_MODEL = '@cf/baai/bge-base-en-v1.5';
 /**
  * Default options for text generation
  */
-const DEFAULT_OPTIONS: Required<Omit<GenerateTextOptions, 'systemPrompt' | 'stopSequences'>> = {
+const DEFAULT_OPTIONS: Required<
+  Omit<GenerateTextOptions, 'systemPrompt' | 'stopSequences' | 'patientNames'>
+> = {
   modelTier: 'balanced',
   maxTokens: 2048,
   temperature: 0.7,
@@ -148,18 +151,27 @@ export class CloudflareProvider implements AIProvider {
     prompt: string,
     options?: GenerateTextOptions
   ): Promise<GenerateTextResult> {
+    this.assertProductionBAA();
     const opts = { ...DEFAULT_OPTIONS, ...options };
     const model = CLOUDFLARE_MODELS[opts.modelTier];
     const startTime = Date.now();
+    const sanitizedPrompt = deidentifyPromptForHIPAA(prompt, {
+      patientNames: opts.patientNames,
+    });
 
     // Build messages array
     const messages: Array<{ role: string; content: string }> = [];
 
     if (opts.systemPrompt !== undefined && opts.systemPrompt !== '') {
-      messages.push({ role: 'system', content: opts.systemPrompt });
+      messages.push({
+        role: 'system',
+        content: deidentifyPromptForHIPAA(opts.systemPrompt, {
+          patientNames: opts.patientNames,
+        }),
+      });
     }
 
-    messages.push({ role: 'user', content: prompt });
+    messages.push({ role: 'user', content: sanitizedPrompt });
 
     const response = await this.makeRequest<CloudflareTextResponse>(model, {
       messages,
@@ -189,6 +201,18 @@ export class CloudflareProvider implements AIProvider {
       provider: this.type,
       latencyMs,
     };
+  }
+
+  private assertProductionBAA(): void {
+    if (
+      process.env.NODE_ENV === 'production' &&
+      process.env.CLOUDFLARE_AI_BAA_ATTESTED !== 'true' &&
+      process.env.AI_BAA_ATTESTED !== 'true'
+    ) {
+      throw new Error(
+        "HIPAA-005 violation: Outbound request to Cloudflare Workers AI blocked in production because CLOUDFLARE_AI_BAA_ATTESTED is not 'true'."
+      );
+    }
   }
 
   /**

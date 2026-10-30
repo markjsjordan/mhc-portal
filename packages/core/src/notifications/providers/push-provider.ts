@@ -141,17 +141,12 @@ export class PushProvider implements NotificationProvider {
   ): Promise<NotificationResult> {
     try {
       // Create Expo push message
-      // SECURITY: Use generic message, no PHI in push body
+      // SECURITY: Use generic message, no PHI in push body or data payload
       const message: ExpoPushMessage = {
         to: token.deviceToken,
         title: this.sanitizeTitle(payload.subject),
         body: this.sanitizeBody(payload.message),
-        data: {
-          eventType: payload.eventType,
-          relatedEntityType: payload.relatedEntityType,
-          relatedEntityId: payload.relatedEntityId,
-          ...payload.data,
-        },
+        data: this.sanitizeData(payload),
         sound: 'default',
         priority: this.mapPriority(payload.priority),
         channelId: this.getChannelId(payload.eventType),
@@ -309,6 +304,45 @@ export class PushProvider implements NotificationProvider {
   private sanitizeBody(_body: string): string {
     // Replace specific names/details with generic messages
     return 'Tap to view details';
+  }
+
+  /**
+   * Sanitize push notification data payload to strip ePHI before sending to Expo Push API
+   */
+  private sanitizeData(payload: NotificationPayload): Record<string, unknown> {
+    const safeKeys = new Set([
+      'notificationId',
+      'type',
+      'priority',
+      'actionUrl',
+      'eventType',
+      'relatedEntityType',
+      'relatedEntityId',
+      'visitId',
+      'organizationId',
+    ]);
+
+    const sanitized: Record<string, unknown> = {
+      eventType: payload.eventType,
+      priority: payload.priority,
+    };
+
+    if (payload.relatedEntityType !== undefined) {
+      sanitized.relatedEntityType = payload.relatedEntityType;
+    }
+
+    if (payload.relatedEntityId !== undefined) {
+      sanitized.relatedEntityId = payload.relatedEntityId;
+    }
+
+    for (const [key, value] of Object.entries(payload.data)) {
+      if (safeKeys.has(key)) {
+        // eslint-disable-next-line security/detect-object-injection
+        sanitized[key] = value;
+      }
+    }
+
+    return sanitized;
   }
 
   /**

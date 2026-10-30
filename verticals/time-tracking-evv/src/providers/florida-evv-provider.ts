@@ -58,7 +58,7 @@ const FLORIDA_AGGREGATOR_CONFIGS: AggregatorConfig[] = [
     id: 'hhaeexchange-fl',
     name: 'HHAeXchange',
     type: 'HHAEEXCHANGE',
-    endpoint: 'https://api.hhaeexchange.com/florida/evv/v1',
+    endpoint: 'https://api.hhaexchange.com/florida/evv/v1',
     assignedMCOs: ['SUNSHINE_HEALTH', 'MOLINA', 'SIMPLY'],
     isDefault: true,
   },

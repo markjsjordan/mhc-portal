@@ -58,7 +58,7 @@ export const STATE_EVV_CONFIGS: Record<StateCode, StateEVVConfig> = {
   TX: {
     state: 'TX',
     aggregatorType: 'HHAEEXCHANGE',
-    aggregatorEndpoint: 'https://api.hhaeexchange.com/evv/v2/visits',
+    aggregatorEndpoint: 'https://api.hhaexchange.com/evv/v2/visits',
     gracePeriodMinutes: 10,
     geofenceRadiusMeters: 100,
     geofenceToleranceMeters: 50,
@@ -83,7 +83,7 @@ export const STATE_EVV_CONFIGS: Record<StateCode, StateEVVConfig> = {
   FL: {
     state: 'FL',
     aggregatorType: 'MULTI',
-    aggregatorEndpoint: 'https://api.hhaeexchange.com/evv/v2/visits', // Default
+    aggregatorEndpoint: 'https://api.hhaexchange.com/evv/v2/visits', // Default
     gracePeriodMinutes: 15,
     geofenceRadiusMeters: 150,
     geofenceToleranceMeters: 100,

@@ -11,6 +11,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
+import { assertAIBAAAttested, deidentifyPromptForHIPAA } from '../hipaa-ai-gateway.js';
 import type {
   AIProvider,
   AIProviderType,
@@ -34,7 +35,9 @@ const ANTHROPIC_MODELS: Record<ModelTier, string> = {
 /**
  * Default options for text generation
  */
-const DEFAULT_OPTIONS: Required<Omit<GenerateTextOptions, 'systemPrompt' | 'stopSequences'>> = {
+const DEFAULT_OPTIONS: Required<
+  Omit<GenerateTextOptions, 'systemPrompt' | 'stopSequences' | 'patientNames'>
+> = {
   modelTier: 'balanced',
   maxTokens: 4096,
   temperature: 0.7,
@@ -88,17 +91,26 @@ export class AnthropicProvider implements AIProvider {
       throw new Error('Anthropic provider not configured - missing API key');
     }
 
+    assertAIBAAAttested(this.name);
+
     const opts = { ...DEFAULT_OPTIONS, ...options };
     const model = ANTHROPIC_MODELS[opts.modelTier];
     const startTime = Date.now();
+    const sanitizedPrompt = deidentifyPromptForHIPAA(prompt, {
+      patientNames: opts.patientNames,
+    });
+    const sanitizedSystemPrompt =
+      opts.systemPrompt !== undefined
+        ? deidentifyPromptForHIPAA(opts.systemPrompt, { patientNames: opts.patientNames })
+        : undefined;
 
     const response = await this.client.messages.create({
       model,
       max_tokens: opts.maxTokens,
       temperature: opts.temperature,
-      system: opts.systemPrompt,
+      system: sanitizedSystemPrompt,
       stop_sequences: opts.stopSequences,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content: sanitizedPrompt }],
     });
 
     const latencyMs = Date.now() - startTime;
