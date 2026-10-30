@@ -24,7 +24,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
-import { requestLogger, metricsMiddleware, sanitizeInput } from '@folkcare/core';
+import { requestLogger, metricsMiddleware, sanitizeInput, AuthBypassDetector } from '@folkcare/core';
 import { authContextMiddleware } from './middleware/auth-context';
 import { errorHandler, notFoundHandler } from './middleware/error-handler';
 import { securityHeaders } from './middleware/security-headers';
@@ -185,6 +185,10 @@ function setupMiddleware(): void {
 
   // Input sanitization (prevent XSS)
   app.use(sanitizeInput);
+
+  // HIPAA-002: Auth bypass detection & mock auth route blocking
+  app.use(AuthBypassDetector.blockBypassAttempts);
+  app.use(AuthBypassDetector.blockMockAuthRoutes);
 
   // CSRF protection
   configureCsrfProtection(app);

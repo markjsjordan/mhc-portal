@@ -5,9 +5,9 @@
  * sentiment analysis, and keyword extraction.
  */
 
-import { Router, type Request, type Response } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import { z } from 'zod';
-import type { Database } from '@folkcare/core';
+import { AuthMiddleware, type Database } from '@folkcare/core';
 import { NoteSummarizationService } from '../service/note-summarization-service.js';
 import type {
   SummarizeNoteRequest,
@@ -68,8 +68,17 @@ const extractKeywordsSchema = z.object({
 /**
  * Create AI services router
  */
-export function createAIRoutes(_db: Database): Router {
+export function createAIRoutes(db: Database): Router {
   const router = Router();
+  const authMiddleware = new AuthMiddleware(db);
+
+  // HIPAA-002: Require authentication on all /ai/* endpoints
+  router.use('/ai', authMiddleware.requireAuth);
+  if (authMiddleware.auditImpersonatedActions) {
+    router.use('/ai', (req: Request, res: Response, next: NextFunction) => {
+      authMiddleware.auditImpersonatedActions(req, res, next);
+    });
+  }
 
   // Initialize AI service (in production, API key would come from env)
   const aiService = new NoteSummarizationService({
@@ -234,25 +243,33 @@ export function createAIRoutes(_db: Database): Router {
    * GET /ai/cache-stats
    * Get summarization cache statistics
    */
-  router.get('/ai/cache-stats', (_req: Request, res: Response) => {
-    const stats = aiService.getCacheStats();
-    res.json({
-      success: true,
-      data: stats,
-    });
-  });
+  router.get(
+    '/ai/cache-stats',
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'ADMIN']),
+    (_req: Request, res: Response) => {
+      const stats = aiService.getCacheStats();
+      res.json({
+        success: true,
+        data: stats,
+      });
+    }
+  );
 
   /**
    * POST /ai/clear-cache
    * Clear the summarization cache
    */
-  router.post('/ai/clear-cache', (_req: Request, res: Response) => {
-    aiService.clearCache();
-    res.json({
-      success: true,
-      message: 'Cache cleared successfully',
-    });
-  });
+  router.post(
+    '/ai/clear-cache',
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'ADMIN']),
+    (_req: Request, res: Response) => {
+      aiService.clearCache();
+      res.json({
+        success: true,
+        message: 'Cache cleared successfully',
+      });
+    }
+  );
 
   return router;
 }

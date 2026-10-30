@@ -18,7 +18,8 @@ import {
   TokenPayload,
   Database, 
   ValidationError, 
-  AuthenticationError 
+  AuthenticationError,
+  PermissionError
 } from '@folkcare/core';
 
 function setRefreshTokenCookie(res: Response, refreshToken: string): void {
@@ -170,6 +171,15 @@ export function createAuthRouter(db: Database): Router {
         });
       }
 
+      if (error instanceof PermissionError) {
+        return res.status(403).json({
+          success: false,
+          error: error.message,
+          code: error.code,
+          context: error.context
+        });
+      }
+
       console.error('Google login error:', error);
       return res.status(500).json({
         success: false,
@@ -290,6 +300,15 @@ export function createAuthRouter(db: Database): Router {
     } catch (error) {
       if (error instanceof AuthenticationError) {
         return res.status(401).json({
+          success: false,
+          error: error.message,
+          code: error.code,
+          context: error.context
+        });
+      }
+
+      if (error instanceof PermissionError) {
+        return res.status(403).json({
           success: false,
           error: error.message,
           code: error.code,

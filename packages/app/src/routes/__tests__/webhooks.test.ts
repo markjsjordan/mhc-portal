@@ -115,7 +115,7 @@ describe('Webhooks Routes', () => {
       expect(res.json).toHaveBeenCalledWith({ error: 'Missing stripe-signature header' });
     });
 
-    it('should return 401 when signature is invalid', async () => {
+    it('should return 400 when signature is invalid', async () => {
       mockVerifyWebhookSignature.mockReturnValue(false);
 
       const req = {
@@ -130,7 +130,7 @@ describe('Webhooks Routes', () => {
       await callHandler(getStripeHandler(), req, res);
 
       expect(mockVerifyWebhookSignature).toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({ error: 'Invalid signature' });
     });
 

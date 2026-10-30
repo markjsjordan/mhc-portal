@@ -5,6 +5,7 @@
  * This service creates real Stripe customers and subscriptions.
  */
 
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { UUID, ValidationError } from '../types/base.js';
 
 export interface StripeConfig {
@@ -188,23 +189,77 @@ export class StripeService {
   }
   
   /**
-   * Verify webhook signature
-   * 
-   * SECURITY NOTE: This is a simplified implementation for development.
-   * Production deployments should implement full Stripe webhook signature verification
-   * using: stripe.webhooks.constructEvent(payload, signature, webhookSecret)
+   * Parse Stripe-Signature header into timestamp and v1 signature candidates
    */
-  // eslint-disable-next-line sonarjs/no-invariant-returns
-  verifyWebhookSignature(_payload: string, _signature: string): boolean {
-    if (this.webhookSecret === null) {
-      console.warn('[Stripe] Webhook secret not configured. Skipping signature verification.');
-      return true; // Allow in development
+  private parseSignatureHeader(signature: string): {
+    timestamp: number;
+    timestampStr: string;
+    signatures: string[];
+  } | null {
+    const parts = signature.split(',').map((part) => part.trim());
+    let timestampStr: string | undefined;
+    const signatures: string[] = [];
+
+    for (const part of parts) {
+      const [key, value] = part.split('=');
+      if (key === 't' && value !== undefined && value !== '') {
+        timestampStr = value;
+      } else if (key === 'v1' && value !== undefined && value !== '') {
+        signatures.push(value);
+      }
     }
-    
-    // Simplified verification for development
-    // Production should use Stripe's webhook signature verification
-    console.log('[Stripe] Using simplified webhook verification for development');
-    return true;
+
+    if (timestampStr === undefined || signatures.length === 0) {
+      return null;
+    }
+
+    const timestamp = Number(timestampStr);
+    if (!Number.isFinite(timestamp) || timestamp <= 0) {
+      return null;
+    }
+
+    return { timestamp, timestampStr, signatures };
+  }
+
+  /**
+   * Verify webhook signature using HMAC-SHA256 (`t=<timestamp>,v1=<hex>`)
+   * with timestamp tolerance <= 300 seconds.
+   */
+  verifyWebhookSignature(payload: string, signature: string, toleranceSeconds = 300): boolean {
+    if (this.webhookSecret === null || this.webhookSecret === '') {
+      console.error('[Stripe] Webhook secret not configured. Rejecting webhook.');
+      return false;
+    }
+
+    if (payload === '' || signature === '') {
+      return false;
+    }
+
+    const parsed = this.parseSignatureHeader(signature);
+    if (parsed === null) {
+      return false;
+    }
+
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    if (Math.abs(nowSeconds - parsed.timestamp) > toleranceSeconds) {
+      return false;
+    }
+
+    const expectedHex = createHmac('sha256', this.webhookSecret)
+      .update(`${parsed.timestampStr}.${payload}`, 'utf8')
+      .digest('hex');
+    const expectedBuffer = Buffer.from(expectedHex, 'hex');
+
+    return parsed.signatures.some((candidateHex) => {
+      if (!/^[\da-f]+$/i.test(candidateHex) || candidateHex.length !== expectedHex.length) {
+        return false;
+      }
+      const candidateBuffer = Buffer.from(candidateHex, 'hex');
+      return (
+        candidateBuffer.length === expectedBuffer.length &&
+        timingSafeEqual(candidateBuffer, expectedBuffer)
+      );
+    });
   }
   
   /**

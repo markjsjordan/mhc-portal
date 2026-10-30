@@ -9,14 +9,13 @@
  * - Rate limiting and account locking
  */
 
-import { randomUUID } from '../utils/crypto';
 import { OAuth2Client } from 'google-auth-library';
 import { Database } from '../db/connection';
 import { UUID } from '../types/base';
 import {
   NotFoundError,
-  ValidationError,
-  AuthenticationError
+  AuthenticationError,
+  PermissionError
 } from '../types/base';
 import { PasswordUtils } from '../utils/password-utils';
 import { JWTUtils, TokenPayload, TokenPair } from '../utils/jwt-utils';
@@ -111,39 +110,56 @@ export class AuthService {
   }
 
   /**
+   * Alias for authenticateWithGoogle
+   */
+  async loginWithGoogle(
+    idToken: string,
+    organizationId?: UUID
+  ): Promise<LoginResult> {
+    return this.authenticateWithGoogle(idToken, organizationId);
+  }
+
+  /**
    * Authenticate with Google OAuth
    * Primary authentication method for production
    *
    * @param idToken - Google ID token from client
-   * @param organizationId - Organization ID for new user registration
+   * @param _organizationId - Deprecated: uninvited OAuth auto-provisioning is prohibited
    * @returns Login result with user info and tokens
-   * @throws ValidationError if organization required for new users
-   * @throws AuthenticationError if token verification fails
+   * @throws PermissionError if Google account is not invited or provisioned
+   * @throws AuthenticationError if token verification fails or email is unverified
    */
   async authenticateWithGoogle(
     idToken: string,
-    organizationId?: UUID
+    _organizationId?: UUID
   ): Promise<LoginResult> {
     // Verify Google ID token
     const profile = await this.verifyGoogleToken(idToken);
 
-    // Check if user exists
-    let user = await this.findUserByEmail(profile.email);
+    if (!profile.emailVerified) {
+      throw new AuthenticationError('Google account email is not verified', {
+        email: profile.email
+      });
+    }
+
+    // Check if user exists (must be invited or pre-provisioned)
+    const user = await this.findUserByEmail(profile.email);
 
     if (user === null) {
-      // Auto-register if organization specified
-      if (organizationId === undefined || organizationId === '') {
-        throw new ValidationError('Organization ID required for new users', {
-          email: profile.email
-        });
-      }
-
-      // Create new user from OAuth profile
-      user = await this.createOAuthUser(profile, organizationId);
-    } else {
-      // Update OAuth fields for existing user
-      await this.updateOAuthFields(user.id, profile);
+      await this.logAuthEvent(
+        null,
+        'LOGIN_FAILED',
+        'GOOGLE_OAUTH',
+        'FAILED',
+        'Account not invited or provisioned'
+      );
+      throw new PermissionError('Account not invited or provisioned', {
+        email: profile.email
+      });
     }
+
+    // Update OAuth fields for existing user
+    await this.updateOAuthFields(user.id, profile);
 
     // Check account status
     if (user.status !== 'ACTIVE') {
@@ -399,6 +415,10 @@ export class AuthService {
         throw new AuthenticationError('Invalid Google token payload');
       }
 
+      if (payload.email_verified === false) {
+        throw new AuthenticationError('Google account email is not verified');
+      }
+
       // Split name into first and last name
       const fullName = payload.name ?? '';
       const nameParts = fullName.split(' ');
@@ -417,6 +437,9 @@ export class AuthService {
         locale: payload.locale
       };
     } catch (error) {
+      if (error instanceof AuthenticationError) {
+        throw error;
+      }
       throw new AuthenticationError('Failed to verify Google token', {
         error: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -484,59 +507,6 @@ export class AuthService {
    */
   async getUserByIdForImpersonation(userId: UUID): Promise<UserRecord | null> {
     return this.findUserById(userId);
-  }
-
-  /**
-   * Create new user from OAuth profile
-   * 
-   * @param profile - OAuth profile data
-   * @param organizationId - Organization ID
-   * @returns New user record
-   */
-  private async createOAuthUser(
-    profile: OAuthProfile,
-    organizationId: UUID
-  ): Promise<UserRecord> {
-    const userId = randomUUID();
-
-    await this.db.query(
-      `INSERT INTO users (
-        id, organization_id, username, email, password_hash,
-        first_name, last_name, roles, permissions, status,
-        oauth_provider, oauth_provider_id, oauth_email_verified,
-        oauth_picture_url, oauth_locale, oauth_last_verified_at,
-        created_at, created_by, updated_at, updated_by
-      ) VALUES (
-        $1, $2, $3, $4, NULL,
-        $5, $6, $7, $8, 'ACTIVE',
-        $9, $10, $11,
-        $12, $13, NOW(),
-        NOW(), $1, NOW(), $1
-      )`,
-      [
-        userId,
-        organizationId,
-        profile.email.split('@')[0] ?? profile.email, // Username from email (fallback to full email if no @)
-        profile.email,
-        profile.firstName ?? profile.name,
-        profile.lastName ?? '',
-        ['COORDINATOR'], // Default role
-        [],
-        profile.provider,
-        profile.providerId,
-        profile.emailVerified ? 'true' : 'false',
-        profile.picture,
-        profile.locale
-      ]
-    );
-
-    // Fetch and return created user
-    const user = await this.findUserById(userId);
-    if (user === null) {
-      throw new Error('Failed to create user');
-    }
-
-    return user;
   }
 
   /**

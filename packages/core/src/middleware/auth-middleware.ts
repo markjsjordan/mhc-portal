@@ -9,6 +9,7 @@ import { Request, Response, NextFunction } from 'express';
 import { JWTUtils, TokenPayload } from '../utils/jwt-utils';
 import { Database } from '../db/connection';
 import { AuditService } from '../audit/audit-service';
+import { UserContext } from '../types/base';
 
 /**
  * Extend Express Request type to include authenticated user
@@ -18,6 +19,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: TokenPayload;
+      userContext?: UserContext;
     }
   }
 }
@@ -115,8 +117,15 @@ export class AuthMiddleware {
         return;
       }
 
-      // Attach user to request
+      // Attach user to request and populate verified userContext
       req.user = payload;
+      req.userContext = {
+        userId: payload.userId,
+        organizationId: payload.organizationId,
+        branchIds: payload.branchIds,
+        roles: payload.roles,
+        permissions: payload.permissions
+      };
       next();
     } catch (error) {
       console.error('Auth middleware error:', error);
@@ -139,9 +148,10 @@ export class AuthMiddleware {
    *     handler
    *   )
    * 
-   * @param roles - Array of roles, user must have at least one
+   * @param roles - Array of roles (or variadic role strings), user must have at least one
    */
-  requireRole = (roles: string[]) => {
+  requireRole = (roles: string[] | string, ...restRoles: string[]) => {
+    const requiredRoles = Array.isArray(roles) ? roles : [roles, ...restRoles];
     return (req: Request, res: Response, next: NextFunction): void => {
       // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (!req.user) {
@@ -153,7 +163,7 @@ export class AuthMiddleware {
         return;
       }
 
-      const hasRole = roles.some(role => req.user!.roles.includes(role));
+      const hasRole = requiredRoles.some(role => req.user!.roles.includes(role));
 
       if (!hasRole) {
         // Log unauthorized access attempt
@@ -172,7 +182,7 @@ export class AuthMiddleware {
             action: 'UNAUTHORIZED_ROLE_ACCESS_ATTEMPT',
             result: 'FAILURE',
             metadata: {
-              requiredRoles: roles,
+              requiredRoles,
               userRoles: req.user.roles,
               method: req.method,
               path: req.path
@@ -188,7 +198,7 @@ export class AuthMiddleware {
           success: false,
           error: 'Insufficient permissions',
           code: 'INSUFFICIENT_PERMISSIONS',
-          requiredRoles: roles,
+          requiredRoles,
           userRoles: req.user.roles
         });
         return;
@@ -310,6 +320,13 @@ export class AuthMiddleware {
         // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions, @typescript-eslint/prefer-optional-chain
         if (user && user.status === 'ACTIVE' && user.token_version === payload.tokenVersion) {
           req.user = payload;
+          req.userContext = {
+            userId: payload.userId,
+            organizationId: payload.organizationId,
+            branchIds: payload.branchIds,
+            roles: payload.roles,
+            permissions: payload.permissions
+          };
         }
       } catch {
         // Invalid token - continue without authentication

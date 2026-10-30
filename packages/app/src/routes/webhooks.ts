@@ -59,7 +59,7 @@ router.post('/stripe', express.raw({ type: 'application/json' }), async (req: Re
     
     if (isValid === false) {
       console.error('[Webhook] Invalid Stripe signature');
-      return res.status(401).json({ error: 'Invalid signature' });
+      return res.status(400).json({ error: 'Invalid signature' });
     }
     
     // Parse the JSON body

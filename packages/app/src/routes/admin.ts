@@ -37,13 +37,32 @@ router.use((req: Request, res: Response, next: NextFunction) => {
   }
 });
 
+const requireAdminRole = (req: Request, res: Response, next: NextFunction): void => {
+  const middleware = getAuthMiddleware();
+  if (typeof middleware.requireRole === 'function') {
+    middleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'ADMIN'])(req, res, next);
+    return;
+  }
+  const userRoles = req.user?.roles ?? [];
+  const allowed = ['SUPER_ADMIN', 'ORG_ADMIN', 'ADMIN'].some((r) => userRoles.includes(r));
+  if (!allowed) {
+    res.status(403).json({
+      success: false,
+      error: 'Insufficient permissions',
+      code: 'INSUFFICIENT_PERMISSIONS',
+    });
+    return;
+  }
+  next();
+};
+
 /**
  * Get cache statistics
  *
  * @route GET /admin/cache/stats
- * @security Requires admin role (not yet implemented)
+ * @security Requires admin role
  */
-router.get('/cache/stats', async (_req, res) => {
+router.get('/cache/stats', requireAdminRole, async (_req, res) => {
   try {
     const cache = getCacheService();
     const stats = await cache.getStats();
@@ -58,9 +77,9 @@ router.get('/cache/stats', async (_req, res) => {
  * Clear cache
  *
  * @route POST /admin/cache/clear
- * @security Requires admin role (not yet implemented)
+ * @security Requires admin role
  */
-router.post('/cache/clear', async (req, res) => {
+router.post('/cache/clear', requireAdminRole, async (req, res) => {
   try {
     const cache = getCacheService();
     const { pattern } = req.body as { pattern?: string };

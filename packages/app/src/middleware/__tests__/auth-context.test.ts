@@ -116,6 +116,57 @@ describe('authContextMiddleware', () => {
     expect(mockRequest.userContext?.organizationId).toBeUndefined();
     expect(nextMock).toHaveBeenCalled();
   });
+
+  it('should ignore spoofed X-User-* headers when NODE_ENV is not test', () => {
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      const mockHeader = vi.fn()
+        .mockImplementation((name: string) => {
+          if (name === 'X-User-Id') return 'spoofed-admin';
+          if (name === 'X-Organization-Id') return '550e8400-e29b-41d4-a716-446655440000';
+          if (name === 'X-User-Roles') return 'SUPER_ADMIN';
+          return '';
+        });
+
+      mockRequest.header = mockHeader as any;
+
+      authContextMiddleware(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextMock
+      );
+
+      expect(mockRequest.userContext).toBeUndefined();
+      expect(nextMock).toHaveBeenCalled();
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+    }
+  });
+
+  it('should ignore spoofed X-User-* headers when ALLOW_TEST_IDENTITY_HEADERS is false', () => {
+    process.env.ALLOW_TEST_IDENTITY_HEADERS = 'false';
+    try {
+      const mockHeader = vi.fn()
+        .mockImplementation((name: string) => {
+          if (name === 'X-User-Id') return 'spoofed-admin';
+          return '';
+        });
+
+      mockRequest.header = mockHeader as any;
+
+      authContextMiddleware(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextMock
+      );
+
+      expect(mockRequest.userContext).toBeUndefined();
+      expect(nextMock).toHaveBeenCalled();
+    } finally {
+      delete process.env.ALLOW_TEST_IDENTITY_HEADERS;
+    }
+  });
 });
 
 describe('requireAuth', () => {

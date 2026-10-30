@@ -16,16 +16,17 @@ export function createDemoRouter(db: Database): Router {
   const router = Router();
   const sessionManager = getDemoSessionManager();
 
-  // Environment check: Demo routes should be carefully controlled in production
-  // Note: These routes are intentionally unauthenticated for public demos
-  // Consider disabling in production or adding rate limiting
-  const isDemoEnabled = process.env.DEMO_MODE === 'true' ||
-                       process.env.NODE_ENV === 'development' ||
-                       process.env.NODE_ENV === 'test';
-
-  if (!isDemoEnabled) {
-    console.warn('⚠️  Demo routes are enabled but DEMO_MODE is not set. Set DEMO_MODE=true to explicitly enable demo routes.');
-  }
+  // Environment check: Demo routes are blocked in production unless DEMO_MODE === 'true'
+  router.use((_req: Request, res: Response, next: NextFunction) => {
+    if (process.env.NODE_ENV === 'production' && process.env.DEMO_MODE !== 'true') {
+      res.status(404).json({
+        success: false,
+        error: 'Not Found',
+      });
+      return;
+    }
+    next();
+  });
 
   // ============================================================================
   // SESSION MANAGEMENT
