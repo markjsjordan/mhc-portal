@@ -6,20 +6,29 @@
  * the API; this page only renders what the server returns.
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   useStaffInbox,
   useMessagesInThread,
   useSendMessage,
   useUpdateMessageThread,
+  useOrganizationStaff,
 } from '../hooks';
-import { MessageThread, MessageComposer, NewStaffMessageDialog } from '../components';
+import {
+  MessageThread,
+  MessageComposer,
+  NewStaffMessageDialog,
+  ThreadAssignmentDropdown,
+} from '../components';
+import { useAuth } from '@/core/hooks';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
 import { Button } from '@/components/ui/button.js';
 import { Badge } from '@/components/ui/badge.js';
+import type { UUID } from '@folkcare/core/browser';
 
 type StatusFilter = 'OPEN' | 'CLOSED';
+type AssignmentFilter = 'ALL' | 'MINE';
 
 export interface StaffMessagesPageProps {
   /** Route prefix used for thread links (e.g. '/messages' or '/caregiver/messages') */
@@ -29,7 +38,9 @@ export interface StaffMessagesPageProps {
 export const StaffMessagesPage: React.FC<StaffMessagesPageProps> = ({ basePath = '/messages' }) => {
   const { threadId } = useParams<{ threadId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [status, setStatus] = useState<StatusFilter>('OPEN');
+  const [assignmentFilter, setAssignmentFilter] = useState<AssignmentFilter>('ALL');
   const [showNewMessage, setShowNewMessage] = useState(false);
 
   const { data: threads, isLoading: threadsLoading } = useStaffInbox(status);
@@ -38,6 +49,24 @@ export const StaffMessagesPage: React.FC<StaffMessagesPageProps> = ({ basePath =
   const updateThread = useUpdateMessageThread();
 
   const activeThread = threads?.find((t) => t.id === threadId);
+  const organizationId = (activeThread?.organizationId ?? user?.organizationId ?? null) as UUID | null;
+  const { data: staffMembers } = useOrganizationStaff(organizationId);
+
+  const staffMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const member of staffMembers ?? []) {
+      map.set(member.id, `${member.firstName} ${member.lastName}`.trim());
+    }
+    return map;
+  }, [staffMembers]);
+
+  const filteredThreads = useMemo(() => {
+    if (!threads) return [];
+    if (assignmentFilter === 'MINE' && user?.id) {
+      return threads.filter((t) => t.assignedToUserId === user.id);
+    }
+    return threads;
+  }, [threads, assignmentFilter, user?.id]);
 
   return (
     <div className="space-y-6">
@@ -62,65 +91,99 @@ export const StaffMessagesPage: React.FC<StaffMessagesPageProps> = ({ basePath =
         <div className="lg:col-span-1">
           <Card>
             <CardContent className="p-4">
-              <div className="mb-3 flex gap-2" role="tablist" aria-label="Conversation status">
-                {(['OPEN', 'CLOSED'] as const).map((s) => (
-                  <Button
-                    key={s}
-                    role="tab"
-                    aria-selected={status === s}
-                    variant={status === s ? 'secondary' : 'ghost'}
-                    size="sm"
-                    onClick={() => setStatus(s)}
-                    className={status === s ? 'font-semibold' : 'text-muted-foreground'}
-                  >
-                    {s === 'OPEN' ? 'Open' : 'Closed'}
-                  </Button>
-                ))}
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex gap-2" role="tablist" aria-label="Conversation status">
+                  {(['OPEN', 'CLOSED'] as const).map((s) => (
+                    <Button
+                      key={s}
+                      role="tab"
+                      aria-selected={status === s}
+                      variant={status === s ? 'secondary' : 'ghost'}
+                      size="sm"
+                      onClick={() => setStatus(s)}
+                      className={status === s ? 'font-semibold' : 'text-muted-foreground'}
+                    >
+                      {s === 'OPEN' ? 'Open' : 'Closed'}
+                    </Button>
+                  ))}
+                </div>
+                {user?.id && (
+                  <div className="flex gap-1" role="group" aria-label="Assignment filter">
+                    <Button
+                      variant={assignmentFilter === 'ALL' ? 'secondary' : 'ghost'}
+                      size="sm"
+                      onClick={() => setAssignmentFilter('ALL')}
+                      className={assignmentFilter === 'ALL' ? 'font-semibold text-xs h-7 px-2' : 'text-muted-foreground text-xs h-7 px-2'}
+                    >
+                      All
+                    </Button>
+                    <Button
+                      variant={assignmentFilter === 'MINE' ? 'secondary' : 'ghost'}
+                      size="sm"
+                      onClick={() => setAssignmentFilter('MINE')}
+                      className={assignmentFilter === 'MINE' ? 'font-semibold text-xs h-7 px-2' : 'text-muted-foreground text-xs h-7 px-2'}
+                    >
+                      My Threads
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {threadsLoading ? (
                 <p className="py-6 text-center text-sm text-gray-500">Loading conversations…</p>
-              ) : !threads || threads.length === 0 ? (
-                <p className="py-6 text-center text-sm text-gray-500">No {status.toLowerCase()} conversations</p>
+              ) : filteredThreads.length === 0 ? (
+                <p className="py-6 text-center text-sm text-gray-500">
+                  No {status.toLowerCase()} conversations
+                </p>
               ) : (
                 <ul className="space-y-2">
-                  {threads.map((thread) => (
-                    <li key={thread.id}>
-                      <Link
-                        to={`${basePath}/${thread.id}`}
-                        className={`block rounded-lg border p-3 hover:bg-gray-50 transition-colors ${
-                          thread.id === threadId ? 'border-primary bg-primary/5' : 'border-gray-200'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="truncate text-sm font-semibold text-gray-900">{thread.subject}</p>
-                          {thread.unreadCountStaff > 0 && (
-                            <Badge variant="destructive" className="px-2 py-0.5 text-xs font-semibold">
-                              {thread.unreadCountStaff}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="mt-0.5 truncate text-xs text-gray-600">
-                          {thread.familyMemberName} ({thread.familyMemberRelationship.toLowerCase()})
-                        </p>
-                        <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
-                          <span>
-                            {new Date(thread.lastMessageAt).toLocaleString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: 'numeric',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                          {thread.priority === 'HIGH' && (
-                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                              High priority
-                            </Badge>
-                          )}
-                        </div>
-                      </Link>
-                    </li>
-                  ))}
+                  {filteredThreads.map((thread) => {
+                    const assigneeName = thread.assignedToUserId
+                      ? staffMap.get(thread.assignedToUserId)
+                      : undefined;
+                    return (
+                      <li key={thread.id}>
+                        <Link
+                          to={`${basePath}/${thread.id}`}
+                          className={`block rounded-lg border p-3 hover:bg-gray-50 transition-colors ${
+                            thread.id === threadId ? 'border-primary bg-primary/5' : 'border-gray-200'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="truncate text-sm font-semibold text-gray-900">{thread.subject}</p>
+                            {thread.unreadCountStaff > 0 && (
+                              <Badge variant="destructive" className="px-2 py-0.5 text-xs font-semibold">
+                                {thread.unreadCountStaff}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="mt-0.5 truncate text-xs text-gray-600">
+                            {thread.familyMemberName} ({thread.familyMemberRelationship.toLowerCase()})
+                          </p>
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                            <span>
+                              {new Date(thread.lastMessageAt).toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                            {assigneeName && (
+                              <span className="truncate text-[11px] text-gray-600">
+                                • {assigneeName}
+                              </span>
+                            )}
+                            {thread.priority === 'HIGH' && (
+                              <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                                High priority
+                              </Badge>
+                            )}
+                          </div>
+                        </Link>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </CardContent>
@@ -143,9 +206,17 @@ export const StaffMessagesPage: React.FC<StaffMessagesPageProps> = ({ basePath =
                 </div>
                 {activeThread && (
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-500">
-                      {activeThread.assignedToUserId ? 'Assigned' : 'Unassigned'}
-                    </span>
+                    <ThreadAssignmentDropdown
+                      assignedToUserId={activeThread.assignedToUserId}
+                      organizationId={activeThread.organizationId}
+                      onAssignmentChange={(userId) =>
+                        updateThread.mutate({
+                          threadId: activeThread.id,
+                          changes: { assignedToUserId: userId },
+                        })
+                      }
+                      disabled={updateThread.isPending}
+                    />
                     <Button
                       variant="outline"
                       size="sm"

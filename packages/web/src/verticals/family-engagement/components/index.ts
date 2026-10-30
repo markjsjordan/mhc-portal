@@ -14,6 +14,7 @@ export * from './MessageList';
 export * from './MessageThread';
 export * from './MessageComposer';
 export * from './NewStaffMessageDialog';
+export * from './ThreadAssignmentDropdown';
 
 // Care Overview Components
 export * from './CareSummary';

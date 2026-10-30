@@ -7,7 +7,36 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import type { UUID } from '@folkcare/core/browser';
+import { useApiClient } from '@/core/hooks';
 import { useFamilyPortalApi } from './useFamilyPortal';
+
+export interface StaffMemberOption {
+  id: UUID;
+  firstName: string;
+  lastName: string;
+  email: string;
+  roles: string[];
+  status: 'ACTIVE' | 'INACTIVE';
+}
+
+/**
+ * Hook to fetch organization staff members for thread assignment
+ */
+export function useOrganizationStaff(organizationId: UUID | null) {
+  const apiClient = useApiClient();
+
+  return useQuery({
+    queryKey: ['teamMembers', organizationId],
+    queryFn: async (): Promise<StaffMemberOption[]> => {
+      const res = await apiClient.get<
+        StaffMemberOption[] | { data?: StaffMemberOption[] }
+      >(`/api/organizations/${organizationId}/users`);
+      return Array.isArray(res) ? res : (res.data ?? []);
+    },
+    enabled: !!organizationId,
+    staleTime: 60000,
+  });
+}
 
 /**
  * Hook to get message threads for family member
