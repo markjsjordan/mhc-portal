@@ -1,16 +1,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createApiClient } from '../api-client';
+import { requestDeduplicator, requestThrottler } from '../../utils/request-utils';
 
 describe('api-client 401 refresh/retry interceptor', () => {
   const originalFetch = global.fetch;
   let mockFetch: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    requestDeduplicator.clear();
+    requestThrottler.clear();
     mockFetch = vi.fn();
     global.fetch = mockFetch as unknown as typeof fetch;
   });
 
   afterEach(() => {
+    requestDeduplicator.clear();
+    requestThrottler.clear();
     global.fetch = originalFetch;
   });
 
@@ -45,7 +50,7 @@ describe('api-client 401 refresh/retry interceptor', () => {
     expect(result).toEqual({ success: true, data: { id: '123' } });
   });
 
-  it('calls onAuthFailure when refresh fails', async () => {
+  it('calls onAuthFailure and returns a never-settling promise when refresh fails', async () => {
     const onRefresh = vi.fn().mockRejectedValue(new Error('Refresh failed'));
     const onAuthFailure = vi.fn();
 
@@ -56,10 +61,31 @@ describe('api-client 401 refresh/retry interceptor', () => {
       onAuthFailure,
     });
 
+    const outcome = await Promise.race([
+      client.get('/api/clients/123').then(
+        () => 'resolved',
+        () => 'rejected'
+      ),
+      new Promise<string>((resolve) => setTimeout(() => resolve('pending'), 25)),
+    ]);
+
+    expect(outcome).toBe('pending');
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+    expect(onAuthFailure).toHaveBeenCalledTimes(1);
+  });
+
+  it('rethrows refresh error when onAuthFailure is not provided', async () => {
+    const onRefresh = vi.fn().mockRejectedValue(new Error('Refresh failed'));
+
+    mockFetch.mockResolvedValue(jsonResponse(401, { message: 'Token expired' }));
+
+    const client = createApiClient('https://api.test', () => 'stale-token', undefined, {
+      onRefresh,
+    });
+
     await expect(client.get('/api/clients/123')).rejects.toThrow('Refresh failed');
 
     expect(onRefresh).toHaveBeenCalledTimes(1);
-    expect(onAuthFailure).toHaveBeenCalledTimes(1);
   });
 
   it('does NOT refresh for 401 from /api/auth/* endpoints', async () => {
@@ -206,10 +232,18 @@ describe('api-client 401 refresh/retry interceptor', () => {
       onAuthFailure,
     });
 
-    await expect(client.get('/api/clients/123')).rejects.toThrow();
+    const outcome = await Promise.race([
+      client.get('/api/clients/123').then(
+        () => 'resolved',
+        () => 'rejected'
+      ),
+      new Promise<string>((resolve) => setTimeout(() => resolve('pending'), 25)),
+    ]);
 
-    // Should refresh once, retry once, then give up
+    // Should refresh once, retry once, call onAuthFailure, and stay pending while redirecting
+    expect(outcome).toBe('pending');
     expect(onRefresh).toHaveBeenCalledTimes(1);
+    expect(onAuthFailure).toHaveBeenCalledTimes(1);
     expect(mockFetch).toHaveBeenCalledTimes(2); // Initial + 1 retry
   });
 });

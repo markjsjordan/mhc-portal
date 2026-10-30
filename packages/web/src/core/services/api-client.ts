@@ -175,7 +175,13 @@ class ApiClientImpl implements ApiClient {
                 // Refresh failed - clear auth and redirect
                 this.refreshPromise = null;
                 if (this.onAuthFailure) {
+                  requestDeduplicator.clear();
                   this.onAuthFailure();
+                  // Return a promise that never resolves - we're redirecting to login
+                  // This prevents errors from being shown to the user
+                  return new Promise<T>(() => {
+                    // Intentionally never resolve - redirect happens immediately
+                  });
                 }
                 throw refreshError;
               }
