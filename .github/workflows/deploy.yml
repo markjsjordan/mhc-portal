@@ -434,7 +434,7 @@ jobs:
           echo "URL: https://folk.care"
           echo "Health Check: https://folk.care/health"
           echo ""
-          echo "Database: Reset and seeded with comprehensive demo data"
+          echo "Database: Schema migrations applied (no demo data seeded in production)"
           echo "Validation Status: See post-deployment checks above"
           echo ""
 

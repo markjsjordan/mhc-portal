@@ -24,13 +24,13 @@ CORS_ORIGIN = "https://folkcare.com,https://www.folkcare.com"
 # 
 # Setup Instructions:
 # 1. Get your Supabase pooler connection string:
-#    Go to: https://supabase.com/dashboard/project/aoxifllwcujpinwfaxmu/settings/database
+#    Go to: https://supabase.com/dashboard/project/${SUPABASE_PROJECT_REF}/settings/database
 #    Use: Transaction pooler (port 6543) with ?pgbouncer=true
-#    Format: postgres://postgres.aoxifllwcujpinwfaxmu:[PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+#    Format: postgres://postgres.${SUPABASE_PROJECT_REF}:[PASSWORD]@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
 #
 # 2. Create Hyperdrive configuration:
 #    wrangler hyperdrive create folkcare-db \
-#      --connection-string="postgres://postgres.aoxifllwcujpinwfaxmu:-Q\$gsyPD788qv\!S@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+#      --connection-string="postgres://postgres.${SUPABASE_PROJECT_REF}:${SUPABASE_PASSWORD}@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
 #
 #    Note: Escape special characters in command line:
 #    - $ becomes \$

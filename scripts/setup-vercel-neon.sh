@@ -116,14 +116,24 @@ echo " Step 3: Generate Secrets"
 echo "════════════════════════════════════════════════════════════════"
 echo ""
 
-echo "Generating secure secrets..."
+echo "Generating distinct cryptographic secrets for production, preview, and development..."
 
-JWT_SECRET=$(openssl rand -base64 32)
-JWT_REFRESH_SECRET=$(openssl rand -base64 32)
-SESSION_SECRET=$(openssl rand -base64 32)
-ENCRYPTION_KEY=$(openssl rand -hex 32)
+PROD_JWT_SECRET=$(openssl rand -base64 32)
+PROD_JWT_REFRESH_SECRET=$(openssl rand -base64 32)
+PROD_SESSION_SECRET=$(openssl rand -base64 32)
+PROD_ENCRYPTION_KEY=$(openssl rand -hex 32)
 
-echo -e "${GREEN}✅ Secrets generated${NC}"
+PREVIEW_JWT_SECRET=$(openssl rand -base64 32)
+PREVIEW_JWT_REFRESH_SECRET=$(openssl rand -base64 32)
+PREVIEW_SESSION_SECRET=$(openssl rand -base64 32)
+PREVIEW_ENCRYPTION_KEY=$(openssl rand -hex 32)
+
+DEV_JWT_SECRET=$(openssl rand -base64 32)
+DEV_JWT_REFRESH_SECRET=$(openssl rand -base64 32)
+DEV_SESSION_SECRET=$(openssl rand -base64 32)
+DEV_ENCRYPTION_KEY=$(openssl rand -hex 32)
+
+echo -e "${GREEN}✅ Distinct secrets generated per environment${NC}"
 
 echo ""
 echo "════════════════════════════════════════════════════════════════"
@@ -133,25 +143,38 @@ echo ""
 
 echo "Setting production environment variables..."
 
-# Set environment variables
+# Set production environment variables
 echo "$POOLED_URL" | vercel env add DATABASE_URL production
 echo "$DIRECT_URL" | vercel env add DATABASE_URL_UNPOOLED production
-echo "$JWT_SECRET" | vercel env add JWT_SECRET production
-echo "$JWT_REFRESH_SECRET" | vercel env add JWT_REFRESH_SECRET production
-echo "$SESSION_SECRET" | vercel env add SESSION_SECRET production
-echo "$ENCRYPTION_KEY" | vercel env add ENCRYPTION_KEY production
+echo "$PROD_JWT_SECRET" | vercel env add JWT_SECRET production
+echo "$PROD_JWT_REFRESH_SECRET" | vercel env add JWT_REFRESH_SECRET production
+echo "$PROD_SESSION_SECRET" | vercel env add SESSION_SECRET production
+echo "$PROD_ENCRYPTION_KEY" | vercel env add ENCRYPTION_KEY production
 
 echo ""
-read -p "Do you want to set preview environment variables too? (y/n): " SET_PREVIEW
+read -p "Do you want to set preview and development environment variables too? (y/n): " SET_PREVIEW
 
 if [ "$SET_PREVIEW" == "y" ]; then
-  echo "Setting preview environment variables..."
-  echo "$POOLED_URL" | vercel env add DATABASE_URL preview
-  echo "$DIRECT_URL" | vercel env add DATABASE_URL_UNPOOLED preview
-  echo "$JWT_SECRET" | vercel env add JWT_SECRET preview
-  echo "$JWT_REFRESH_SECRET" | vercel env add JWT_REFRESH_SECRET preview
-  echo "$SESSION_SECRET" | vercel env add SESSION_SECRET preview
-  echo "$ENCRYPTION_KEY" | vercel env add ENCRYPTION_KEY preview
+  read -p "Enter your Neon preview branch name (default: preview): " NEON_PREVIEW_BRANCH
+  NEON_PREVIEW_BRANCH=${NEON_PREVIEW_BRANCH:-preview}
+  PREVIEW_POOLED_URL=$(neon connection-string "$NEON_PROJECT_ID" --branch "$NEON_PREVIEW_BRANCH" --pooled)
+  PREVIEW_DIRECT_URL=$(neon connection-string "$NEON_PROJECT_ID" --branch "$NEON_PREVIEW_BRANCH")
+
+  echo "Setting preview environment variables (isolated from production)..."
+  echo "$PREVIEW_POOLED_URL" | vercel env add DATABASE_URL preview
+  echo "$PREVIEW_DIRECT_URL" | vercel env add DATABASE_URL_UNPOOLED preview
+  echo "$PREVIEW_JWT_SECRET" | vercel env add JWT_SECRET preview
+  echo "$PREVIEW_JWT_REFRESH_SECRET" | vercel env add JWT_REFRESH_SECRET preview
+  echo "$PREVIEW_SESSION_SECRET" | vercel env add SESSION_SECRET preview
+  echo "$PREVIEW_ENCRYPTION_KEY" | vercel env add ENCRYPTION_KEY preview
+
+  echo "Setting development environment variables (isolated from production/preview)..."
+  echo "$PREVIEW_POOLED_URL" | vercel env add DATABASE_URL development
+  echo "$PREVIEW_DIRECT_URL" | vercel env add DATABASE_URL_UNPOOLED development
+  echo "$DEV_JWT_SECRET" | vercel env add JWT_SECRET development
+  echo "$DEV_JWT_REFRESH_SECRET" | vercel env add JWT_REFRESH_SECRET development
+  echo "$DEV_SESSION_SECRET" | vercel env add SESSION_SECRET development
+  echo "$DEV_ENCRYPTION_KEY" | vercel env add ENCRYPTION_KEY development
 fi
 
 echo ""

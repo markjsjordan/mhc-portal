@@ -34,15 +34,15 @@
 # }
 
 # =============================================================================
-# AWS S3 Backend (Alternative)
+# Encrypted Remote State Backend (HIPAA-001)
 # =============================================================================
 
-# terraform {
-#   backend "s3" {
-#     bucket         = "folkcare-terraform-state"
-#     key            = "infrastructure/terraform.tfstate"
-#     region         = "us-east-1"
-#     encrypt        = true
-#     dynamodb_table = "folkcare-terraform-locks"
-#   }
-# }
+terraform {
+  backend "s3" {
+    bucket         = "folkcare-terraform-state"
+    key            = "infrastructure/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "folkcare-terraform-locks"
+  }
+}

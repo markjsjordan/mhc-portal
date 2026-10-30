@@ -47,10 +47,12 @@ neon_org_id = "org-xxxxxxxxxx"
 # Application Secrets
 # =============================================================================
 
-# REQUIRED: JWT secret for authentication
+# REQUIRED: Distinct JWT secrets for production and preview authentication
 # Generate with: openssl rand -base64 32
-jwt_secret = "your-jwt-secret-here"
+jwt_secret_production = "your-production-jwt-secret-here"
+jwt_secret_preview    = "your-preview-jwt-secret-here"
 
-# REQUIRED: Encryption key for sensitive data
-# Generate with: openssl rand -base64 32
-encryption_key = "your-encryption-key-here"
+# REQUIRED: Distinct Encryption keys for production and preview sensitive data
+# Generate with: openssl rand -hex 32
+encryption_key_production = "your-production-encryption-key-here"
+encryption_key_preview    = "your-preview-encryption-key-here"

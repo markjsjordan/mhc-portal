@@ -43,13 +43,12 @@ data "neon_branch" "main" {
   depends_on = [neon_project.folkcare]
 }
 
-# Preview branch for staging/development
+# Preview branch for staging/development (schema-only: never clone production ePHI)
 resource "neon_branch" "preview" {
-  project_id = neon_project.folkcare.id
-  name       = "preview"
-
-  # Branch from main to inherit schema and data
-  parent_id = data.neon_branch.main.id
+  project_id  = neon_project.folkcare.id
+  name        = "preview"
+  parent_id   = data.neon_branch.main.id
+  schema_only = true
 }
 
 # =============================================================================
