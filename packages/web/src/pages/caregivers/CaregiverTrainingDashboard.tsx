@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button.js';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs.js';
 
 /**
  * Caregiver Training & Certification Dashboard
@@ -275,30 +276,32 @@ export default function CaregiverTrainingDashboard() {
         <p style={styles.subtitle}>Track your certifications, complete training, and advance your career</p>
       </div>
 
-      {/* Tab Navigation */}
-      <div style={styles.tabContainer}>
-        {[
-          { id: 'overview' as const, label: 'Overview', icon: '📊' },
-          { id: 'certifications' as const, label: 'My Certifications', icon: '🎓' },
-          { id: 'training' as const, label: 'My Training', icon: '📚' },
-          { id: 'catalog' as const, label: 'Course Catalog', icon: '📖' },
-        ].map((tab) => (
-          <Button
-            key={tab.id}
-            variant={activeTab === tab.id ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setActiveTab(tab.id)}
-            className="gap-2"
-          >
-            <span>{tab.icon}</span>
-            {tab.label}
-          </Button>
-        ))}
-      </div>
+      {/* Tab Navigation & Content */}
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as 'overview' | 'certifications' | 'training' | 'catalog')}
+      >
+        <TabsList variant="line" style={styles.tabContainer}>
+          {[
+            { id: 'overview' as const, label: 'Overview', icon: '📊' },
+            { id: 'certifications' as const, label: 'My Certifications', icon: '🎓' },
+            { id: 'training' as const, label: 'My Training', icon: '📚' },
+            { id: 'catalog' as const, label: 'Course Catalog', icon: '📖' },
+          ].map((tab) => (
+            <TabsTrigger
+              key={tab.id}
+              value={tab.id}
+              className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              <span>{tab.icon}</span>
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-      {/* Overview Tab */}
-      {activeTab === 'overview' && (
-        <div>
+        {/* Overview Tab */}
+        <TabsContent value="overview">
+          <div>
           {/* Stats Cards */}
           <div style={styles.statsGrid}>
             <div style={{ ...styles.statCard, ...styles.statCardGreen }}>
@@ -406,12 +409,12 @@ export default function CaregiverTrainingDashboard() {
               ))}
             </div>
           </div>
-        </div>
-      )}
+          </div>
+        </TabsContent>
 
-      {/* Certifications Tab */}
-      {activeTab === 'certifications' && (
-        <div>
+        {/* Certifications Tab */}
+        <TabsContent value="certifications">
+          <div>
           <div style={styles.section}>
             <div style={styles.sectionHeader}>
               <h2 style={styles.sectionTitle}>My Certifications</h2>
@@ -477,12 +480,12 @@ export default function CaregiverTrainingDashboard() {
               ))}
             </div>
           </div>
-        </div>
-      )}
+          </div>
+        </TabsContent>
 
-      {/* Training Tab */}
-      {activeTab === 'training' && (
-        <div>
+        {/* Training Tab */}
+        <TabsContent value="training">
+          <div>
           <div style={styles.section}>
             <h2 style={styles.sectionTitle}>My Training Courses</h2>
 
@@ -535,12 +538,12 @@ export default function CaregiverTrainingDashboard() {
               ))}
             </div>
           </div>
-        </div>
-      )}
+          </div>
+        </TabsContent>
 
-      {/* Catalog Tab */}
-      {activeTab === 'catalog' && (
-        <div>
+        {/* Catalog Tab */}
+        <TabsContent value="catalog">
+          <div>
           <div style={styles.section}>
             <h2 style={styles.sectionTitle}>Course Catalog</h2>
             <p style={styles.sectionSubtitle}>
@@ -570,7 +573,8 @@ export default function CaregiverTrainingDashboard() {
             ))}
           </div>
         </div>
-      )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

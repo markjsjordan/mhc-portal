@@ -44,6 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select.js';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs.js';
 
 type EntityType = 'clients' | 'caregivers';
 type ImportStep = 'upload' | 'mapping' | 'preview' | 'completed';
@@ -412,7 +413,14 @@ export const BulkDataHub: React.FC = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <Tabs
+      value={activeTab}
+      onValueChange={(value) => {
+        setActiveTab(value as 'import' | 'export');
+        setErrorMessage(null);
+      }}
+      className="space-y-6"
+    >
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -423,34 +431,16 @@ export const BulkDataHub: React.FC = () => {
         </div>
 
         {/* Tab Switcher */}
-        <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1">
-          <Button
-            type="button"
-            variant={activeTab === 'import' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => {
-              setActiveTab('import');
-              setErrorMessage(null);
-            }}
-            className="gap-2"
-          >
+        <TabsList className="rounded-lg border border-gray-200 bg-gray-50 p-1 h-auto">
+          <TabsTrigger value="import" className="gap-2">
             <Upload className="h-4 w-4" />
             Bulk CSV Import Wizard
-          </Button>
-          <Button
-            type="button"
-            variant={activeTab === 'export' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => {
-              setActiveTab('export');
-              setErrorMessage(null);
-            }}
-            className="gap-2"
-          >
+          </TabsTrigger>
+          <TabsTrigger value="export" className="gap-2">
             <FileArchive className="h-4 w-4" />
             Regulatory Audit Pack Export
-          </Button>
-        </div>
+          </TabsTrigger>
+        </TabsList>
       </div>
 
       {errorMessage && (
@@ -470,8 +460,7 @@ export const BulkDataHub: React.FC = () => {
       )}
 
       {/* TAB 1: BULK IMPORT WIZARD */}
-      {activeTab === 'import' && (
-        <div className="space-y-6">
+      <TabsContent value="import" className="space-y-6 mt-0">
           {/* Step Breadcrumb */}
           <div className="grid grid-cols-4 gap-2 text-sm">
             {[
@@ -758,23 +747,25 @@ export const BulkDataHub: React.FC = () => {
                 </div>
 
                 {/* Filter Tabs */}
-                <div className="flex items-center justify-between border-b pb-2">
-                  <div className="flex gap-2">
-                    {(['all', 'valid', 'issues', 'duplicates'] as const).map((filter) => (
-                      <Button
-                        key={filter}
-                        type="button"
-                        variant={previewFilter === filter ? 'default' : 'secondary'}
-                        size="sm"
-                        onClick={() => setPreviewFilter(filter)}
-                        className="capitalize"
-                      >
-                        {filter} {filter === 'all' ? `(${previewResult.totalRows})` : ''}
-                      </Button>
-                    ))}
+                <Tabs
+                  value={previewFilter}
+                  onValueChange={(value) => setPreviewFilter(value as 'all' | 'valid' | 'issues' | 'duplicates')}
+                >
+                  <div className="flex items-center justify-between border-b pb-2">
+                    <TabsList variant="line" className="gap-2">
+                      {(['all', 'valid', 'issues', 'duplicates'] as const).map((filter) => (
+                        <TabsTrigger
+                          key={filter}
+                          value={filter}
+                          className="capitalize bg-secondary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                        >
+                          {filter} {filter === 'all' ? `(${previewResult.totalRows})` : ''}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                    <span className="text-xs text-gray-500">Showing {filteredRows.length} rows</span>
                   </div>
-                  <span className="text-xs text-gray-500">Showing {filteredRows.length} rows</span>
-                </div>
+                </Tabs>
 
                 {/* Table */}
                 <div className="overflow-x-auto border rounded-lg max-h-96">
@@ -908,11 +899,10 @@ export const BulkDataHub: React.FC = () => {
               </CardContent>
             </Card>
           )}
-        </div>
-      )}
+      </TabsContent>
 
       {/* TAB 2: REGULATORY AUDIT PACK EXPORT */}
-      {activeTab === 'export' && (
+      <TabsContent value="export" className="mt-0">
         <Card>
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-gray-900">State Regulatory Audit Pack Export</CardTitle>
@@ -1053,7 +1043,7 @@ export const BulkDataHub: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-      )}
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 };

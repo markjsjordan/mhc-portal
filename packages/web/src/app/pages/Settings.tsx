@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button.js';
 import { Input } from '@/components/ui/input.js';
 import { Label } from '@/components/ui/label.js';
 import { Checkbox } from '@/components/ui/checkbox.js';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs.js';
 import { FormField } from '@/components/forms/FormField';
 import { useApiClient } from '@/core/hooks';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -105,63 +106,61 @@ export function Settings() {
         </div>
       )}
 
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200 overflow-x-auto">
-        <nav className="-mb-px flex space-x-8 min-w-max">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <Button
-                key={tab.id}
-                variant="ghost"
-                onClick={() => setActiveTab(tab.id)}
-                className={`
-                  flex items-center gap-2 py-4 px-1 rounded-none border-b-2 font-medium text-sm h-auto
-                  ${
-                    activeTab === tab.id
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-                  }
-                `}
-              >
-                <Icon className="w-5 h-5" />
-                {tab.label}
-              </Button>
-            );
-          })}
-        </nav>
-      </div>
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as SettingsTab)}
+        className="space-y-6"
+      >
+        {/* Tab Navigation */}
+        <div className="border-b border-gray-200 overflow-x-auto">
+          <TabsList variant="line" className="-mb-px flex space-x-8 min-w-max justify-start">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <TabsTrigger
+                  key={tab.id}
+                  value={tab.id}
+                  className="flex items-center gap-2 py-4 px-1 rounded-none border-b-2 border-transparent font-medium text-sm h-auto bg-transparent text-muted-foreground hover:text-foreground hover:border-border data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                >
+                  <Icon className="w-5 h-5" />
+                  {tab.label}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </div>
 
-      {/* Tab Content */}
-      <div className="mt-6">
-        {activeTab === 'profile' && (
+        {/* Tab Content */}
+        <TabsContent value="profile" className="mt-6">
           <ProfileSettings
             userProfile={userProfile}
             isLoading={isLoadingProfile}
             onSuccess={(message) => showMessage('success', message)}
             onError={(message) => showMessage('error', message)}
           />
-        )}
-        {activeTab === 'account' && (
+        </TabsContent>
+        <TabsContent value="account" className="mt-6">
           <AccountSettings
             onSuccess={(message) => showMessage('success', message)}
             onError={(message) => showMessage('error', message)}
           />
-        )}
-        {activeTab === 'preferences' && (
+        </TabsContent>
+        <TabsContent value="preferences" className="mt-6">
           <PreferencesSettings
             onSuccess={(message) => showMessage('success', message)}
             onError={(message) => showMessage('error', message)}
           />
-        )}
-        {activeTab === 'team' && userProfile && (
-          <TeamSettings
-            organizationId={userProfile.organizationId}
-            onSuccess={(message) => showMessage('success', message)}
-            onError={(message) => showMessage('error', message)}
-          />
-        )}
-      </div>
+        </TabsContent>
+        <TabsContent value="team" className="mt-6">
+          {userProfile && (
+            <TeamSettings
+              organizationId={userProfile.organizationId}
+              onSuccess={(message) => showMessage('success', message)}
+              onError={(message) => showMessage('error', message)}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

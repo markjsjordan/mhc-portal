@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select.js';
-import { cn } from '@/lib/utils.js';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs.js';
 import type { FamilyMember, FamilyRelationship } from '@folkcare/family-engagement';
 import type { UUID } from '@folkcare/core/browser';
 
@@ -67,61 +67,47 @@ export const FamilySettings: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8" aria-label="Settings">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => setActiveTab('profile')}
-            className={cn(
-              "rounded-none border-b-2 py-4 px-1 text-sm font-medium transition-colors h-auto",
-              activeTab === 'profile'
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
-            )}
-          >
-            Profile Information
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => setActiveTab('notifications')}
-            className={cn(
-              "rounded-none border-b-2 py-4 px-1 text-sm font-medium transition-colors h-auto",
-              activeTab === 'notifications'
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
-            )}
-          >
-            Notifications
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => setActiveTab('data')}
-            className={cn(
-              "rounded-none border-b-2 py-4 px-1 text-sm font-medium transition-colors h-auto",
-              activeTab === 'data'
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
-            )}
-          >
-            Data & Privacy
-          </Button>
-        </nav>
-      </div>
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as 'profile' | 'notifications' | 'data')}
+      >
+        <div className="border-b border-gray-200 mb-6">
+          <TabsList variant="line" className="-mb-px space-x-8 justify-start" aria-label="Settings">
+            <TabsTrigger
+              value="profile"
+              className="rounded-none border-b-2 border-transparent py-4 px-1 text-sm font-medium transition-colors h-auto bg-transparent text-muted-foreground hover:border-border hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            >
+              Profile Information
+            </TabsTrigger>
+            <TabsTrigger
+              value="notifications"
+              className="rounded-none border-b-2 border-transparent py-4 px-1 text-sm font-medium transition-colors h-auto bg-transparent text-muted-foreground hover:border-border hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            >
+              Notifications
+            </TabsTrigger>
+            <TabsTrigger
+              value="data"
+              className="rounded-none border-b-2 border-transparent py-4 px-1 text-sm font-medium transition-colors h-auto bg-transparent text-muted-foreground hover:border-border hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            >
+              Data & Privacy
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-      {/* Tab Content */}
-      <div className="mt-6">
-        {activeTab === 'profile' && <ProfileTab familyMember={familyMember} />}
-        {activeTab === 'notifications' && (
+        {/* Tab Content */}
+        <TabsContent value="profile" className="mt-6">
+          <ProfileTab familyMember={familyMember} />
+        </TabsContent>
+        <TabsContent value="notifications" className="mt-6">
           <NotificationSettings
             familyMemberId={familyMember.id}
             currentPreferences={familyMember.notificationPreferences}
           />
-        )}
-        {activeTab === 'data' && <DataTab familyMember={familyMember} />}
-      </div>
+        </TabsContent>
+        <TabsContent value="data" className="mt-6">
+          <DataTab familyMember={familyMember} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

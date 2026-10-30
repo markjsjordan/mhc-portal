@@ -5,6 +5,7 @@ import {
   CardContent,
 } from '@/components/ui/card.js';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert.js';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs.js';
 import { useAuth } from '@/core/hooks/auth';
 import {
   OperationsCenter,
@@ -142,32 +143,42 @@ export const AdminDashboard: React.FC = () => {
         ))}
       </div>
 
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="flex -mb-px space-x-4" aria-label="Tabs">
-          {tabs.map((tab) => (
-            <Button
-              key={tab.id}
-              variant={activeTab === tab.id ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setActiveTab(tab.id)}
-              aria-current={activeTab === tab.id ? 'page' : undefined}
-              className="gap-2"
-            >
-              <span>{tab.icon}</span>
-              <span className="hidden sm:inline">{tab.label}</span>
-            </Button>
-          ))}
-        </nav>
-      </div>
+      {/* Tab Navigation & Content */}
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as TabView)}
+        className="space-y-6"
+      >
+        <div className="border-b border-gray-200 pb-2">
+          <TabsList variant="line" className="-mb-px space-x-4 justify-start" aria-label="Tabs">
+            {tabs.map((tab) => (
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
+                className="gap-2 data-[state=active]:bg-secondary"
+              >
+                <span>{tab.icon}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
-      {/* Tab Content */}
-      <div className="min-h-[600px]">
-        {activeTab === 'operations' && <OperationsCenter />}
-        {activeTab === 'state-config' && <StateConfigPanel />}
-        {activeTab === 'data' && <DataGridPanel />}
-        {activeTab === 'compliance' && <ComplianceCenter />}
-      </div>
+        <div className="min-h-[600px]">
+          <TabsContent value="operations" className="mt-0">
+            <OperationsCenter />
+          </TabsContent>
+          <TabsContent value="state-config" className="mt-0">
+            <StateConfigPanel />
+          </TabsContent>
+          <TabsContent value="data" className="mt-0">
+            <DataGridPanel />
+          </TabsContent>
+          <TabsContent value="compliance" className="mt-0">
+            <ComplianceCenter />
+          </TabsContent>
+        </div>
+      </Tabs>
 
       {/* Login As Modal */}
       <LoginAsModal
