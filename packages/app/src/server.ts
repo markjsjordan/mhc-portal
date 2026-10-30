@@ -50,7 +50,7 @@ app.set('trust proxy', 1);
  * Initialize database connection
  * Supports both DATABASE_URL (Vercel) and individual config (local dev)
  */
-function initDb(): ReturnType<typeof initializeDatabase> {
+export function initDb(): ReturnType<typeof initializeDatabase> {
   // Check for DATABASE_URL first (Vercel/production style)
   const databaseUrl = process.env['DATABASE_URL'];
   
@@ -59,13 +59,16 @@ function initDb(): ReturnType<typeof initializeDatabase> {
     // Parse DATABASE_URL (format: postgresql://user:***@host:port/db?sslmode=require)
     const url = new globalThis.URL(databaseUrl);
     const port = Number(url.port);
+    const sslmode = url.searchParams.get('sslmode') ?? '';
     const dbConfig = {
       host: url.hostname,
       port: port !== 0 ? port : 5432,
       database: url.pathname.slice(1), // Remove leading /
       user: url.username,
       password: url.password,
-      ssl: url.searchParams.get('sslmode') === 'require',
+      ssl:
+        ['require', 'verify-ca', 'verify-full'].includes(sslmode) ||
+        process.env.NODE_ENV === 'production',
       max: 20,
       idleTimeoutMillis: 30000,
     };
@@ -98,7 +101,7 @@ function initDb(): ReturnType<typeof initializeDatabase> {
     database: process.env['DB_NAME'] ?? 'folkcare',
     user: process.env['DB_USER'] ?? 'postgres',
     password: dbPassword,
-    ssl: process.env['DB_SSL'] === 'true' ? true : false,
+    ssl: process.env['DB_SSL'] === 'true' || process.env['NODE_ENV'] === 'production',
     max: 20,
     idleTimeoutMillis: 30000,
   };
@@ -292,6 +295,7 @@ export async function createApp(): Promise<express.Express> {
         port: Number(url.port) !== 0 ? Number(url.port) : 6379,
         password: url.password !== '' ? url.password : undefined,
         ttl: 300, // 5 minutes default
+        useTLS: redisUrl.startsWith('rediss://'),
       };
       await initCacheService(cacheConfig);
       console.log('Cache service initialized with Redis');

@@ -22,13 +22,14 @@ export const initRedis = async (): Promise<Redis.RedisClientType | null> => {
       url: redisUrl,
     };
 
-    // Enable TLS for Upstash and other cloud Redis providers
+    // Enable TLS with strict certificate verification for Upstash and other cloud Redis providers
     if (useTLS) {
+      const caCert = process.env.REDIS_CA_CERT ?? process.env.DB_CA_CERT;
       clientOptions.socket = {
         tls: true,
-        // Disable certificate verification for Vercel deployments
-        // (Vercel's serverless functions may have issues with cert chains)
-        rejectUnauthorized: false,
+        rejectUnauthorized: true,
+        minVersion: 'TLSv1.2',
+        ...(caCert !== undefined && caCert !== '' ? { ca: caCert } : {}),
       };
     }
 

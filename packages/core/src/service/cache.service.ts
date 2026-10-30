@@ -6,6 +6,7 @@ export interface CacheConfig {
   password?: string;
   db?: number;
   ttl: number; // Default TTL in seconds
+  useTLS?: boolean;
 }
 
 export class CacheService {
@@ -27,21 +28,25 @@ export class CacheService {
 
       // Determine protocol based on TLS requirement
       // Use 'rediss://' for TLS (Upstash, Vercel KV, etc.)
-      // Check if we should use TLS (environment variable or port 6380 which is common for TLS Redis)
-      const useTLS = process.env.REDIS_USE_TLS === 'true' || this.config.port === 6380;
+      // Check if we should use TLS (explicit config, environment variable, or port 6380 which is common for TLS Redis)
+      const useTLS =
+        this.config.useTLS === true ||
+        process.env.REDIS_USE_TLS === 'true' ||
+        this.config.port === 6380;
       const protocol = useTLS ? 'rediss' : 'redis';
 
       const url = `${protocol}://${passwordPart}${this.config.host}:${this.config.port}/${this.config.db ?? 0}`;
 
       const clientOptions: Parameters<typeof createClient>[0] = { url };
 
-      // Enable TLS for Upstash and other cloud Redis providers
+      // Enable TLS with strict certificate verification for HIPAA compliance
       if (useTLS) {
+        const caCert = process.env.REDIS_CA_CERT ?? process.env.DB_CA_CERT;
         clientOptions.socket = {
           tls: true,
-          // Disable certificate verification for Vercel deployments
-          // (Vercel's serverless functions may have issues with cert chains)
-          rejectUnauthorized: false,
+          rejectUnauthorized: true,
+          minVersion: 'TLSv1.2',
+          ...(caCert !== undefined && caCert !== '' ? { ca: caCert } : {}),
         };
       }
 

@@ -13,6 +13,7 @@ const env = process.env.NODE_ENV || 'development';
 const dbName = process.env.DB_NAME || 'folkcare';
 
 // Use DATABASE_URL if provided, otherwise build from individual DB_* variables
+const caCert = process.env.DB_CA_CERT ?? process.env.REDIS_CA_CERT;
 const connectionConfig = process.env.DATABASE_URL 
   ? { connectionString: process.env.DATABASE_URL }
   : {
@@ -20,7 +21,13 @@ const connectionConfig = process.env.DATABASE_URL
       password: process.env.DB_PASSWORD || 'postgres',
       host: process.env.DB_HOST || 'localhost',
       port: parseInt(process.env.DB_PORT || '5432'),
-      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+      ssl: process.env.DB_SSL === 'true'
+        ? {
+            rejectUnauthorized: true,
+            minVersion: 'TLSv1.2' as const,
+            ...(caCert !== undefined && caCert !== '' ? { ca: caCert } : {}),
+          }
+        : false,
     };
 
 async function runMigrations() {

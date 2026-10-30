@@ -37,9 +37,14 @@ export function createSupabasePool(env: CloudflareEnv): InstanceType<typeof Pool
     throw new Error('No database connection string. Set HYPERDRIVE or DATABASE_URL.');
   }
 
+  const caCert = process.env.DB_CA_CERT ?? process.env.REDIS_CA_CERT;
   return new Pool({
     connectionString,
-    ssl: { rejectUnauthorized: false },
+    ssl: {
+      rejectUnauthorized: true,
+      minVersion: 'TLSv1.2',
+      ...(caCert !== undefined && caCert !== '' ? { ca: caCert } : {}),
+    },
     max: 1, // Hyperdrive handles pooling
     idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 5000,

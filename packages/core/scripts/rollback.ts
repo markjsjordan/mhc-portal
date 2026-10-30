@@ -17,6 +17,7 @@ async function rollbackMigrations() {
 
   // Build connection config. Prefer DATABASE_URL (matches migrate.ts) so the
   // rollback targets the same database as the migration it reverses.
+  const caCert = process.env.DB_CA_CERT ?? process.env.REDIS_CA_CERT;
   const connection = process.env.DATABASE_URL
     ? process.env.DATABASE_URL
     : {
@@ -27,7 +28,13 @@ async function rollbackMigrations() {
           : process.env.DB_NAME || 'folkcare',
         user: process.env.DB_USER || 'postgres',
         password: process.env.DB_PASSWORD || 'postgres',
-        ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+        ssl: process.env.DB_SSL === 'true'
+          ? {
+              rejectUnauthorized: true,
+              minVersion: 'TLSv1.2',
+              ...(caCert !== undefined && caCert !== '' ? { ca: caCert } : {}),
+            }
+          : false,
       };
 
   const config: Knex.Config = {
