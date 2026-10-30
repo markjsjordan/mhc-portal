@@ -13,7 +13,7 @@
 
 import { useState, useEffect } from 'react';
 import { Sparkles, Loader2, AlertCircle } from 'lucide-react';
-import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover.js';
 import { Button } from '@/components/ui/button.js';
 import { useNoteAutofill, type AutofillSuggestions } from '../../hooks/useNoteAutofill';
 
@@ -57,82 +57,69 @@ export function NoteAutofillButton({
   };
 
   return (
-    <Popover className="relative">
-      {({ open }) => {
-        // Sync internal state with Headless UI state
-        if (open !== isOpen) {
-          setIsOpen(open);
-        }
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger
+        className={`
+          inline-flex items-center gap-2 px-4 py-2 text-sm font-medium
+          text-purple-700 bg-purple-50 border border-purple-200
+          rounded-lg hover:bg-purple-100 focus:outline-none focus:ring-2
+          focus:ring-purple-500 focus:ring-offset-2 transition-colors
+          ${className}
+        `}
+        title="Get AI-powered suggestions based on previous notes"
+      >
+        <Sparkles className="h-4 w-4" />
+        <span>Auto-fill Suggestions</span>
+      </PopoverTrigger>
 
-        return (
-          <>
-            <PopoverButton
-              className={`
-                inline-flex items-center gap-2 px-4 py-2 text-sm font-medium
-                text-purple-700 bg-purple-50 border border-purple-200
-                rounded-lg hover:bg-purple-100 focus:outline-none focus:ring-2
-                focus:ring-purple-500 focus:ring-offset-2 transition-colors
-                ${className}
-              `}
-              title="Get AI-powered suggestions based on previous notes"
-            >
-              <Sparkles className="h-4 w-4" />
-              <span>Auto-fill Suggestions</span>
-            </PopoverButton>
+      <PopoverContent className="w-96 max-w-sm p-0 overflow-hidden bg-white" align="start">
+        {/* Header */}
+        <div className="px-4 py-3 bg-purple-50 border-b border-purple-100 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-gray-900">
+            AI Suggestions
+          </h3>
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            onClick={handleRefresh}
+            disabled={loading}
+            className="text-xs font-medium"
+          >
+            Refresh
+          </Button>
+        </div>
 
-            <PopoverPanel className="absolute z-10 mt-2 w-96 max-w-sm">
-              <div className="rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 bg-white overflow-hidden">
-                {/* Header */}
-                <div className="px-4 py-3 bg-purple-50 border-b border-purple-100 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-gray-900">
-                    AI Suggestions
-                  </h3>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    onClick={handleRefresh}
-                    disabled={loading}
-                    className="text-xs font-medium"
-                  >
-                    Refresh
-                  </Button>
-                </div>
+        {/* Content */}
+        <div className="px-4 py-3 max-h-96 overflow-y-auto">
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+              <Loader2 className="h-8 w-8 animate-spin mb-2" />
+              <p className="text-sm">Analyzing previous notes...</p>
+            </div>
+          )}
 
-                {/* Content */}
-                <div className="px-4 py-3 max-h-96 overflow-y-auto">
-                  {loading && (
-                    <div className="flex flex-col items-center justify-center py-8 text-gray-500">
-                      <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                      <p className="text-sm">Analyzing previous notes...</p>
-                    </div>
-                  )}
-
-                  {error && (
-                    <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
-                      <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-red-800">Error</p>
-                        <p className="text-sm text-red-700 mt-1">{error}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {suggestions && !loading && !error && (
-                    <SuggestionsContent
-                      suggestions={suggestions}
-                      onApplyActivity={onApplyActivity}
-                      onApplyMood={onApplyMood}
-                      onApplyPhrase={onApplyPhrase}
-                      onApplyNoteStarter={onApplyNoteStarter}
-                    />
-                  )}
-                </div>
+          {error && (
+            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
+              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-800">Error</p>
+                <p className="text-sm text-red-700 mt-1">{error}</p>
               </div>
-            </PopoverPanel>
-          </>
-        );
-      }}
+            </div>
+          )}
+
+          {suggestions && !loading && !error && (
+            <SuggestionsContent
+              suggestions={suggestions}
+              onApplyActivity={onApplyActivity}
+              onApplyMood={onApplyMood}
+              onApplyPhrase={onApplyPhrase}
+              onApplyNoteStarter={onApplyNoteStarter}
+            />
+          )}
+        </div>
+      </PopoverContent>
     </Popover>
   );
 }
