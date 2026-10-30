@@ -45,6 +45,14 @@ export class ClientService {
     // Check permissions
     this.permissionService.requirePermission(context, 'clients:create');
 
+    // HIPAA-003: Enforce tenant scoping on client creation for non-SUPER_ADMIN
+    if (!context.roles.includes('SUPER_ADMIN') && context.organizationId) {
+      if (input.organizationId && input.organizationId !== context.organizationId) {
+        throw new PermissionError('No access to this organization');
+      }
+      input.organizationId = context.organizationId;
+    }
+
     // Resolve branchId if not provided or empty
     let branchId = input.branchId;
     if (!branchId || typeof branchId !== 'string' || branchId.trim() === '') {
@@ -195,7 +203,7 @@ export class ClientService {
       }
     }
 
-    return client;
+    return this.filterSensitiveData(client, context);
   }
 
   /**
@@ -208,9 +216,23 @@ export class ClientService {
   ): Promise<Client> {
     this.permissionService.requirePermission(context, 'clients:read');
 
+    const effectiveOrgId =
+      !context.roles.includes('SUPER_ADMIN') && context.organizationId
+        ? context.organizationId
+        : organizationId;
+
+    if (
+      !context.roles.includes('SUPER_ADMIN') &&
+      context.organizationId &&
+      organizationId &&
+      organizationId !== context.organizationId
+    ) {
+      throw new PermissionError('No access to this organization');
+    }
+
     const client = await this.repository.findByClientNumber(
       clientNumber,
-      organizationId
+      effectiveOrgId
     );
     if (!client) {
       throw new NotFoundError(`Client not found: ${clientNumber}`);
@@ -218,7 +240,7 @@ export class ClientService {
 
     this.checkOrganizationalAccess(client, context);
 
-    return client;
+    return this.filterSensitiveData(client, context);
   }
 
   /**
@@ -325,7 +347,10 @@ export class ClientService {
 
     const result = await this.repository.search(filters, pagination);
 
-    return result;
+    return {
+      ...result,
+      items: result.items.map((client) => this.filterSensitiveData(client, context)),
+    };
   }
 
   /**
@@ -346,7 +371,10 @@ export class ClientService {
       throw new PermissionError('No access to this branch');
     }
 
-    return await this.repository.findByBranch(branchId, activeOnly);
+    const clients = await this.repository.findByBranch(branchId, activeOnly);
+    return clients
+      .filter((c) => context.roles.includes('SUPER_ADMIN') || !context.organizationId || c.organizationId === context.organizationId)
+      .map((c) => this.filterSensitiveData(c, context));
   }
 
   /**
@@ -597,6 +625,53 @@ export class ClientService {
     ) {
       throw new PermissionError('No access to this branch');
     }
+  }
+
+  /**
+   * Filter sensitive PHI/financial fields based on HIPAA Minimum Necessary principle (§164.502(b)).
+   * Strips ssn, insurance, and fundingSources for roles that do not require financial/SSN access
+   * (such as CAREGIVER, FAMILY, READ_ONLY, SCHEDULER).
+   */
+  public filterSensitiveData(
+    client: Client,
+    context: UserContext
+  ): Client {
+    const canViewSSN =
+      context.roles.includes('SUPER_ADMIN') ||
+      context.roles.includes('ORG_ADMIN') ||
+      context.roles.includes('ADMIN') ||
+      context.roles.includes('BRANCH_ADMIN') ||
+      context.roles.includes('BILLING') ||
+      context.roles.includes('AUDITOR') ||
+      context.permissions.includes('clients:read:ssn') ||
+      context.permissions.includes('clients:*') ||
+      context.permissions.includes('*:*') ||
+      context.permissions.includes('*');
+
+    const canViewFinancial =
+      canViewSSN ||
+      context.roles.includes('COORDINATOR') ||
+      context.roles.includes('NURSE') ||
+      context.roles.includes('NURSE_RN') ||
+      context.roles.includes('NURSE_LPN') ||
+      context.roles.includes('CLINICAL') ||
+      context.permissions.includes('billing:read') ||
+      context.permissions.includes('billing:*');
+
+    if (canViewSSN && canViewFinancial) {
+      return client;
+    }
+
+    const filtered: Client = { ...client };
+    if (!canViewSSN) {
+      delete filtered.ssn;
+    }
+    if (!canViewFinancial) {
+      delete filtered.insurance;
+      delete filtered.fundingSources;
+    }
+
+    return filtered;
   }
 
   /**

@@ -380,5 +380,24 @@ describe('Payroll Routes', () => {
 
       expect(response.status).toBe(400);
     });
+
+    it('should reject cross-tenant organizationId query override with 403', async () => {
+      const response = await request(app)
+        .get('/api/payroll/periods')
+        .query({ organizationId: 'org-other' });
+
+      expect(response.status).toBe(403);
+    });
+
+    it('should return 404 when requesting a pay period belonging to another organization', async () => {
+      mockPayrollRepository.findPayPeriodById.mockResolvedValueOnce({
+        id: 'period-other',
+        organizationId: 'org-other',
+      });
+
+      const response = await request(app).get('/api/payroll/periods/period-other');
+
+      expect(response.status).toBe(404);
+    });
   });
 });

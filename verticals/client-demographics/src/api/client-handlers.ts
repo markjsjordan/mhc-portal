@@ -326,7 +326,25 @@ export class ClientHandlers {
     const context = getUserContext(req);
     const { clientNumber } = req.params;
     const orgIdFromQuery = req.query['organizationId'];
-    const organizationId = (typeof orgIdFromQuery === 'string' && orgIdFromQuery !== '') ? orgIdFromQuery : context.organizationId;
+    const isSuperAdmin = context.roles.includes('SUPER_ADMIN');
+    if (
+      typeof orgIdFromQuery === 'string' &&
+      orgIdFromQuery !== '' &&
+      !isSuperAdmin &&
+      context.organizationId &&
+      orgIdFromQuery !== context.organizationId
+    ) {
+      return res.status(403).json({
+        success: false,
+        error: 'Cross-tenant access denied',
+      });
+    }
+    const organizationId =
+      !isSuperAdmin && context.organizationId
+        ? context.organizationId
+        : typeof orgIdFromQuery === 'string' && orgIdFromQuery !== ''
+          ? orgIdFromQuery
+          : context.organizationId;
 
     if (typeof clientNumber !== 'string' || clientNumber === '' || typeof organizationId !== 'string' || organizationId === '') {
       return res.status(400).json({
@@ -418,7 +436,24 @@ export class ClientHandlers {
    */
   createClient = asyncHandler(async (req: Request, res: Response) => {
     const context = getUserContext(req);
-    const input: CreateClientInput = req.body;
+    const bodyOrgId = req.body?.organizationId;
+    const isSuperAdmin = context.roles.includes('SUPER_ADMIN');
+    if (
+      typeof bodyOrgId === 'string' &&
+      bodyOrgId !== '' &&
+      !isSuperAdmin &&
+      context.organizationId &&
+      bodyOrgId !== context.organizationId
+    ) {
+      return res.status(403).json({
+        success: false,
+        error: 'Cross-tenant access denied',
+      });
+    }
+    const input: CreateClientInput = {
+      ...req.body,
+      ...(!isSuperAdmin && context.organizationId ? { organizationId: context.organizationId } : {}),
+    };
 
     const client = await this.clientService.createClient(input, context);
 

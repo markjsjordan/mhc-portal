@@ -50,16 +50,58 @@ export function createPayrollRouter(db: Database): Router {
   }
 
   /**
+   * HIPAA-003: Resolve organizationId strictly from req.user.organizationId for non-SUPER_ADMIN users.
+   * Returns { orgId, forbidden } so callers can reject cross-tenant overrides with 403.
+   */
+  const resolveTenantOrgId = (
+    req: Request,
+    requestedOrgId?: unknown
+  ): { orgId?: string; forbidden: boolean } => {
+    const userOrgId = req.user?.organizationId;
+    const isSuperAdmin = req.user?.roles?.includes('SUPER_ADMIN') ?? false;
+    const reqOrgStr =
+      typeof requestedOrgId === 'string' && requestedOrgId.trim() !== ''
+        ? requestedOrgId.trim()
+        : undefined;
+
+    if (!isSuperAdmin && userOrgId !== undefined && userOrgId !== '') {
+      if (reqOrgStr !== undefined && reqOrgStr !== userOrgId) {
+        return { forbidden: true };
+      }
+      return { orgId: userOrgId, forbidden: false };
+    }
+
+    return { orgId: reqOrgStr ?? userOrgId, forbidden: false };
+  };
+
+  /**
+   * HIPAA-003: Check if an entity with optional organizationId belongs to another tenant.
+   */
+  const isCrossTenantEntity = (req: Request, entity: { organizationId?: string } | null): boolean => {
+    if (!entity?.organizationId) {
+      return false;
+    }
+    const isSuperAdmin = req.user?.roles?.includes('SUPER_ADMIN') ?? false;
+    const userOrgId = req.user?.organizationId;
+    return !isSuperAdmin && userOrgId !== undefined && userOrgId !== '' && entity.organizationId !== userOrgId;
+  };
+
+  /**
    * GET /api/payroll/periods
    * List pay periods with optional filters
    */
   router.get('/payroll/periods', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { organizationId, status, year, limit = 50, offset = 0 } = req.query;
+      const tenant = resolveTenantOrgId(req, organizationId);
+      if (tenant.forbidden) {
+        res.status(403).json({ error: 'Cross-tenant access denied' });
+        return;
+      }
 
       const filters: PayPeriodSearchFilters = {};
-      if (organizationId !== undefined) {
-        filters.organizationId = String(organizationId);
+      if (tenant.orgId !== undefined) {
+        filters.organizationId = tenant.orgId;
       }
       if (status !== undefined) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -101,7 +143,16 @@ export function createPayrollRouter(db: Database): Router {
         return;
       }
 
-      const input: CreatePayPeriodInput = req.body;
+      const tenant = resolveTenantOrgId(req, req.body?.organizationId);
+      if (tenant.forbidden) {
+        res.status(403).json({ error: 'Cross-tenant access denied' });
+        return;
+      }
+
+      const input: CreatePayPeriodInput = {
+        ...req.body,
+        ...(tenant.orgId !== undefined ? { organizationId: tenant.orgId } : {}),
+      };
       const period = await payrollService.createPayPeriod(input, userId);
 
       res.status(201).json({ data: period });
@@ -124,7 +175,7 @@ export function createPayrollRouter(db: Database): Router {
 
       const period = await payrollRepository.findPayPeriodById(id);
 
-      if (period === null) {
+      if (period === null || isCrossTenantEntity(req, period)) {
         res.status(404).json({ error: 'Pay period not found' });
         return;
       }
@@ -225,7 +276,16 @@ export function createPayrollRouter(db: Database): Router {
         return;
       }
 
-      const input: CompileTimeSheetInput = req.body;
+      const tenant = resolveTenantOrgId(req, req.body?.organizationId);
+      if (tenant.forbidden) {
+        res.status(403).json({ error: 'Cross-tenant access denied' });
+        return;
+      }
+
+      const input: CompileTimeSheetInput = {
+        ...req.body,
+        ...(tenant.orgId !== undefined ? { organizationId: tenant.orgId } : {}),
+      };
       const timesheet = await payrollService.compileTimeSheet(input, userId);
 
       res.status(201).json({ data: timesheet });
@@ -241,10 +301,15 @@ export function createPayrollRouter(db: Database): Router {
   router.get('/payroll/timesheets', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { organizationId, payPeriodId, caregiverId, status } = req.query;
+      const tenant = resolveTenantOrgId(req, organizationId);
+      if (tenant.forbidden) {
+        res.status(403).json({ error: 'Cross-tenant access denied' });
+        return;
+      }
 
       const filters: TimeSheetSearchFilters = {};
-      if (organizationId !== undefined) {
-        filters.organizationId = String(organizationId);
+      if (tenant.orgId !== undefined) {
+        filters.organizationId = tenant.orgId;
       }
       if (payPeriodId !== undefined) {
         filters.payPeriodId = String(payPeriodId);
@@ -279,7 +344,7 @@ export function createPayrollRouter(db: Database): Router {
 
       const timesheet = await payrollRepository.findTimeSheetById(id);
 
-      if (timesheet === null) {
+      if (timesheet === null || isCrossTenantEntity(req, timesheet)) {
         res.status(404).json({ error: 'Timesheet not found' });
         return;
       }
@@ -332,7 +397,16 @@ export function createPayrollRouter(db: Database): Router {
         return;
       }
 
-      const input: CreatePayRunInput = req.body;
+      const tenant = resolveTenantOrgId(req, req.body?.organizationId);
+      if (tenant.forbidden) {
+        res.status(403).json({ error: 'Cross-tenant access denied' });
+        return;
+      }
+
+      const input: CreatePayRunInput = {
+        ...req.body,
+        ...(tenant.orgId !== undefined ? { organizationId: tenant.orgId } : {}),
+      };
       const payRun = await payrollService.createPayRun(input, userId);
 
       res.status(201).json({ data: payRun });
@@ -376,7 +450,7 @@ export function createPayrollRouter(db: Database): Router {
 
       const payRun = await payrollRepository.findPayRunById(id);
 
-      if (payRun === null) {
+      if (payRun === null || isCrossTenantEntity(req, payRun)) {
         res.status(404).json({ error: 'Pay run not found' });
         return;
       }
@@ -472,10 +546,15 @@ export function createPayrollRouter(db: Database): Router {
   router.get('/payroll/pay-stubs', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { organizationId, payRunId, payPeriodId, caregiverId, status } = req.query;
+      const tenant = resolveTenantOrgId(req, organizationId);
+      if (tenant.forbidden) {
+        res.status(403).json({ error: 'Cross-tenant access denied' });
+        return;
+      }
 
       const filters: PayStubSearchFilters = {};
-      if (organizationId !== undefined) {
-        filters.organizationId = String(organizationId);
+      if (tenant.orgId !== undefined) {
+        filters.organizationId = tenant.orgId;
       }
       if (payRunId !== undefined) {
         filters.payRunId = String(payRunId);
@@ -513,7 +592,7 @@ export function createPayrollRouter(db: Database): Router {
 
       const payStub = await payrollRepository.findPayStubById(id);
 
-      if (payStub === null) {
+      if (payStub === null || isCrossTenantEntity(req, payStub)) {
         res.status(404).json({ error: 'Pay stub not found' });
         return;
       }
@@ -538,7 +617,7 @@ export function createPayrollRouter(db: Database): Router {
 
       const payStub = await payrollRepository.findPayStubById(id);
 
-      if (payStub === null) {
+      if (payStub === null || isCrossTenantEntity(req, payStub)) {
         res.status(404).json({ error: 'Pay stub not found' });
         return;
       }
@@ -565,9 +644,17 @@ export function createPayrollRouter(db: Database): Router {
   router.get('/payroll/caregivers/:caregiverId/pay-stubs', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { caregiverId } = req.params;
-      const { limit = 50 } = req.query;
+      const { limit = 50, organizationId } = req.query;
+      const tenant = resolveTenantOrgId(req, organizationId);
+      if (tenant.forbidden) {
+        res.status(403).json({ error: 'Cross-tenant access denied' });
+        return;
+      }
 
-      const filters: PayStubSearchFilters = { caregiverId };
+      const filters: PayStubSearchFilters = {
+        caregiverId,
+        ...(tenant.orgId !== undefined ? { organizationId: tenant.orgId } : {}),
+      };
 
       const payStubs = await payrollRepository.findPayStubs(filters);
 
@@ -594,12 +681,18 @@ export function createPayrollRouter(db: Database): Router {
     try {
       const { organizationId } = req.query;
 
-      if (organizationId === undefined) {
+      if (organizationId === undefined && req.user?.organizationId === undefined) {
         res.status(400).json({ error: 'organizationId is required' });
         return;
       }
 
-      const summary = await payrollRepository.getPayrollSummary(String(organizationId));
+      const tenant = resolveTenantOrgId(req, organizationId);
+      if (tenant.forbidden) {
+        res.status(403).json({ error: 'Cross-tenant access denied' });
+        return;
+      }
+
+      const summary = await payrollRepository.getPayrollSummary(String(tenant.orgId ?? organizationId));
 
       res.json({
         currentPeriod: summary.currentPeriod ?? undefined,
@@ -631,8 +724,14 @@ export function createPayrollRouter(db: Database): Router {
         return;
       }
 
+      const tenant = resolveTenantOrgId(req, organizationId);
+      if (tenant.forbidden) {
+        res.status(403).json({ error: 'Cross-tenant access denied' });
+        return;
+      }
+
       const periods = await payrollRepository.findPayPeriods({
-        organizationId: String(organizationId),
+        organizationId: String(tenant.orgId ?? organizationId),
         status: ['OPEN', 'LOCKED', 'PROCESSING'],
       });
 

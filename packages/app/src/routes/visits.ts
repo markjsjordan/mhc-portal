@@ -2353,13 +2353,32 @@ export function createVisitRouter(db: Database): Router {
         return;
       }
 
+      const isSuperAdmin = req.user?.roles?.includes('SUPER_ADMIN') ?? false;
+      const userOrgId = req.user?.organizationId;
+      if (
+        !isSuperAdmin &&
+        userOrgId !== undefined &&
+        userOrgId !== '' &&
+        organizationId !== undefined &&
+        organizationId !== '' &&
+        organizationId !== userOrgId
+      ) {
+        res.status(403).json({ success: false, error: 'Cross-tenant access denied' });
+        return;
+      }
+
+      const effectiveOrgId =
+        !isSuperAdmin && userOrgId !== undefined && userOrgId !== ''
+          ? userOrgId
+          : organizationId ?? userOrgId;
+
       const reportService = new ReportGenerationService(knexDbForReport);
       const result = await reportService.generateReport({
         reportType: reportType as import('@folkcare/visit-notes').ReportType,
         format: format as import('@folkcare/visit-notes').ReportFormat | undefined,
         clientId,
         caregiverId,
-        organizationId,
+        organizationId: effectiveOrgId,
         startDate,
         endDate,
         includeRecommendations,
