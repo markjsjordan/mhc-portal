@@ -6,6 +6,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button.js';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table.js';
 
 interface StateAggregatorSubmission {
   id: string;
@@ -197,63 +205,63 @@ export const SubmissionTrackingDashboard: React.FC = () => {
           </h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <Table className="min-w-full divide-y divide-gray-200">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   State
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </TableHead>
+                <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Aggregator
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </TableHead>
+                <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </TableHead>
+                <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Submitted
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </TableHead>
+                <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Retries
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </TableHead>
+                <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Error
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </TableHead>
+                <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {pendingSubmissions.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                <TableRow>
+                  <TableCell colSpan={7} className="px-6 py-4 text-center text-gray-500">
                     No pending submissions
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 pendingSubmissions.map((submission) => (
-                  <tr key={submission.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <TableRow key={submission.id}>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {submission.state}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {submission.aggregatorType}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap">
                       <span className={getStatusBadgeClass(submission.submissionStatus)}>
                         {submission.submissionStatus}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(submission.submittedAt).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {submission.retryCount} / {submission.maxRetries}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-red-600 max-w-xs truncate">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 text-sm text-red-600 max-w-xs truncate">
                       {submission.errorMessage ?? '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm">
                       <Button
                         type="button"
                         variant="link"
@@ -271,12 +279,12 @@ export const SubmissionTrackingDashboard: React.FC = () => {
                       >
                         {retrying === submission.id ? 'Retrying...' : 'Retry'}
                       </Button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
     </div>

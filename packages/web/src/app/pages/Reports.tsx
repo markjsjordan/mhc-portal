@@ -39,6 +39,7 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card.js';
 import { Button } from '@/components/ui/button.js';
 import { Badge } from '@/components/ui/badge.js';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table.js';
 import { LoadingSpinner, ErrorMessage, DemoBadge } from '@/core/components';
 import {
   useOperationalKPIs,
@@ -405,54 +406,42 @@ export function ReportsPage() {
               <CardDescription>Performance metrics for care coordinators</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Coordinator
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Completed
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Total Assigned
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Completion Rate
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {visitCompletionByCoordinatorData.map((coordinator) => (
-                      <tr key={coordinator.coordinator}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {coordinator.coordinator}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{coordinator.completed}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{coordinator.total}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-gray-900">
-                            {coordinator.rate}%
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {getCoordinatorBadge(coordinator.rate)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Coordinator</TableHead>
+                    <TableHead>Completed</TableHead>
+                    <TableHead>Total Assigned</TableHead>
+                    <TableHead>Completion Rate</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {visitCompletionByCoordinatorData.map((coordinator) => (
+                    <TableRow key={coordinator.coordinator}>
+                      <TableCell>
+                        <div className="text-sm font-medium text-gray-900">
+                          {coordinator.coordinator}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-gray-900">{coordinator.completed}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-gray-900">{coordinator.total}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm font-semibold text-gray-900">
+                          {coordinator.rate}%
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {getCoordinatorBadge(coordinator.rate)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
 

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table.js';
 
 interface ComparisonItem {
   feature: string;
@@ -135,55 +136,49 @@ export const ComparisonTable: React.FC = () => {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="p-0 overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Feature
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Showcase (This Site)
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-blue-50">
-                Full Demo
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Feature</TableHead>
+              <TableHead>Showcase (This Site)</TableHead>
+              <TableHead className="bg-blue-50">Full Demo</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {comparisonData.map((category) => (
               <React.Fragment key={category.category}>
                 {/* Category Header */}
-                <tr className="bg-gray-100">
-                  <td colSpan={3} className="px-6 py-3 text-sm font-semibold text-gray-900">
+                <TableRow className="bg-gray-100">
+                  <TableCell colSpan={3} className="text-sm font-semibold text-gray-900">
                     {category.category}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
 
                 {/* Category Items */}
                 {category.items.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <tr key={item.feature} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                    <TableRow key={item.feature}>
+                      <TableCell>
                         <div className="flex items-center gap-2">
                           <Icon className="h-5 w-5 text-gray-400" />
                           <span className="text-sm font-medium text-gray-900">{item.feature}</span>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-600">
                         {item.showcase}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900 font-medium bg-blue-50">
+                      </TableCell>
+                      <TableCell className="text-sm text-gray-900 font-medium bg-blue-50">
                         {item.fullDemo}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
               </React.Fragment>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </CardContent>
 
       <CardFooter className="bg-gray-50 p-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">

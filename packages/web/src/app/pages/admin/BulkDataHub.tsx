@@ -37,6 +37,7 @@ import { Badge } from '@/components/ui/badge.js';
 import { Input } from '@/components/ui/input.js';
 import { Label } from '@/components/ui/label.js';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group.js';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table.js';
 import {
   Select,
   SelectContent,
@@ -597,25 +598,25 @@ export const BulkDataHub: React.FC = () => {
                 </div>
 
                 {/* Mapping Table */}
-                <div className="overflow-x-auto border rounded-lg">
-                  <table className="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-700">CSV Header</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Sample Header Name</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Target MHC Portal Field</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-700">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 bg-white">
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>CSV Header</TableHead>
+                        <TableHead>Sample Header Name</TableHead>
+                        <TableHead>Target MHC Portal Field</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {csvHeaders.map((header) => {
                         const currentTarget = mappings[header] ?? '';
 
                         return (
-                          <tr key={header} className="hover:bg-gray-50/50">
-                            <td className="px-4 py-3 font-mono text-xs text-gray-900 font-semibold">{header}</td>
-                            <td className="px-4 py-3 text-gray-500">{header}</td>
-                            <td className="px-4 py-3">
+                          <TableRow key={header}>
+                            <TableCell className="font-mono text-xs text-gray-900 font-semibold">{header}</TableCell>
+                            <TableCell className="text-gray-500">{header}</TableCell>
+                            <TableCell>
                               <Select
                                 value={currentTarget || '__none__'}
                                 onValueChange={(val) => {
@@ -642,19 +643,19 @@ export const BulkDataHub: React.FC = () => {
                                   ))}
                                 </SelectContent>
                               </Select>
-                            </td>
-                            <td className="px-4 py-3">
+                            </TableCell>
+                            <TableCell>
                               {currentTarget ? (
                                 <Badge className="bg-green-100 text-green-800 border-transparent hover:bg-green-100">Mapped</Badge>
                               ) : (
                                 <Badge variant="secondary">Ignored</Badge>
                               )}
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         );
                       })}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
 
                 {/* Action Buttons */}
@@ -768,20 +769,20 @@ export const BulkDataHub: React.FC = () => {
                 </Tabs>
 
                 {/* Table */}
-                <div className="overflow-x-auto border rounded-lg max-h-96">
-                  <table className="min-w-full divide-y divide-gray-200 text-xs">
-                    <thead className="bg-gray-50 sticky top-0">
-                      <tr>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-600">Row</th>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-600">Status</th>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-600">Identifier</th>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-600">Full Name</th>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-600">DOB</th>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-600">Contact</th>
-                        <th className="px-3 py-2 text-left font-semibold text-gray-600">Issues / Duplicates</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 bg-white">
+                <div className="border rounded-lg max-h-96 overflow-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0">
+                      <TableRow>
+                        <TableHead>Row</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Identifier</TableHead>
+                        <TableHead>Full Name</TableHead>
+                        <TableHead>DOB</TableHead>
+                        <TableHead>Contact</TableHead>
+                        <TableHead>Issues / Duplicates</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {filteredRows.map((row) => {
                         const hasErrors = row.errors.length > 0;
                         const hasDup = !!row.duplicateMatch;
@@ -794,19 +795,19 @@ export const BulkDataHub: React.FC = () => {
                         const contactVal = String(row.data['email'] ?? row.data['phone'] ?? '-');
 
                         return (
-                          <tr
+                          <TableRow
                             key={row.rowNumber}
                             className={getRowBgClass(hasErrors, hasDup)}
                           >
-                            <td className="px-3 py-2 font-mono text-gray-500">{row.rowNumber}</td>
-                            <td className="px-3 py-2">
+                            <TableCell className="font-mono text-gray-500 text-xs">{row.rowNumber}</TableCell>
+                            <TableCell className="text-xs">
                               {renderRowBadge(hasErrors, hasDup)}
-                            </td>
-                            <td className="px-3 py-2 font-mono font-medium text-gray-900">{idVal}</td>
-                            <td className="px-3 py-2 font-medium text-gray-900">{nameVal}</td>
-                            <td className="px-3 py-2 text-gray-600">{dobVal}</td>
-                            <td className="px-3 py-2 text-gray-600">{contactVal}</td>
-                            <td className="px-3 py-2">
+                            </TableCell>
+                            <TableCell className="font-mono font-medium text-gray-900 text-xs">{idVal}</TableCell>
+                            <TableCell className="font-medium text-gray-900 text-xs">{nameVal}</TableCell>
+                            <TableCell className="text-gray-600 text-xs">{dobVal}</TableCell>
+                            <TableCell className="text-gray-600 text-xs">{contactVal}</TableCell>
+                            <TableCell className="text-xs">
                               {hasErrors && (
                                 <div className="text-red-700 flex items-center gap-1">
                                   <XCircle className="h-3.5 w-3.5 flex-shrink-0" />
@@ -820,12 +821,12 @@ export const BulkDataHub: React.FC = () => {
                                 </div>
                               )}
                               {!hasErrors && !hasDup && <span className="text-gray-400">None</span>}
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         );
                       })}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
 
                 {/* Footer Controls */}

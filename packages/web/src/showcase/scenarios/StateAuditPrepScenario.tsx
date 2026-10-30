@@ -11,6 +11,14 @@ import { Shield, FileText, CheckCircle, AlertTriangle, Download, Search } from '
 import { Scenario } from '../types';
 import { NarrationBox } from './components/NarrationBox';
 import { ActionButtons } from './components/ActionButtons';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table.js';
 
 // Step Components
 
@@ -234,98 +242,98 @@ const CredentialVerification: React.FC = () => (
         <h4 className="font-semibold text-gray-900">Credential Checklist</h4>
 
         <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left p-3 font-semibold">Requirement</th>
-                <th className="text-center p-3 font-semibold">Compliant</th>
-                <th className="text-center p-3 font-semibold">Expiring Soon</th>
-                <th className="text-center p-3 font-semibold">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-gray-100">
-                <td className="p-3">Background Check (FBI + State)</td>
-                <td className="text-center p-3 font-bold text-green-700">20/20</td>
-                <td className="text-center p-3">0</td>
-                <td className="text-center p-3">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-left">Requirement</TableHead>
+                <TableHead className="text-center">Compliant</TableHead>
+                <TableHead className="text-center">Expiring Soon</TableHead>
+                <TableHead className="text-center">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell>Background Check (FBI + State)</TableCell>
+                <TableCell className="text-center font-bold text-green-700">20/20</TableCell>
+                <TableCell className="text-center">0</TableCell>
+                <TableCell className="text-center">
                   <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
                     ✓ Pass
                   </span>
-                </td>
-              </tr>
-              <tr className="border-b border-gray-100">
-                <td className="p-3">Texas Employee Misconduct Registry</td>
-                <td className="text-center p-3 font-bold text-green-700">20/20</td>
-                <td className="text-center p-3">0</td>
-                <td className="text-center p-3">
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>Texas Employee Misconduct Registry</TableCell>
+                <TableCell className="text-center font-bold text-green-700">20/20</TableCell>
+                <TableCell className="text-center">0</TableCell>
+                <TableCell className="text-center">
                   <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
                     ✓ Clear
                   </span>
-                </td>
-              </tr>
-              <tr className="border-b border-gray-100">
-                <td className="p-3">TB Test (Annual)</td>
-                <td className="text-center p-3 font-bold text-green-700">20/20</td>
-                <td className="text-center p-3 text-yellow-700">3</td>
-                <td className="text-center p-3">
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>TB Test (Annual)</TableCell>
+                <TableCell className="text-center font-bold text-green-700">20/20</TableCell>
+                <TableCell className="text-center text-yellow-700">3</TableCell>
+                <TableCell className="text-center">
                   <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
                     ✓ Current
                   </span>
-                </td>
-              </tr>
-              <tr className="border-b border-gray-100">
-                <td className="p-3">CPR/First Aid Certification</td>
-                <td className="text-center p-3 font-bold text-green-700">20/20</td>
-                <td className="text-center p-3 text-yellow-700">2</td>
-                <td className="text-center p-3">
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>CPR/First Aid Certification</TableCell>
+                <TableCell className="text-center font-bold text-green-700">20/20</TableCell>
+                <TableCell className="text-center text-yellow-700">2</TableCell>
+                <TableCell className="text-center">
                   <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
                     ✓ Valid
                   </span>
-                </td>
-              </tr>
-              <tr className="border-b border-gray-100">
-                <td className="p-3">HIPAA Training (Annual)</td>
-                <td className="text-center p-3 font-bold text-green-700">20/20</td>
-                <td className="text-center p-3">0</td>
-                <td className="text-center p-3">
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>HIPAA Training (Annual)</TableCell>
+                <TableCell className="text-center font-bold text-green-700">20/20</TableCell>
+                <TableCell className="text-center">0</TableCell>
+                <TableCell className="text-center">
                   <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
                     ✓ Complete
                   </span>
-                </td>
-              </tr>
-              <tr className="border-b border-gray-100">
-                <td className="p-3">Infection Control Training</td>
-                <td className="text-center p-3 font-bold text-green-700">20/20</td>
-                <td className="text-center p-3">0</td>
-                <td className="text-center p-3">
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>Infection Control Training</TableCell>
+                <TableCell className="text-center font-bold text-green-700">20/20</TableCell>
+                <TableCell className="text-center">0</TableCell>
+                <TableCell className="text-center">
                   <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
                     ✓ Complete
                   </span>
-                </td>
-              </tr>
-              <tr className="border-b border-gray-100">
-                <td className="p-3">Orientation & Competency Check</td>
-                <td className="text-center p-3 font-bold text-green-700">20/20</td>
-                <td className="text-center p-3">0</td>
-                <td className="text-center p-3">
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>Orientation & Competency Check</TableCell>
+                <TableCell className="text-center font-bold text-green-700">20/20</TableCell>
+                <TableCell className="text-center">0</TableCell>
+                <TableCell className="text-center">
                   <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
                     ✓ Pass
                   </span>
-                </td>
-              </tr>
-              <tr className="bg-gray-50 font-bold">
-                <td className="p-3">TOTAL COMPLIANCE</td>
-                <td className="text-center p-3 text-green-700">140/140</td>
-                <td className="text-center p-3 text-yellow-700">5</td>
-                <td className="text-center p-3">
+                </TableCell>
+              </TableRow>
+              <TableRow className="bg-muted/50 font-bold">
+                <TableCell>TOTAL COMPLIANCE</TableCell>
+                <TableCell className="text-center text-green-700">140/140</TableCell>
+                <TableCell className="text-center text-yellow-700">5</TableCell>
+                <TableCell className="text-center">
                   <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
                     ✓ 100%
                   </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </div>
 

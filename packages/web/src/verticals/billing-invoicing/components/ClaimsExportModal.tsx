@@ -12,6 +12,14 @@ import {
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button.js";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs.js";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table.js';
 import type { ClaimsQueueItem, CMS1500ClaimForm } from "../types";
 import { formatCurrency } from "../utils";
 
@@ -329,52 +337,52 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
                         24. SERVICE LINES (A. DATES • B. PLACE • D. PROCEDURES •
                         E. DIAG • F. CHARGES • G. UNITS)
                       </p>
-                      <table className="w-full border border-gray-300 text-[11px]">
-                        <thead className="bg-gray-100 border-b border-gray-300">
-                          <tr>
-                            <th className="p-1 text-left">Dates of Service</th>
-                            <th className="p-1 text-center">Place</th>
-                            <th className="p-1 text-left">CPT / HCPCS</th>
-                            <th className="p-1 text-center">Mod</th>
-                            <th className="p-1 text-right">Charges</th>
-                            <th className="p-1 text-center">Units</th>
-                            <th className="p-1 text-center">EVV Verified</th>
-                            <th className="p-1 text-left">Rendering NPI</th>
-                          </tr>
-                        </thead>
-                        <tbody>
+                      <Table className="w-full border border-gray-300 text-[11px]">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="p-1 text-left">Dates of Service</TableHead>
+                            <TableHead className="p-1 text-center">Place</TableHead>
+                            <TableHead className="p-1 text-left">CPT / HCPCS</TableHead>
+                            <TableHead className="p-1 text-center">Mod</TableHead>
+                            <TableHead className="p-1 text-right">Charges</TableHead>
+                            <TableHead className="p-1 text-center">Units</TableHead>
+                            <TableHead className="p-1 text-center">EVV Verified</TableHead>
+                            <TableHead className="p-1 text-left">Rendering NPI</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
                           {cms1500Data.box24_serviceLines.map((line, idx) => (
-                            <tr key={idx} className="border-b border-gray-200">
-                              <td className="p-1.5 font-mono">
+                            <TableRow key={idx} className="border-b border-gray-200">
+                              <TableCell className="p-1.5 font-mono">
                                 {line.dateOfServiceFrom}
-                              </td>
-                              <td className="p-1.5 text-center">
+                              </TableCell>
+                              <TableCell className="p-1.5 text-center">
                                 {line.placeOfService}
-                              </td>
-                              <td className="p-1.5 font-bold">
+                              </TableCell>
+                              <TableCell className="p-1.5 font-bold">
                                 {line.procedureCode}
-                              </td>
-                              <td className="p-1.5 text-center">
+                              </TableCell>
+                              <TableCell className="p-1.5 text-center">
                                 {line.modifiers.join(", ")}
-                              </td>
-                              <td className="p-1.5 text-right font-medium">
+                              </TableCell>
+                              <TableCell className="p-1.5 text-right font-medium">
                                 {formatCurrency(line.charges)}
-                              </td>
-                              <td className="p-1.5 text-center">
+                              </TableCell>
+                              <TableCell className="p-1.5 text-center">
                                 {line.daysOrUnits}
-                              </td>
-                              <td className="p-1.5 text-center">
+                              </TableCell>
+                              <TableCell className="p-1.5 text-center">
                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-800">
                                   ✓ PASSED
                                 </span>
-                              </td>
-                              <td className="p-1.5 font-mono">
+                              </TableCell>
+                              <TableCell className="p-1.5 font-mono">
                                 {line.renderingProviderNpi}
-                              </td>
-                            </tr>
+                              </TableCell>
+                            </TableRow>
                           ))}
-                        </tbody>
-                      </table>
+                        </TableBody>
+                      </Table>
                     </div>
 
                     {/* Totals & Signatures */}

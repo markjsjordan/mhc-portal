@@ -11,6 +11,14 @@
 import React, { useState } from 'react';
 import { X, Download, Check, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button.js';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table.js';
 import type { MatchCandidate } from '../types';
 import { getMatchScoreColor, formatDistance } from '../utils';
 
@@ -119,16 +127,13 @@ export const MatchComparisonView: React.FC<MatchComparisonViewProps> = ({
       {/* Comparison Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
-                  Metric
-                </th>
+          <Table className="min-w-full">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-48">Metric</TableHead>
                 {selectedCandidates.map((candidate, index) => (
-                  <th
+                  <TableHead
                     key={candidate.caregiverId}
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
@@ -146,194 +151,194 @@ export const MatchComparisonView: React.FC<MatchComparisonViewProps> = ({
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
-                  </th>
+                  </TableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {/* Name */}
-              <tr className="bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+              <TableRow className="bg-muted/50">
+                <TableCell className="font-medium">
                   Name
-                </td>
+                </TableCell>
                 {selectedCandidates.map(candidate => (
-                  <td key={candidate.caregiverId} className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                  <TableCell key={candidate.caregiverId} className="font-semibold">
                     {candidate.caregiverName}
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
 
               {/* Overall Score */}
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+              <TableRow>
+                <TableCell className="font-medium">
                   Overall Score
-                </td>
+                </TableCell>
                 {selectedCandidates.map(candidate => {
                   const scoreColor = getMatchScoreColor(candidate.overallScore);
                   return (
-                    <td key={candidate.caregiverId} className={`px-6 py-4 whitespace-nowrap ${getValueClass(candidate.overallScore, selectedCandidates.map(c => c.overallScore))}`}>
+                    <TableCell key={candidate.caregiverId} className={getValueClass(candidate.overallScore, selectedCandidates.map(c => c.overallScore))}>
                       <div className="flex items-center gap-2">
                         <span className={`text-2xl font-bold ${scoreColor}`}>
                           {candidate.overallScore}
                         </span>
                         <span className="text-sm text-gray-500">/ 100</span>
                       </div>
-                    </td>
+                    </TableCell>
                   );
                 })}
-              </tr>
+              </TableRow>
 
               {/* Skills */}
-              <tr className="bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+              <TableRow className="bg-muted/50">
+                <TableCell className="text-gray-700">
                   Skills Match
-                </td>
+                </TableCell>
                 {selectedCandidates.map(candidate => (
-                  <td key={candidate.caregiverId} className={`px-6 py-4 whitespace-nowrap text-sm ${getValueClass(candidate.scores.skillMatch, selectedCandidates.map(c => c.scores.skillMatch))}`}>
+                  <TableCell key={candidate.caregiverId} className={getValueClass(candidate.scores.skillMatch, selectedCandidates.map(c => c.scores.skillMatch))}>
                     {candidate.scores.skillMatch}
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
 
               {/* Availability */}
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+              <TableRow>
+                <TableCell className="text-gray-700">
                   Availability
-                </td>
+                </TableCell>
                 {selectedCandidates.map(candidate => (
-                  <td key={candidate.caregiverId} className={`px-6 py-4 whitespace-nowrap text-sm ${getValueClass(candidate.scores.availabilityMatch, selectedCandidates.map(c => c.scores.availabilityMatch))}`}>
+                  <TableCell key={candidate.caregiverId} className={getValueClass(candidate.scores.availabilityMatch, selectedCandidates.map(c => c.scores.availabilityMatch))}>
                     <div className="flex items-center gap-2">
                       {candidate.scores.availabilityMatch}
                       {candidate.hasConflict && (
                         <AlertTriangle className="h-4 w-4 text-yellow-500" />
                       )}
                     </div>
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
 
               {/* Distance */}
-              <tr className="bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+              <TableRow className="bg-muted/50">
+                <TableCell className="text-gray-700">
                   Location (Distance)
-                </td>
+                </TableCell>
                 {selectedCandidates.map(candidate => {
                   const distances = selectedCandidates
                     .filter(c => c.distanceFromShift !== undefined)
                     .map(c => c.distanceFromShift!);
                   return (
-                    <td key={candidate.caregiverId} className={`px-6 py-4 whitespace-nowrap text-sm ${candidate.distanceFromShift !== undefined ? getValueClass(-candidate.distanceFromShift, distances.map(d => -d)) : ''}`}>
+                    <TableCell key={candidate.caregiverId} className={candidate.distanceFromShift !== undefined ? getValueClass(-candidate.distanceFromShift, distances.map(d => -d)) : ''}>
                       {candidate.distanceFromShift !== undefined
                         ? formatDistance(candidate.distanceFromShift)
                         : 'N/A'}
-                    </td>
+                    </TableCell>
                   );
                 })}
-              </tr>
+              </TableRow>
 
               {/* Proximity Score */}
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+              <TableRow>
+                <TableCell className="text-gray-700">
                   Proximity Score
-                </td>
+                </TableCell>
                 {selectedCandidates.map(candidate => (
-                  <td key={candidate.caregiverId} className={`px-6 py-4 whitespace-nowrap text-sm ${getValueClass(candidate.scores.proximityMatch, selectedCandidates.map(c => c.scores.proximityMatch))}`}>
+                  <TableCell key={candidate.caregiverId} className={getValueClass(candidate.scores.proximityMatch, selectedCandidates.map(c => c.scores.proximityMatch))}>
                     {candidate.scores.proximityMatch}
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
 
               {/* Experience */}
-              <tr className="bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+              <TableRow className="bg-muted/50">
+                <TableCell className="text-gray-700">
                   Experience
-                </td>
+                </TableCell>
                 {selectedCandidates.map(candidate => (
-                  <td key={candidate.caregiverId} className={`px-6 py-4 whitespace-nowrap text-sm ${getValueClass(candidate.scores.experienceMatch, selectedCandidates.map(c => c.scores.experienceMatch))}`}>
+                  <TableCell key={candidate.caregiverId} className={getValueClass(candidate.scores.experienceMatch, selectedCandidates.map(c => c.scores.experienceMatch))}>
                     {candidate.scores.experienceMatch}
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
 
               {/* Previous Visits */}
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+              <TableRow>
+                <TableCell className="text-gray-700">
                   Previous Visits
-                </td>
+                </TableCell>
                 {selectedCandidates.map(candidate => {
                   const visits = selectedCandidates
                     .filter(c => c.previousVisitsWithClient !== undefined)
                     .map(c => c.previousVisitsWithClient!);
                   return (
-                    <td key={candidate.caregiverId} className={`px-6 py-4 whitespace-nowrap text-sm ${candidate.previousVisitsWithClient !== undefined ? getValueClass(candidate.previousVisitsWithClient, visits) : ''}`}>
+                    <TableCell key={candidate.caregiverId} className={candidate.previousVisitsWithClient !== undefined ? getValueClass(candidate.previousVisitsWithClient, visits) : ''}>
                       {candidate.previousVisitsWithClient ?? 0}
-                    </td>
+                    </TableCell>
                   );
                 })}
-              </tr>
+              </TableRow>
 
               {/* Client Rating */}
-              <tr className="bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+              <TableRow className="bg-muted/50">
+                <TableCell className="text-gray-700">
                   Client Rating
-                </td>
+                </TableCell>
                 {selectedCandidates.map(candidate => {
                   const ratings = selectedCandidates
                     .filter(c => c.clientRating !== undefined)
                     .map(c => c.clientRating!);
                   return (
-                    <td key={candidate.caregiverId} className={`px-6 py-4 whitespace-nowrap text-sm ${candidate.clientRating !== undefined ? getValueClass(candidate.clientRating, ratings) : ''}`}>
+                    <TableCell key={candidate.caregiverId} className={candidate.clientRating !== undefined ? getValueClass(candidate.clientRating, ratings) : ''}>
                       {candidate.clientRating !== undefined
                         ? `${candidate.clientRating.toFixed(1)} ⭐`
                         : 'N/A'}
-                    </td>
+                    </TableCell>
                   );
                 })}
-              </tr>
+              </TableRow>
 
               {/* Reliability */}
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+              <TableRow>
+                <TableCell className="text-gray-700">
                   Reliability
-                </td>
+                </TableCell>
                 {selectedCandidates.map(candidate => (
-                  <td key={candidate.caregiverId} className={`px-6 py-4 whitespace-nowrap text-sm ${getValueClass(candidate.scores.reliabilityMatch, selectedCandidates.map(c => c.scores.reliabilityMatch))}`}>
+                  <TableCell key={candidate.caregiverId} className={getValueClass(candidate.scores.reliabilityMatch, selectedCandidates.map(c => c.scores.reliabilityMatch))}>
                     {candidate.scores.reliabilityMatch}
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
 
               {/* Compliance */}
-              <tr className="bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+              <TableRow className="bg-muted/50">
+                <TableCell className="text-gray-700">
                   Compliance
-                </td>
+                </TableCell>
                 {selectedCandidates.map(candidate => (
-                  <td key={candidate.caregiverId} className={`px-6 py-4 whitespace-nowrap text-sm ${getValueClass(candidate.scores.complianceMatch, selectedCandidates.map(c => c.scores.complianceMatch))}`}>
+                  <TableCell key={candidate.caregiverId} className={getValueClass(candidate.scores.complianceMatch, selectedCandidates.map(c => c.scores.complianceMatch))}>
                     {candidate.scores.complianceMatch}
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
 
               {/* Employment Type */}
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+              <TableRow>
+                <TableCell className="text-gray-700">
                   Employment
-                </td>
+                </TableCell>
                 {selectedCandidates.map(candidate => (
-                  <td key={candidate.caregiverId} className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <TableCell key={candidate.caregiverId} className="text-gray-600">
                     {candidate.employmentType}
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
 
               {/* Eligibility */}
-              <tr className="bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+              <TableRow className="bg-muted/50">
+                <TableCell className="text-gray-700">
                   Eligible
-                </td>
+                </TableCell>
                 {selectedCandidates.map(candidate => (
-                  <td key={candidate.caregiverId} className="px-6 py-4 whitespace-nowrap">
+                  <TableCell key={candidate.caregiverId}>
                     {candidate.isEligible ? (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         <Check className="h-3 w-3 mr-1" />
@@ -345,17 +350,17 @@ export const MatchComparisonView: React.FC<MatchComparisonViewProps> = ({
                         No
                       </span>
                     )}
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
 
               {/* Issues */}
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+              <TableRow>
+                <TableCell className="text-gray-700">
                   Issues
-                </td>
+                </TableCell>
                 {selectedCandidates.map(candidate => (
-                  <td key={candidate.caregiverId} className="px-6 py-4 text-sm text-gray-600">
+                  <TableCell key={candidate.caregiverId} className="text-gray-600">
                     {candidate.eligibilityIssues.length === 0 ? (
                       <span className="text-gray-400">None</span>
                     ) : (
@@ -367,18 +372,18 @@ export const MatchComparisonView: React.FC<MatchComparisonViewProps> = ({
                         ))}
                       </ul>
                     )}
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
 
               {/* Action Row */}
               {onSelect && (
-                <tr className="bg-gray-100">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                <TableRow className="bg-muted">
+                  <TableCell className="font-medium">
                     Select Candidate
-                  </td>
+                  </TableCell>
                   {selectedCandidates.map(candidate => (
-                    <td key={candidate.caregiverId} className="px-6 py-4">
+                    <TableCell key={candidate.caregiverId}>
                       <Button
                         onClick={() => onSelect(candidate.caregiverId)}
                         variant={candidate.isEligible ? 'default' : 'outline'}
@@ -395,12 +400,12 @@ export const MatchComparisonView: React.FC<MatchComparisonViewProps> = ({
                           'Ineligible'
                         )}
                       </Button>
-                    </td>
+                    </TableCell>
                   ))}
-                </tr>
+                </TableRow>
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
 

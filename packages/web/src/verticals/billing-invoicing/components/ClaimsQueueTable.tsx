@@ -16,6 +16,14 @@ import {
 import { Button } from '@/components/ui/button.js';
 import { Checkbox } from '@/components/ui/checkbox.js';
 import type { ClaimsQueueItem, ClaimStatus } from '../types';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table.js';
 import { formatCurrency, formatDate } from '../utils';
 
 interface ClaimsQueueTableProps {
@@ -132,10 +140,10 @@ export const ClaimsQueueTable: React.FC<ClaimsQueueTableProps> = ({
     <>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-left text-xs">
-            <thead className="bg-gray-50 text-gray-600 font-semibold uppercase tracking-wider text-[11px]">
-              <tr>
-                <th scope="col" className="w-10 px-4 py-3.5 text-center">
+          <Table className="min-w-full divide-y divide-gray-200 text-left text-xs">
+            <TableHeader>
+              <TableRow>
+                <TableHead scope="col" className="w-10 px-4 py-3.5 text-center">
                   <div className="flex items-center justify-center">
                     <Checkbox
                       checked={allSelected}
@@ -143,42 +151,42 @@ export const ClaimsQueueTable: React.FC<ClaimsQueueTableProps> = ({
                       aria-label="Select all claims"
                     />
                   </div>
-                </th>
-                <th scope="col" className="px-4 py-3.5">Claim # / DOS</th>
-                <th scope="col" className="px-4 py-3.5">Client (Patient)</th>
-                <th scope="col" className="px-4 py-3.5">Caregiver</th>
-                <th scope="col" className="px-4 py-3.5">Service Code</th>
-                <th scope="col" className="px-4 py-3.5 text-right">Units / Rate</th>
-                <th scope="col" className="px-4 py-3.5 text-right">Amount</th>
-                <th scope="col" className="px-4 py-3.5">Payor</th>
-                <th scope="col" className="px-4 py-3.5">EVV Compliance</th>
-                <th scope="col" className="px-4 py-3.5">Status</th>
-                <th scope="col" className="px-4 py-3.5 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+                </TableHead>
+                <TableHead scope="col" className="px-4 py-3.5">Claim # / DOS</TableHead>
+                <TableHead scope="col" className="px-4 py-3.5">Client (Patient)</TableHead>
+                <TableHead scope="col" className="px-4 py-3.5">Caregiver</TableHead>
+                <TableHead scope="col" className="px-4 py-3.5">Service Code</TableHead>
+                <TableHead scope="col" className="px-4 py-3.5 text-right">Units / Rate</TableHead>
+                <TableHead scope="col" className="px-4 py-3.5 text-right">Amount</TableHead>
+                <TableHead scope="col" className="px-4 py-3.5">Payor</TableHead>
+                <TableHead scope="col" className="px-4 py-3.5">EVV Compliance</TableHead>
+                <TableHead scope="col" className="px-4 py-3.5">Status</TableHead>
+                <TableHead scope="col" className="px-4 py-3.5 text-center">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {claims.length === 0 ? (
-                <tr>
-                  <td colSpan={11} className="py-12 text-center text-gray-500">
+                <TableRow>
+                  <TableCell colSpan={11} className="py-12 text-center text-gray-500">
                     <FileText className="h-10 w-10 mx-auto text-gray-300 mb-2" />
                     <p className="text-sm font-medium text-gray-900">No claims match the selected criteria</p>
                     <p className="text-xs text-gray-500 mt-1">Try switching payor filters or clearing the search box</p>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 claims.map((claim) => {
                   const isSelected = selectedClaimIds.includes(claim.id);
                   const isBlocked = claim.status === 'EVV_INCOMPLETE';
 
                   return (
-                    <tr
+                    <TableRow
                       key={claim.id}
                       className={`hover:bg-gray-50/80 transition-colors ${
                         isBlocked ? 'bg-amber-50/20' : ''
                       } ${isSelected ? 'bg-blue-50/40' : ''}`}
                     >
                       {/* Checkbox */}
-                      <td className="px-4 py-3.5 text-center">
+                      <TableCell className="px-4 py-3.5 text-center">
                         <div className="flex items-center justify-center">
                           <Checkbox
                             checked={isSelected}
@@ -186,59 +194,59 @@ export const ClaimsQueueTable: React.FC<ClaimsQueueTableProps> = ({
                             aria-label={`Select claim ${claim.claimNumber}`}
                           />
                         </div>
-                      </td>
+                      </TableCell>
 
                       {/* Claim # and DOS */}
-                      <td className="px-4 py-3.5 whitespace-nowrap">
+                      <TableCell className="px-4 py-3.5 whitespace-nowrap">
                         <p className="font-mono font-bold text-gray-900">{claim.claimNumber}</p>
                         <p className="text-gray-500 text-[11px] mt-0.5">
                           {formatDate(claim.serviceDate)}
                         </p>
-                      </td>
+                      </TableCell>
 
                       {/* Patient Name */}
-                      <td className="px-4 py-3.5">
+                      <TableCell className="px-4 py-3.5">
                         <p className="font-semibold text-gray-900">{claim.clientName}</p>
                         {claim.clientMedicaidId && (
                           <p className="font-mono text-[10px] text-gray-500">
                             {claim.clientMedicaidId}
                           </p>
                         )}
-                      </td>
+                      </TableCell>
 
                       {/* Caregiver */}
-                      <td className="px-4 py-3.5 whitespace-nowrap text-gray-700">
+                      <TableCell className="px-4 py-3.5 whitespace-nowrap text-gray-700">
                         {claim.caregiverName}
-                      </td>
+                      </TableCell>
 
                       {/* Service Code & Description */}
-                      <td className="px-4 py-3.5">
+                      <TableCell className="px-4 py-3.5">
                         <span className="font-mono font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">
                           {claim.serviceCode}
                         </span>
                         <p className="text-[11px] text-gray-600 truncate max-w-[160px] mt-0.5" title={claim.serviceDescription}>
                           {claim.serviceDescription}
                         </p>
-                      </td>
+                      </TableCell>
 
                       {/* Units / Rate */}
-                      <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                      <TableCell className="px-4 py-3.5 text-right whitespace-nowrap">
                         <span className="font-medium">{claim.units} {claim.unitType.toLowerCase()}s</span>
                         <p className="text-[11px] text-gray-500">@{formatCurrency(claim.unitRate)}</p>
-                      </td>
+                      </TableCell>
 
                       {/* Total Amount */}
-                      <td className="px-4 py-3.5 text-right font-bold text-gray-900 whitespace-nowrap">
+                      <TableCell className="px-4 py-3.5 text-right font-bold text-gray-900 whitespace-nowrap">
                         {formatCurrency(claim.totalAmount)}
-                      </td>
+                      </TableCell>
 
                       {/* Payor */}
-                      <td className="px-4 py-3.5">
+                      <TableCell className="px-4 py-3.5">
                         {renderPayorBadge(claim.payorType, claim.payorName)}
-                      </td>
+                      </TableCell>
 
                       {/* EVV Gate Checklist */}
-                      <td className="px-4 py-3.5 whitespace-nowrap">
+                      <TableCell className="px-4 py-3.5 whitespace-nowrap">
                         <Button
                           type="button"
                           variant="outline"
@@ -263,15 +271,15 @@ export const ClaimsQueueTable: React.FC<ClaimsQueueTableProps> = ({
                           )}
                           <Info className="h-3 w-3 ml-0.5 opacity-70" />
                         </Button>
-                      </td>
+                      </TableCell>
 
                       {/* Status Badge */}
-                      <td className="px-4 py-3.5 whitespace-nowrap">
+                      <TableCell className="px-4 py-3.5 whitespace-nowrap">
                         {renderStatusBadge(claim.status, claim.rejectionReason)}
-                      </td>
+                      </TableCell>
 
                       {/* Action buttons */}
-                      <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                      <TableCell className="px-4 py-3.5 text-center whitespace-nowrap">
                         <Button
                           type="button"
                           variant="outline"
@@ -288,13 +296,13 @@ export const ClaimsQueueTable: React.FC<ClaimsQueueTableProps> = ({
                           <Eye className="h-3.5 w-3.5" />
                           Preview
                         </Button>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
 

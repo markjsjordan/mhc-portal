@@ -6,6 +6,14 @@ import { LoadingSpinner, ErrorMessage } from '@/core/components';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table.js';
 import { usePermissions } from '@/core/hooks';
 import { 
   usePayRun, 
@@ -197,37 +205,37 @@ export const PayRunDetail: React.FC = () => {
             <div className="pt-6 border-t">
               <h3 className="text-lg font-semibold mb-4">Pay Stubs ({payStubs.length})</h3>
               <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Employee</th>
-                      <th className="px-4 py-2 text-right text-sm font-medium text-gray-700">Hours</th>
-                      <th className="px-4 py-2 text-right text-sm font-medium text-gray-700">Gross Pay</th>
-                      <th className="px-4 py-2 text-right text-sm font-medium text-gray-700">Net Pay</th>
-                      <th className="px-4 py-2 text-center text-sm font-medium text-gray-700">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-left">Employee</TableHead>
+                      <TableHead className="text-right">Hours</TableHead>
+                      <TableHead className="text-right">Gross Pay</TableHead>
+                      <TableHead className="text-right">Net Pay</TableHead>
+                      <TableHead className="text-center">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {payStubs.map((stub) => (
-                      <tr key={stub.id} className="hover:bg-muted/30">
-                        <td className="px-4 py-3">
+                      <TableRow key={stub.id}>
+                        <TableCell>
                           <div>
                             <p className="font-medium">{stub.caregiverName}</p>
                             <p className="text-sm text-gray-500">{stub.caregiverEmployeeId}</p>
                           </div>
-                        </td>
-                        <td className="px-4 py-3 text-right">{formatHours(stub.totalHours)}</td>
-                        <td className="px-4 py-3 text-right">{formatCurrency(stub.currentGrossPay)}</td>
-                        <td className="px-4 py-3 text-right font-medium">{formatCurrency(stub.currentNetPay)}</td>
-                        <td className="px-4 py-3 text-center">
+                        </TableCell>
+                        <TableCell className="text-right">{formatHours(stub.totalHours)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(stub.currentGrossPay)}</TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(stub.currentNetPay)}</TableCell>
+                        <TableCell className="text-center">
                           <Badge variant="outline" className="text-xs">
                             {stub.status.replace(/_/g, ' ')}
                           </Badge>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </div>
           )}

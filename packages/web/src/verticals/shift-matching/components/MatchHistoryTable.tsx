@@ -20,6 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select.js';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table.js';
 
 interface MatchHistoryRecord {
   id: string;
@@ -262,10 +270,10 @@ export const MatchHistoryTable: React.FC<MatchHistoryTableProps> = ({
       {/* Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th
+          <Table className="min-w-full divide-y divide-gray-200">
+            <TableHeader>
+              <TableRow>
+                <TableHead
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('date')}
                 >
@@ -275,17 +283,17 @@ export const MatchHistoryTable: React.FC<MatchHistoryTableProps> = ({
                       sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                     )}
                   </div>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </TableHead>
+                <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Shift
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </TableHead>
+                <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Client
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </TableHead>
+                <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Caregiver
-                </th>
-                <th
+                </TableHead>
+                <TableHead
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('matchScore')}
                 >
@@ -295,54 +303,54 @@ export const MatchHistoryTable: React.FC<MatchHistoryTableProps> = ({
                       sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                     )}
                   </div>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </TableHead>
+                <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Outcome
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </TableHead>
+                <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Response
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </TableHead>
+                <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredAndSortedRecords.map((record) => (
                 <React.Fragment key={record.id}>
-                  <tr className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <TableRow className="hover:bg-gray-50 transition-colors">
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {record.date.toLocaleDateString()}
                       <div className="text-xs text-gray-500">
                         {record.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
                       {record.shiftId}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {record.clientName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {record.caregiverName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getScoreBadge(record.matchScore)}`}>
                         {record.matchScore}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         {getOutcomeIcon(record.outcome)}
                         {getOutcomeBadge(record.outcome)}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {record.responseTimeMinutes !== undefined
                         ? `${record.responseTimeMinutes} min`
                         : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm">
                       <Button
                         type="button"
                         variant="link"
@@ -352,11 +360,11 @@ export const MatchHistoryTable: React.FC<MatchHistoryTableProps> = ({
                       >
                         {expandedRow === record.id ? 'Hide' : 'Details'}
                       </Button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                   {expandedRow === record.id && (
-                    <tr>
-                      <td colSpan={8} className="px-6 py-4 bg-gray-50">
+                    <TableRow>
+                      <TableCell colSpan={8} className="px-6 py-4 bg-gray-50">
                         <div className="space-y-3">
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
@@ -387,13 +395,13 @@ export const MatchHistoryTable: React.FC<MatchHistoryTableProps> = ({
                             </div>
                           )}
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   )}
                 </React.Fragment>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
 
         {filteredAndSortedRecords.length === 0 && (

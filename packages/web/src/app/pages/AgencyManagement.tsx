@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button.js';
 import { Badge } from '@/components/ui/badge.js';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert.js';
 import { Card } from '@/components/ui/card.js';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table.js';
 
 interface Organization {
   id: string;
@@ -72,71 +73,57 @@ export default function AgencyManagement() {
         </div>
       ) : (
         <Card>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Agency Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    State
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {organizations.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                      No agencies found
-                    </td>
-                  </tr>
-                ) : (
-                  organizations.map((org) => (
-                    <tr key={org.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{org.name}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{org.stateCode}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{org.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge variant={org.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                          {org.status}
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(org.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Button variant="ghost" size="sm" className="mr-2">
-                          View
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          Settings
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Agency Name</TableHead>
+                <TableHead>State</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {organizations.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-gray-500 py-12">
+                    No agencies found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                organizations.map((org) => (
+                  <TableRow key={org.id}>
+                    <TableCell>
+                      <div className="text-sm font-medium text-gray-900">{org.name}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm text-gray-900">{org.stateCode}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm text-gray-900">{org.email}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={org.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                        {org.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-500">
+                      {new Date(org.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right text-sm font-medium">
+                      <Button variant="ghost" size="sm" className="mr-2">
+                        View
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        Settings
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </Card>
       )}
     </div>
