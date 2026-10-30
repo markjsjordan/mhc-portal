@@ -26,7 +26,7 @@ export default defineConfig({
     // PWA plugin for offline functionality
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.ico', 'favicon.png', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
         name: 'Marquette Home Care',
         short_name: 'MHC Portal',
