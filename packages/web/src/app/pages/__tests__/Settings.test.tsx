@@ -116,7 +116,7 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
     renderSettings();
 
     // Switch to Team tab
-    const teamTab = await screen.findByRole('button', { name: /Team/i });
+    const teamTab = await screen.findByRole('tab', { name: /Team/i });
     fireEvent.click(teamTab);
 
     // Wait for Team Members section and Pending Invitations
@@ -171,7 +171,7 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
     renderSettings();
 
     // Switch to Team tab
-    const teamTab = await screen.findByRole('button', { name: /Team/i });
+    const teamTab = await screen.findByRole('tab', { name: /Team/i });
     fireEvent.click(teamTab);
 
     // Open Invite Member modal
@@ -200,7 +200,7 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
     renderSettings();
 
     // Switch to Team tab
-    const teamTab = await screen.findByRole('button', { name: /Team/i });
+    const teamTab = await screen.findByRole('tab', { name: /Team/i });
     fireEvent.click(teamTab);
 
     // Open Invite Member modal
@@ -229,7 +229,7 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
     renderSettings();
 
     // Switch to Team tab
-    const teamTab = await screen.findByRole('button', { name: /Team/i });
+    const teamTab = await screen.findByRole('tab', { name: /Team/i });
     fireEvent.click(teamTab);
 
     // Verify member is listed
@@ -278,7 +278,7 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
     renderSettings();
 
     // Switch to Team tab
-    const teamTab = await screen.findByRole('button', { name: /Team/i });
+    const teamTab = await screen.findByRole('tab', { name: /Team/i });
     fireEvent.click(teamTab);
 
     // Verify member is listed
@@ -307,7 +307,7 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
     renderSettings();
 
     // Switch to Team tab
-    const teamTab = await screen.findByRole('button', { name: /Team/i });
+    const teamTab = await screen.findByRole('tab', { name: /Team/i });
     fireEvent.click(teamTab);
 
     // Verify member is listed

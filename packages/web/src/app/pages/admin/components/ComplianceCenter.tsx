@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card.js';
 import { Button } from '@/components/ui/button.js';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs.js';
 import { Shield, FileText, Eye, Download, AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface AuditLogEntry {
@@ -159,29 +160,33 @@ export const ComplianceCenter: React.FC = () => {
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200 pb-2">
-        <nav className="flex space-x-2">
-          {[
-            { id: 'audit' as const, label: 'Audit Trail' },
-            { id: 'hipaa' as const, label: 'HIPAA Access Logs' },
-            { id: 'reports' as const, label: 'Compliance Reports' },
-          ].map((tab) => (
-            <Button
-              key={tab.id}
-              variant={activeTab === tab.id ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.label}
-            </Button>
-          ))}
-        </nav>
-      </div>
+      {/* Tab Navigation & Content */}
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as 'audit' | 'hipaa' | 'reports')}
+        className="space-y-6"
+      >
+        <div className="border-b border-gray-200 pb-2">
+          <TabsList variant="line" className="space-x-2">
+            {[
+              { id: 'audit' as const, label: 'Audit Trail' },
+              { id: 'hipaa' as const, label: 'HIPAA Access Logs' },
+              { id: 'reports' as const, label: 'Compliance Reports' },
+            ].map((tab) => (
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
+                className="data-[state=active]:bg-secondary"
+              >
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
-      {/* Audit Trail Tab */}
-      {activeTab === 'audit' && (
-        <Card className="p-6">
+        {/* Audit Trail Tab */}
+        <TabsContent value="audit" className="mt-0">
+          <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">System Audit Trail</h3>
             <Button variant="ghost" size="sm" className="flex items-center gap-2">
@@ -246,10 +251,10 @@ export const ComplianceCenter: React.FC = () => {
             </table>
           </div>
         </Card>
-      )}
+      </TabsContent>
 
       {/* HIPAA Access Logs Tab */}
-      {activeTab === 'hipaa' && (
+      <TabsContent value="hipaa" className="mt-0">
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -319,10 +324,10 @@ export const ComplianceCenter: React.FC = () => {
             </table>
           </div>
         </Card>
-      )}
+      </TabsContent>
 
       {/* Compliance Reports Tab */}
-      {activeTab === 'reports' && (
+      <TabsContent value="reports" className="mt-0">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {COMPLIANCE_REPORTS.map((report) => (
             <Card key={report.id} className="p-6 transition-all hover:shadow-md">
@@ -367,7 +372,8 @@ export const ComplianceCenter: React.FC = () => {
             </Card>
           ))}
         </div>
-      )}
+      </TabsContent>
+      </Tabs>
     </div>
   );
 };

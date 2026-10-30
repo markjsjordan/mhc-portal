@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button.js";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs.js";
 import type { ClaimsQueueItem, CMS1500ClaimForm } from "../types";
 import { formatCurrency } from "../utils";
 
@@ -117,45 +118,47 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
           </Button>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex border-b border-gray-200 px-6 pt-3 bg-white gap-2">
-          <Button
-            variant={activeTab === "837p" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setActiveTab("837p")}
-            className="gap-2"
-          >
-            <ShieldCheck className="h-4 w-4" />
-            ANSI 837P (EDI Electronic)
-          </Button>
-          <Button
-            variant={activeTab === "cms1500" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setActiveTab("cms1500")}
-            className="gap-2"
-          >
-            <FileText className="h-4 w-4" />
-            CMS-1500 (HCFA Form)
-          </Button>
-          <Button
-            variant={activeTab === "csv" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setActiveTab("csv")}
-            className="gap-2"
-          >
-            <FileSpreadsheet className="h-4 w-4" />
-            Clearinghouse CSV Export
-          </Button>
-        </div>
+        {/* Tab Navigation & Content */}
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as "837p" | "cms1500" | "csv")}
+          className="flex-1 flex flex-col overflow-hidden"
+        >
+          <div className="flex border-b border-gray-200 px-6 py-2 bg-white">
+            <TabsList variant="line" className="gap-2">
+              <TabsTrigger
+                value="837p"
+                className="gap-2 data-[state=active]:bg-secondary"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                ANSI 837P (EDI Electronic)
+              </TabsTrigger>
+              <TabsTrigger
+                value="cms1500"
+                className="gap-2 data-[state=active]:bg-secondary"
+              >
+                <FileText className="h-4 w-4" />
+                CMS-1500 (HCFA Form)
+              </TabsTrigger>
+              <TabsTrigger
+                value="csv"
+                className="gap-2 data-[state=active]:bg-secondary"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                Clearinghouse CSV Export
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
-          {/* TAB 1: 837P EDI PREVIEW */}
-          {activeTab === "837p" && exportErrors.edi && (
-            <ExportBlocked message={exportErrors.edi} />
-          )}
-          {activeTab === "837p" && !exportErrors.edi && (
-            <div className="space-y-4">
+          {/* Modal Body */}
+          <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+            {/* TAB 1: 837P EDI PREVIEW */}
+            <TabsContent value="837p" className="mt-0">
+              {exportErrors.edi && (
+                <ExportBlocked message={exportErrors.edi} />
+              )}
+              {!exportErrors.edi && (
+                <div className="space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3.5 flex items-start justify-between">
                 <div>
                   <h4 className="text-xs font-bold text-blue-900 uppercase tracking-wide">
@@ -203,14 +206,16 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
                 <pre>{ediContent ?? "Loading 837P preview..."}</pre>
               </div>
             </div>
-          )}
+              )}
+            </TabsContent>
 
-          {/* TAB 2: CMS-1500 FORM PREVIEW */}
-          {activeTab === "cms1500" && exportErrors.cms1500 && (
-            <ExportBlocked message={exportErrors.cms1500} />
-          )}
-          {activeTab === "cms1500" && !exportErrors.cms1500 && (
-            <div className="space-y-4">
+            {/* TAB 2: CMS-1500 FORM PREVIEW */}
+            <TabsContent value="cms1500" className="mt-0">
+              {exportErrors.cms1500 && (
+                <ExportBlocked message={exportErrors.cms1500} />
+              )}
+              {!exportErrors.cms1500 && (
+                <div className="space-y-4">
               <div className="flex justify-between items-center bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
                 <div>
                   <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">
@@ -400,14 +405,16 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
                 </div>
               )}
             </div>
-          )}
+              )}
+            </TabsContent>
 
-          {/* TAB 3: CSV EXPORT */}
-          {activeTab === "csv" && exportErrors.csv && (
-            <ExportBlocked message={exportErrors.csv} />
-          )}
-          {activeTab === "csv" && !exportErrors.csv && (
-            <div className="space-y-4">
+            {/* TAB 3: CSV EXPORT */}
+            <TabsContent value="csv" className="mt-0">
+              {exportErrors.csv && (
+                <ExportBlocked message={exportErrors.csv} />
+              )}
+              {!exportErrors.csv && (
+                <div className="space-y-4">
               <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3.5 flex items-start justify-between">
                 <div>
                   <h4 className="text-xs font-bold text-emerald-900 uppercase tracking-wide">
@@ -440,8 +447,10 @@ export const ClaimsExportModal: React.FC<ClaimsExportModalProps> = ({
                 </div>
               </div>
             </div>
-          )}
-        </div>
+              )}
+            </TabsContent>
+          </div>
+        </Tabs>
 
         {/* Footer */}
         <div className="px-6 py-3.5 border-t border-gray-200 bg-white flex justify-between items-center text-xs text-gray-500">
