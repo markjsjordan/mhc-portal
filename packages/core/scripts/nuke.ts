@@ -55,6 +55,7 @@ async function nukeDatabase() {
     console.log(`Database: ${dbName}`);
     console.log(`Host: ${process.env.DB_HOST || 'localhost'}\n`);
 
+    const caCert = process.env.DB_CA_CERT ?? process.env.REDIS_CA_CERT;
     config = {
       client: 'postgresql',
       connection: {
@@ -63,7 +64,13 @@ async function nukeDatabase() {
         database: dbName,
         user: process.env.DB_USER || 'postgres',
         password: process.env.DB_PASSWORD || 'postgres',
-        ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+        ssl: process.env.DB_SSL === 'true'
+          ? {
+              rejectUnauthorized: true,
+              minVersion: 'TLSv1.2',
+              ...(caCert !== undefined && caCert !== '' ? { ca: caCert } : {}),
+            }
+          : false,
       },
     };
   }

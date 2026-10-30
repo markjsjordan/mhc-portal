@@ -34,12 +34,15 @@ const initRedis = async (): Promise<void> => {
       url: redisUrl,
     };
 
-    // Enable TLS for Upstash (always required)
-    if (isUpstash) {
+    // Enable TLS for Upstash or rediss:// URLs with strict certificate verification
+    const useTLS = isUpstash || redisUrl.startsWith('rediss://');
+    if (useTLS) {
+      const caCert = process.env.REDIS_CA_CERT ?? process.env.DB_CA_CERT;
       clientOptions.socket = {
         tls: true,
-        // Upstash certificates are valid, but disable verification for Vercel compatibility
-        rejectUnauthorized: false,
+        rejectUnauthorized: true,
+        minVersion: 'TLSv1.2',
+        ...(caCert !== undefined && caCert !== '' ? { ca: caCert } : {}),
       };
     }
 

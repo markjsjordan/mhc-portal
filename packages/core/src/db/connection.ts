@@ -25,13 +25,20 @@ export class Database {
   private pool: Pool;
 
   constructor(config: DatabaseConfig) {
+    const caCert = process.env.DB_CA_CERT ?? process.env.REDIS_CA_CERT;
     this.pool = new Pool({
       host: config.host,
       port: config.port,
       database: config.database,
       user: config.user,
       password: config.password,
-      ssl: config.ssl === true ? { rejectUnauthorized: false } : false,
+      ssl: config.ssl === true
+        ? {
+            rejectUnauthorized: true,
+            minVersion: 'TLSv1.2',
+            ...(caCert !== undefined && caCert !== '' ? { ca: caCert } : {}),
+          }
+        : false,
       // Connection pool settings
       max: config.max ?? 20, // Maximum number of clients in the pool
       min: config.min ?? 2, // Minimum number of clients in the pool

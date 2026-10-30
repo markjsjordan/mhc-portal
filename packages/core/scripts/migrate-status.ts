@@ -21,6 +21,7 @@ async function showMigrationStatus() {
     : process.env.DB_NAME || 'folkcare';
 
   // Build connection config
+  const caCert = process.env.DB_CA_CERT ?? process.env.REDIS_CA_CERT;
   const connection = process.env.DATABASE_URL
     ? { connectionString: process.env.DATABASE_URL }
     : {
@@ -29,7 +30,13 @@ async function showMigrationStatus() {
         database: dbName,
         user: process.env.DB_USER || 'postgres',
         password: process.env.DB_PASSWORD || 'postgres',
-        ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+        ssl: process.env.DB_SSL === 'true'
+          ? {
+              rejectUnauthorized: true,
+              minVersion: 'TLSv1.2',
+              ...(caCert !== undefined && caCert !== '' ? { ca: caCert } : {}),
+            }
+          : false,
       };
 
   // Build Knex config inline to avoid tsconfig issues

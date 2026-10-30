@@ -106,7 +106,10 @@ describe('Database Connection', () => {
 
       expect(Pool).toHaveBeenCalledWith(
         expect.objectContaining({
-          ssl: { rejectUnauthorized: false },
+          ssl: {
+            rejectUnauthorized: true,
+            minVersion: 'TLSv1.2',
+          },
         })
       );
     });
