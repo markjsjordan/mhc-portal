@@ -63,13 +63,15 @@ echo ""
 echo "Setting up Supabase project..."
 echo ""
 
-# Supabase project details
-SUPABASE_PROJECT_REF="aoxifllwcujpinwfaxmu"
-SUPABASE_PASSWORD="-Q\$gsyPD788qv!S"
+# Supabase project details (must be provided via environment variables)
+if [ -z "${SUPABASE_PROJECT_REF:-}" ] || [ -z "${SUPABASE_PASSWORD:-}" ]; then
+  echo -e "${RED}❌ ERROR: SUPABASE_PROJECT_REF and SUPABASE_PASSWORD environment variables are required.${NC}"
+  echo "Usage: SUPABASE_PROJECT_REF=your-project-ref SUPABASE_PASSWORD=your-password ./scripts/setup-cloudflare-supabase.sh"
+  exit 1
+fi
 
 echo -e "${BLUE}Your Supabase project:${NC}"
-echo "Project Ref: $SUPABASE_PROJECT_REF"
-echo "Dashboard: https://supabase.com/dashboard/project/$SUPABASE_PROJECT_REF"
+echo "Dashboard: https://supabase.com/dashboard/project/${SUPABASE_PROJECT_REF}"
 echo ""
 
 # Build connection strings
@@ -114,11 +116,10 @@ HYPERDRIVE_ID=$(echo "$HYPERDRIVE_OUTPUT" | grep -oE 'id = "[^"]*"' | cut -d'"' 
 
 if [ -z "$HYPERDRIVE_ID" ]; then
   echo -e "${RED}❌ Failed to create Hyperdrive${NC}"
-  echo "Output: $HYPERDRIVE_OUTPUT"
   echo ""
   echo "You may need to create it manually:"
   echo "wrangler hyperdrive create care-commons-db \\"
-  echo "  --connection-string=\"$HYPERDRIVE_CONNECTION\""
+  echo "  --connection-string=\"\$HYPERDRIVE_CONNECTION\""
   exit 1
 fi
 
@@ -254,8 +255,7 @@ echo "Your Cloudflare + Supabase deployment is ready!"
 echo ""
 echo "Key Information:"
 echo "─────────────────────────────────────────────────────────────"
-echo "Supabase Project: $SUPABASE_PROJECT_REF"
-echo "Supabase Dashboard: https://supabase.com/dashboard/project/$SUPABASE_PROJECT_REF"
+echo "Supabase Dashboard: https://supabase.com/dashboard/project/${SUPABASE_PROJECT_REF}"
 echo "Cloudflare Account: $CLOUDFLARE_ACCOUNT_ID"
 echo "Hyperdrive ID: $HYPERDRIVE_ID"
 echo ""
@@ -268,12 +268,12 @@ echo ""
 echo "GitHub Secrets to add:"
 echo "─────────────────────────────────────────────────────────────"
 echo "CLOUDFLARE_API_TOKEN - Get from Cloudflare Dashboard"
-echo "CLOUDFLARE_ACCOUNT_ID - $CLOUDFLARE_ACCOUNT_ID"
+echo "CLOUDFLARE_ACCOUNT_ID - (use your Cloudflare Account ID)"
 echo "SUPABASE_ACCESS_TOKEN - Get from Supabase Dashboard"
-echo "SUPABASE_PROJECT_ID - $SUPABASE_PROJECT_REF"
-echo "SUPABASE_DB_PASSWORD - $SUPABASE_PASSWORD"
-echo "SUPABASE_DATABASE_URL - $SUPABASE_POOLER"
-echo "SUPABASE_ANON_KEY - $SUPABASE_ANON_KEY"
+echo "SUPABASE_PROJECT_ID - (use SUPABASE_PROJECT_REF)"
+echo "SUPABASE_DB_PASSWORD - (use SUPABASE_PASSWORD - never commit or echo)"
+echo "SUPABASE_DATABASE_URL - (use pooler connection string - never commit or echo)"
+echo "SUPABASE_ANON_KEY - (already set)"
 echo "SUPABASE_SERVICE_ROLE_KEY - (already set)"
 echo ""
 echo "Documentation: /docs/DEPLOYMENT_SETUP_COMPLETE.md"

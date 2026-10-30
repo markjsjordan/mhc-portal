@@ -29,8 +29,8 @@ resource "vercel_project" "folkcare" {
     on_commit       = true
   }
 
-  # Protection bypass for automation
-  protection_bypass_for_automation = true
+  # Protection bypass for automation (disabled for HIPAA compliance)
+  protection_bypass_for_automation = false
 }
 
 # =============================================================================
@@ -42,6 +42,7 @@ resource "vercel_project_environment_variable" "database_url_production" {
   key        = "DATABASE_URL"
   value      = data.neon_branch.main.connection_uri
   target     = ["production"]
+  sensitive  = true
 }
 
 resource "vercel_project_environment_variable" "redis_url_production" {
@@ -49,6 +50,7 @@ resource "vercel_project_environment_variable" "redis_url_production" {
   key        = "REDIS_URL"
   value      = "rediss://${upstash_redis_database.production.endpoint}:${upstash_redis_database.production.port}"
   target     = ["production"]
+  sensitive  = true
 }
 
 resource "vercel_project_environment_variable" "redis_token_production" {
@@ -56,20 +58,23 @@ resource "vercel_project_environment_variable" "redis_token_production" {
   key        = "REDIS_TOKEN"
   value      = upstash_redis_database.production.password
   target     = ["production"]
+  sensitive  = true
 }
 
 resource "vercel_project_environment_variable" "jwt_secret_production" {
   project_id = vercel_project.folkcare.id
   key        = "JWT_SECRET"
-  value      = var.jwt_secret
+  value      = var.jwt_secret_production
   target     = ["production"]
+  sensitive  = true
 }
 
 resource "vercel_project_environment_variable" "encryption_key_production" {
   project_id = vercel_project.folkcare.id
   key        = "ENCRYPTION_KEY"
-  value      = var.encryption_key
+  value      = var.encryption_key_production
   target     = ["production"]
+  sensitive  = true
 }
 
 resource "vercel_project_environment_variable" "node_env_production" {
@@ -88,6 +93,7 @@ resource "vercel_project_environment_variable" "database_url_preview" {
   key        = "DATABASE_URL"
   value      = neon_branch.preview.connection_uri
   target     = ["preview", "development"]
+  sensitive  = true
 }
 
 resource "vercel_project_environment_variable" "redis_url_preview" {
@@ -95,6 +101,7 @@ resource "vercel_project_environment_variable" "redis_url_preview" {
   key        = "REDIS_URL"
   value      = "rediss://${upstash_redis_database.preview.endpoint}:${upstash_redis_database.preview.port}"
   target     = ["preview", "development"]
+  sensitive  = true
 }
 
 resource "vercel_project_environment_variable" "redis_token_preview" {
@@ -102,20 +109,23 @@ resource "vercel_project_environment_variable" "redis_token_preview" {
   key        = "REDIS_TOKEN"
   value      = upstash_redis_database.preview.password
   target     = ["preview", "development"]
+  sensitive  = true
 }
 
 resource "vercel_project_environment_variable" "jwt_secret_preview" {
   project_id = vercel_project.folkcare.id
   key        = "JWT_SECRET"
-  value      = var.jwt_secret
+  value      = var.jwt_secret_preview
   target     = ["preview", "development"]
+  sensitive  = true
 }
 
 resource "vercel_project_environment_variable" "encryption_key_preview" {
   project_id = vercel_project.folkcare.id
   key        = "ENCRYPTION_KEY"
-  value      = var.encryption_key
+  value      = var.encryption_key_preview
   target     = ["preview", "development"]
+  sensitive  = true
 }
 
 resource "vercel_project_environment_variable" "node_env_preview" {

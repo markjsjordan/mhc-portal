@@ -86,7 +86,8 @@
     "capture:prod": "tsx scripts/capture-screenshots.ts --production",
     "capture:all": "tsx scripts/capture-screenshots.ts --all",
     "capture:mobile": "tsx scripts/capture-screenshots.ts --mobile",
-    "ui:report": "tsx scripts/generate-ui-state-report.ts"
+    "ui:report": "tsx scripts/generate-ui-state-report.ts",
+    "rotate:secrets": "tsx scripts/security/rotate-secrets.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",

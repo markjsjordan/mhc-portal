@@ -90,14 +90,26 @@ variable "environments" {
   default     = ["production", "preview"]
 }
 
-variable "jwt_secret" {
-  description = "JWT secret for authentication (generate with: openssl rand -base64 32)"
+variable "jwt_secret_production" {
+  description = "JWT secret for production authentication (generate with: openssl rand -base64 32)"
   type        = string
   sensitive   = true
 }
 
-variable "encryption_key" {
-  description = "Encryption key for sensitive data (generate with: openssl rand -base64 32)"
+variable "jwt_secret_preview" {
+  description = "JWT secret for preview/development authentication (generate with: openssl rand -base64 32)"
+  type        = string
+  sensitive   = true
+}
+
+variable "encryption_key_production" {
+  description = "Encryption key for production sensitive data (generate with: openssl rand -hex 32)"
+  type        = string
+  sensitive   = true
+}
+
+variable "encryption_key_preview" {
+  description = "Encryption key for preview/development sensitive data (generate with: openssl rand -hex 32)"
   type        = string
   sensitive   = true
 }

@@ -47,11 +47,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Guard against destructive operations in production
+        if: ${{ github.event.inputs.environment == 'production' && (github.event.inputs.operation == 'nuke' || github.event.inputs.operation == 'seed') }}
+        run: |
+          echo "❌ HIPAA VIOLATION: Destructive or demo seed operation '${{ github.event.inputs.operation }}' is strictly prohibited on production!"
+          exit 1
+
       - name: Set environment variables
         run: |
           if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+            echo "NODE_ENV=production" >> $GITHUB_ENV
+            echo "ENVIRONMENT=production" >> $GITHUB_ENV
             echo "DATABASE_URL=${{ secrets.PROD_DATABASE_URL }}" >> $GITHUB_ENV
           else
+            echo "NODE_ENV=staging" >> $GITHUB_ENV
+            echo "ENVIRONMENT=staging" >> $GITHUB_ENV
             echo "DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }}" >> $GITHUB_ENV
           fi
 
@@ -68,9 +78,17 @@ jobs:
               npm run db:migrate:status
               ;;
             "seed")
+              if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+                echo "❌ HIPAA VIOLATION: Cannot seed demo data in production"
+                exit 1
+              fi
               npm run db:seed
               ;;
             "nuke")
+              if [ "${{ github.event.inputs.environment }}" = "production" ] || [ "$NODE_ENV" = "production" ]; then
+                echo "❌ HIPAA VIOLATION: Cannot nuke production database"
+                exit 1
+              fi
               echo "⚠️  WARNING: This will destroy all data in ${{ github.event.inputs.environment }}"
               npm run db:nuke
               ;;

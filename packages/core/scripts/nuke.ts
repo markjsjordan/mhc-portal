@@ -9,26 +9,23 @@ import dotenv from "dotenv";
 import knex, { Knex } from 'knex';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-// import * as readline from 'readline';
+import { EnvironmentIsolationService } from '../src/security/environment-isolation.js';
 
 dotenv.config({ path: '.env', quiet: true });
 
-// async function confirmNuke(): Promise<boolean> {
-//   const rl = readline.createInterface({
-//     input: process.stdin,
-//     output: process.stdout
-//   });
-
-//   return new Promise((resolve) => {
-//     rl.question('⚠️  WARNING: This will DROP ALL TABLES! Type "NUKE" to confirm: ', (answer) => {
-//       rl.close();
-//       resolve(answer === 'NUKE');
-//     });
-//   });
-// }
+export function assertCanNukeDatabase(): void {
+  EnvironmentIsolationService.assertNotProductionForDestructiveOperation('nuke');
+}
 
 async function nukeDatabase() {
   console.log('💣 Database Nuke Script\n');
+
+  try {
+    assertCanNukeDatabase();
+  } catch (error) {
+    console.error(`❌ ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
 
   // Check for DATABASE_URL first (cloud/Vercel deployments)
   const databaseUrl = process.env.DATABASE_URL;
