@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface CustomLoginFormProps {
@@ -255,18 +255,6 @@ export const CustomLoginForm: React.FC<CustomLoginFormProps> = ({ onLoginSuccess
           </div>
         </form>
       </CardContent>
-
-      <CardFooter className="flex-col border-t pt-6">
-        <p className="text-center text-sm text-muted-foreground">
-          Don't have an account?{' '}
-          <a
-            href="/signup"
-            className="text-primary hover:underline font-medium"
-          >
-            Sign up here
-          </a>
-        </p>
-      </CardFooter>
     </Card>
   );
 };

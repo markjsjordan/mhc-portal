@@ -14,7 +14,6 @@ import { Dashboard } from './app/pages/Dashboard';
 import { DashboardSelector } from './app/pages/DashboardSelector';
 import { Login } from './app/pages/Login';
 import { Logout } from './app/pages/Logout';
-import { Signup } from './app/pages/Signup';
 import { Onboarding } from './app/pages/Onboarding';
 import { NotFound } from './app/pages/NotFound';
 import { DemoModeBar } from './demo';
@@ -171,11 +170,7 @@ function AppRoutes() {
       />
       <Route
         path="/signup"
-        element={
-          <PublicRoute>
-            <Signup />
-          </PublicRoute>
-        }
+        element={<Navigate to="/login" replace />}
       />
       <Route
         path="/accept-invite/:token"

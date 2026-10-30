@@ -311,14 +311,18 @@ describe('Login Page', () => {
     });
   });
 
-  it('should link to the signup page for new accounts', () => {
+  it('should not offer a self-service signup link', () => {
     render(
       <BrowserRouter>
         <Login />
       </BrowserRouter>
     );
 
-    const signupLink = screen.getByRole('link', { name: /sign up here/i });
-    expect(signupLink).toHaveAttribute('href', '/signup');
+    expect(
+      screen.queryByRole('link', { name: /sign up here/i })
+    ).not.toBeInTheDocument();
+    expect(
+      document.querySelector('a[href="/signup"]')
+    ).not.toBeInTheDocument();
   });
 });
