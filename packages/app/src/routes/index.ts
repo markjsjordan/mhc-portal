@@ -358,8 +358,18 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
   console.log('  ✓ Shift Matching & Assignment routes registered (with rate limiting)');
 
   // Demo routes (interactive demo system) - includes EVV clock-in/out
+  // Blocked in production unless DEMO_MODE === 'true'
   const demoRouter = createDemoRouter(db);
-  app.use('/api/demo', evvLimiter, demoRouter);
+  app.use('/api/demo', (_req, res, next) => {
+    if (process.env.NODE_ENV === 'production' && process.env.DEMO_MODE !== 'true') {
+      res.status(404).json({
+        success: false,
+        error: 'Not Found',
+      });
+      return;
+    }
+    next();
+  }, evvLimiter, demoRouter);
   console.log('  ✓ Demo routes registered (with EVV rate limiting)');
 
   // Analytics & Reporting routes

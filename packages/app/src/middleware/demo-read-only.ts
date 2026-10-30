@@ -8,11 +8,12 @@
  */
 
 import type { Request, Response, NextFunction } from 'express';
+import { JWTUtils } from '@folkcare/core';
 
 /**
  * Check if an email belongs to a demo account
  */
-function isDemoEmail(email: string | undefined): boolean {
+export function isDemoEmail(email: string | undefined): boolean {
   if (email === undefined || email === '') return false;
 
   // State-specific demo emails: user@tx.folkcare.example
@@ -32,7 +33,7 @@ function isDemoEmail(email: string | undefined): boolean {
  * Routes that are allowed even for demo users
  * These are either read operations or necessary for app functionality
  */
-const ALLOWED_ROUTES = [
+export const DEMO_WRITABLE_PATHS = [
   // Auth operations
   '/api/auth/login',
   '/api/auth/logout',
@@ -49,10 +50,35 @@ const ALLOWED_ROUTES = [
   '/api/signup',
   '/api/organizations/register',
   '/api/invitations/accept',
-
-  // Client operations (for client intake & onboarding workflows)
-  '/api/clients',
 ];
+
+const ALLOWED_ROUTES = DEMO_WRITABLE_PATHS;
+
+function resolveRequestEmail(req: Request): string | undefined {
+  const existingUser = (req as Request & { user?: { email?: string } }).user;
+  if (existingUser?.email !== undefined && existingUser.email !== '') {
+    return existingUser.email;
+  }
+
+  const authHeader =
+    typeof req.header === 'function'
+      ? req.header('Authorization') ?? req.headers?.['authorization']
+      : req.headers?.['authorization'];
+
+  if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.slice(7).trim();
+    if (token !== '') {
+      try {
+        const payload = JWTUtils.verifyAccessToken(token);
+        return payload.email;
+      } catch {
+        // Ignore invalid token here; route-level auth will reject it
+      }
+    }
+  }
+
+  return undefined;
+}
 
 /**
  * Middleware to enforce read-only mode for demo accounts
@@ -62,32 +88,45 @@ export function demoReadOnlyMiddleware(
   res: Response,
   next: NextFunction
 ): void {
-  // Get user from request (set by auth middleware)
-  const user = (req as Request & { user?: { email?: string } }).user;
+  if (process.env['DEMO_READ_ONLY'] === 'false') {
+    next();
+    return;
+  }
+
+  const email = resolveRequestEmail(req);
 
   // If no user or not a demo user, allow all operations
-  if (user === undefined || !isDemoEmail(user.email)) {
-    return next();
+  if (!isDemoEmail(email)) {
+    next();
+    return;
   }
 
   // Allow safe methods (GET, HEAD, OPTIONS)
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
-    return next();
+    next();
+    return;
   }
 
   // Allow specific routes that are necessary for app functionality
-  const path = req.path;
+  const rawUrl = (req as { originalUrl?: string }).originalUrl;
+  const path =
+    typeof rawUrl === 'string' && rawUrl !== ''
+      ? (rawUrl.split('?')[0] ?? req.path)
+      : req.path;
+
   if (ALLOWED_ROUTES.some((route) => path === route || path.startsWith(route + '/'))) {
-    return next();
+    next();
+    return;
   }
 
   // Allow team member invitation management (URL generation, resend, revoke) for demo admins
   if (/^\/api\/organizations\/[^/]+\/invitations(?:\/|$)/.test(path)) {
-    return next();
+    next();
+    return;
   }
 
   // Block all other write operations for demo users
-  console.warn(`🛡️  Blocked write operation for demo user: ${req.method} ${path} (${user.email})`);
+  console.warn(`🛡️  Blocked write operation for demo user: ${req.method} ${path} (${email})`);
 
   res.status(403).json({
     error: 'Demo Mode',

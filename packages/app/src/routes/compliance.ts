@@ -5,6 +5,7 @@
  * Supports the Compliance Autopilot feature that proactively monitors regulatory deadlines.
  */
 
+import { timingSafeEqual } from 'node:crypto';
 import { Router, Request, Response } from 'express';
 import {
   Database,
@@ -606,28 +607,35 @@ export function createComplianceRouter(db: Database): Router {
         const authHeader = req.headers['authorization'];
         const cronSecret = process.env['CRON_SECRET'];
 
-        // If CRON_SECRET is set, verify it. If not set, only allow from Vercel cron.
-        if (cronSecret !== undefined && cronSecret !== '') {
-          if (authHeader !== `Bearer ${cronSecret}`) {
-            res.status(401).json({
-              success: false,
-              error: 'Unauthorized: Invalid cron secret',
-            });
-            return;
-          }
-        } else {
-          // Fallback: Check for Vercel cron user-agent in production
-          const userAgent = req.headers['user-agent'] ?? '';
-          const isVercelCron = userAgent.toLowerCase().includes('vercel-cron');
-          const isLocalDev = process.env['NODE_ENV'] === 'development';
+        // Require a non-empty CRON_SECRET verified with timingSafeEqual (no User-Agent bypass)
+        if (cronSecret === undefined || cronSecret.trim() === '') {
+          res.status(401).json({
+            success: false,
+            error: 'Unauthorized: CRON_SECRET is not configured',
+          });
+          return;
+        }
 
-          if (!isVercelCron && !isLocalDev) {
-            res.status(401).json({
-              success: false,
-              error: 'Unauthorized: Cron endpoint only callable by Vercel cron or with CRON_SECRET',
-            });
-            return;
-          }
+        if (typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
+          res.status(401).json({
+            success: false,
+            error: 'Unauthorized: Invalid cron secret',
+          });
+          return;
+        }
+
+        const expectedBuffer = Buffer.from(`Bearer ${cronSecret}`, 'utf8');
+        const providedBuffer = Buffer.from(authHeader, 'utf8');
+
+        if (
+          expectedBuffer.length !== providedBuffer.length ||
+          !timingSafeEqual(expectedBuffer, providedBuffer)
+        ) {
+          res.status(401).json({
+            success: false,
+            error: 'Unauthorized: Invalid cron secret',
+          });
+          return;
         }
 
         console.log('[Compliance Cron] Starting scheduled compliance scan');
