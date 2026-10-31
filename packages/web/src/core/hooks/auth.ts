@@ -3,8 +3,10 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { AuthState, User } from '../types/auth';
 
 interface AuthStore extends AuthState {
+  isInitializing: boolean;
   setAuth: (user: User, token: string) => void;
   clearAuth: () => void;
+  setInitializing: (isInitializing: boolean) => void;
 }
 
 /**
@@ -57,13 +59,15 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       token: null,
       isAuthenticated: false,
+      isInitializing: true,
       setAuth: (user, token) =>
-        set({ user, token, isAuthenticated: true }),
+        set({ user, token, isAuthenticated: true, isInitializing: false }),
       clearAuth: () => {
         // HIPAA-008: Purge IndexedDB and WebCrypto encryption keys on logout
         import('../../db/index.js').then(({ resetDatabase }) => resetDatabase().catch(() => {})).catch(() => {});
-        set({ user: null, token: null, isAuthenticated: false });
+        set({ user: null, token: null, isAuthenticated: false, isInitializing: false });
       },
+      setInitializing: (isInitializing: boolean) => set({ isInitializing }),
     }),
     {
       name: 'auth-storage',
@@ -74,13 +78,59 @@ export const useAuthStore = create<AuthStore>()(
 );
 
 export const useAuth = () => {
-  const { user, token, isAuthenticated, setAuth, clearAuth } = useAuthStore();
+  const { user, token, isAuthenticated, isInitializing, setAuth, clearAuth, setInitializing } = useAuthStore();
 
   return {
     user,
     token,
     isAuthenticated,
+    isInitializing,
     login: setAuth,
     logout: clearAuth,
+    setInitializing,
   };
 };
+
+/**
+ * Attempt to restore an active session via the HttpOnly refresh token cookie.
+ * If successful, updates useAuthStore with the refreshed user & access token.
+ * If it fails (e.g. 401 or network error), marks isInitializing as false.
+ */
+export async function refreshAuthSession(baseUrl: string = import.meta.env.VITE_API_BASE_URL || ''): Promise<boolean> {
+  const store = useAuthStore.getState();
+
+  // If already authenticated with token, no need to refresh
+  if (store.isAuthenticated && store.token) {
+    store.setInitializing(false);
+    return true;
+  }
+
+  try {
+    const response = await fetch(`${baseUrl}/api/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+      store.clearAuth();
+      return false;
+    }
+
+    const data = await response.json();
+    const token = data.data?.accessToken ?? data.accessToken;
+    const user = data.data?.user ?? data.user ?? store.user;
+
+    if (token && user) {
+      store.setAuth(user, token);
+      return true;
+    }
+
+    store.clearAuth();
+    return false;
+  } catch {
+    store.setInitializing(false);
+    return false;
+  }
+}
+

@@ -31,6 +31,7 @@ export interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
+  isInitializing?: boolean;
 }
 
 export interface LoginCredentials {

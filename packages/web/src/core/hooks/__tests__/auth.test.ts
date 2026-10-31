@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useAuthStore, useAuth } from '../auth';
+import { useAuthStore, useAuth, refreshAuthSession } from '../auth';
 import type { User } from '../../types/auth';
 
 describe('Auth Hooks', () => {
@@ -188,6 +188,43 @@ describe('Auth Hooks', () => {
       expect(result.current.user?.roles).toHaveLength(3);
       expect(result.current.user?.roles).toContain('ADMIN');
       expect(result.current.user?.roles).toContain('COORDINATOR');
+    });
+  });
+
+  describe('refreshAuthSession', () => {
+    it('should set auth state when refresh endpoint returns token and user', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: {
+            accessToken: 'refreshed-token-999',
+            user: mockUser,
+          },
+        }),
+      });
+      globalThis.fetch = mockFetch;
+
+      const success = await refreshAuthSession('http://test-api');
+      expect(success).toBe(true);
+      expect(useAuthStore.getState().isAuthenticated).toBe(true);
+      expect(useAuthStore.getState().token).toBe('refreshed-token-999');
+      expect(useAuthStore.getState().user).toEqual(mockUser);
+      expect(useAuthStore.getState().isInitializing).toBe(false);
+    });
+
+    it('should clear auth and mark initializing false when refresh fails', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+      });
+      globalThis.fetch = mockFetch;
+
+      const success = await refreshAuthSession('http://test-api');
+      expect(success).toBe(false);
+      expect(useAuthStore.getState().isAuthenticated).toBe(false);
+      expect(useAuthStore.getState().token).toBeNull();
+      expect(useAuthStore.getState().isInitializing).toBe(false);
     });
   });
 });
