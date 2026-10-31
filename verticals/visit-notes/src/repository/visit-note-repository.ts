@@ -1,3 +1,4 @@
+import { resolveFieldEncryptionService, isEncryptedEnvelope } from '@folkcare/core';
 /**
  * Visit Note Repository
  *
@@ -53,12 +54,21 @@ export class VisitNoteRepository {
       input.organizationId,
       input.caregiverId,
       input.noteType ?? 'GENERAL',
-      input.noteText,
-      input.noteHtml ?? null,
+      (() => {
+        const s = resolveFieldEncryptionService();
+        return s && input.noteText ? s.encrypt(input.noteText) : input.noteText;
+      })(),
+      (() => {
+        const s = resolveFieldEncryptionService();
+        return s && input.noteHtml ? s.encrypt(input.noteHtml) : (input.noteHtml ?? null);
+      })(),
       input.templateId ?? null,
       input.activitiesPerformed ? JSON.stringify(input.activitiesPerformed) : '[]',
       input.clientMood ?? null,
-      input.clientConditionNotes ?? null,
+      (() => {
+        const s = resolveFieldEncryptionService();
+        return s && input.clientConditionNotes ? s.encrypt(input.clientConditionNotes) : (input.clientConditionNotes ?? null);
+      })(),
       input.isIncident ?? false,
       input.incidentSeverity ?? null,
       input.incidentDescription ?? null,
@@ -486,12 +496,33 @@ export class VisitNoteRepository {
       organizationId: row.organization_id,
       caregiverId: row.caregiver_id,
       noteType: row.note_type,
-      noteText: row.note_text,
-      noteHtml: row.note_html,
+      noteText: (() => {
+        const v = row.note_text;
+        if (v && isEncryptedEnvelope(v)) {
+          const s = resolveFieldEncryptionService();
+          return s ? s.decrypt(v) : v;
+        }
+        return v;
+      })(),
+      noteHtml: (() => {
+        const v = row.note_html;
+        if (v && isEncryptedEnvelope(v)) {
+          const s = resolveFieldEncryptionService();
+          return s ? s.decrypt(v) : v;
+        }
+        return v;
+      })(),
       templateId: row.template_id,
       activitiesPerformed: row.activities_performed ?? [],
       clientMood: row.client_mood,
-      clientConditionNotes: row.client_condition_notes,
+      clientConditionNotes: (() => {
+        const v = row.client_condition_notes;
+        if (v && isEncryptedEnvelope(v)) {
+          const s = resolveFieldEncryptionService();
+          return s ? s.decrypt(v) : v;
+        }
+        return v;
+      })(),
       isIncident: row.is_incident,
       incidentSeverity: row.incident_severity,
       incidentDescription: row.incident_description,

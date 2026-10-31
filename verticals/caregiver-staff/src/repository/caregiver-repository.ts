@@ -12,6 +12,13 @@ export class CaregiverRepository extends Repository<Caregiver> {
       database,
       enableAudit: true,
       enableSoftDelete: true,
+      encryption: {
+        text: ['ssn'],
+        json: ['payroll_info'],
+        blindIndex: {
+          ssn: 'ssn_bidx',
+        },
+      },
     });
   }
 
@@ -891,7 +898,31 @@ export class CaregiverRepository extends Repository<Caregiver> {
       updatedAt: row['updated_at'] as Date
     }));
   }
+  /**
+   * Find caregiver by SSN using blind index (HIPAA-007)
+   */
+  async findBySSN(organizationId: string, ssn: string): Promise<Caregiver | null> {
+    const service = this.encryption ? (await import('@folkcare/core')).resolveFieldEncryptionService() : null;
+    if (service) {
+      const bidx = service.blindIndex(ssn);
+      const query = `
+        SELECT * FROM caregivers
+        WHERE organization_id = $1 AND (ssn_bidx = $2 OR ssn = $3) AND deleted_at IS NULL
+        LIMIT 1
+      `;
+      const result = await this.database.query(query, [organizationId, bidx, ssn]);
+      return result.rows[0] ? this.hydrate(result.rows[0] as Record<string, unknown>) : null;
+    }
+    const query = `
+      SELECT * FROM caregivers
+      WHERE organization_id = $1 AND ssn = $2 AND deleted_at IS NULL
+      LIMIT 1
+    `;
+    const result = await this.database.query(query, [organizationId, ssn]);
+    return result.rows[0] ? this.hydrate(result.rows[0] as Record<string, unknown>) : null;
+  }
 }
+
 
 interface ServiceAuthorization {
   id: string;

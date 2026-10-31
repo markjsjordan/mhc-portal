@@ -24,6 +24,11 @@ const envSchema = z.object({
   DB_PASSWORD: z.string().min(1).optional(),
   DB_SSL: z.string().optional().transform(val => val === 'true'),
   
+  // HIPAA-007: Encryption at Rest & Blind Indexing
+  ENCRYPTION_KEY: z.string().min(32, 'ENCRYPTION_KEY must be at least 32 bytes (or 64 hex characters)').optional(),
+  ENCRYPTION_KEY_ID: z.string().default('default'),
+  BLIND_INDEX_KEY: z.string().min(32, 'BLIND_INDEX_KEY must be at least 32 bytes (or 64 hex characters)').optional(),
+
   // Authentication
   JWT_SECRET: z.string().min(32, 'JWT secret must be at least 32 characters for security'),
   JWT_ACCESS_EXPIRATION: z.string().default('15m'),

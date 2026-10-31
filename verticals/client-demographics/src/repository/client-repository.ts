@@ -12,6 +12,14 @@ export class ClientRepository extends Repository<Client> {
       database,
       enableAudit: true,
       enableSoftDelete: true,
+      encryption: {
+        text: ['ssn', 'medical_record_number'],
+        json: ['insurance'],
+        blindIndex: {
+          ssn: 'ssn_bidx',
+          medical_record_number: 'medical_record_number_bidx',
+        },
+      },
     });
   }
 
@@ -588,4 +596,53 @@ export class ClientRepository extends Repository<Client> {
     const result = await this.database.query(query, [organizationId]);
     return result.rows as Array<{ id: string; name: string; code?: string; status?: string }>;
   }
+
+  /**
+   * Find client by SSN using blind index (HIPAA-007)
+   */
+  async findBySSN(organizationId: string, ssn: string): Promise<Client | null> {
+    const service = this.encryption ? (await import('@folkcare/core')).resolveFieldEncryptionService() : null;
+    if (service) {
+      const bidx = service.blindIndex(ssn);
+      const query = `
+        SELECT * FROM clients
+        WHERE organization_id = $1 AND (ssn_bidx = $2 OR ssn = $3) AND deleted_at IS NULL
+        LIMIT 1
+      `;
+      const result = await this.database.query(query, [organizationId, bidx, ssn]);
+      return result.rows[0] ? this.hydrate(result.rows[0] as Record<string, unknown>) : null;
+    }
+    const query = `
+      SELECT * FROM clients
+      WHERE organization_id = $1 AND ssn = $2 AND deleted_at IS NULL
+      LIMIT 1
+    `;
+    const result = await this.database.query(query, [organizationId, ssn]);
+    return result.rows[0] ? this.hydrate(result.rows[0] as Record<string, unknown>) : null;
+  }
+
+  /**
+   * Find client by Medical Record Number using blind index (HIPAA-007)
+   */
+  async findByMedicalRecordNumber(organizationId: string, mrn: string): Promise<Client | null> {
+    const service = this.encryption ? (await import('@folkcare/core')).resolveFieldEncryptionService() : null;
+    if (service) {
+      const bidx = service.blindIndex(mrn);
+      const query = `
+        SELECT * FROM clients
+        WHERE organization_id = $1 AND (medical_record_number_bidx = $2 OR medical_record_number = $3) AND deleted_at IS NULL
+        LIMIT 1
+      `;
+      const result = await this.database.query(query, [organizationId, bidx, mrn]);
+      return result.rows[0] ? this.hydrate(result.rows[0] as Record<string, unknown>) : null;
+    }
+    const query = `
+      SELECT * FROM clients
+      WHERE organization_id = $1 AND medical_record_number = $2 AND deleted_at IS NULL
+      LIMIT 1
+    `;
+    const result = await this.database.query(query, [organizationId, mrn]);
+    return result.rows[0] ? this.hydrate(result.rows[0] as Record<string, unknown>) : null;
+  }
+
 }

@@ -1,3 +1,4 @@
+import { resolveFieldEncryptionService, isEncryptedEnvelope } from '@folkcare/core';
 /**
  * EVV Repository - Data access layer for time tracking and verification
  */
@@ -137,7 +138,12 @@ export class EVVRepository {
       record.serviceTypeCode,
       record.serviceTypeName,
       record.clientName,
-      record.clientMedicaidId,
+      (() => {
+        const v = record.clientMedicaidId;
+        if (!v) return v;
+        const s = resolveFieldEncryptionService();
+        return s ? s.encrypt(v) : v;
+      })(),
       record.caregiverName,
       record.caregiverEmployeeId,
       record.caregiverNationalProviderId,
@@ -697,7 +703,15 @@ export class EVVRepository {
     };
 
     const optionalFields = {
-      clientMedicaidId: row.client_medicaid_id,
+      clientMedicaidId: (() => {
+      const v = row.client_medicaid_id;
+      if (!v) return v;
+      if (isEncryptedEnvelope(v)) {
+        const s = resolveFieldEncryptionService();
+        return s ? s.decrypt(v) : v;
+      }
+      return v;
+    })(),
       caregiverNationalProviderId: row.caregiver_npi,
       clockOutTime: row.clock_out_time,
       totalDuration: row.total_duration,

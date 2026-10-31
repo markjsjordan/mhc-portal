@@ -1,3 +1,4 @@
+import { resolveFieldEncryptionService, isEncryptedEnvelope } from '@folkcare/core';
 /**
  * Clinical Documentation Repository
  * 
@@ -59,11 +60,26 @@ export class ClinicalRepository {
         input.noteType,
         input.serviceDate,
         now, // documented_at
-        input.subjectiveNotes || null,
-        input.objectiveNotes || null,
-        input.assessment || null,
-        input.plan || null,
-        input.narrativeNote || null,
+        (() => {
+          const s = resolveFieldEncryptionService();
+          return input.subjectiveNotes ? (s ? s.encrypt(input.subjectiveNotes) : input.subjectiveNotes) : null;
+        })(),
+        (() => {
+          const s = resolveFieldEncryptionService();
+          return input.objectiveNotes ? (s ? s.encrypt(input.objectiveNotes) : input.objectiveNotes) : null;
+        })(),
+        (() => {
+          const s = resolveFieldEncryptionService();
+          return input.assessment ? (s ? s.encrypt(input.assessment) : input.assessment) : null;
+        })(),
+        (() => {
+          const s = resolveFieldEncryptionService();
+          return input.plan ? (s ? s.encrypt(input.plan) : input.plan) : null;
+        })(),
+        (() => {
+          const s = resolveFieldEncryptionService();
+          return input.narrativeNote ? (s ? s.encrypt(input.narrativeNote) : input.narrativeNote) : null;
+        })(),
         JSON.stringify(input.interventionsPerformed || []),
         input.patientResponse || null,
         input.safetyIncidents || false,
@@ -74,7 +90,7 @@ export class ClinicalRepository {
         now, // signed_at (will be updated on actual signature)
         'DRAFT', // status
         input.requiresCoSign || false,
-        false, // is_encrypted
+        resolveFieldEncryptionService() !== null, // is_encrypted
         now, // created_at
         createdBy,
         now, // updated_at
@@ -374,11 +390,46 @@ export class ClinicalRepository {
       noteType: row.note_type,
       serviceDate: row.service_date,
       documentedAt: row.documented_at,
-      subjectiveNotes: row.subjective_notes,
-      objectiveNotes: row.objective_notes,
-      assessment: row.assessment,
-      plan: row.plan,
-      narrativeNote: row.narrative_note,
+      subjectiveNotes: (() => {
+        const v = row.subjective_notes;
+        if (v && isEncryptedEnvelope(v)) {
+          const s = resolveFieldEncryptionService();
+          return s ? s.decrypt(v) : v;
+        }
+        return v;
+      })(),
+      objectiveNotes: (() => {
+        const v = row.objective_notes;
+        if (v && isEncryptedEnvelope(v)) {
+          const s = resolveFieldEncryptionService();
+          return s ? s.decrypt(v) : v;
+        }
+        return v;
+      })(),
+      assessment: (() => {
+        const v = row.assessment;
+        if (v && isEncryptedEnvelope(v)) {
+          const s = resolveFieldEncryptionService();
+          return s ? s.decrypt(v) : v;
+        }
+        return v;
+      })(),
+      plan: (() => {
+        const v = row.plan;
+        if (v && isEncryptedEnvelope(v)) {
+          const s = resolveFieldEncryptionService();
+          return s ? s.decrypt(v) : v;
+        }
+        return v;
+      })(),
+      narrativeNote: (() => {
+        const v = row.narrative_note;
+        if (v && isEncryptedEnvelope(v)) {
+          const s = resolveFieldEncryptionService();
+          return s ? s.decrypt(v) : v;
+        }
+        return v;
+      })(),
       interventionsPerformed: row.interventions_performed || [],
       patientResponse: row.patient_response,
       safetyIncidents: row.safety_incidents,

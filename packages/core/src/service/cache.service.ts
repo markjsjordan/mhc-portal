@@ -1,3 +1,4 @@
+import { resolveFieldEncryptionService, isEncryptedEnvelope } from '../security/field-encryption.js';
 import { createClient, type RedisClientType } from 'redis';
 
 export interface CacheConfig {
@@ -83,6 +84,11 @@ export class CacheService {
         if (value === null) {
           return null;
         }
+        const encryptionService = resolveFieldEncryptionService();
+        if (encryptionService !== null && isEncryptedEnvelope(value)) {
+          const decrypted = encryptionService.decrypt(value);
+          return JSON.parse(decrypted) as T;
+        }
         return JSON.parse(value) as T;
       } else {
         // Memory cache fallback
@@ -109,7 +115,10 @@ export class CacheService {
       const ttlSeconds = ttl ?? this.config?.ttl ?? 300;
 
       if (this.isRedisAvailable && this.redis !== null) {
-        await this.redis.set(key, JSON.stringify(value), { EX: ttlSeconds });
+        const rawJson = JSON.stringify(value);
+        const encryptionService = resolveFieldEncryptionService();
+        const payloadToStore = encryptionService !== null ? encryptionService.encrypt(rawJson) : rawJson;
+        await this.redis.set(key, payloadToStore, { EX: ttlSeconds });
       } else {
         // Memory cache fallback
         const expiresAt = Date.now() + ttlSeconds * 1000;
