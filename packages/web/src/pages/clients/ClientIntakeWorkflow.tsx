@@ -5,6 +5,15 @@ import { useCreateClient, useClients, useUpdateClient, useBranches } from '@/ver
 import type { CreateClientInput, UpdateClientInput } from '@/verticals/client-demographics/types';
 import { useAuth } from '@/core/hooks';
 import { US_STATES } from '@/core/constants/us-states';
+
+// Intake Step 1 offers the 50 U.S. states only (no DC, no territories).
+// Derived from the shared list so codes stay in one source of truth.
+const US_50_STATE_CODES = [
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
+  'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
+  'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY',
+] as const;
+const INTAKE_STATES = US_STATES.filter((s) => (US_50_STATE_CODES as readonly string[]).includes(s.code));
 import type { Client } from '@/verticals/client-demographics/types/client';
 import { Button } from '@/components/ui/button.js';
 import { Input } from '@/components/ui/input.js';
@@ -647,7 +656,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                       <SelectValue placeholder="Select State" />
                     </SelectTrigger>
                     <SelectContent>
-                      {US_STATES.map((s) => (
+                      {INTAKE_STATES.map((s) => (
                         <SelectItem key={s.code} value={s.code}>
                           {s.name} ({s.code})
                         </SelectItem>
