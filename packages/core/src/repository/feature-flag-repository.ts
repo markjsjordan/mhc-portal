@@ -114,7 +114,7 @@ export class FeatureFlagRepository implements IFeatureFlagRepository {
     return this.mapRowToFeatureFlag(result.rows[0]!);
   }
 
-  // eslint-disable-next-line sonarjs/cognitive-complexity -- Complex update logic with many optional fields
+   
   async updateFeatureFlag(
     id: UUID,
     request: UpdateFeatureFlagRequest,

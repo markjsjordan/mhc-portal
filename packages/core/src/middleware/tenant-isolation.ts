@@ -70,7 +70,7 @@ export class TenantIsolationMiddleware {
         }
 
         // Get resource ID from params
-        // eslint-disable-next-line security/detect-object-injection
+         
         const params = req.params as Record<string, string>;
         // eslint-disable-next-line security/detect-object-injection
         const resourceId = params[paramName];

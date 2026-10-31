@@ -92,16 +92,16 @@ describe('Input Sanitization Middleware', () => {
       const response = await request(app)
         .post('/echo')
         .send({
-          // eslint-disable-next-line sonarjs/code-eval
+           
           link: '<a href="javascript:alert(1)">Click</a>',
-          // eslint-disable-next-line sonarjs/code-eval
+           
           redirect: 'javascript:void(0)'
         })
         .expect(200);
 
-      // eslint-disable-next-line sonarjs/code-eval
+       
       expect(response.body.link).not.toContain('javascript:');
-      // eslint-disable-next-line sonarjs/code-eval
+       
       expect(response.body.redirect).not.toContain('javascript:');
     });
   });

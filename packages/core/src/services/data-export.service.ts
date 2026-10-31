@@ -505,7 +505,7 @@ export class DataExportService {
   /**
    * Export audit logs with filtering options for compliance and legal purposes
    */
-  // eslint-disable-next-line sonarjs/cognitive-complexity
+   
   async exportAuditLogs(filters: AuditLogFilters): Promise<AuditLogExportResult> {
     const {
       organizationId,

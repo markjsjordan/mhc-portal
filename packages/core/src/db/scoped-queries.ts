@@ -108,7 +108,7 @@ export async function scopedUpdate(
   const finalWhereClause = `${whereClause} AND organization_id = $${orgIdParam}`;
   const finalParams = [...allUpdates, ...whereParams, context.organizationId];
 
-  // eslint-disable-next-line sonarjs/sql-queries
+   
   const query = `UPDATE ${tableName} SET ${finalSetClause} WHERE ${finalWhereClause}`;
 
   return await db.query(query, finalParams);
@@ -148,7 +148,7 @@ export async function scopedDelete(
   const now = new Date();
   const params = [now, context.userId, ...whereParams, context.organizationId];
   
-  // eslint-disable-next-line sonarjs/sql-queries
+   
   const query = `
     UPDATE ${tableName}
     SET deleted_at = $1, deleted_by = $2
@@ -179,7 +179,7 @@ export async function scopedHardDelete(
   whereParams: unknown[] = []
 ): Promise<QueryResult> {
   const params = [...whereParams, context.organizationId];
-  // eslint-disable-next-line sonarjs/sql-queries
+   
   const query = `DELETE FROM ${tableName} WHERE ${whereClause} AND organization_id = $${params.length}`;
 
   return await db.query(query, params);
@@ -229,7 +229,7 @@ export async function scopedInsert<T extends Record<string, unknown> = Record<st
   const values = Object.values(fullData);
   const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
 
-  // eslint-disable-next-line sonarjs/sql-queries
+   
   const query = `
     INSERT INTO ${tableName} (${columns.join(', ')})
     VALUES (${placeholders})
@@ -301,7 +301,7 @@ export async function scopedCount(
     ? `WHERE ${whereClause} AND organization_id = $${params.length} AND deleted_at IS NULL`
     : `WHERE organization_id = $${params.length} AND deleted_at IS NULL`;
 
-  // eslint-disable-next-line sonarjs/sql-queries
+   
   const query = `SELECT COUNT(*) as count FROM ${tableName} ${where}`;
   const result = await db.query<{ count: string }>(query, params);
   
@@ -326,7 +326,7 @@ export async function scopedExists(
   whereParams: unknown[] = []
 ): Promise<boolean> {
   const params = [...whereParams, context.organizationId];
-  // eslint-disable-next-line sonarjs/sql-queries
+   
   const query = `
     SELECT EXISTS(
       SELECT 1 FROM ${tableName} 

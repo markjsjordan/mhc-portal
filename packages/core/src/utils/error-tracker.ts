@@ -91,7 +91,7 @@ export function initializeErrorTracking(): void {
       const integrations: unknown[] = [];
       
       // Only add profiling integration if available (server-side)
-        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions, sonarjs/cognitive-complexity
+        // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
       if (nodeProfilingIntegration && typeof globalThis === 'object' && 'window' in globalThis === false) {
         integrations.push(nodeProfilingIntegration());
       }
