@@ -46,23 +46,24 @@ const initRedis = async (): Promise<void> => {
       };
     }
 
-    redisClient = Redis.createClient(clientOptions);
+    const client = Redis.createClient(clientOptions);
 
-    redisClient.on('error', (err) => {
+    client.on('error', (err) => {
       console.error('Redis rate limiting error:', err);
     });
 
-    redisClient.on('connect', () => {
+    client.on('connect', () => {
       console.log(
         `Redis connected successfully for rate limiting (${isUpstash ? 'Upstash' : 'Local'})`
       );
     });
 
-    redisClient.on('reconnecting', () => {
+    client.on('reconnecting', () => {
       console.log('Redis reconnecting for rate limiting...');
     });
 
-    await redisClient.connect();
+    await client.connect();
+    redisClient = client;
     console.log('✅ Redis rate limiting initialized');
   } catch (error) {
     console.error('Failed to connect to Redis for rate limiting:', error);
@@ -76,9 +77,9 @@ initRedis().catch((err) => {
   console.warn('Top-level Redis rate-limiting initialization deferred/failed:', err);
 });
 
-// Helper function to get Redis store if available
+// Helper function to get Redis store if available (safe lazy evaluation)
 const getRedisStore = (prefix: string): RedisStore | undefined => {
-  if (redisClient !== null) {
+  if (redisClient !== null && (redisClient as any).isReady) {
     return new RedisStore({
       sendCommand: (...args: string[]) => redisClient!.sendCommand(args),
       prefix,
@@ -122,8 +123,8 @@ export const generalApiLimiter = rateLimit({
 // Generous limit for demo environment with frequent role-switching and testing
 // Only counts failed login attempts (skipSuccessfulRequests: true)
 export const authLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 50, // High limit for demo testing and role switching
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // HIPAA-012: Enforce max 10 failed login attempts per 15 minutes
   skipSuccessfulRequests: true, // Don't count successful requests
   standardHeaders: true,
   legacyHeaders: false,

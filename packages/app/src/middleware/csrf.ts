@@ -73,7 +73,8 @@ export const configureCsrfProtection = (app: Express): void => {
     }
 
     // Skip CSRF for mobile API or Bearer token authenticated API requests (uses JWT)
-    if (req.headers['x-mobile-app'] !== undefined || req.headers.authorization?.startsWith('Bearer ') === true) {
+    // HIPAA-012: Never trust client-spoofable X-Mobile-App header for CSRF bypass
+    if (req.headers.authorization?.startsWith('Bearer ') === true) {
       return next();
     }
 
