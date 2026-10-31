@@ -310,8 +310,8 @@ export abstract class Repository<T extends Entity> {
       operation,
       JSON.stringify(safeChanges),
       JSON.stringify(safeSnapshot),
-      null, // IP address would come from HTTP context
-      null, // User agent would come from HTTP context
+      context.ipAddress ?? null,
+      context.userAgent ?? null
     ]);
   }
 

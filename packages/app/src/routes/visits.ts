@@ -1501,7 +1501,7 @@ export function createVisitRouter(db: Database): Router {
       // If compliance was overridden, log the override for audit trail
       if (complianceOverridden) {
         await db.query(
-          `INSERT INTO audit_logs (
+          `INSERT INTO audit_events (
             organization_id, user_id, action, entity_type, entity_id,
             details, created_at
           ) VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
