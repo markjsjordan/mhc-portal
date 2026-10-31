@@ -820,11 +820,12 @@ export function createAuthRouter(db: Database): Router {
       const user = req.user;
       if (!user) return res.status(401).json({ success: false, error: 'Unauthorized' });
       const { MFAService } = await import('../../../core/src/service/mfa.service.js');
-      const mfaService = new MFAService(db as any);
+      const mfaService = new MFAService(db);
       const result = await mfaService.enrollMFA(user.userId, user.email);
       return res.json({ success: true, data: result });
-    } catch (err: any) {
-      return res.status(500).json({ success: false, error: err.message || 'MFA enrollment failed' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'MFA enrollment failed';
+      return res.status(500).json({ success: false, error: message || 'MFA enrollment failed' });
     }
   });
 
@@ -837,14 +838,15 @@ export function createAuthRouter(db: Database): Router {
         return res.status(400).json({ success: false, error: 'Verification token is required' });
       }
       const { MFAService } = await import('../../../core/src/service/mfa.service.js');
-      const mfaService = new MFAService(db as any);
+      const mfaService = new MFAService(db);
       const verified = await mfaService.verifyAndEnable(user.userId, token);
       if (!verified) {
         return res.status(400).json({ success: false, error: 'Invalid verification token' });
       }
       return res.json({ success: true, message: 'MFA verified and enabled successfully' });
-    } catch (err: any) {
-      return res.status(500).json({ success: false, error: err.message || 'MFA verification failed' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'MFA verification failed';
+      return res.status(500).json({ success: false, error: message || 'MFA verification failed' });
     }
   });
 

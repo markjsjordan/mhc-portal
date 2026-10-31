@@ -44,7 +44,7 @@ echo ""
 # 0. Clean install
 echo -e "${YELLOW}▶ 🧹 Clean install (npm ci)${NC}"
 ci_start=$(date +%s)
-if npm ci > /npm-ci.log 2>&1; then
+if npm ci > .turbo/npm-ci.log 2>&1; then
   ci_end=$(date +%s)
   echo -e "${GREEN}✅ npm ci completed${NC} ($((ci_end - ci_start))s)"
 else
@@ -52,7 +52,7 @@ else
   echo -e "${RED}❌ npm ci failed${NC} ($((ci_end - ci_start))s)"
   echo ""
   echo -e "${RED}Error output:${NC}"
-  tail -50 /npm-ci.log
+  tail -50 .turbo/npm-ci.log
   failed_checks=$((failed_checks + 1))
 fi
 echo ""
@@ -60,7 +60,7 @@ echo ""
 # 1. Lint
 echo -e "${YELLOW}▶ 🔍 Lint${NC}"
 lint_start=$(date +%s)
-if npx turbo run lint --force 2>&1 | tee /lint.log | tail -20; then
+if npx turbo run lint --force 2>&1 | tee .turbo/lint.log | tail -20; then
   lint_end=$(date +%s)
   echo -e "${GREEN}✅ Lint passed${NC} ($((lint_end - lint_start))s)"
 else
@@ -68,7 +68,7 @@ else
   echo -e "${RED}❌ Lint failed${NC} ($((lint_end - lint_start))s)"
   echo ""
   echo -e "${RED}Error output:${NC}"
-  tail -50 /lint.log
+  tail -50 .turbo/lint.log
   failed_checks=$((failed_checks + 1))
 fi
 echo ""
@@ -76,7 +76,7 @@ echo ""
 # 2. TypeCheck
 echo -e "${YELLOW}▶ 🔍 TypeCheck${NC}"
 typecheck_start=$(date +%s)
-if npx turbo run typecheck --force 2>&1 | tee /typecheck.log | tail -20; then
+if npx turbo run typecheck --force 2>&1 | tee .turbo/typecheck.log | tail -20; then
   typecheck_end=$(date +%s)
   echo -e "${GREEN}✅ TypeCheck passed${NC} ($((typecheck_end - typecheck_start))s)"
 else
@@ -84,7 +84,7 @@ else
   echo -e "${RED}❌ TypeCheck failed${NC} ($((typecheck_end - typecheck_start))s)"
   echo ""
   echo -e "${RED}Error output:${NC}"
-  tail -50 /typecheck.log
+  tail -50 .turbo/typecheck.log
   failed_checks=$((failed_checks + 1))
 fi
 echo ""
@@ -92,7 +92,7 @@ echo ""
 # 3. Tests
 echo -e "${YELLOW}▶ 🧪 Tests${NC}"
 test_start=$(date +%s)
-if npx turbo run test --force 2>&1 | tee /test.log | tail -20; then
+if npx turbo run test --force 2>&1 | tee .turbo/test.log | tail -20; then
   test_end=$(date +%s)
   echo -e "${GREEN}✅ Tests passed${NC} ($((test_end - test_start))s)"
 else
@@ -100,7 +100,7 @@ else
   echo -e "${RED}❌ Tests failed${NC} ($((test_end - test_start))s)"
   echo ""
   echo -e "${RED}Error output:${NC}"
-  tail -50 /test.log
+  tail -50 .turbo/test.log
   failed_checks=$((failed_checks + 1))
 fi
 echo ""
@@ -108,7 +108,7 @@ echo ""
 # 4. Build
 echo -e "${YELLOW}▶ 🏗️  Build${NC}"
 build_start=$(date +%s)
-if npx turbo run build --force 2>&1 | tee /build.log | tail -20; then
+if npx turbo run build --force 2>&1 | tee .turbo/build.log | tail -20; then
   build_end=$(date +%s)
   echo -e "${GREEN}✅ Build passed${NC} ($((build_end - build_start))s)"
 else
@@ -116,7 +116,7 @@ else
   echo -e "${RED}❌ Build failed${NC} ($((build_end - build_start))s)"
   echo ""
   echo -e "${RED}Error output:${NC}"
-  tail -50 /build.log
+  tail -50 .turbo/build.log
   failed_checks=$((failed_checks + 1))
 fi
 echo ""
