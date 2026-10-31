@@ -297,19 +297,19 @@ describe('Security Middleware Integration Tests', () => {
 
     describe('Spoofed Header Rejection & Bearer Exemption', () => {
       it('should NOT skip CSRF protection when spoofed x-mobile-app header is sent', async () => {
-        await request(app)
+        const response = await request(app)
           .post('/api/mobile/sync')
           .set('x-mobile-app', 'true')
-          .send({ data: 'mobile sync' })
-          .expect(403);
+          .send({ data: 'mobile sync' });
+        expect(response.status).toBe(403);
       });
 
       it('should require CSRF for requests with x-mobile-app without CSRF token or Bearer auth', async () => {
-        await request(app)
+        const response = await request(app)
           .post('/api/data')
           .set('x-mobile-app', '1')
-          .send({ test: 'data' })
-          .expect(403);
+          .send({ test: 'data' });
+        expect(response.status).toBe(403);
       });
     });
 
