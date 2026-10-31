@@ -201,9 +201,12 @@ function setupMiddleware(): void {
   // Metrics collection
   app.use(metricsMiddleware);
 
-  // Body parsing
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  // HIPAA-012: Apply rate limiting BEFORE body parsing to prevent pre-auth DoS
+  app.use('/api', generalApiLimiter);
+
+  // Body parsing with safe 256kb limit for pre-auth protection
+  app.use(express.json({ limit: '256kb' }));
+  app.use(express.urlencoded({ extended: true, limit: '256kb' }));
 
   // Input sanitization (prevent XSS)
   app.use(sanitizeInput);
@@ -221,9 +224,6 @@ function setupMiddleware(): void {
   // Demo read-only mode (blocks writes for demo accounts)
   // Must be after authContextMiddleware to have user info
   app.use(demoReadOnlyMiddleware);
-
-  // Apply general rate limiter to all API routes
-  app.use('/api', generalApiLimiter);
 }
 
 /**
