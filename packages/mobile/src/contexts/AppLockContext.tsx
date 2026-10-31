@@ -93,8 +93,9 @@ export function AppLockProvider({ children }: AppLockProviderProps) {
       const biometricEnabled = await authService.isBiometricEnabled();
 
       if (!biometricEnabled) {
-        // Biometric not enabled, unlock immediately
+        // HIPAA-009: When biometric is disabled, app lock requires re-authentication
         setIsLocked(false);
+        lastActiveTime.current = Date.now();
         return true;
       }
 

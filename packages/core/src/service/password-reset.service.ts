@@ -272,16 +272,10 @@ export class PasswordResetService {
       // Hash the new password
       const hashedPassword = PasswordUtils.hashPassword(newPassword);
 
-      // Update user's password
+      // Update user's password and increment token_version (HIPAA-009)
       await this.database.query(
-        'UPDATE users SET password = $1 WHERE id = $2',
+        'UPDATE users SET password_hash = $1, token_version = token_version + 1 WHERE id = $2',
         [hashedPassword, validation.userId]
-      );
-
-      // Invalidate all existing sessions by incrementing token_version
-      await this.database.query(
-        'UPDATE users SET token_version = token_version + 1 WHERE id = $1',
-        [validation.userId]
       );
 
       // Delete the used reset token (one-time use)

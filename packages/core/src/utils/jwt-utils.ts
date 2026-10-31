@@ -162,6 +162,7 @@ export class JWTUtils {
    static verifyAccessToken(token: string): TokenPayload {
     try {
       const decoded = jwt.verify(token, this.getAccessTokenSecret(), {
+        algorithms: ['HS256'],
         issuer: 'folkcare',
         audience: 'folkcare-api'
       });
@@ -216,6 +217,7 @@ export class JWTUtils {
    static verifyRefreshToken(token: string): RefreshTokenPayload {
     try {
       const decoded = jwt.verify(token, this.getRefreshTokenSecret(), {
+        algorithms: ['HS256'],
         issuer: 'folkcare',
         audience: 'folkcare-api'
       });

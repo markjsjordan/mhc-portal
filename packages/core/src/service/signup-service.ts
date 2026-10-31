@@ -299,7 +299,7 @@ export class SignupService {
       branchIds: [], // No branches initially
       roles,
       permissions,
-      tokenVersion: 0, // New users start at version 0
+      tokenVersion: 1, // HIPAA-009: tokenVersion starts at 1 (non-falsy)
     };
     
     return JWTUtils.generateTokenPair(tokenPayload);
