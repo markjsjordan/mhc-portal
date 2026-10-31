@@ -107,7 +107,7 @@ vars = { ENVIRONMENT = "staging", NODE_ENV = "staging" }
 # ════════════════════════════════════════════════════════════════
 [env.preview]
 name = "folkcare-api-preview"
-vars = { ENVIRONMENT = "preview", NODE_ENV = "development" }
+vars = { ENVIRONMENT = "preview", NODE_ENV = "preview" }
 
 # ════════════════════════════════════════════════════════════════
 # Environment: Development
