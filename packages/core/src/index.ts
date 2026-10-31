@@ -125,3 +125,6 @@ export * from './fhir/index.js';
 export * from './hl7/index.js';
 // Plugin System
 export * from './plugins/index.js';
+
+// HIPAA-007: Field Encryption & Blind Indexing
+export * from './security/field-encryption.js';

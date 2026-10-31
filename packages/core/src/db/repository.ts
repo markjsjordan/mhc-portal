@@ -17,12 +17,21 @@ import {
   ConflictError,
 } from '../types/base';
 import { Database } from './connection';
+import {
+  type FieldEncryptionSpec,
+  decryptRow,
+  encryptAuditChanges,
+  encryptAuditData,
+  encryptRow,
+} from '../security/field-encryption.js';
 
 export interface RepositoryConfig {
   tableName: string;
   database: Database;
   enableAudit?: boolean;
   enableSoftDelete?: boolean;
+  /** HIPAA-007: columns to transparently encrypt (AES-256-GCM) and blind-index */
+  encryption?: FieldEncryptionSpec;
 }
 
 /**
@@ -33,12 +42,19 @@ export abstract class Repository<T extends Entity> {
   protected database: Database;
   protected enableAudit: boolean;
   protected enableSoftDelete: boolean;
+  protected encryption: FieldEncryptionSpec;
 
   constructor(config: RepositoryConfig) {
     this.tableName = config.tableName;
     this.database = config.database;
     this.enableAudit = config.enableAudit ?? true;
     this.enableSoftDelete = config.enableSoftDelete ?? true;
+    this.encryption = config.encryption ?? {};
+  }
+
+  /** Decrypt a raw DB row (legacy plaintext passes through) and map to entity */
+  protected hydrate(row: Record<string, unknown>): T {
+    return this.mapRowToEntity(decryptRow(row, this.encryption));
   }
 
   /**
@@ -74,8 +90,9 @@ export abstract class Repository<T extends Entity> {
       fullRow['deleted_by'] = null;
     }
 
-    const columns = Object.keys(fullRow);
-    const values = Object.values(fullRow);
+    const storedRow = encryptRow(fullRow, this.encryption);
+    const columns = Object.keys(storedRow);
+    const values = Object.values(storedRow);
     const placeholders = columns.map((_, i) => `$${i + 1}`).join(', ');
 
     const query = `
@@ -89,7 +106,7 @@ export abstract class Repository<T extends Entity> {
     if (createdRow === undefined) {
       throw new Error('Create failed - no row returned');
     }
-    const created = this.mapRowToEntity(createdRow);
+    const created = this.hydrate(createdRow);
 
     if (this.enableAudit) {
       await this.createRevision(id, 'CREATE', {}, fullRow, context);
@@ -118,7 +135,7 @@ export abstract class Repository<T extends Entity> {
       return null;
     }
 
-    return this.mapRowToEntity(foundRow);
+    return this.hydrate(foundRow);
   }
 
   /**
@@ -148,7 +165,7 @@ export abstract class Repository<T extends Entity> {
     const result = await this.database.query(query, [limit, offset]);
 
     return {
-      items: result.rows.map((row) => this.mapRowToEntity(row as Record<string, unknown>)),
+      items: result.rows.map((row) => this.hydrate(row as Record<string, unknown>)),
       total,
       page,
       limit,
@@ -178,14 +195,15 @@ export abstract class Repository<T extends Entity> {
 
     const now = new Date();
     const row = this.mapEntityToRow(updates);
+    const storedRow = encryptRow(row, this.encryption);
 
-    const updateFields = Object.keys(row)
+    const updateFields = Object.keys(storedRow)
       .filter((key) => key !== 'id')
       .map((key, i) => `${key} = $${i + 1}`)
       .join(', ');
 
     const values = [
-      ...Object.values(row),
+      ...Object.values(storedRow),
       now,
       context.userId,
       existing.version + 1,
@@ -195,11 +213,11 @@ export abstract class Repository<T extends Entity> {
 
     const query = `
       UPDATE ${this.tableName}
-      SET ${updateFields}, updated_at = $${Object.keys(row).length + 1}, 
-          updated_by = $${Object.keys(row).length + 2},
-          version = $${Object.keys(row).length + 3}
-      WHERE id = $${Object.keys(row).length + 4}
-        AND version = $${Object.keys(row).length + 5}
+      SET ${updateFields}, updated_at = $${Object.keys(storedRow).length + 1}, 
+          updated_by = $${Object.keys(storedRow).length + 2},
+          version = $${Object.keys(storedRow).length + 3}
+      WHERE id = $${Object.keys(storedRow).length + 4}
+        AND version = $${Object.keys(storedRow).length + 5}
       RETURNING *
     `;
 
@@ -214,7 +232,7 @@ export abstract class Repository<T extends Entity> {
       throw new ConflictError('Update failed - no row returned');
     }
 
-    const updated = this.mapRowToEntity(updatedRow);
+    const updated = this.hydrate(updatedRow);
 
     if (this.enableAudit) {
       const changes = this.computeChanges(
@@ -272,6 +290,9 @@ export abstract class Repository<T extends Entity> {
   ): Promise<void> {
     const revisionId = uuidv4();
     const now = new Date();
+    // HIPAA-007: audit trail stores ciphertext only for sensitive fields
+    const safeChanges = encryptAuditChanges(changes, this.encryption);
+    const safeSnapshot = encryptAuditData(newData, this.encryption);
 
     const query = `
       INSERT INTO audit_revisions (
@@ -287,8 +308,8 @@ export abstract class Repository<T extends Entity> {
       now,
       context.userId,
       operation,
-      JSON.stringify(changes),
-      JSON.stringify(newData),
+      JSON.stringify(safeChanges),
+      JSON.stringify(safeSnapshot),
       null, // IP address would come from HTTP context
       null, // User agent would come from HTTP context
     ]);

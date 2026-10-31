@@ -487,7 +487,7 @@ export class AuthService {
       CacheKeys.user(userId),
       async () => {
         const result = await this.db.query(
-          `SELECT id, organization_id, email, password_hash, first_name, last_name,
+          `SELECT id, organization_id, email, first_name, last_name,
                   roles, permissions, branch_ids, status, token_version, failed_login_attempts,
                   locked_until, oauth_provider, oauth_provider_id
            FROM users
@@ -496,7 +496,14 @@ export class AuthService {
         );
 
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        return (result.rows[0] as unknown as UserRecord) ?? null;
+        const user = (result.rows[0] as unknown as UserRecord) ?? null;
+        if ((user as UserRecord | null) === null) {
+          return null;
+        }
+        return {
+          ...user,
+          password_hash: null, // HIPAA-007: Never store password_hash in Redis/cache
+        };
       },
       CacheTTL.SHORT // User data changes frequently
     );
