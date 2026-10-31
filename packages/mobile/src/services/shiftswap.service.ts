@@ -10,7 +10,7 @@
  * - Offline-first with AsyncStorage
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '../database/secure-storage';
 
 const SHIFT_SWAP_REQUESTS_KEY = '@folkcare_shift_swap_requests';
 const AVAILABLE_SHIFTS_KEY = '@folkcare_available_shifts';

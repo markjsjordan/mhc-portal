@@ -77,7 +77,9 @@ export class AuthService {
     // Clear tokens from API client
     this.apiClient.clearAuth();
 
-    // Clear secure storage
+    // Clear secure storage and purge encryption keys (HIPAA-008)
+    const { purgeSecureEncryptionKeys } = await import('../database/secure-storage');
+    await purgeSecureEncryptionKeys();
     await SecureStore.deleteItemAsync(TOKEN_KEY);
     await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
     await SecureStore.deleteItemAsync(USER_KEY);

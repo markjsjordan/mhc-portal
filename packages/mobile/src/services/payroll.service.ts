@@ -9,7 +9,7 @@
  * - Pay stubs viewing
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '../database/secure-storage';
 
 const PAYMENT_SETTINGS_KEY = 'payment_settings';
 const PAY_HISTORY_KEY = 'pay_history';

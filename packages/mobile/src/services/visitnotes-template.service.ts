@@ -10,7 +10,7 @@
  * - Offline-first with AsyncStorage
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '../database/secure-storage';
 
 const CUSTOM_TEMPLATES_KEY = '@folkcare_visit_note_templates';
 

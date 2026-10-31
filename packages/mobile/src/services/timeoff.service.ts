@@ -9,7 +9,7 @@
  * - Offline-first with AsyncStorage
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '../database/secure-storage';
 
 const TIMEOFF_REQUESTS_KEY = '@folkcare_timeoff_requests';
 

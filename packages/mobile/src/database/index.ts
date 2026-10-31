@@ -137,13 +137,18 @@ const migrations: SchemaMigrations = schemaMigrations({
   ],
 });
 
-// Configure SQLite adapter
+import { getDatabaseEncryptionKey } from './secure-storage';
+
+// Configure SQLite adapter with SQLCipher encryption support (HIPAA-008)
 const adapter = new SQLiteAdapter({
   schema,
   // Use JSI if available (not available in Expo Go)
   jsi: false, // Set to false for Expo Go compatibility
   // Migrations will be added here as schema evolves
   migrations,
+  // SQLCipher encryption configuration
+  // @ts-expect-error WatermelonDB SQLCipher extension option
+  encryptionKey: getDatabaseEncryptionKey,
   onSetUpError: (error: Error) => {
     // Handle setup errors - could send to error tracking service
     console.error('Database setup error:', error);
