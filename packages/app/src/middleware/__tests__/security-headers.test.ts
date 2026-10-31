@@ -171,4 +171,16 @@ describe('Security Headers Middleware', () => {
 
     process.env.NODE_ENV = originalEnv;
   });
+
+  it('should set strict Content-Security-Policy without script-src unsafe-inline', async () => {
+    const response = await request(app)
+      .get('/test')
+      .expect(200);
+
+    const csp = response.headers['content-security-policy'];
+    expect(csp).toBeDefined();
+    expect(csp).toContain("script-src 'self'");
+    expect(csp).not.toContain("script-src 'self' 'unsafe-inline'");
+    expect(csp).toContain("connect-src 'self' https://*.vercel.app https://*.neon.tech");
+  });
 });

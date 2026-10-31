@@ -33,16 +33,16 @@ export function securityHeaders(
   // Restricts sources of content to prevent XSS attacks
   const csp = [
     "default-src 'self'",
-    // React requires inline scripts for hydration
-    "script-src 'self' 'unsafe-inline'",
+    // Strict script-src without 'unsafe-inline'
+    "script-src 'self'",
     // Allow inline styles (required for styled-components, etc.)
     "style-src 'self' 'unsafe-inline'",
     // Allow images from self, data URLs, and HTTPS sources
     "img-src 'self' data: https:",
     // Allow fonts from self and data URLs
     "font-src 'self' data:",
-    // Allow connections to self and external APIs
-    "connect-src 'self' https:",
+    // Restrict connections to self and approved Vercel/Neon endpoints
+    "connect-src 'self' https://*.vercel.app https://*.neon.tech",
     // Prevent framing by other sites
     "frame-ancestors 'none'",
     // Restrict base tag to self

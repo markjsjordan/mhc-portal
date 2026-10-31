@@ -483,7 +483,8 @@ describe('Security Middleware Integration Tests', () => {
 
         // Verify key directives
         expect(csp).toContain("default-src 'self'");
-        expect(csp).toContain("script-src 'self' 'unsafe-inline'"); // React needs inline scripts
+        expect(csp).toContain("script-src 'self'");
+        expect(csp).not.toContain("script-src 'self' 'unsafe-inline'");
         expect(csp).toContain("style-src 'self' 'unsafe-inline'");
         expect(csp).toContain("frame-ancestors 'none'");
         expect(csp).toContain("base-uri 'self'");
@@ -498,7 +499,7 @@ describe('Security Middleware Integration Tests', () => {
         const csp = response.headers['content-security-policy'];
         expect(csp).toContain("img-src 'self' data: https:");
         expect(csp).toContain("font-src 'self' data:");
-        expect(csp).toContain("connect-src 'self' https:");
+        expect(csp).toContain("connect-src 'self' https://*.vercel.app https://*.neon.tech");
       });
     });
 

@@ -116,6 +116,40 @@ export function initDb(): ReturnType<typeof initializeDatabase> {
   }
 }
 
+// eslint-disable-next-line unicorn/better-regex, security/detect-unsafe-regex
+const ALLOWED_VERCEL_ORIGIN_REGEX = /^https:\/\/(folk-care|mhc-portal|mhc-family-portal)(-[a-z0-9-]+)?\.vercel\.app$/;
+
+/**
+ * Validate whether a request Origin is allowed by CORS policy
+ */
+export function isOriginAllowed(
+  origin: string | undefined,
+  allowedOrigins: string[],
+  nodeEnv: string = process.env['NODE_ENV'] ?? 'development'
+): boolean {
+  // Allow requests with no origin (mobile apps, curl, etc.)
+  if (typeof origin !== 'string') {
+    return true;
+  }
+
+  // In development, allow all origins
+  if (nodeEnv === 'development') {
+    return true;
+  }
+
+  // Allow organization's Vercel preview/production deployments only
+  if (ALLOWED_VERCEL_ORIGIN_REGEX.test(origin)) {
+    return true;
+  }
+
+  // Allow exact matches in configured CORS_ORIGIN (never wildcard '*')
+  if (allowedOrigins.length > 0 && allowedOrigins.some((allowed) => allowed !== '*' && allowed === origin)) {
+    return true;
+  }
+
+  return false;
+}
+
 /**
  * Configure Express middleware
  */
@@ -148,37 +182,15 @@ function setupMiddleware(): void {
 
   app.use(cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, etc.)
-      if (typeof origin !== 'string') {
+      const currentNodeEnv = process.env['NODE_ENV'] ?? NODE_ENV;
+      if (isOriginAllowed(origin, allowedOrigins, currentNodeEnv)) {
         callback(null, true);
         return;
       }
 
-      // In development, allow all origins
-      if (NODE_ENV === 'development') {
-        callback(null, true);
-        return;
-      }
-
-      // Allow Vercel preview deployments (both preview and production)
-      // Format: https://<project>-<hash>-<team>.vercel.app
-      // Or: https://<custom-domain>.vercel.app
-      if (origin.includes('.vercel.app')) {
-        callback(null, true);
-        return;
-      }
-
-      // In production, allow specified origins if configured
-      if (allowedOrigins.length > 0) {
-        if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
-          callback(null, true);
-          return;
-        }
-      }
-
-      // If no CORS_ORIGIN configured and not a Vercel domain, block
-      console.warn(`⚠️  Origin ${origin} not allowed by CORS`);
-      callback(new Error(`Origin ${origin} not allowed by CORS`), false);
+      // If not in allowedOrigins and not an approved Vercel domain, block
+      console.warn(`⚠️  Origin ${origin ?? 'unknown'} not allowed by CORS`);
+      callback(new Error(`Origin ${origin ?? 'unknown'} not allowed by CORS`), false);
     },
     credentials: true,
   }));
