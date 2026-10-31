@@ -566,7 +566,7 @@ export function createLabResultRoutes(pool: Pool): Router {
           clientId: z.string().uuid(),
         });
         const querySchema = z.object({
-          clientName: z.string().min(1),
+          clientName: z.string().optional(),
           includeTrends: z.coerce.boolean().optional(),
         });
 
@@ -589,7 +589,7 @@ export function createLabResultRoutes(pool: Pool): Router {
         }
 
         const report = labService.generateClientLabReport(
-          decodeURIComponent(clientName),
+          decodeURIComponent(clientName || "Client"),
           results,
           trends
         );

@@ -4,8 +4,20 @@ const isTest = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
 const isDevelopment = (process.env.NODE_ENV ?? '') === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
 
+const REDACTED_PATHS = [
+  '*.ssn', '*.dateOfBirth', '*.dob', '*.medicalRecordNumber', '*.medicaidId',
+  '*.password', '*.passwordHash', '*.token', '*.accessToken', '*.refreshToken',
+  '*.firstName', '*.lastName', '*.primaryAddress', '*.payrollInfo',
+  '*.subjectiveNotes', '*.objectiveNotes', '*.assessment', '*.plan', '*.narrativeNote',
+  'req.headers.authorization', 'req.headers.cookie'
+];
+
 const logger = pino({
   level: process.env.LOG_LEVEL ?? (isTest ? 'silent' : 'info'),
+  redact: {
+    paths: REDACTED_PATHS,
+    censor: '[REDACTED]',
+  },
   // In test environments, avoid worker threads by not using transport
   // In development, use pino-pretty for readable logs
   // In production, use JSON format
