@@ -72,6 +72,8 @@ export interface UserContext {
   permissions: string[];  // Accepting string[] instead of Permission[] for flexibility
   organizationId?: UUID; // Optional - system users and super admins may not have an organization
   branchIds: UUID[];
+  ipAddress?: string | null;
+  userAgent?: string | null;
 }
 
 /**
