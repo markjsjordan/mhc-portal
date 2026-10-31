@@ -34,13 +34,13 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.2
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -50,6 +50,9 @@ jobs:
 
       - name: Determine version
         id: version
+        env:
+          INPUT_RELEASE_TYPE: ${{ github.event.inputs.release_type }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
         run: |
           if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/v}
@@ -60,7 +63,7 @@ jobs:
             echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
             
             # Calculate next version based on release type
-            case "${{ github.event.inputs.release_type }}" in
+            case "${INPUT_RELEASE_TYPE}" in
               "patch")
                 NEXT_VERSION=$(node -p "
                   const [major, minor, patch] = '${CURRENT_VERSION}'.split('.').map(Number);
@@ -81,8 +84,8 @@ jobs:
                 ;;
             esac
             
-            if [ -n "${{ github.event.inputs.version }}" ]; then
-              VERSION="${{ github.event.inputs.version }}"
+            if [ -n "${INPUT_VERSION}" ]; then
+              VERSION="${INPUT_VERSION}"
             else
               VERSION="$NEXT_VERSION"
             fi
@@ -138,7 +141,7 @@ jobs:
           } >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
-        uses: actions/create-release@v1
+        uses: actions/create-release@0cb9c9b65d5d1901c1f53e5e66eaf4afd303e70e # v1.1.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -177,10 +180,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
