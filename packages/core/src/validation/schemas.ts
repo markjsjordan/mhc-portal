@@ -55,6 +55,9 @@ export const validators = {
     })
 };
 
+// All 50 U.S. state USPS codes. Client intake offers exactly these.
+const US_50_STATE_CODES = ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'] as const;
+
 /**
  * Client schema for client registration and updates
  */
@@ -68,7 +71,7 @@ export const clientSchema = z.object({
   address: z.object({
     street: validators.requiredString('Street address'),
     city: validators.requiredString('City'),
-    state: z.enum(['TX', 'FL', 'OH', 'PA', 'GA', 'NC', 'AZ']),
+    state: z.enum(US_50_STATE_CODES),
     zip: validators.zipCode
   }),
   emergency_contact: z.object({
