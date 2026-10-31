@@ -813,6 +813,41 @@ export function createAuthRouter(db: Database): Router {
     }
   );
 
+  
+  // HIPAA-009: MFA Endpoints
+  router.post('/mfa/enroll', authMiddleware.requireAuth, async (req: Request, res: Response) => {
+    try {
+      const user = req.user;
+      if (!user) return res.status(401).json({ success: false, error: 'Unauthorized' });
+      const { MFAService } = await import('../../../core/src/service/mfa.service.js');
+      const mfaService = new MFAService(db as any);
+      const result = await mfaService.enrollMFA(user.userId, user.email);
+      return res.json({ success: true, data: result });
+    } catch (err: any) {
+      return res.status(500).json({ success: false, error: err.message || 'MFA enrollment failed' });
+    }
+  });
+
+  router.post('/mfa/verify', authMiddleware.requireAuth, async (req: Request, res: Response) => {
+    try {
+      const user = req.user;
+      const { token } = req.body;
+      if (!user) return res.status(401).json({ success: false, error: 'Unauthorized' });
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ success: false, error: 'Verification token is required' });
+      }
+      const { MFAService } = await import('../../../core/src/service/mfa.service.js');
+      const mfaService = new MFAService(db as any);
+      const verified = await mfaService.verifyAndEnable(user.userId, token);
+      if (!verified) {
+        return res.status(400).json({ success: false, error: 'Invalid verification token' });
+      }
+      return res.json({ success: true, message: 'MFA verified and enabled successfully' });
+    } catch (err: any) {
+      return res.status(500).json({ success: false, error: err.message || 'MFA verification failed' });
+    }
+  });
+
   return router;
 }
 

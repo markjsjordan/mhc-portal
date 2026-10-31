@@ -355,13 +355,16 @@ export class AuthService {
       );
     }
 
+    // HIPAA-009: Include role-derived permissions on refresh token rotation
+    const mergedPermissions = this.mergePermissions(user.permissions, user.roles);
+
     const payload: TokenPayload = {
       userId: user.id,
       email: user.email,
       organizationId: user.organization_id,
       branchIds: user.branch_ids,
       roles: user.roles,
-      permissions: user.permissions,
+      permissions: mergedPermissions,
       tokenVersion: user.token_version
     };
 
