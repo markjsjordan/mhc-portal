@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.2
 
       - name: Check verification configuration
         id: check-config
@@ -40,7 +40,7 @@ jobs:
 
       - name: Setup Node.js
         if: steps.check-config.outputs.configured == 'true'
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -84,11 +84,10 @@ jobs:
       - name: Install Neon CLI
         if: steps.check-config.outputs.configured == 'true'
         run: |
-          curl -fsSL https://neon.tech/install.sh | bash
-          echo "$HOME/.neon/bin" >> $GITHUB_PATH
+          npm install -g neonctl@8.15.1
 
           # Verify Neon CLI installation
-          neon --version
+          neonctl --version
 
       - name: Create backup directory
         if: steps.check-config.outputs.configured == 'true'
@@ -137,7 +136,7 @@ jobs:
 
       - name: Create issue on failure
         if: failure() && steps.check-config.outputs.configured == 'true'
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |
             const issue = await github.rest.issues.create({

@@ -31,14 +31,19 @@ jobs:
 
     steps:
       - name: Validate Rollback Request
+        env:
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+          INPUT_DEPLOYMENT_ID: ${{ inputs.deployment_id }}
+          INPUT_REASON: ${{ inputs.reason }}
+          ACTOR: ${{ github.actor }}
         run: |
           echo "::warning::━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "::warning::EMERGENCY ROLLBACK INITIATED"
           echo "::warning::━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "Environment: ${{ inputs.environment }}"
-          echo "Target Deployment ID: ${{ inputs.deployment_id }}"
-          echo "Reason: ${{ inputs.reason }}"
-          echo "Initiated by: ${{ github.actor }}"
+          echo "Environment: ${INPUT_ENVIRONMENT}"
+          echo "Target Deployment ID: ${INPUT_DEPLOYMENT_ID}"
+          echo "Reason: ${INPUT_REASON}"
+          echo "Initiated by: ${ACTOR}"
           echo "Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo "::warning::━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
@@ -46,13 +51,17 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Execute Rollback
+        env:
+          INPUT_DEPLOYMENT_ID: ${{ inputs.deployment_id }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
         run: |
-          echo "🔄 Rolling back to deployment: ${{ inputs.deployment_id }}"
+          echo "🔄 Rolling back to deployment: ${INPUT_DEPLOYMENT_ID}"
 
           # Promote the previous deployment to current environment
-          vercel promote ${{ inputs.deployment_id }} \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --scope ${{ secrets.VERCEL_ORG_ID }} \
+          vercel promote "${INPUT_DEPLOYMENT_ID}" \
+            --token "${VERCEL_TOKEN}" \
+            --scope "${VERCEL_ORG_ID}" \
             --yes || {
               echo "::error::Rollback failed using 'promote' command"
               echo "::error::Please check the deployment ID and try manual rollback via Vercel dashboard"
@@ -62,12 +71,14 @@ jobs:
           echo "✅ Rollback command executed successfully"
 
       - name: Verify Rollback
+        env:
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
         run: |
           echo "⏳ Waiting for rollback to complete..."
           sleep 15
 
           # Determine the URL based on environment
-          if [ "${{ inputs.environment }}" == "production" ]; then
+          if [ "${INPUT_ENVIRONMENT}" == "production" ]; then
             URL="https://folk.care"
           else
             URL="https://preview-folk.care"
@@ -84,18 +95,22 @@ jobs:
 
       - name: Post-Rollback Actions
         if: always()
+        env:
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+          INPUT_DEPLOYMENT_ID: ${{ inputs.deployment_id }}
+          INPUT_REASON: ${{ inputs.reason }}
         run: |
           echo "::notice::━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "::notice::ROLLBACK COMPLETED"
           echo "::notice::━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "Environment: ${{ inputs.environment }}"
-          echo "Rolled back to: ${{ inputs.deployment_id }}"
-          echo "Reason: ${{ inputs.reason }}"
+          echo "Environment: ${INPUT_ENVIRONMENT}"
+          echo "Rolled back to: ${INPUT_DEPLOYMENT_ID}"
+          echo "Reason: ${INPUT_REASON}"
           echo ""
           echo "⚠️  IMPORTANT POST-ROLLBACK STEPS:"
           echo "1. Verify the application is functioning correctly"
           echo "2. Check error logs in Vercel dashboard"
-          echo "3. Investigate root cause: ${{ inputs.reason }}"
+          echo "3. Investigate root cause: ${INPUT_REASON}"
           echo "4. Create a post-mortem if needed"
           echo "5. Plan fix for the issue that caused rollback"
           echo ""
@@ -107,18 +122,23 @@ jobs:
 
       - name: Create Rollback Issue
         if: always()
+        env:
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+          INPUT_DEPLOYMENT_ID: ${{ inputs.deployment_id }}
+          INPUT_REASON: ${{ inputs.reason }}
+          ACTOR: ${{ github.actor }}
         run: |
           echo "📝 To track this rollback, consider creating a GitHub issue:"
           echo ""
-          echo "Title: [Rollback] ${{ inputs.environment }} - $(date -u '+%Y-%m-%d')"
-          echo "Labels: rollback, incident, ${{ inputs.environment }}"
+          echo "Title: [Rollback] ${INPUT_ENVIRONMENT} - $(date -u '+%Y-%m-%d')"
+          echo "Labels: rollback, incident, ${INPUT_ENVIRONMENT}"
           echo ""
           echo "Body:"
           echo "## Rollback Summary"
-          echo "- **Environment**: ${{ inputs.environment }}"
-          echo "- **Deployment ID**: ${{ inputs.deployment_id }}"
-          echo "- **Reason**: ${{ inputs.reason }}"
-          echo "- **Initiated by**: ${{ github.actor }}"
+          echo "- **Environment**: ${INPUT_ENVIRONMENT}"
+          echo "- **Deployment ID**: ${INPUT_DEPLOYMENT_ID}"
+          echo "- **Reason**: ${INPUT_REASON}"
+          echo "- **Initiated by**: ${ACTOR}"
           echo "- **Timestamp**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo ""
           echo "## Actions Required"
