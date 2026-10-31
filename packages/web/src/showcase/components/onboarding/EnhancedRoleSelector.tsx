@@ -8,6 +8,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { personas } from '../../data/personas.js';
+import { Persona } from '../../types/index.js';
 import { Button } from '@/components/ui/button.js';
 import { Badge } from '@/components/ui/badge.js';
 
@@ -88,7 +89,7 @@ export const EnhancedRoleSelector: React.FC<EnhancedRoleSelectorProps> = ({
 };
 
 interface PersonaDetailCardProps {
-  persona: any;
+  persona: Persona;
   isCurrent: boolean;
   onConfirm: () => void;
 }
