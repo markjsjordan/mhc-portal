@@ -655,14 +655,14 @@ export function createPatientEducationRoutes(pool: Pool): Router {
           clientId: z.string().uuid(),
         });
         const querySchema = z.object({
-          clientName: z.string().min(1),
+          clientName: z.string().optional(),
         });
 
         const { clientId } = paramsSchema.parse(req.params);
         const { clientName } = querySchema.parse(req.query);
 
         const education = await educationService.getClientEducation(clientId);
-        const report = educationService.generateEducationReport(clientName, education);
+        const report = educationService.generateEducationReport(clientName || "Client", education);
 
         res.setHeader('Content-Type', 'text/plain');
         res.send(report);

@@ -757,14 +757,14 @@ export function createOrderRoutes(pool: Pool): Router {
           clientId: z.string().uuid(),
         });
         const querySchema = z.object({
-          clientName: z.string().min(1),
+          clientName: z.string().optional(),
         });
 
         const { clientId } = paramsSchema.parse(req.params);
         const { clientName } = querySchema.parse(req.query);
 
         const orders = await orderService.getClientOrders(clientId);
-        const report = orderService.generateOrderReport(clientName, orders);
+        const report = orderService.generateOrderReport(clientName || "Client", orders);
 
         res.setHeader('Content-Type', 'text/plain');
         res.send(report);

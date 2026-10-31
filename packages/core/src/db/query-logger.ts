@@ -81,7 +81,7 @@ export class QueryLogger {
       if (this.config.verbose) {
         console.log('📝 Query:', query.sql);
         if (query.bindings !== undefined && query.bindings.length > 0) {
-          console.log('📌 Bindings:', query.bindings);
+          console.log('📌 Bindings count:', query.bindings.length);
         }
       }
 
@@ -99,7 +99,7 @@ export class QueryLogger {
       if (duration > this.config.slowQueryThreshold) {
         console.warn(`🐌 Slow query (${duration}ms):`, query.sql);
         if (query.bindings !== undefined && query.bindings.length > 0) {
-          console.warn('📌 Bindings:', query.bindings);
+          console.warn('📌 Bindings count:', query.bindings.length);
         }
       } else if (this.config.verbose) {
         console.log(`⚡ Query completed (${duration}ms)`);
@@ -116,7 +116,7 @@ export class QueryLogger {
       console.error('❌ Query error:', error.message);
       console.error('📝 Failed query:', query.sql);
       if (query.bindings !== undefined && query.bindings.length > 0) {
-        console.error('📌 Bindings:', query.bindings);
+        console.error('📌 Bindings count:', query.bindings.length);
       }
     });
 
