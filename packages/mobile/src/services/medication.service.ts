@@ -11,7 +11,7 @@
  * - Offline-first with AsyncStorage
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '../database/secure-storage';
 
 const MEDICATIONS_KEY = '@folkcare_medications';
 const MAR_RECORDS_KEY = '@folkcare_mar_records';

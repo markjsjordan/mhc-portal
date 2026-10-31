@@ -48,7 +48,10 @@ export const database = new Database({
  * Reset database (for development/testing only)
  * WARNING: This deletes all local data!
  */
+import { purgeSessionKey } from './secure-web-storage.js';
+
 export async function resetDatabase(): Promise<void> {
+  purgeSessionKey();
   await database.write(async () => {
     await database.unsafeResetDatabase();
   });

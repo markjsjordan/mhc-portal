@@ -59,8 +59,11 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       setAuth: (user, token) =>
         set({ user, token, isAuthenticated: true }),
-      clearAuth: () =>
-        set({ user: null, token: null, isAuthenticated: false }),
+      clearAuth: () => {
+        // HIPAA-008: Purge IndexedDB and WebCrypto encryption keys on logout
+        import('../../db/index.js').then(({ resetDatabase }) => resetDatabase().catch(() => {})).catch(() => {});
+        set({ user: null, token: null, isAuthenticated: false });
+      },
     }),
     {
       name: 'auth-storage',

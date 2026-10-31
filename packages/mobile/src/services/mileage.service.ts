@@ -10,7 +10,7 @@
  * - Export for reimbursement
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '../database/secure-storage';
 import * as Location from 'expo-location';
 
 const MILEAGE_RECORDS_KEY = '@folkcare_mileage_records';

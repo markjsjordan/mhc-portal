@@ -11,7 +11,7 @@
  * - Audit trail for compliance
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '../secure-storage';
 import { database } from '../index';
 
 /**

@@ -153,18 +153,8 @@ export const VisitDetail: React.FC = () => {
   const { data: client, isLoading: isClientLoading } = useClient(visit?.clientId);
   const { data: caregiver } = useCaregiver(visit?.assignedCaregiverId ?? undefined);
 
-  // Assessment completion checklist state
-  const [checklist, setChecklist] = useState<ChecklistItem[]>(() => {
-    const saved = localStorage.getItem(`folkcare_assessment_checklist_${visitId}`);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        // fallback
-      }
-    }
-    return DEFAULT_INITIAL_ASSESSMENT_CHECKLIST;
-  });
+  // Assessment completion checklist state (HIPAA-008: keep clinical assessment in memory, not localStorage)
+  const [checklist, setChecklist] = useState<ChecklistItem[]>(() => DEFAULT_INITIAL_ASSESSMENT_CHECKLIST);
 
   // EVV clock-in record id — set after a successful clock-in from this page
   const [evvRecordId, setEvvRecordId] = useState<string | undefined>();
@@ -200,15 +190,9 @@ export const VisitDetail: React.FC = () => {
   }, [visit]);
 
   const toggleChecklistItem = (itemId: string) => {
-    setChecklist((prev) => {
-      const updated = prev.map((item) =>
-        item.id === itemId ? { ...item, completed: !item.completed } : item
-      );
-      if (visitId) {
-        localStorage.setItem(`folkcare_assessment_checklist_${visitId}`, JSON.stringify(updated));
-      }
-      return updated;
-    });
+    setChecklist((prev) =>
+      prev.map((item) => (item.id === itemId ? { ...item, completed: !item.completed } : item))
+    );
   };
 
   // Supervisory Cadence calculation

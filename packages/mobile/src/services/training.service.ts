@@ -9,7 +9,7 @@
  * - Sync training completions when online
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '../database/secure-storage';
 
 const TRAINING_STORAGE_KEY = 'training_modules';
 const TRAINING_PROGRESS_KEY = 'training_progress';
