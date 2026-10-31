@@ -19,17 +19,16 @@ metadata:
     # Rate limiting
     nginx.ingress.kubernetes.io/limit-rps: "10"
     nginx.ingress.kubernetes.io/limit-connections: "5"
-    # SSL redirect (enable when TLS is configured)
-    # nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # SSL redirect
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
     # For cert-manager automatic TLS
-    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   ingressClassName: nginx
-  # Uncomment for TLS/HTTPS
-  # tls:
-  #   - hosts:
-  #       - folkcare.example.com
-  #     secretName: folkcare-tls
+  tls:
+    - hosts:
+        - folkcare.example.com
+      secretName: folkcare-tls
   rules:
     - host: folkcare.example.com
       http:

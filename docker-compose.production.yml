@@ -26,13 +26,11 @@ services:
     image: folkcare:latest
     container_name: folkcare-app
     restart: unless-stopped
-    ports:
-      - "${PORT:-3000}:3000"
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-folkcare}
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-folkcare}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       # Optional AI features (Claude API)
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
@@ -52,7 +50,8 @@ services:
       retries: 3
       start_period: 40s
     networks:
-      - folkcare
+      - frontend
+      - backend
     labels:
       - "com.folkcare.description=Folk Care Application Server"
 
@@ -65,7 +64,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: ${POSTGRES_DB:-folkcare}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
@@ -76,7 +75,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - folkcare
+      - backend
     # Performance tuning for small-medium deployments
     command:
       - "postgres"
@@ -106,16 +105,16 @@ services:
     image: redis:7-alpine
     container_name: folkcare-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required} --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?REDIS_PASSWORD is required}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - folkcare
+      - backend
     labels:
       - "com.folkcare.description=Folk Care Redis Cache"
 
@@ -136,7 +135,7 @@ services:
     depends_on:
       - app
     networks:
-      - folkcare
+      - frontend
     profiles:
       - proxy
     labels:
@@ -152,7 +151,7 @@ services:
     environment:
       PGHOST: postgres
       PGUSER: ${POSTGRES_USER:-postgres}
-      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       PGDATABASE: ${POSTGRES_DB:-folkcare}
     volumes:
       - ./backups:/backups
@@ -163,7 +162,7 @@ services:
     depends_on:
       - postgres
     networks:
-      - folkcare
+      - backend
     profiles:
       - backup
     labels:
@@ -178,6 +177,8 @@ volumes:
     driver: local
 
 networks:
-  folkcare:
+  frontend:
     driver: bridge
-    name: folkcare-network
+  backend:
+    driver: bridge
+    internal: true

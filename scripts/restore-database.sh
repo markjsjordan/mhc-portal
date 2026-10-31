@@ -18,7 +18,7 @@ DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-5432}"
 DB_NAME="${DB_NAME:-care_commons}"
 DB_USER="${DB_USER:-postgres}"
-ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:-}"
+ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:?BACKUP_ENCRYPTION_KEY is required to decrypt backup}"
 
 echo "[$(date)] Starting database restore from ${BACKUP_FILE}..."
 
@@ -30,21 +30,21 @@ if [[ "${BACKUP_FILE}" == s3://* ]]; then
   BACKUP_FILE="${LOCAL_BACKUP}"
 fi
 
-# Decompress if gzipped
-if [[ "${BACKUP_FILE}" == *.gz ]]; then
-  echo "[$(date)] Decompressing backup..."
-  gunzip -c "${BACKUP_FILE}" > "${BACKUP_FILE%.gz}"
-  BACKUP_FILE="${BACKUP_FILE%.gz}"
-fi
-
-# Decrypt if encrypted
-if [ -n "${ENCRYPTION_KEY}" ] && [[ "${BACKUP_FILE}" == *.enc ]]; then
+# Decrypt if encrypted (.enc)
+if [[ "${BACKUP_FILE}" == *.enc ]]; then
   echo "[$(date)] Decrypting backup..."
-  openssl enc -aes-256-cbc -d \
+  openssl enc -aes-256-cbc -d -salt -pbkdf2 -iter 600000 -md sha256 \
     -in "${BACKUP_FILE}" \
     -out "${BACKUP_FILE%.enc}" \
     -pass pass:"${ENCRYPTION_KEY}"
   BACKUP_FILE="${BACKUP_FILE%.enc}"
+fi
+
+# Decompress if gzipped (.gz)
+if [[ "${BACKUP_FILE}" == *.gz ]]; then
+  echo "[$(date)] Decompressing backup..."
+  gunzip -c "${BACKUP_FILE}" > "${BACKUP_FILE%.gz}"
+  BACKUP_FILE="${BACKUP_FILE%.gz}"
 fi
 
 # Create a backup of current database before restoring
