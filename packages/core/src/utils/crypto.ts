@@ -7,7 +7,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-undef */
-/* eslint-disable @typescript-eslint/no-implied-eval */
+ 
 
 // Platform detection
 const isReactNative = typeof navigator !== 'undefined' && (navigator as any).product === 'ReactNative';
@@ -46,10 +46,10 @@ function getNodeCrypto(): NodeCryptoModule {
     if (isReactNative) {
       // Metro bundler (React Native) - use eval to hide from static analysis
       // This prevents Metro from trying to bundle node:crypto
-      /* eslint-disable sonarjs/code-eval -- intentional eval to hide from Metro bundler static analysis */
+       
       const req = eval('require');
       nodeCrypto = req('node' + String.fromCharCode(58) + 'crypto') as NodeCryptoModule;
-      /* eslint-enable sonarjs/code-eval */
+       
     } else {
       throw new Error('node:crypto should have been loaded at module initialization');
     }
