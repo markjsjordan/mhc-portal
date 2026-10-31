@@ -9,7 +9,7 @@ set -e
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/care-commons}"
 RETENTION_DAYS="${RETENTION_DAYS:-30}"
 S3_BUCKET="${S3_BUCKET:-}"
-ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:-}"
+ENCRYPTION_KEY="${BACKUP_ENCRYPTION_KEY:?BACKUP_ENCRYPTION_KEY is required for HIPAA compliance}"
 
 # Database config from environment
 DB_HOST="${DB_HOST:-localhost}"
@@ -44,34 +44,31 @@ if [ ! -f "${BACKUP_PATH}.tmp" ]; then
   exit 1
 fi
 
-# Encrypt backup if encryption key provided
-if [ -n "${ENCRYPTION_KEY}" ]; then
-  echo "[$(date)] Encrypting backup..."
-  openssl enc -aes-256-cbc -salt \
-    -in "${BACKUP_PATH}.tmp" \
-    -out "${BACKUP_PATH}.enc" \
-    -pass pass:"${ENCRYPTION_KEY}"
-
-  rm "${BACKUP_PATH}.tmp"
-  mv "${BACKUP_PATH}.enc" "${BACKUP_PATH}"
-else
-  mv "${BACKUP_PATH}.tmp" "${BACKUP_PATH}"
-fi
-
 # Compress backup
 echo "[$(date)] Compressing backup..."
-gzip "${BACKUP_PATH}"
-BACKUP_PATH="${BACKUP_PATH}.gz"
+gzip "${BACKUP_PATH}.tmp"
+
+# Encrypt backup with PBKDF2 iteration hardening
+echo "[$(date)] Encrypting backup..."
+openssl enc -aes-256-cbc -salt -pbkdf2 -iter 600000 -md sha256 \
+  -in "${BACKUP_PATH}.tmp.gz" \
+  -out "${BACKUP_PATH}.gz.enc" \
+  -pass pass:"${ENCRYPTION_KEY}"
+
+rm "${BACKUP_PATH}.tmp.gz"
+BACKUP_PATH="${BACKUP_PATH}.gz.enc"
+BACKUP_FILE="${BACKUP_FILE}.gz.enc"
 
 # Get backup size
 BACKUP_SIZE=$(du -h "${BACKUP_PATH}" | cut -f1)
-echo "[$(date)] Backup created: ${BACKUP_FILE}.gz (${BACKUP_SIZE})"
+echo "[$(date)] Backup created: ${BACKUP_FILE} (${BACKUP_SIZE})"
 
 # Upload to S3 if configured
 if [ -n "${S3_BUCKET}" ]; then
   echo "[$(date)] Uploading to S3..."
-  aws s3 cp "${BACKUP_PATH}" "s3://${S3_BUCKET}/backups/${BACKUP_FILE}.gz" \
-    --storage-class STANDARD_IA
+  aws s3 cp "${BACKUP_PATH}" "s3://${S3_BUCKET}/backups/${BACKUP_FILE}" \
+    --storage-class STANDARD_IA \
+    --sse aws:kms
 
   if [ $? -eq 0 ]; then
     echo "[$(date)] Backup uploaded to S3 successfully"
@@ -83,7 +80,7 @@ fi
 
 # Remove old backups (keep only RETENTION_DAYS)
 echo "[$(date)] Cleaning up old backups (keeping ${RETENTION_DAYS} days)..."
-find "${BACKUP_DIR}" -name "care_commons_*.sql.gz" -mtime +${RETENTION_DAYS} -delete
+find "${BACKUP_DIR}" -name "care_commons_*.sql.gz.enc" -mtime +${RETENTION_DAYS} -delete
 
 # Remove old S3 backups if configured
 if [ -n "${S3_BUCKET}" ]; then

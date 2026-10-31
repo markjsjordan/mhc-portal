@@ -12,16 +12,12 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     ripgrep \
-    sudo \
     && rm -rf /var/lib/apt/lists/*
 
 # Set bash as default shell
 SHELL ["/bin/bash", "-c"]
 
-# Grant sudo access to existing 'node' user (UID 1000)
-RUN echo "node ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
-# Switch to node user
+# Switch to non-root node user (UID 1000)
 USER node
 WORKDIR /home/node
 
