@@ -65,7 +65,7 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext ts --max-warnings 210 && npm run lint:sql",
-    "lint:sql": "sql-lint --driver postgres migrations/*.sql || echo 'SQL lint completed'",
+    "lint:sql": "sql-lint --driver postgres ../../scripts/migrations/*.sql || echo 'SQL lint: findings reported (non-blocking, see ticket wdvf3ach)'",
     "db:migrate": "cd ../.. && tsx packages/core/scripts/migrate.ts",
     "db:migrate:rollback": "cd ../.. && tsx packages/core/scripts/rollback.ts",
     "db:migrate:status": "cd ../.. && tsx packages/core/scripts/migrate-status.ts",
