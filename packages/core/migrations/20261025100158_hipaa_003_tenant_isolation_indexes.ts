@@ -64,8 +64,16 @@ export async function down(knex: Knex): Promise<void> {
   for (const table of TABLES) {
     const indexName = `idx_${table}_tenant_isolation`;
     
+    // Mirror up(): only drop indexes that up() actually created.
     const hasTable = await knex.schema.hasTable(table);
     if (!hasTable) {
+      continue;
+    }
+    const hasColumns =
+      (await knex.schema.hasColumn(table, 'id')) &&
+      (await knex.schema.hasColumn(table, 'organization_id')) &&
+      (await knex.schema.hasColumn(table, 'deleted_at'));
+    if (!hasColumns) {
       continue;
     }
 
