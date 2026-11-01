@@ -32,10 +32,12 @@ describe('ProtectedRoute', () => {
   it('should redirect to login if not authenticated', async () => {
     vi.mocked(hooks.useAuth).mockReturnValue({
       isAuthenticated: false,
+      isInitializing: false,
       user: null,
       token: null,
       login: vi.fn(),
       logout: vi.fn(),
+      setInitializing: vi.fn(),
     });
 
     vi.mocked(hooks.usePermissions).mockReturnValue({
@@ -71,10 +73,12 @@ describe('ProtectedRoute', () => {
   it('should render children if authenticated and no permission required', () => {
     vi.mocked(hooks.useAuth).mockReturnValue({
       isAuthenticated: true,
+      isInitializing: false,
       user: mockUser,
       token: 'token',
       login: vi.fn(),
       logout: vi.fn(),
+      setInitializing: vi.fn(),
     });
 
     vi.mocked(hooks.usePermissions).mockReturnValue({
@@ -101,10 +105,12 @@ describe('ProtectedRoute', () => {
 
     vi.mocked(hooks.useAuth).mockReturnValue({
       isAuthenticated: true,
+      isInitializing: false,
       user: mockUser,
       token: 'token',
       login: vi.fn(),
       logout: vi.fn(),
+      setInitializing: vi.fn(),
     });
 
     vi.mocked(hooks.usePermissions).mockReturnValue({
@@ -136,10 +142,12 @@ describe('FamilyProtectedRoute', () => {
   it('should redirect to login if not authenticated', async () => {
     vi.mocked(hooks.useAuth).mockReturnValue({
       isAuthenticated: false,
+      isInitializing: false,
       user: null,
       token: null,
       login: vi.fn(),
       logout: vi.fn(),
+      setInitializing: vi.fn(),
     });
 
     render(
@@ -231,10 +239,12 @@ describe('PublicRoute', () => {
   it('should render children if not authenticated', () => {
     vi.mocked(hooks.useAuth).mockReturnValue({
       isAuthenticated: false,
+      isInitializing: false,
       user: null,
       token: null,
       login: vi.fn(),
       logout: vi.fn(),
+      setInitializing: vi.fn(),
     });
 
     render(
@@ -246,5 +256,36 @@ describe('PublicRoute', () => {
     );
 
     expect(screen.getByText('Public Content')).toBeInTheDocument();
+  });
+
+  it('should render loading spinner while auth is initializing in ProtectedRoute', () => {
+    vi.mocked(hooks.useAuth).mockReturnValue({
+      isAuthenticated: false,
+      isInitializing: true,
+      user: null,
+      token: null,
+      login: vi.fn(),
+      logout: vi.fn(),
+      setInitializing: vi.fn(),
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/protected']}>
+        <Routes>
+          <Route
+            path="/protected"
+            element={
+              <ProtectedRoute>
+                <div>Protected Content</div>
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/login" element={<div>Login Page</div>} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByText('Login Page')).not.toBeInTheDocument();
+    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
   });
 });

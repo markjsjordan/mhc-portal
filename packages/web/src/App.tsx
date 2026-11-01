@@ -5,7 +5,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
-import { useAuth } from './core/hooks';
+import { useAuth, refreshAuthSession } from './core/hooks';
 import { ProtectedRoute, FamilyProtectedRoute, PublicRoute, LoadingSpinner, UpdatePrompt, OnlineStatus } from './core/components';
 import { AppShell } from './app/components';
 import { initAuthStorage } from './core/utils/auth-storage';
@@ -127,10 +127,17 @@ const queryClient = new QueryClient({
 
 
 function AppRoutes() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isInitializing } = useAuth();
   const { isOpen, closeSearch } = useGlobalSearch();
 
   const renderRootElement = () => {
+    if (isInitializing) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <LoadingSpinner size="lg" />
+        </div>
+      );
+    }
     if (!isAuthenticated) {
       return <Navigate to="/login" replace />;
     }
@@ -911,8 +918,10 @@ function AppRoutes() {
 
 function App() {
   // Initialize auth storage checks (demo mode: detect stale data from DB resets)
+  // and attempt silent session restoration using the HttpOnly refresh token cookie
   React.useEffect(() => {
     initAuthStorage();
+    void refreshAuthSession();
   }, []);
 
   return (

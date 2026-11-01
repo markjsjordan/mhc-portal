@@ -6,6 +6,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth, usePermissions } from '../hooks';
 import { getDashboardRoute } from '../utils/role-routing';
+import { LoadingSpinner } from './feedback/LoadingSpinner';
 import type { Role } from '../types/auth';
 
 export interface ProtectedRouteProps {
@@ -44,9 +45,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredRoles,
   fallbackPath,
 }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isInitializing } = useAuth();
   const { can, canAll, hasRole, hasAnyRole } = usePermissions();
   const location = useLocation();
+
+  if (isInitializing) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   // Check authentication
   if (!isAuthenticated || !user) {
@@ -87,8 +96,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 export const FamilyProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isInitializing } = useAuth();
   const location = useLocation();
+
+  if (isInitializing) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -108,7 +125,15 @@ export const FamilyProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
 export const PublicRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isInitializing } = useAuth();
+
+  if (isInitializing) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   if (isAuthenticated && user) {
     return <Navigate to={getDashboardRoute(user.roles)} replace />;
