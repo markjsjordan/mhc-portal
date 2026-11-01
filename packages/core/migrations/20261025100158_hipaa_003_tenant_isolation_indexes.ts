@@ -32,10 +32,20 @@ export async function up(knex: Knex): Promise<void> {
   for (const table of TABLES) {
     const indexName = `idx_${table}_tenant_isolation`;
     
-    // Check if index already exists
-    const hasIndex = await knex.schema.hasTable(table);
-    if (!hasIndex) {
+    // Skip tables that are absent OR lack the columns the index needs.
+    // Not every listed table has deleted_at (e.g. schedules) — indexing a
+    // missing column aborts the whole migration on a fresh database.
+    const hasTable = await knex.schema.hasTable(table);
+    if (!hasTable) {
       console.log(`Skipping ${table} - table does not exist`);
+      continue;
+    }
+    const hasColumns =
+      (await knex.schema.hasColumn(table, 'id')) &&
+      (await knex.schema.hasColumn(table, 'organization_id')) &&
+      (await knex.schema.hasColumn(table, 'deleted_at'));
+    if (!hasColumns) {
+      console.log(`Skipping ${table} - missing id/organization_id/deleted_at`);
       continue;
     }
 
