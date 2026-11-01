@@ -34,6 +34,7 @@ import { GlobalSearch, useGlobalSearch } from './components/search/index.js';
 
 // Lazy loaded dashboards
 const AdministratorDashboard = React.lazy(() => import('./app/pages/AdministratorDashboard').then((m) => ({ default: m.AdministratorDashboard })));
+const SystemActivityPage = React.lazy(() => import('./app/pages/admin/SystemActivityPage').then((m) => ({ default: m.SystemActivityPage })));
 const ComplianceDashboard = React.lazy(() => import('./app/pages/ComplianceDashboard').then((m) => ({ default: m.ComplianceDashboard })));
 const NurseDashboard = React.lazy(() => import('./app/pages/NurseDashboard').then((m) => ({ default: m.NurseDashboard })));
 const CaregiverDashboard = React.lazy(() => import('./app/pages/CaregiverDashboard').then((m) => ({ default: m.CaregiverDashboard })));
@@ -738,6 +739,18 @@ function AppRoutes() {
           >
             <AppShell>
               <AdministratorDashboard />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/activity"
+        element={
+          <ProtectedRoute
+            requiredRoles={['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']}
+          >
+            <AppShell>
+              <SystemActivityPage />
             </AppShell>
           </ProtectedRoute>
         }
