@@ -26,7 +26,7 @@ curl -X POST https://folk.care/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@folkcare.example",
-    "password": "Care2024!"
+    "password": "<your_password>"
   }'
 
 # Response

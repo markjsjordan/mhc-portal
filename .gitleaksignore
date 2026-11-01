@@ -1,3 +1,18 @@
 # False positive: dummy JWT ("...test.signature") used as a fixture in a Playwright
 # test template. Not a credential. Fingerprint format: commit:file:rule:line
 390544556194fd2b9e166288683587bd6030fdd4:tests/templates/FC-SCHED-001-TA-AUTOMATION-TEMPLATES.ts:generic-api-key:466
+# Placeholder/example values in k8s manifests and API docs (verified: empty or
+# REPLACE_WITH_* placeholders, truncated example JWTs). See PR #115.
+7f8c6d5c02aee503e54b5b633f7a812f3dd88153:k8s/secrets.yaml:generic-api-key:16
+7f8c6d5c02aee503e54b5b633f7a812f3dd88153:k8s/secrets.yaml:generic-api-key:20
+d9ebfaded3b30032c58d8e790aa29ef257d713b6:deploy/k8s/secret.yaml:kubernetes-secret-yaml:24
+1ee09b041d85cfab86bcf98346e1ec0d29123398:FEATURE_IMPLEMENTATION_SUMMARY.md:curl-auth-header:217
+4a0582daae758642d8415f78798dbb1bc0032f3d:docs/API_QUICK_START.md:curl-auth-header:17
+4a0582daae758642d8415f78798dbb1bc0032f3d:docs/API_QUICK_START.md:generic-api-key:34
+343a4b1c42c756f9fee3b5194ab9554f6809c479:docs/ARCHITECTURE.md:generic-api-key:541
+b75dfb1a59ea0acf1bd8a0aa58f147ea963b1567:DEPLOYMENT_NEXT_STEPS.md:curl-auth-header:162
+c4f9253ec705cd57d3b2872de0adf7087f9f202b:docs/API_DOCUMENTATION.md:curl-auth-header:29
+c4f9253ec705cd57d3b2872de0adf7087f9f202b:docs/API_DOCUMENTATION.md:generic-api-key:50
+443e5c4417df84840d98366645295b3ce17bcf32:VERCEL_ENV_SETUP.md:generic-api-key:24
+443e5c4417df84840d98366645295b3ce17bcf32:VERCEL_ENV_SETUP.md:generic-api-key:25
+443e5c4417df84840d98366645295b3ce17bcf32:VERCEL_ENV_SETUP.md:generic-api-key:28
