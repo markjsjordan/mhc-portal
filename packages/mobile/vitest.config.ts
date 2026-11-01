@@ -13,7 +13,10 @@ export default defineConfig({
     environment: 'node', // Use 'jsdom' for React Native testing with proper setup
     server: {
       deps: {
-        inline: ['@react-native-community/netinfo', '@nozbe/watermelondb'],
+        // netinfo is intentionally NOT inlined: its ESM entry imports
+        // react-native, whose Flow-only index.js cannot be parsed by Rollup.
+        // Tests mock netinfo via vitest.setup.ts, so it is never executed.
+        inline: ['@nozbe/watermelondb'],
       },
     },
     mockReset: true,
@@ -51,8 +54,20 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
   },
   resolve: {
-    alias: {
-      '@': '/src',
-    },
+    alias: [
+      { find: '@', replacement: '/src' },
+      {
+        // Replace the RN-backed package with an in-memory Node stub: its ESM
+        // build imports react-native (Flow-only index.js, unparseable here).
+        find: /^@react-native-async-storage\/async-storage$/,
+        replacement: new URL('./test-stubs/async-storage.ts', import.meta.url).pathname,
+      },
+      {
+        // Replace the native bridge with an in-memory Node stub: it resolves
+        // into react-native (Flow-only index.js, unparseable here).
+        find: /^expo-secure-store$/,
+        replacement: new URL('./test-stubs/expo-secure-store.ts', import.meta.url).pathname,
+      },
+    ],
   },
 });

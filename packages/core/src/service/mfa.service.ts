@@ -26,7 +26,7 @@ export class MFAService {
     const recoveryCodes = Array.from({ length: 8 }, () => randomBytes(5).toString('hex'));
 
     const encryption = resolveFieldEncryptionService();
-    const storedSecret = encryption ? encryption.encrypt(rawSecret) : rawSecret;
+    const storedSecret = encryption !== null ? encryption.encrypt(rawSecret) : rawSecret;
 
     // Persist to user record in pending state
     await this.db.query(
@@ -57,11 +57,11 @@ export class MFAService {
       [userId]
     );
     const user = res.rows[0] as { mfa_secret?: string; mfa_recovery_codes?: string[]; mfa_enabled?: boolean } | undefined;
-    if (!user || !user.mfa_secret) return false;
+    if (user?.mfa_secret === undefined || user.mfa_secret === '') return false;
 
     const encryption = resolveFieldEncryptionService();
     let secret = user.mfa_secret;
-    if (encryption && secret.startsWith('v1:')) {
+    if (encryption !== null && secret.startsWith('v1:')) {
       secret = encryption.decrypt(secret);
     }
 

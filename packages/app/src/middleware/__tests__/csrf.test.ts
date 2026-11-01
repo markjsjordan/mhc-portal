@@ -184,11 +184,11 @@ describe('CSRF Protection Middleware', () => {
 
   describe('CSRF Protection - Bearer Auth Exemption', () => {
     it('should reject CSRF check without token even if spoofed x-mobile-app header is sent', async () => {
-      await request(app)
+      const response = await request(app)
         .post('/api/test')
         .set('x-mobile-app', 'true')
-        .send({ data: 'test' })
-        .expect(403);
+        .send({ data: 'test' });
+      expect(response.status).toBe(403);
     });
 
     it('should skip CSRF check for Bearer token authenticated requests', async () => {

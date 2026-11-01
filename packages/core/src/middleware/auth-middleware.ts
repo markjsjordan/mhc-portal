@@ -125,8 +125,8 @@ export class AuthMiddleware {
         branchIds: payload.branchIds,
         roles: payload.roles,
         permissions: payload.permissions,
-        ipAddress: req.ip || (req.headers['x-forwarded-for'] as string) || null,
-        userAgent: (req.headers['user-agent'] as string) || null
+        ipAddress: (typeof req.ip === 'string' && req.ip !== '' ? req.ip : null) ?? (typeof req.headers['x-forwarded-for'] === 'string' && req.headers['x-forwarded-for'] !== '' ? req.headers['x-forwarded-for'] : null),
+        userAgent: typeof req.headers['user-agent'] === 'string' && req.headers['user-agent'] !== '' ? req.headers['user-agent'] : null
       };
       next();
     } catch (error) {

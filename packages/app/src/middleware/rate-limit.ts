@@ -79,7 +79,7 @@ initRedis().catch((err) => {
 
 // Helper function to get Redis store if available (safe lazy evaluation)
 const getRedisStore = (prefix: string): RedisStore | undefined => {
-  if (redisClient !== null && (redisClient as any).isReady) {
+  if (redisClient?.isReady === true) {
     return new RedisStore({
       sendCommand: (...args: string[]) => redisClient!.sendCommand(args),
       prefix,

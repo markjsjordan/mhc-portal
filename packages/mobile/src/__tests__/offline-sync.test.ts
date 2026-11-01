@@ -3,6 +3,14 @@ import { ConflictResolver } from '../database/sync/conflict-resolver';
 import { OfflineQueue } from '../database/sync/offline-queue';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// OfflineQueue writes through the secure-storage wrapper (encrypts values).
+// These tests assert the plain queue payload, so route that wrapper to the
+// same spy object instead of the encrypting implementation.
+vi.mock('../database/secure-storage', async () => {
+  const spy = await import('@react-native-async-storage/async-storage');
+  return { default: spy.default };
+});
+
 // Mock AsyncStorage
 vi.mock('@react-native-async-storage/async-storage', () => ({
   default: {
