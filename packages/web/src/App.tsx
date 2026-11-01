@@ -34,6 +34,8 @@ import { GlobalSearch, useGlobalSearch } from './components/search/index.js';
 
 // Lazy loaded dashboards
 const AdministratorDashboard = React.lazy(() => import('./app/pages/AdministratorDashboard').then((m) => ({ default: m.AdministratorDashboard })));
+const AgencyManagement = React.lazy(() => import('./app/pages/AgencyManagement'));
+const BrandingSettings = React.lazy(() => import('./app/pages/BrandingSettings'));
 const ComplianceDashboard = React.lazy(() => import('./app/pages/ComplianceDashboard').then((m) => ({ default: m.ComplianceDashboard })));
 const NurseDashboard = React.lazy(() => import('./app/pages/NurseDashboard').then((m) => ({ default: m.NurseDashboard })));
 const CaregiverDashboard = React.lazy(() => import('./app/pages/CaregiverDashboard').then((m) => ({ default: m.CaregiverDashboard })));
@@ -743,6 +745,18 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/admin/agencies"
+        element={
+          <ProtectedRoute
+            requiredRoles={['SUPER_ADMIN']}
+          >
+            <AppShell>
+              <AgencyManagement />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/mobile-demo"
         element={
           <ProtectedRoute>
@@ -856,6 +870,18 @@ function AppRoutes() {
           >
             <AppShell>
               <BulkNotificationsPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/branding"
+        element={
+          <ProtectedRoute
+            requiredRoles={['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']}
+          >
+            <AppShell>
+              <BrandingSettings />
             </AppShell>
           </ProtectedRoute>
         }
