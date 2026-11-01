@@ -222,6 +222,9 @@ jobs:
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
+    # NON-BLOCKING (owner decision): 75 moderate+ prod npm vulns, no non-breaking
+    # fix. Still reports; does not gate build. Tracked in ClickUp wdvf3acgua.
+    continue-on-error: true
     steps:
       - name: Checkout code
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.2
