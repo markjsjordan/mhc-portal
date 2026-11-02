@@ -120,8 +120,8 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
     queryFn: async () => {
       try {
         const response = await apiClient.get<{
-          items?: Array<{ id: string; first_name: string; last_name: string; status?: string }>;
-          data?: Array<{ id: string; first_name: string; last_name: string; status?: string }>;
+          items?: Array<{ id: string; firstName: string; lastName: string; status?: string }>;
+          data?: Array<{ id: string; firstName: string; lastName: string; status?: string }>;
         }>('/api/caregivers?limit=100');
         // Handle paginated response format (actual API response)
         if (response && Array.isArray((response as any).items)) {
@@ -132,7 +132,7 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
           return (response as any).data;
         }
         if (Array.isArray(response)) {
-          return response as Array<{ id: string; first_name: string; last_name: string; status?: string }>;
+          return response as Array<{ id: string; firstName: string; lastName: string; status?: string }>;
         }
         return [];
       } catch (err) {
@@ -416,7 +416,7 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
                 <SelectItem value="UNASSIGNED">-- Unassigned --</SelectItem>
                 {caregivers.map((cg) => (
                   <SelectItem key={cg.id} value={cg.id}>
-                    {cg.first_name} {cg.last_name} {cg.status ? `(${cg.status})` : ''}
+                    {cg.firstName} {cg.lastName} {cg.status && cg.status !== 'ACTIVE' ? `(${cg.status})` : ''}
                   </SelectItem>
                 ))}
               </SelectContent>
