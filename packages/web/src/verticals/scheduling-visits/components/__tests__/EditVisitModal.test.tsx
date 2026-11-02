@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { EditVisitModal } from '../EditVisitModal';
+import { formatCaregiverOptionLabel } from '../../utils/caregiverOptionLabel';
 import type { Visit } from '../../types';
 
 // Mock react-hot-toast
@@ -225,5 +226,49 @@ describe('EditVisitModal', () => {
 
     const saveBtn = screen.getByTestId('save-visit-button');
     expect(saveBtn.className).toContain('min-h-[44px]');
+  });
+
+  describe('formatCaregiverOptionLabel', () => {
+    it('formats label with camelCase firstName and lastName', () => {
+      const label = formatCaregiverOptionLabel({
+        id: 'cg-1',
+        firstName: 'Maria',
+        lastName: 'Santos',
+        status: 'ACTIVE',
+      });
+      expect(label).toBe('Maria Santos (ACTIVE)');
+    });
+
+    it('formats label with snake_case first_name and last_name', () => {
+      const label = formatCaregiverOptionLabel({
+        id: 'cg-2',
+        first_name: 'David',
+        last_name: 'Kim',
+        status: 'ACTIVE',
+      });
+      expect(label).toBe('David Kim (ACTIVE)');
+    });
+
+    it('formats label when caregiver name field is provided without status', () => {
+      const label = formatCaregiverOptionLabel({
+        id: 'cg-3',
+        name: 'Carlos Mendez',
+      });
+      expect(label).toBe('Carlos Mendez');
+    });
+
+    it('handles camelCase firstName and lastName without status', () => {
+      const label = formatCaregiverOptionLabel({
+        id: 'cg-4',
+        firstName: 'Alice',
+        lastName: 'Walker',
+      });
+      expect(label).toBe('Alice Walker');
+    });
+
+    it('falls back to Caregiver with status or id when name fields are missing', () => {
+      expect(formatCaregiverOptionLabel({ id: 'cg-12345678-abcd', status: 'ACTIVE' })).toBe('Caregiver (ACTIVE)');
+      expect(formatCaregiverOptionLabel({ id: 'cg-12345678-abcd' })).toBe('Caregiver cg-12345');
+    });
   });
 });

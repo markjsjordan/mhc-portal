@@ -359,7 +359,7 @@ export const AdministratorDashboard: React.FC = () => {
       title: 'Review Exceptions',
       description: 'Visit and billing exceptions',
       icon: <AlertTriangle className="h-5 w-5" />,
-      onClick: () => navigate('/exceptions'),
+      onClick: () => navigate('/time-tracking/aggregator-submissions'),
     },
     {
       title: 'Run Reports',

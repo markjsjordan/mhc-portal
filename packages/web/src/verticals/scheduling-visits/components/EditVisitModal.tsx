@@ -26,6 +26,13 @@ import {
   SelectValue,
 } from '@/components/ui/select.js';
 
+import {
+  formatCaregiverOptionLabel,
+  type CaregiverOption,
+} from '../utils/caregiverOptionLabel.js';
+
+export type { CaregiverOption };
+
 export interface EditVisitModalProps {
   visit: Visit;
   isOpen: boolean;
@@ -115,24 +122,25 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
   }, [visit.status, visit.actualStartTime]);
 
   // Fetch active caregivers for assignment
-  const { data: caregivers = [], isLoading: isLoadingCaregivers } = useQuery({
+  const { data: caregivers = [], isLoading: isLoadingCaregivers } = useQuery<CaregiverOption[]>({
     queryKey: ['caregivers', 'active-list'],
     queryFn: async () => {
       try {
         const response = await apiClient.get<{
-          items?: Array<{ id: string; first_name: string; last_name: string; status?: string }>;
-          data?: Array<{ id: string; first_name: string; last_name: string; status?: string }>;
+          items?: CaregiverOption[];
+          data?: CaregiverOption[];
         }>('/api/caregivers?limit=100');
         // Handle paginated response format (actual API response)
-        if (response && Array.isArray((response as any).items)) {
-          return (response as any).items;
+        const resObj = response as { items?: CaregiverOption[]; data?: CaregiverOption[] } | undefined;
+        if (Array.isArray(resObj?.items)) {
+          return resObj.items;
         }
         // Fallback to legacy format
-        if (response && Array.isArray((response as any).data)) {
-          return (response as any).data;
+        if (Array.isArray(resObj?.data)) {
+          return resObj.data;
         }
         if (Array.isArray(response)) {
-          return response as Array<{ id: string; first_name: string; last_name: string; status?: string }>;
+          return response as CaregiverOption[];
         }
         return [];
       } catch (err) {
@@ -416,7 +424,7 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
                 <SelectItem value="UNASSIGNED">-- Unassigned --</SelectItem>
                 {caregivers.map((cg) => (
                   <SelectItem key={cg.id} value={cg.id}>
-                    {cg.first_name} {cg.last_name} {cg.status ? `(${cg.status})` : ''}
+                    {formatCaregiverOptionLabel(cg)}
                   </SelectItem>
                 ))}
               </SelectContent>
