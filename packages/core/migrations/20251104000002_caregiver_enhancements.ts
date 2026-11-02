@@ -117,7 +117,6 @@ export async function down(knex: Knex): Promise<void> {
   await knex.raw('DROP TRIGGER IF EXISTS update_caregiver_service_authorizations_updated_at ON caregiver_service_authorizations');
   await knex.schema.dropTableIfExists('caregiver_state_screenings');
   await knex.schema.dropTableIfExists('caregiver_service_authorizations');
-  await knex.schema.alterTable('caregivers', (table) => {
-    table.dropColumn('state_specific');
-  });
+  // NOTE: caregivers.state_specific is owned and dropped by 20251030214719_state_specific_fields.ts.
+  // Dropping it here breaks the rollback chain when rolling back earlier migrations.
 }
