@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, User, Target, Clock, AlertTriangle } from 'lucide-react';
-import { Card, StatusBadge } from '@/core/components';
+import { Card, CardContent } from '@/components/ui/card.js';
+import { StatusBadge } from '@/core/components';
 import { formatDate } from '@/core/utils';
 import type { CarePlan } from '../types';
 
@@ -28,7 +29,8 @@ export const CarePlanCard: React.FC<CarePlanCardProps> = ({ carePlan, compact = 
 
   return (
     <Link to={`/care-plans/${carePlan.id}`}>
-      <Card padding="md" hover className="h-full">
+      <Card className="h-full hover:shadow-md transition-shadow">
+        <CardContent className="p-5">
         <div className="flex justify-between items-start">
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-gray-900">
@@ -95,6 +97,7 @@ export const CarePlanCard: React.FC<CarePlanCardProps> = ({ carePlan, compact = 
             </div>
           </div>
         )}
+        </CardContent>
       </Card>
     </Link>
   );

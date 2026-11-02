@@ -85,7 +85,7 @@ export const VisitCard: React.FC<VisitCardProps> = ({ visit, compact = false, on
             handleCardClick();
           }
         }}
-        className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="flex items-center justify-between p-4 bg-card text-card-foreground border rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer group focus:outline-none focus:ring-2 focus:ring-ring"
       >
         <div className="flex items-center space-x-4 flex-1 min-w-0">
           <div className="flex-shrink-0">
@@ -133,7 +133,7 @@ export const VisitCard: React.FC<VisitCardProps> = ({ visit, compact = false, on
           handleCardClick();
         }
       }}
-      className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group text-left focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="bg-card text-card-foreground rounded-xl shadow-sm border hover:shadow-md transition-all cursor-pointer group text-left focus:outline-none focus:ring-2 focus:ring-ring"
     >
       <div className="p-5">
         {/* Header Badges & Status */}
