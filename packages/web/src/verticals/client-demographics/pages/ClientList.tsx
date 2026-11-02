@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Grid, List, Users, Sparkles } from 'lucide-react';
+import { Plus, Grid, List, Users, Sparkles, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button.js';
 import {
   LoadingSpinner, 
@@ -44,6 +44,23 @@ export const ClientList: React.FC = () => {
   }
 
   const clients = data?.items ?? [];
+  const totalClients = data?.total ?? 0;
+
+  // Check if any filters are active
+  const hasActiveFilters = useMemo(() => {
+    return (
+      Boolean(filters.query) ||
+      Boolean(filters.status?.length) ||
+      Boolean(filters.serviceLevel?.length) ||
+      Boolean(filters.insuranceType?.length) ||
+      Boolean(filters.createdDateFrom) ||
+      Boolean(filters.createdDateTo)
+    );
+  }, [filters]);
+
+  const clearAllFilters = () => {
+    setFilters({});
+  };
 
   return (
     <div className="space-y-6">
@@ -51,7 +68,13 @@ export const ClientList: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
           <p className="text-gray-600 mt-1">
-            {data?.total ?? 0} total clients
+            {(() => {
+              if (totalClients === 0) return 'No clients found';
+              if (hasActiveFilters) {
+                return `Showing ${clients.length} of ${totalClients} clients`;
+              }
+              return `${totalClients} total clients`;
+            })()}
           </p>
         </div>
         <div className="flex gap-2 items-center">
@@ -92,7 +115,7 @@ export const ClientList: React.FC = () => {
 
       <ClientFilters filters={filters} onFiltersChange={setFilters} />
 
-      {clients.length === 0 ? (
+      {totalClients === 0 && !hasActiveFilters ? (
         <EmptyState
           title="No clients found"
           description={
@@ -143,6 +166,21 @@ export const ClientList: React.FC = () => {
             ) : null
           }
         />
+      ) : totalClients > 0 && clients.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4 text-gray-500">
+            <Search className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-semibold text-gray-900">No clients match your filter</h3>
+          <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
+            Try adjusting your search query or filters to see more results.
+          </p>
+          <div className="mt-4">
+            <Button variant="outline" size="sm" onClick={clearAllFilters}>
+              Reset Filters
+            </Button>
+          </div>
+        </div>
       ) : (
         <div
           className={
