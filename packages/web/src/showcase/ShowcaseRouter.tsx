@@ -16,8 +16,9 @@ import { ScenarioProvider, ScenarioContainer } from './scenarios';
 import { ScenarioButton } from './components/scenarios/ScenarioButton';
 import { PersonaRole } from './types';
 import { AppShell } from '../app/components';
-import { NotFound, AdminDashboard } from '../app/pages';
+import { NotFound, AdminDashboard, Settings } from '../app/pages';
 import { ClientList, ClientDetail } from '../verticals/client-demographics';
+import { CaregiverList, CaregiverDetail } from '../verticals/caregivers';
 import { CarePlanList, CarePlanDetail, TaskList, CreateCarePlanPage } from '../verticals/care-plans';
 import { EVVRecordList, EVVRecordDetail } from '../verticals/time-tracking-evv';
 import { InvoiceList, InvoiceDetail } from '../verticals/billing-invoicing';
@@ -119,13 +120,18 @@ export const ShowcaseRouter: React.FC = () => {
           }
         />
         <Route
-          path="/caregivers/*"
+          path="/caregivers"
           element={
             <AppShell>
-              <div className="text-center py-12">
-                <h2 className="text-2xl font-bold text-gray-900">Caregivers Module</h2>
-                <p className="text-gray-600 mt-2">Coming soon...</p>
-              </div>
+              <CaregiverList />
+            </AppShell>
+          }
+        />
+        <Route
+          path="/caregivers/:id"
+          element={
+            <AppShell>
+              <CaregiverDetail />
             </AppShell>
           }
         />
@@ -237,10 +243,7 @@ export const ShowcaseRouter: React.FC = () => {
           path="/settings/*"
           element={
             <AppShell>
-              <div className="text-center py-12">
-                <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
-                <p className="text-gray-600 mt-2">Coming soon...</p>
-              </div>
+              <Settings />
             </AppShell>
           }
         />
