@@ -23,6 +23,7 @@ describe('CaregiverFilters', () => {
     expect(
       screen.getByPlaceholderText('Search by name or employee #...')
     ).toBeInTheDocument();
+    // Filter button accessible name is just "Filters" when count is 0
     expect(screen.getByRole('button', { name: /filters/i })).toBeInTheDocument();
   });
 
@@ -34,7 +35,10 @@ describe('CaregiverFilters', () => {
       />
     );
 
-    const filterButton = screen.getByRole('button', { name: /filters/i });
+    // Find the Filters button (not Reset Filters)
+    const filterButton = screen.getByRole('button', { name: (name) => 
+      /filters/i.test(name) && !/reset/i.test(name)
+    });
     fireEvent.click(filterButton);
 
     expect(screen.getByText('Filter Caregivers')).toBeInTheDocument();
@@ -51,7 +55,9 @@ describe('CaregiverFilters', () => {
       />
     );
 
-    const filterButton = screen.getByRole('button', { name: /filters/i });
+    const filterButton = screen.getByRole('button', { name: (name) => 
+      /filters/i.test(name) && !/reset/i.test(name)
+    });
     fireEvent.click(filterButton);
 
     const activeButton = screen.getByRole('button', { name: /^Active$/ });
@@ -70,7 +76,9 @@ describe('CaregiverFilters', () => {
       />
     );
 
-    const filterButton = screen.getByRole('button', { name: /filters/i });
+    const filterButton = screen.getByRole('button', { name: (name) => 
+      /filters/i.test(name) && !/reset/i.test(name)
+    });
     fireEvent.click(filterButton);
 
     const fullTimeButton = screen.getByRole('button', { name: /Full-Time/ });
@@ -112,11 +120,9 @@ describe('CaregiverFilters', () => {
       />
     );
 
-    const filterButton = screen.getByRole('button', { name: /filters/i });
-    fireEvent.click(filterButton);
-
-    const clearButton = await screen.findByRole('button', { name: /clear all/i });
-    fireEvent.click(clearButton);
+    // Click the standalone Reset Filters button (visible when activeCount > 0)
+    const resetButton = screen.getByRole('button', { name: /reset filters/i });
+    fireEvent.click(resetButton);
 
     expect(mockOnFiltersChange).toHaveBeenCalledWith(
       expect.objectContaining({

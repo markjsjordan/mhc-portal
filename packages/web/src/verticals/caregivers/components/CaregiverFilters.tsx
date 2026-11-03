@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X, RotateCcw } from 'lucide-react';
 import { Input } from '@/components/ui/input.js';
 import { Button } from '@/components/ui/button.js';
 import {
@@ -145,13 +145,28 @@ export const CaregiverFilters: React.FC<CaregiverFiltersProps> = ({
           )}
         </div>
 
-        {/* Filter Dropdown */}
-        <FilterDropdown
-          title="Filter Caregivers"
-          activeCount={activeCount}
-          onClearAll={handleClearAll}
-          width="md"
-        >
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          {activeCount > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleClearAll}
+              className="gap-1.5 text-muted-foreground hover:text-destructive"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset Filters</span>
+            </Button>
+          )}
+
+          {/* Filter Dropdown */}
+          <FilterDropdown
+            title="Filter Caregivers"
+            activeCount={activeCount}
+            onClearAll={handleClearAll}
+            width="md"
+          >
           {/* Status Section */}
           <FilterCheckboxSection
             label="Status"
@@ -204,6 +219,7 @@ export const CaregiverFilters: React.FC<CaregiverFiltersProps> = ({
             }
           />
         </FilterDropdown>
+        </div>
       </div>
     </div>
   );
