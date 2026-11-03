@@ -1,8 +1,8 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CaregiverFilters } from '../CaregiverFilters.js';
-import type { CaregiverSearchFilters } from '../types';
+import type { CaregiverSearchFilters } from '../../types/index.js';
 
 describe('CaregiverFilters', () => {
   const mockOnFiltersChange = vi.fn();
@@ -12,7 +12,7 @@ describe('CaregiverFilters', () => {
     mockOnFiltersChange.mockClear();
   });
 
-  it('renders search input and filter button', () => {
+  it('renders filter button', () => {
     render(
       <CaregiverFilters
         filters={defaultFilters}
@@ -20,9 +20,6 @@ describe('CaregiverFilters', () => {
       />
     );
 
-    expect(
-      screen.getByPlaceholderText('Search by name or employee #...')
-    ).toBeInTheDocument();
     // Filter button accessible name is just "Filters" when count is 0
     expect(screen.getByRole('button', { name: /filters/i })).toBeInTheDocument();
   });
@@ -106,9 +103,8 @@ describe('CaregiverFilters', () => {
     expect(screen.getByText('3')).toBeInTheDocument();
   });
 
-  it('clears all filters', async () => {
+  it('clears all filters via dropdown clear button', async () => {
     const existingFilters: CaregiverSearchFilters = {
-      query: 'John',
       status: ['ACTIVE'],
       employmentType: ['FULL_TIME'],
     };
@@ -120,17 +116,45 @@ describe('CaregiverFilters', () => {
       />
     );
 
-    // Click the standalone Reset Filters button (visible when activeCount > 0)
-    const resetButton = screen.getByRole('button', { name: /reset filters/i });
-    fireEvent.click(resetButton);
+    // Open the dropdown
+    const filterButton = screen.getByRole('button', { name: (name) => 
+      /filters/i.test(name) && !/reset/i.test(name)
+    });
+    fireEvent.click(filterButton);
+
+    // Click the "Clear" button inside the dropdown
+    const clearButton = screen.getByRole('button', { name: /clear/i });
+    fireEvent.click(clearButton);
 
     expect(mockOnFiltersChange).toHaveBeenCalledWith(
       expect.objectContaining({
-        query: undefined,
         status: undefined,
         employmentType: undefined,
         complianceStatus: undefined,
       })
     );
+  });
+
+  it('does not include search query in filter state', () => {
+    const filtersWithQuery: CaregiverSearchFilters = {
+      query: 'John',
+      status: ['ACTIVE'],
+    };
+
+    render(
+      <CaregiverFilters
+        filters={filtersWithQuery}
+        onFiltersChange={mockOnFiltersChange}
+      />
+    );
+
+    // Open dropdown
+    const filterButton = screen.getByRole('button', { name: (name) => 
+      /filters/i.test(name) && !/reset/i.test(name)
+    });
+    fireEvent.click(filterButton);
+
+    // Active count should be 1 (status only, not query)
+    expect(screen.getByText('1')).toBeInTheDocument();
   });
 });
