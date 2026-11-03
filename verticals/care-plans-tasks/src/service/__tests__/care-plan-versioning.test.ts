@@ -39,7 +39,6 @@ describe('Care Plan Versioning (FC-020)', () => {
   const userId: UUID = '00000000-0000-4000-8000-000000000002';
   const planId: UUID = '00000000-0000-4000-8000-000000000010';
   const clientId: UUID = '00000000-0000-4000-8000-000000000020';
-  // eslint-disable-next-line sonarjs/no-hardcoded-ip -- fixture value for signature audit trail
   const signerIp = '192.0.2.10';
 
   const mockContext: UserContext = {
