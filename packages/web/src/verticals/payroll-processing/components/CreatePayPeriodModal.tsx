@@ -44,7 +44,7 @@ export const CreatePayPeriodModal: React.FC<CreatePayPeriodModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!user?.organizationId) return;
 

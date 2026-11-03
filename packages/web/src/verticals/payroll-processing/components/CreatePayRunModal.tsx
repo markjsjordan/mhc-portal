@@ -47,7 +47,7 @@ export const CreatePayRunModal: React.FC<CreatePayRunModalProps> = ({
     label: `#${period.periodNumber} - ${period.periodYear} (${period.startDate.slice(0, 10)} to ${period.endDate.slice(0, 10)})`,
   }));
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!user?.organizationId || !payPeriodId) return;
 

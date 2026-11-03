@@ -9,6 +9,10 @@
 
 let sessionKey: CryptoKey | null = null;
 
+function hasSubtle(): boolean {
+  return typeof window !== 'undefined' && !!window.crypto?.subtle;
+}
+
 async function getSessionKey(): Promise<CryptoKey> {
   if (sessionKey) return sessionKey;
   sessionKey = await window.crypto.subtle.generateKey(
@@ -21,7 +25,7 @@ async function getSessionKey(): Promise<CryptoKey> {
 
 export async function encryptData(data: unknown): Promise<string> {
   try {
-    if (typeof window === 'undefined' || !window.crypto?.subtle) {
+    if (!hasSubtle()) {
       return JSON.stringify(data);
     }
     const key = await getSessionKey();
@@ -47,7 +51,7 @@ export async function decryptData<T>(envelope: string): Promise<T | null> {
     if (!envelope.startsWith('enc:v1:')) {
       return JSON.parse(envelope) as T;
     }
-    if (typeof window === 'undefined' || !window.crypto?.subtle) {
+    if (!hasSubtle()) {
       return null;
     }
     const parts = envelope.slice('enc:v1:'.length).split(':');

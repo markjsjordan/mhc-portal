@@ -143,7 +143,7 @@ export const CreateCaregiverPage: React.FC = () => {
   const [errors, setErrors] = useState<Partial<Record<keyof CaregiverFormValues, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
 
     if (!user?.organizationId) {
