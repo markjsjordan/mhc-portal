@@ -266,12 +266,18 @@ export async function down(knex: Knex): Promise<void> {
   await knex.raw('DROP INDEX IF EXISTS idx_clients_state_specific');
   await knex.raw('DROP INDEX IF EXISTS idx_caregivers_state_specific');
   
-  // Remove state-specific fields
-  await knex.schema.alterTable('clients', (table) => {
-    table.dropColumn('state_specific');
-  });
+  // Remove state-specific fields (check for existence first)
+  const hasClientsStateSpecific = await knex.schema.hasColumn('clients', 'state_specific');
+  if (hasClientsStateSpecific) {
+    await knex.schema.alterTable('clients', (table) => {
+      table.dropColumn('state_specific');
+    });
+  }
   
-  await knex.schema.alterTable('caregivers', (table) => {
-    table.dropColumn('state_specific');
-  });
+  const hasCaregiversStateSpecific = await knex.schema.hasColumn('caregivers', 'state_specific');
+  if (hasCaregiversStateSpecific) {
+    await knex.schema.alterTable('caregivers', (table) => {
+      table.dropColumn('state_specific');
+    });
+  }
 }

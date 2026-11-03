@@ -85,23 +85,38 @@ export async function down(knex: Knex): Promise<void> {
   await knex.raw('DROP INDEX IF EXISTS idx_users_token_version');
   await knex.raw('DROP INDEX IF EXISTS idx_users_failed_logins');
 
-  // Remove new columns from users table
-  await knex.schema.alterTable('users', (table) => {
-    table.dropColumn('oauth_provider');
-    table.dropColumn('oauth_provider_id');
-    table.dropColumn('oauth_email_verified');
-    table.dropColumn('oauth_picture_url');
-    table.dropColumn('oauth_locale');
-    table.dropColumn('oauth_last_verified_at');
-    table.dropColumn('token_version');
-    table.dropColumn('last_password_change_at');
-    table.dropColumn('last_failed_login_at');
-    table.dropColumn('last_login_ip');
-    table.dropColumn('last_login_user_agent');
-  });
+  // Helper function to safely drop columns
+  async function dropColumnsIfExist(tableName: string, columnNames: string[]) {
+    for (const columnName of columnNames) {
+      const hasColumn = await knex.schema.hasColumn(tableName, columnName);
+      if (hasColumn) {
+        await knex.schema.alterTable(tableName, (table) => {
+          table.dropColumn(columnName);
+        });
+      }
+    }
+  }
 
-  // Restore password_hash to NOT NULL
-  await knex.schema.alterTable('users', (table) => {
-    table.string('password_hash', 255).notNullable().alter();
-  });
+  // Remove new columns from users table
+  await dropColumnsIfExist('users', [
+    'oauth_provider',
+    'oauth_provider_id',
+    'oauth_email_verified',
+    'oauth_picture_url',
+    'oauth_locale',
+    'oauth_last_verified_at',
+    'token_version',
+    'last_password_change_at',
+    'last_failed_login_at',
+    'last_login_ip',
+    'last_login_user_agent',
+  ]);
+
+  // Restore password_hash to NOT NULL (only if it exists)
+  const hasPasswordHash = await knex.schema.hasColumn('users', 'password_hash');
+  if (hasPasswordHash) {
+    await knex.schema.alterTable('users', (table) => {
+      table.string('password_hash', 255).notNullable().alter();
+    });
+  }
 }

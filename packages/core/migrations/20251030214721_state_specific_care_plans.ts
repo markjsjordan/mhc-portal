@@ -353,60 +353,72 @@ export async function down(knex: Knex): Promise<void> {
   await knex.raw('DROP INDEX IF EXISTS idx_care_plans_review_due');
   await knex.raw('DROP INDEX IF EXISTS idx_care_plans_state_jurisdiction');
   
+  // Helper function to safely drop columns
+  async function dropColumnsIfExist(tableName: string, columnNames: string[]) {
+    for (const columnName of columnNames) {
+      const hasColumn = await knex.schema.hasColumn(tableName, columnName);
+      if (hasColumn) {
+        await knex.schema.alterTable(tableName, (table) => {
+          table.dropColumn(columnName);
+        });
+      }
+    }
+  }
+  
   // Remove state-specific columns from service_authorizations
-  await knex.schema.alterTable('service_authorizations', (table) => {
-    table.dropColumn('state_specific_data');
-    table.dropColumn('units_remaining');
-    table.dropColumn('units_used');
-    table.dropColumn('service_codes');
-    table.dropColumn('state_jurisdiction');
-    table.dropColumn('care_plan_id');
-  });
+  await dropColumnsIfExist('service_authorizations', [
+    'state_specific_data',
+    'units_remaining',
+    'units_used',
+    'service_codes',
+    'state_jurisdiction',
+    'care_plan_id',
+  ]);
   
   // Remove state-specific columns from task_instances
-  await knex.schema.alterTable('task_instances', (table) => {
-    table.dropColumn('state_specific_task_data');
-    table.dropColumn('skill_level_required');
-    table.dropColumn('delegation_authority_id');
-    table.dropColumn('supervisor_reviewed_at');
-    table.dropColumn('supervisor_reviewed_by');
-    table.dropColumn('supervisor_review_required');
-    table.dropColumn('requires_supervision');
-  });
+  await dropColumnsIfExist('task_instances', [
+    'state_specific_task_data',
+    'skill_level_required',
+    'delegation_authority_id',
+    'supervisor_reviewed_at',
+    'supervisor_reviewed_by',
+    'supervisor_review_required',
+    'requires_supervision',
+  ]);
   
   // Remove state-specific columns from care_plans
-  await knex.schema.alterTable('care_plans', (table) => {
-    table.dropColumn('infection_control_plan_reviewed');
-    table.dropColumn('disaster_plan_on_file');
-    table.dropColumn('plan_of_care_form_number');
-    table.dropColumn('financial_management_service_id');
-    table.dropColumn('employer_authority_id');
-    table.dropColumn('is_cds_model');
-    table.dropColumn('service_authorization_period_end');
-    table.dropColumn('service_authorization_period_start');
-    table.dropColumn('service_authorization_units');
-    table.dropColumn('service_authorization_form');
-    table.dropColumn('medicaid_waiver');
-    table.dropColumn('medicaid_program');
-    table.dropColumn('last_review_completed_by');
-    table.dropColumn('last_review_completed_date');
-    table.dropColumn('next_review_due');
-    table.dropColumn('plan_review_interval_days');
-    table.dropColumn('next_supervisory_visit_due');
-    table.dropColumn('last_supervisory_visit_date');
-    table.dropColumn('rn_supervisor_license');
-    table.dropColumn('rn_supervisor_name');
-    table.dropColumn('rn_supervisor_id');
-    table.dropColumn('rn_delegation_id');
-    table.dropColumn('verbal_order_authenticated_at');
-    table.dropColumn('verbal_order_authenticated_by');
-    table.dropColumn('order_date');
-    table.dropColumn('ordering_provider_npi');
-    table.dropColumn('ordering_provider_license');
-    table.dropColumn('ordering_provider_name');
-    table.dropColumn('ordering_provider_id');
-    table.dropColumn('order_source');
-    table.dropColumn('state_specific_data');
-    table.dropColumn('state_jurisdiction');
-  });
+  await dropColumnsIfExist('care_plans', [
+    'infection_control_plan_reviewed',
+    'disaster_plan_on_file',
+    'plan_of_care_form_number',
+    'financial_management_service_id',
+    'employer_authority_id',
+    'is_cds_model',
+    'service_authorization_period_end',
+    'service_authorization_period_start',
+    'service_authorization_units',
+    'service_authorization_form',
+    'medicaid_waiver',
+    'medicaid_program',
+    'last_review_completed_by',
+    'last_review_completed_date',
+    'next_review_due',
+    'plan_review_interval_days',
+    'next_supervisory_visit_due',
+    'last_supervisory_visit_date',
+    'rn_supervisor_license',
+    'rn_supervisor_name',
+    'rn_supervisor_id',
+    'rn_delegation_id',
+    'verbal_order_authenticated_at',
+    'verbal_order_authenticated_by',
+    'order_date',
+    'ordering_provider_npi',
+    'ordering_provider_license',
+    'ordering_provider_name',
+    'ordering_provider_id',
+    'order_source',
+    'state_specific_data',
+    'state_jurisdiction',
+  ]);
 }
