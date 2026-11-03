@@ -350,7 +350,7 @@ export class PatientEducationService {
     }
 
     // Conditions are from hardcoded strings, safe for dynamic SQL
-    // eslint-disable-next-line sonarjs/sql-queries
+     
     const result = await this.pool.query<EducationTopicRow>(
       `SELECT * FROM education_topics WHERE ${conditions.join(' AND ')} ORDER BY category, display_order, name`,
       values
@@ -428,7 +428,7 @@ export class PatientEducationService {
     values.push(id);
 
     // Column names are from hardcoded field map, safe for dynamic SQL
-    // eslint-disable-next-line sonarjs/sql-queries
+     
     const result = await this.pool.query<EducationTopicRow>(
       `UPDATE education_topics SET ${setClauses.join(', ')} WHERE id = $${paramCount} RETURNING *`,
       values
@@ -492,7 +492,7 @@ export class PatientEducationService {
     }
 
     // Conditions are from hardcoded strings, safe for dynamic SQL
-    // eslint-disable-next-line sonarjs/sql-queries
+     
     const result = await this.pool.query<EducationMaterialRow>(
       `SELECT * FROM education_materials WHERE ${conditions.join(' AND ')} ORDER BY display_order, name`,
       values
@@ -728,7 +728,7 @@ export class PatientEducationService {
     values.push(input.id);
 
     // Column names are from hardcoded field map, safe for dynamic SQL
-    // eslint-disable-next-line sonarjs/sql-queries
+     
     const result = await this.pool.query<PatientEducationRow>(
       `UPDATE patient_education SET ${setClauses.join(', ')} WHERE id = $${paramCount} RETURNING *`,
       values

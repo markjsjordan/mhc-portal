@@ -376,7 +376,7 @@ export class LabResultService {
     values.push(id);
 
     // Column names are from hardcoded field map, safe for dynamic SQL
-    // eslint-disable-next-line sonarjs/sql-queries
+     
     const result = await this.pool.query<LabResultTypeRow>(
       `UPDATE lab_result_types SET ${setClauses.join(', ')} WHERE id = $${paramCount} RETURNING *`,
       values
@@ -796,7 +796,7 @@ export class LabResultService {
     values.push(input.id);
 
     // Column names are from hardcoded field map, safe for dynamic SQL
-    // eslint-disable-next-line sonarjs/sql-queries
+     
     const result = await this.pool.query<LabResultRow>(
       `UPDATE lab_results SET ${setClauses.join(', ')} WHERE id = $${paramCount} RETURNING *`,
       values
