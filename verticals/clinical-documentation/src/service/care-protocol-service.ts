@@ -315,7 +315,7 @@ export class CareProtocolService {
     }
 
     // Conditions are from hardcoded strings, safe for dynamic SQL
-    // eslint-disable-next-line sonarjs/sql-queries
+     
     const result = await this.pool.query<ProtocolCategoryRow>(
       `SELECT * FROM protocol_categories WHERE ${conditions.join(' AND ')} ORDER BY display_order, name`,
       [organizationId]
@@ -409,7 +409,7 @@ export class CareProtocolService {
     }
 
     // Conditions are from hardcoded strings, safe for dynamic SQL
-    // eslint-disable-next-line sonarjs/sql-queries
+     
     const result = await this.pool.query<CareProtocolRow>(query, values);
     return result.rows.map(this.mapCareProtocol);
   }
@@ -581,7 +581,7 @@ export class CareProtocolService {
     values.push(input.id);
 
     // Column names are from hardcoded field map, safe for dynamic SQL
-    // eslint-disable-next-line sonarjs/sql-queries
+     
     const result = await this.pool.query<CareProtocolRow>(
       `UPDATE care_protocols SET ${setClauses.join(', ')} WHERE id = $${paramCount} RETURNING *`,
       values
@@ -718,7 +718,7 @@ export class CareProtocolService {
     }
 
     // Conditions are from hardcoded strings, safe for dynamic SQL
-    // eslint-disable-next-line sonarjs/sql-queries
+     
     const result = await this.pool.query<ProtocolComplianceRow>(query, values);
     return result.rows.map(this.mapProtocolCompliance);
   }
