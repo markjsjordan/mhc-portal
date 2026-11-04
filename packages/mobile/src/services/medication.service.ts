@@ -129,7 +129,7 @@ export interface MARExport {
 /**
  * Get route display name
  */
-function getRouteDisplayName(route: MedicationRoute): string {
+export function getRouteDisplayName(route: MedicationRoute): string {
   const names: Record<MedicationRoute, string> = {
     oral: 'Oral (by mouth)',
     sublingual: 'Sublingual (under tongue)',
@@ -148,7 +148,7 @@ function getRouteDisplayName(route: MedicationRoute): string {
 /**
  * Get frequency display name
  */
-function getFrequencyDisplayName(frequency: MedicationFrequency): string {
+export function getFrequencyDisplayName(frequency: MedicationFrequency): string {
   const names: Record<MedicationFrequency, string> = {
     once_daily: 'Once daily',
     twice_daily: 'Twice daily',
