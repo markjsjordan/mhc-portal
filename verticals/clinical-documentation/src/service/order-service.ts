@@ -738,7 +738,7 @@ export class OrderService {
     values.push(input.id);
 
     // Field names are from hardcoded map, safe for dynamic SQL
-     
+    // eslint-disable-next-line sonarjs/sql-queries
     const result = await this.pool.query<OrderRow>(
       `UPDATE orders SET ${setClauses.join(', ')} WHERE id = $${paramCount} RETURNING *`,
       values

@@ -317,7 +317,7 @@ export class ClinicalRepository {
 
     // False positive: whereClause is built from safe conditions array,
     // not user input. All user values are passed via parameterized params array.
-     
+    // eslint-disable-next-line sonarjs/sql-queries
     const result = await db.query(
       `
       SELECT * FROM clinical_visit_notes

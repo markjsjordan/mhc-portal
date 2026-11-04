@@ -363,7 +363,7 @@ export class PhysicianCommunicationService {
     }
 
     // Conditions are from hardcoded strings, safe for dynamic SQL
-     
+    // eslint-disable-next-line sonarjs/sql-queries
     const result = await this.pool.query<PhysicianRow>(
       `SELECT * FROM physicians WHERE ${conditions.join(' AND ')} ORDER BY last_name, first_name`,
       values
@@ -463,7 +463,7 @@ export class PhysicianCommunicationService {
     values.push(input.id);
 
     // Column names are from hardcoded field map, safe for dynamic SQL
-     
+    // eslint-disable-next-line sonarjs/sql-queries
     const result = await this.pool.query<PhysicianRow>(
       `UPDATE physicians SET ${setClauses.join(', ')} WHERE id = $${paramCount} RETURNING *`,
       values
@@ -724,7 +724,7 @@ export class PhysicianCommunicationService {
     const setClause = [`status = $2`, 'updated_at = NOW()', ...extraFields].join(', ');
 
     // Set clause uses hardcoded field names only, safe for dynamic SQL
-     
+    // eslint-disable-next-line sonarjs/sql-queries
     const result = await this.pool.query<CommunicationRow>(
       `UPDATE physician_communications SET ${setClause} WHERE id = $1 RETURNING *`,
       [id, status]
