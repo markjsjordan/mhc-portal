@@ -34,11 +34,30 @@ vi.mock('../../components', () => ({
 }));
 
 describe('TaskList', () => {
-  it('renders the client picker by default, not a task list', () => {
+  it('renders the search input and client picker by default', () => {
     render(<TaskList />);
 
+    expect(
+      screen.getByPlaceholderText('Search by client, caregiver, service, address, or visit #...')
+    ).toBeInTheDocument();
     expect(screen.getByTestId('task-client-picker')).toBeInTheDocument();
     expect(screen.queryByTestId('task-instance-list')).not.toBeInTheDocument();
+  });
+
+  it('allows typing and clearing search query', async () => {
+    const user = userEvent.setup();
+    render(<TaskList />);
+
+    const searchInput = screen.getByPlaceholderText(
+      'Search by client, caregiver, service, address, or visit #...'
+    );
+    await user.type(searchInput, 'wound care');
+    expect(searchInput).toHaveValue('wound care');
+
+    const clearButton = screen.getByRole('button', { name: 'Clear search' });
+    expect(clearButton).toBeInTheDocument();
+    await user.click(clearButton);
+    expect(searchInput).toHaveValue('');
   });
 
   it('shows TaskInstanceList scoped to the selected client after selection', async () => {
