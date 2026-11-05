@@ -52,8 +52,39 @@ interface TestTimeEntry {
   metadata?: Record<string, unknown>;
 }
 
+interface TestClockInput {
+  organizationId: string;
+  branchId: string;
+  clientId: string;
+  caregiverId: string;
+  serviceTypeCode: string;
+  serviceTypeName: string;
+  clientName: string;
+  caregiverName: string;
+  clockInTime?: Date;
+  clockOutTime?: Date;
+  locationVerification?: {
+    clockInLocation?: {
+      latitude: number;
+      longitude: number;
+      accuracy: number;
+      timestamp: Date;
+      method: string;
+    };
+    clockOutLocation?: {
+      latitude: number;
+      longitude: number;
+      accuracy: number;
+      timestamp: Date;
+      method: string;
+    };
+  };
+  notes?: string;
+  metadata?: Record<string, unknown>;
+}
+
 // Test the fixed variable naming and optional property handling
-function _testClockInProcessing(input: any): TestEVVRecord {
+function _testClockInProcessing(input: TestClockInput): TestEVVRecord {
   const baseRecord: TestEVVRecord = {
     organizationId: input.organizationId,
     branchId: input.branchId,
@@ -85,7 +116,7 @@ function _testClockInProcessing(input: any): TestEVVRecord {
 }
 
 // Test the fixed variable naming for clock out
-function _testClockOutProcessing(input: any): TestEVVRecord {
+function _testClockOutProcessing(input: TestClockInput): TestEVVRecord {
   const baseRecord: TestEVVRecord = {
     organizationId: input.organizationId,
     branchId: input.branchId,
@@ -116,8 +147,24 @@ function _testClockOutProcessing(input: any): TestEVVRecord {
   };
 }
 
+interface TestDatabaseRow {
+  evv_record_id: string;
+  entry_type: 'CLOCK_IN' | 'CLOCK_OUT' | 'MANUAL_ADJUSTMENT';
+  timestamp: Date;
+  location?: boolean;
+  location_latitude?: number;
+  location_longitude?: number;
+  location_accuracy?: number;
+  location_timestamp?: Date;
+  location_method?: string;
+  verified: boolean;
+  verification_method?: string;
+  notes?: string;
+  metadata?: string;
+}
+
 // Test the fixed bracket notation access
-function _testDatabaseRowProcessing(row: any): TestTimeEntry {
+function _testDatabaseRowProcessing(row: TestDatabaseRow): TestTimeEntry {
   // Fixed: Use bracket notation for dynamic property access
   return {
     evvRecordId: row['evv_record_id'] as string,

@@ -16,8 +16,26 @@ import {
   VerificationLevel,
   ComplianceFlag,
   EVVRecord,
+  DeviceInfo,
 } from '../types/evv';
 import { CryptoUtils } from '../utils/crypto-utils';
+
+export interface StateRequirementsValidationConfig {
+  allowedClockMethods?: string[];
+  allowedVerificationMethods?: string[];
+  clockInGracePeriodMinutes?: number;
+  geoPerimeterTolerance?: number;
+  vmurEnabled?: boolean;
+  vmurApprovalRequired?: boolean;
+  allowTelephonyFallback?: boolean;
+  mcoRequirements?: {
+    mcoId?: string;
+    mcoName?: string;
+    requiresClientSignature?: boolean;
+    requiresPhotoVerification?: boolean;
+  };
+  [key: string]: unknown;
+}
 
 export class EVVValidator {
   
@@ -132,7 +150,7 @@ export class EVVValidator {
   /**
    * Validate device info
    */
-  validateDeviceInfo(deviceInfo: any, errors: string[]): void {
+  validateDeviceInfo(deviceInfo: DeviceInfo, errors: string[]): void {
     if (!deviceInfo.deviceId) {
       errors.push('deviceId is required');
     }
@@ -494,7 +512,7 @@ export class EVVValidator {
    */
   validateStateRequirements(
     stateCode: string,
-    config: any, // Accept full state config with all properties
+    config: StateRequirementsValidationConfig, // Accept full state config with all properties
     record: EVVRecord,
     scheduledStartTime?: Date,
     _scheduledEndTime?: Date // Unused parameter, kept for API compatibility
@@ -520,8 +538,9 @@ export class EVVValidator {
           'MANUAL': [],
         };
 
+        const allowedMethods = config.allowedClockMethods;
         const methodMappings = methodMap[method] || [];
-        const isAllowed = methodMappings.some(m => config.allowedClockMethods.includes(m));
+        const isAllowed = methodMappings.some(m => allowedMethods.includes(m));
 
         if (!isAllowed) {
           issues.push({
@@ -625,8 +644,9 @@ export class EVVValidator {
           'MANUAL': [],
         };
 
+        const allowedVerificationMethods = config.allowedVerificationMethods;
         const methodMappings = methodMap[method] || [];
-        const isAllowed = methodMappings.some(m => config.allowedVerificationMethods.includes(m));
+        const isAllowed = methodMappings.some(m => allowedVerificationMethods.includes(m));
 
         if (!isAllowed) {
           issues.push({

@@ -17,8 +17,8 @@ export class CryptoUtils {
    * Generate integrity hash for EVV records
    * Uses HMAC with a secret key for additional security
    */
-  static generateIntegrityHash(data: object, secret?: string): string {
-    const input = JSON.stringify(data);
+  static generateIntegrityHash(data: string | object, secret?: string): string {
+    const input = typeof data === 'string' ? data : JSON.stringify(data);
     
     if (secret) {
       return createHmac('sha256', secret).update(input).digest('hex');

@@ -8,6 +8,7 @@ import {
   EVVRecord,
   TimeEntry,
   Geofence,
+  GeoPoint,
   EVVRecordSearchFilters,
   EVVRecordStatus,
   VerificationLevel,
@@ -86,6 +87,35 @@ interface TimeEntryRow {
   offline_recorded_at: Date | null;
   verification_issues: string | null;
   manual_override: string | null;
+  created_at: Date;
+  created_by: string;
+  updated_at: Date;
+  updated_by: string;
+  version: number;
+}
+
+interface GeofenceRow {
+  id: string;
+  organization_id: string;
+  client_id: string;
+  address_id: string;
+  center_latitude: number;
+  center_longitude: number;
+  radius_meters: number;
+  radius_type: 'STANDARD' | 'EXPANDED' | 'CUSTOM';
+  shape: 'CIRCLE' | 'POLYGON';
+  polygon_points: string | null;
+  is_active: boolean;
+  allowed_variance?: number;
+  calibrated_at?: Date;
+  calibrated_by?: string;
+  calibration_method?: 'AUTO' | 'MANUAL';
+  calibration_notes?: string;
+  verification_count: number;
+  successful_verifications: number;
+  failed_verifications: number;
+  average_accuracy?: number;
+  status: 'ACTIVE' | 'SUSPENDED' | 'ARCHIVED';
   created_at: Date;
   created_by: string;
   updated_at: Date;
@@ -610,7 +640,7 @@ export class EVVRepository {
       geofence.updatedBy,
     ]);
 
-    return this.mapGeofence(result.rows[0]);
+    return this.mapGeofence(result.rows[0] as unknown as GeofenceRow);
   }
 
   /**
@@ -624,7 +654,7 @@ export class EVVRepository {
       LIMIT 1
     `;
     const result = await this.database.query(query, [addressId]);
-    return result.rows[0] ? this.mapGeofence(result.rows[0]) : null;
+    return result.rows[0] ? this.mapGeofence(result.rows[0] as unknown as GeofenceRow) : null;
   }
 
   /**
@@ -737,7 +767,7 @@ export class EVVRepository {
   /**
    * Helper: Map database row to Geofence
    */
-  private mapGeofence(row: any): Geofence {
+  private mapGeofence(row: GeofenceRow): Geofence {
     return {
       id: row.id,
       organizationId: row.organization_id,
@@ -748,7 +778,7 @@ export class EVVRepository {
       radiusMeters: row.radius_meters,
       radiusType: row.radius_type,
       shape: row.shape,
-      polygonPoints: row.polygon_points ? this.parseJsonField(row.polygon_points) : undefined,
+      polygonPoints: row.polygon_points ? this.parseJsonField<GeoPoint[]>(row.polygon_points) : undefined,
       isActive: row.is_active,
       allowedVariance: row.allowed_variance,
       calibratedAt: row.calibrated_at,

@@ -30,6 +30,47 @@ import {
   TexasEVVDataSnapshot,
 } from '../types/state-specific';
 
+interface TexasVMURRow {
+  id: UUID;
+  evv_record_id: UUID;
+  visit_id: UUID;
+  requested_by: UUID;
+  requested_by_name: string;
+  requested_at: string | Date;
+  request_reason: TexasVMURReasonCode;
+  request_reason_details: string;
+  approval_status: 'PENDING' | 'APPROVED' | 'DENIED' | 'EXPIRED';
+  approved_by?: UUID | null;
+  approved_by_name?: string | null;
+  approved_at?: string | Date | null;
+  denial_reason?: string | null;
+  original_data: TexasEVVDataSnapshot;
+  corrected_data: TexasEVVDataSnapshot;
+  changes_summary: string[];
+  submitted_to_aggregator: boolean;
+  aggregator_confirmation?: string | null;
+  submitted_at?: string | Date | null;
+  expires_at: string | Date;
+  compliance_notes?: string | null;
+}
+
+interface TexasEVVRecordValidationRow {
+  client_state: string;
+  recorded_at: string | Date;
+  clock_in_time: string | Date;
+  clock_out_time?: string | Date | null;
+  clock_in_verification?: {
+    latitude?: number;
+    longitude?: number;
+    method?: string;
+  } | null;
+  clock_out_verification?: {
+    latitude?: number;
+    longitude?: number;
+  } | null;
+  total_duration?: number | null;
+}
+
 /**
  * VMUR creation input
  */
@@ -104,7 +145,7 @@ export class VMURService {
       throw new NotFoundError('EVV record not found', { evvRecordId: input.evvRecordId });
     }
 
-    const evvRecord = evvResult.rows[0] as any;
+    const evvRecord = evvResult.rows[0] as unknown as TexasEVVRecordValidationRow;
 
     // 2. Validate record is for Texas
     if (evvRecord.client_state !== 'TX') {
@@ -136,7 +177,7 @@ export class VMURService {
       clockOutLatitude: evvRecord['clock_out_verification']?.['latitude'],
       clockOutLongitude: evvRecord['clock_out_verification']?.['longitude'],
       clockMethod: this.mapClockMethodToTexas(evvRecord['clock_in_verification']?.['method']),
-      totalDuration: evvRecord['total_duration'],
+      totalDuration: evvRecord['total_duration'] ?? undefined,
     };
 
     // 5. Calculate changes summary
@@ -203,7 +244,7 @@ export class VMURService {
       ]
     );
 
-    const vmur = result.rows[0] as any;
+    const vmur = result.rows[0] as unknown as TexasVMURRow;
 
     // 9. Return formatted VMUR
     return {
@@ -365,7 +406,7 @@ export class VMURService {
       throw new NotFoundError('VMUR not found', { vmurId });
     }
 
-    const vmur = result.rows[0] as any;
+    const vmur = result.rows[0] as unknown as TexasVMURRow;
 
     return {
       id: vmur['id'],
@@ -407,7 +448,7 @@ export class VMURService {
       [organizationId]
     );
 
-    return result.rows.map((row: any) => ({
+    return (result.rows as unknown as TexasVMURRow[]).map((row: TexasVMURRow) => ({
       id: row['id'],
       evvRecordId: row['evv_record_id'],
       visitId: row['visit_id'],
@@ -558,7 +599,7 @@ export class VMURService {
   /**
    * Map generic clock method to Texas-specific enum
    */
-  private mapClockMethodToTexas(method: string): 'MOBILE_GPS' | 'FIXED_TELEPHONY' | 'MOBILE_TELEPHONY' | 'FIXED_BIOMETRIC' | 'ALTERNATE_METHOD' {
+  private mapClockMethodToTexas(method?: string): 'MOBILE_GPS' | 'FIXED_TELEPHONY' | 'MOBILE_TELEPHONY' | 'FIXED_BIOMETRIC' | 'ALTERNATE_METHOD' {
     switch (method) {
       case 'GPS':
         return 'MOBILE_GPS';
