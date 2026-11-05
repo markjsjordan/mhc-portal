@@ -20,14 +20,14 @@ export const ClientCard: React.FC<ClientCardProps> = ({ client, compact = false 
     <Link to={`/clients/${client.id}`}>
       <Card className="h-full hover:shadow-md transition-shadow">
         <CardContent className="p-5">
-          <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900">
+          <div className="flex justify-between items-start gap-4">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-lg font-semibold text-gray-900 truncate">
               {client.preferredName ?? fullName}
             </h3>
-            <p className="text-sm text-gray-600">{client.clientNumber}</p>
+            <p className="text-sm text-gray-600 truncate">{client.clientNumber}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {client.isDemoData && <DemoBadge />}
             <StatusBadge status={client.status} />
           </div>
@@ -36,26 +36,28 @@ export const ClientCard: React.FC<ClientCardProps> = ({ client, compact = false 
         {!compact && (
           <div className="mt-4 space-y-2">
             {client.primaryPhone && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Phone className="h-4 w-4" />
-                {formatPhone(client.primaryPhone.number)}
+              <div className="flex items-center gap-2 text-sm text-gray-600 min-w-0">
+                <Phone className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{formatPhone(client.primaryPhone.number)}</span>
               </div>
             )}
             {client.email && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Mail className="h-4 w-4" />
-                {client.email}
+              <div className="flex items-center gap-2 text-sm text-gray-600 min-w-0">
+                <Mail className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{client.email}</span>
               </div>
             )}
             {(client.primaryAddress.city || client.primaryAddress.state) && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <MapPin className="h-4 w-4" />
-                {client.primaryAddress.city}, {client.primaryAddress.state}
+              <div className="flex items-center gap-2 text-sm text-gray-600 min-w-0">
+                <MapPin className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">
+                  {client.primaryAddress.city}, {client.primaryAddress.state}
+                </span>
               </div>
             )}
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Calendar className="h-4 w-4" />
-              DOB: {formatDate(client.dateOfBirth)}
+            <div className="flex items-center gap-2 text-sm text-gray-600 min-w-0">
+              <Calendar className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">DOB: {formatDate(client.dateOfBirth)}</span>
             </div>
           </div>
         )}
