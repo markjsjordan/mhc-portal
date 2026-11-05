@@ -8,6 +8,28 @@ import {
   MLFeatureVector,
 } from '../types/ml-matching';
 
+interface GradientBoostingTree {
+  feature_thresholds: Record<string, number>;
+  weights: Record<string, number>;
+}
+
+interface GradientBoostingModel {
+  type: string;
+  hyperparameters: Record<string, string | number | boolean>;
+  trees: GradientBoostingTree[];
+  feature_names: string[];
+  n_features: number;
+  base_score: number;
+}
+
+interface MLTrainingDataRow {
+  features: string | MLFeatureVector;
+  was_accepted: boolean;
+  was_completed: boolean;
+  was_no_show: boolean;
+  matched_at: string | Date;
+}
+
 /**
  * ML Model Service for training and prediction
  *
@@ -364,7 +386,7 @@ export class MLModelService {
 
     const rows = await query.orderBy('matched_at', 'desc');
 
-    return rows.map((row: any) => {
+    return rows.map((row: MLTrainingDataRow) => {
       const features = typeof row.features === 'string' ? JSON.parse(row.features) : row.features;
 
       // Label based on target variable
@@ -421,7 +443,7 @@ export class MLModelService {
     trainData: Array<{ features: MLFeatureVector; label: number; weight: number }>,
     _validationData: Array<{ features: MLFeatureVector; label: number; weight: number }>,
     config: MLTrainingConfig
-  ): Promise<any> {
+  ): Promise<GradientBoostingModel> {
     const hyperparameters = {
       learning_rate: 0.1,
       max_depth: 6,
@@ -433,7 +455,7 @@ export class MLModelService {
 
     // This is a simplified placeholder
     // In production, this would call a Python microservice
-    const model: any = {
+    const model: GradientBoostingModel = {
       type: config.model_type,
       hyperparameters,
       trees: [] as Array<{
@@ -458,7 +480,7 @@ export class MLModelService {
    * Evaluate model on test set
    */
   private evaluateModel(
-    model: any,
+    model: GradientBoostingModel,
     testData: Array<{ features: MLFeatureVector; label: number; weight: number }>
   ): MLModelMetrics {
     const predictions = testData.map((sample) => this.predictSample(model, sample.features));
@@ -499,7 +521,7 @@ export class MLModelService {
    * Make prediction for a single sample
    */
   private predictSample(
-    model: any,
+    model: GradientBoostingModel,
     features: MLFeatureVector
   ): {
     score: number;
@@ -514,9 +536,9 @@ export class MLModelService {
     let score = model.base_score * 100;
 
     // Apply simplified boosting
-    model.trees.forEach((tree: any) => {
+    model.trees.forEach((tree: GradientBoostingTree) => {
       const treeScore = this.evaluateTree(tree, featureArray);
-      score += treeScore * model.hyperparameters.learning_rate;
+      score += treeScore * (model.hyperparameters.learning_rate as number);
     });
 
     // Clip to [0, 100]
@@ -554,12 +576,12 @@ export class MLModelService {
     return `v${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}_${String(date.getHours()).padStart(2, '0')}${String(date.getMinutes()).padStart(2, '0')}`;
   }
 
-  private serializeModel(model: any): string {
+  private serializeModel(model: GradientBoostingModel): string {
     return Buffer.from(JSON.stringify(model)).toString('base64');
   }
 
-  private deserializeModel(artifact: string): any {
-    return JSON.parse(Buffer.from(artifact, 'base64').toString('utf-8'));
+  private deserializeModel(artifact: string): GradientBoostingModel {
+    return JSON.parse(Buffer.from(artifact, 'base64').toString('utf-8')) as GradientBoostingModel;
   }
 
   private getFeatureNames(): string[] {
@@ -634,7 +656,7 @@ export class MLModelService {
     return weights;
   }
 
-  private evaluateTree(tree: any, features: number[]): number {
+  private evaluateTree(tree: GradientBoostingTree, features: number[]): number {
     // Simplified tree evaluation
     const featureNames = this.getFeatureNames();
     let score = 0;
@@ -647,7 +669,7 @@ export class MLModelService {
     return score;
   }
 
-  private calculateFeatureImportance(_model: any): Record<string, number> {
+  private calculateFeatureImportance(_model: GradientBoostingModel): Record<string, number> {
     // Simplified feature importance
     const importance: Record<string, number> = {};
     const featureNames = this.getFeatureNames();
@@ -698,36 +720,36 @@ export class MLModelService {
     return shuffled;
   }
 
-  private parseModelFromDB(row: any): MLModelMetadata {
+  private parseModelFromDB(row: Record<string, unknown>): MLModelMetadata {
     return {
-      id: row.id,
-      organization_id: row.organization_id,
-      model_type: row.model_type,
-      model_version: row.model_version,
-      target_variable: row.target_variable,
-      model_artifact: row.model_artifact,
+      id: row.id as string,
+      organization_id: (row.organization_id as string | null) ?? null,
+      model_type: row.model_type as MLModelMetadata['model_type'],
+      model_version: row.model_version as string,
+      target_variable: row.target_variable as MLModelMetadata['target_variable'],
+      model_artifact: row.model_artifact as string,
       feature_importance: typeof row.feature_importance === 'string'
         ? JSON.parse(row.feature_importance)
-        : row.feature_importance,
+        : (row.feature_importance as Record<string, number>),
       hyperparameters: typeof row.hyperparameters === 'string'
         ? JSON.parse(row.hyperparameters)
-        : row.hyperparameters,
-      training_samples: row.training_samples,
-      training_started_at: row.training_started_at,
-      training_completed_at: row.training_completed_at,
+        : (row.hyperparameters as Record<string, string | number | boolean>),
+      training_samples: Number(row.training_samples),
+      training_started_at: new Date(row.training_started_at as string | Date),
+      training_completed_at: new Date(row.training_completed_at as string | Date),
       training_metrics: typeof row.training_metrics === 'string'
         ? JSON.parse(row.training_metrics)
-        : row.training_metrics,
+        : (row.training_metrics as MLModelMetadata['training_metrics']),
       validation_metrics: typeof row.validation_metrics === 'string'
         ? JSON.parse(row.validation_metrics)
-        : row.validation_metrics,
-      status: row.status,
-      deployed_at: row.deployed_at,
-      archived_at: row.archived_at,
-      is_active: row.is_active,
-      replaces_model_id: row.replaces_model_id,
-      created_at: row.created_at,
-      updated_at: row.updated_at,
+        : (row.validation_metrics as MLModelMetadata['validation_metrics']),
+      status: row.status as MLModelMetadata['status'],
+      deployed_at: row.deployed_at ? new Date(row.deployed_at as string | Date) : null,
+      archived_at: row.archived_at ? new Date(row.archived_at as string | Date) : null,
+      is_active: Boolean(row.is_active),
+      replaces_model_id: (row.replaces_model_id as string | null) ?? null,
+      created_at: new Date(row.created_at as string | Date),
+      updated_at: new Date(row.updated_at as string | Date),
     };
   }
 }

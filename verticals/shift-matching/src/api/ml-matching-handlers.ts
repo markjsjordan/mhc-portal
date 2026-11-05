@@ -25,6 +25,15 @@ import {
   MLPerformanceReport,
 } from '../types/ml-matching';
 
+interface MLConfigResult {
+  ml_enabled: boolean;
+  ml_weight: number;
+  ml_model_preference: string;
+  min_ml_confidence: number;
+  ab_testing_enabled: boolean;
+  ab_test_variant: string | null;
+}
+
 export class MLMatchingHandlers {
   private enhancedMatchingService: MLEnhancedMatchingService;
   private modelService: MLModelService;
@@ -103,7 +112,7 @@ export class MLMatchingHandlers {
 
     const rows = await query;
 
-    return rows.map((row: any) => this.parseModelFromDB(row));
+    return rows.map((row: Record<string, unknown>) => this.parseModelFromDB(row));
   }
 
   /**
@@ -258,7 +267,7 @@ export class MLMatchingHandlers {
     const totalPages = Math.ceil(totalCount / pagination.limit);
 
     return {
-      items: rows.map((row: any) => this.parseOptimizationFromDB(row)),
+      items: rows.map((row: Record<string, unknown>) => this.parseOptimizationFromDB(row)),
       total: totalCount,
       page: pagination.page,
       limit: pagination.limit,
@@ -281,7 +290,7 @@ export class MLMatchingHandlers {
     testVersion: number,
     organizationId: string | undefined,
     context: UserContext
-  ): Promise<any> {
+  ): Promise<ReturnType<MLABTestingService['getTestResults']>> {
     this.verifyAdminAccess(context);
 
     return this.abTestingService.getTestResults(testName, testVersion, organizationId);
@@ -352,7 +361,7 @@ export class MLMatchingHandlers {
    * GET /ml/models/:id/monitoring
    * Get real-time monitoring metrics
    */
-  async getRealtimeMonitoring(modelId: string, context: UserContext): Promise<any> {
+  async getRealtimeMonitoring(modelId: string, context: UserContext): Promise<ReturnType<MLPerformanceMonitoringService['monitorRealTimePerformance']>> {
     this.verifyAdminAccess(context);
 
     return this.monitoringService.monitorRealTimePerformance(modelId);
@@ -434,7 +443,7 @@ export class MLMatchingHandlers {
    * GET /ml/config/:organizationId
    * Get ML configuration
    */
-  async getMLConfig(organizationId: string, _context: UserContext): Promise<any> {
+  async getMLConfig(organizationId: string, _context: UserContext): Promise<MLConfigResult> {
     const config = await this.db('matching_configurations')
       .where('organization_id', organizationId)
       .whereNull('branch_id')
@@ -538,72 +547,72 @@ export class MLMatchingHandlers {
     }
   }
 
-  private parseModelFromDB(row: any): MLModelMetadata {
+  private parseModelFromDB(row: Record<string, unknown>): MLModelMetadata {
     return {
-      id: row.id,
-      organization_id: row.organization_id,
-      model_type: row.model_type,
-      model_version: row.model_version,
-      target_variable: row.target_variable,
-      model_artifact: row.model_artifact,
+      id: row.id as string,
+      organization_id: row.organization_id as string | null,
+      model_type: row.model_type as MLModelMetadata['model_type'],
+      model_version: row.model_version as string,
+      target_variable: row.target_variable as MLModelMetadata['target_variable'],
+      model_artifact: row.model_artifact as string,
       feature_importance: typeof row.feature_importance === 'string'
         ? JSON.parse(row.feature_importance)
-        : row.feature_importance,
+        : (row.feature_importance as Record<string, number>),
       hyperparameters: typeof row.hyperparameters === 'string'
         ? JSON.parse(row.hyperparameters)
-        : row.hyperparameters,
-      training_samples: row.training_samples,
-      training_started_at: row.training_started_at,
-      training_completed_at: row.training_completed_at,
+        : (row.hyperparameters as Record<string, string | number | boolean>),
+      training_samples: Number(row.training_samples),
+      training_started_at: new Date(row.training_started_at as string | Date),
+      training_completed_at: new Date(row.training_completed_at as string | Date),
       training_metrics: typeof row.training_metrics === 'string'
         ? JSON.parse(row.training_metrics)
-        : row.training_metrics,
+        : (row.training_metrics as MLModelMetadata['training_metrics']),
       validation_metrics: typeof row.validation_metrics === 'string'
         ? JSON.parse(row.validation_metrics)
-        : row.validation_metrics,
-      status: row.status,
-      deployed_at: row.deployed_at,
-      archived_at: row.archived_at,
-      is_active: row.is_active,
-      replaces_model_id: row.replaces_model_id,
-      created_at: row.created_at,
-      updated_at: row.updated_at,
+        : (row.validation_metrics as MLModelMetadata['validation_metrics']),
+      status: row.status as MLModelMetadata['status'],
+      deployed_at: row.deployed_at ? new Date(row.deployed_at as string | Date) : null,
+      archived_at: row.archived_at ? new Date(row.archived_at as string | Date) : null,
+      is_active: Boolean(row.is_active),
+      replaces_model_id: (row.replaces_model_id as string | null) ?? null,
+      created_at: new Date(row.created_at as string | Date),
+      updated_at: new Date(row.updated_at as string | Date),
     };
   }
 
-  private parseJsonField(value: any): any {
+  private parseJsonField<T>(value: unknown): T | null {
     if (!value) return null;
-    return typeof value === 'string' ? JSON.parse(value) : value;
+    return typeof value === 'string' ? (JSON.parse(value) as T) : (value as T);
   }
 
-  private parseOptimizationFromDB(row: any): ScheduleOptimization {
-    const shiftIds = typeof row.shift_ids === 'string' ? JSON.parse(row.shift_ids) : row.shift_ids;
-    const caregiverIds = this.parseJsonField(row.caregiver_ids);
-    const constraints = typeof row.constraints === 'string' ? JSON.parse(row.constraints) : row.constraints;
-    const assignments = this.parseJsonField(row.assignments);
-    const metrics = this.parseJsonField(row.metrics);
+  private parseOptimizationFromDB(row: Record<string, unknown>): ScheduleOptimization {
+    const shiftIds = typeof row.shift_ids === 'string' ? JSON.parse(row.shift_ids) : (row.shift_ids as string[]);
+    const caregiverIds = this.parseJsonField<string[]>(row.caregiver_ids);
+    const constraints = typeof row.constraints === 'string' ? JSON.parse(row.constraints) : (row.constraints as ScheduleOptimizationConstraints);
+    const assignments = this.parseJsonField<ScheduleOptimization['assignments']>(row.assignments);
+    const metrics = this.parseJsonField<ScheduleOptimization['metrics']>(row.metrics);
 
     return {
-      id: row.id,
-      organization_id: row.organization_id,
-      branch_id: row.branch_id,
-      schedule_date: row.schedule_date,
+      id: row.id as string,
+      organization_id: row.organization_id as string,
+      branch_id: (row.branch_id as string | null) ?? null,
+      schedule_date: new Date(row.schedule_date as string | Date),
       shift_ids: shiftIds,
       caregiver_ids: caregiverIds,
-      primary_goal: row.primary_goal,
+      primary_goal: row.primary_goal as ScheduleOptimization['primary_goal'],
       constraints,
-      status: row.status,
+      status: row.status as ScheduleOptimization['status'],
       assignments,
       metrics,
-      optimization_score: row.optimization_score,
-      computation_time_ms: row.computation_time_ms,
-      iterations: row.iterations,
-      algorithm_used: row.algorithm_used,
-      applied: row.applied,
-      applied_at: row.applied_at,
-      applied_by_user_id: row.applied_by_user_id,
-      created_at: row.created_at,
-      completed_at: row.completed_at,
+      optimization_score: row.optimization_score !== null && row.optimization_score !== undefined ? Number(row.optimization_score) : null,
+      computation_time_ms: row.computation_time_ms !== null && row.computation_time_ms !== undefined ? Number(row.computation_time_ms) : null,
+      iterations: row.iterations !== null && row.iterations !== undefined ? Number(row.iterations) : null,
+      algorithm_used: (row.algorithm_used as ScheduleOptimization['algorithm_used']) ?? null,
+      applied: Boolean(row.applied),
+      applied_at: row.applied_at ? new Date(row.applied_at as string | Date) : null,
+      applied_by_user_id: (row.applied_by_user_id as string | null) ?? null,
+      created_at: new Date(row.created_at as string | Date),
+      completed_at: row.completed_at ? new Date(row.completed_at as string | Date) : null,
     };
   }
 }
