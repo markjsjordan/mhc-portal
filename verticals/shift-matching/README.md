@@ -340,3 +340,4 @@ AGPL-3.0 - See LICENSE file for details
 ## Authors
 
 Neighborhood Lab - Community-owned care software
+
