@@ -6,6 +6,19 @@ import {
   ScheduleAssignment,
 } from '../types/ml-matching';
 
+interface ShiftEntity {
+  id: string;
+  start_time: string;
+  end_time?: string;
+  priority?: number;
+  [key: string]: unknown;
+}
+
+interface CaregiverEntity {
+  id: string;
+  [key: string]: unknown;
+}
+
 /**
  * Schedule Optimization Service
  *
@@ -184,8 +197,8 @@ export class ScheduleOptimizationService {
    * Greedy optimization - fast but may not find global optimum
    */
   private greedyOptimization(
-    shifts: any[],
-    caregivers: any[],
+    shifts: ShiftEntity[],
+    caregivers: CaregiverEntity[],
     matchMatrix: Map<string, Map<string, number>>,
     goal: ScheduleOptimization['primary_goal'],
     constraints: ScheduleOptimizationConstraints
@@ -196,7 +209,9 @@ export class ScheduleOptimizationService {
 
     // Sort shifts by priority or start time
     const sortedShifts = [...shifts].sort((a, b) => {
-      if (a.priority !== b.priority) return b.priority - a.priority;
+      const aPriority = a.priority ?? 0;
+      const bPriority = b.priority ?? 0;
+      if (aPriority !== bPriority) return bPriority - aPriority;
       return a.start_time.localeCompare(b.start_time);
     });
 
@@ -251,8 +266,8 @@ export class ScheduleOptimizationService {
    * Constraint programming optimization
    */
   private constraintProgrammingOptimization(
-    shifts: any[],
-    caregivers: any[],
+    shifts: ShiftEntity[],
+    caregivers: CaregiverEntity[],
     matchMatrix: Map<string, Map<string, number>>,
     goal: ScheduleOptimization['primary_goal'],
     constraints: ScheduleOptimizationConstraints
@@ -266,8 +281,8 @@ export class ScheduleOptimizationService {
    * Genetic algorithm optimization - can find better solutions
    */
   private geneticAlgorithmOptimization(
-    shifts: any[],
-    caregivers: any[],
+    shifts: ShiftEntity[],
+    caregivers: CaregiverEntity[],
     matchMatrix: Map<string, Map<string, number>>,
     goal: ScheduleOptimization['primary_goal'],
     constraints: ScheduleOptimizationConstraints
@@ -344,7 +359,7 @@ export class ScheduleOptimizationService {
     scheduleDate: Date,
     branchId?: string,
     shiftIds?: string[]
-  ): Promise<any[]> {
+  ): Promise<ShiftEntity[]> {
     let query = this.db('open_shifts')
       .where('organization_id', organizationId)
       .where('scheduled_date', scheduleDate)
@@ -365,7 +380,7 @@ export class ScheduleOptimizationService {
     organizationId: string,
     branchId?: string,
     caregiverIds?: string[]
-  ): Promise<any[]> {
+  ): Promise<CaregiverEntity[]> {
     let query = this.db('caregivers')
       .where('organization_id', organizationId)
       .where('employment_status', 'ACTIVE')
@@ -383,8 +398,8 @@ export class ScheduleOptimizationService {
   }
 
   private async calculateMatchMatrix(
-    shifts: any[],
-    caregivers: any[]
+    shifts: ShiftEntity[],
+    caregivers: CaregiverEntity[]
   ): Promise<Map<string, Map<string, number>>> {
     const matrix = new Map<string, Map<string, number>>();
 
@@ -405,8 +420,8 @@ export class ScheduleOptimizationService {
   }
 
   private meetsConstraints(
-    _shift: any,
-    caregiver: any,
+    _shift: ShiftEntity,
+    caregiver: CaregiverEntity,
     caregiverAssignments: Map<string, number>,
     constraints: ScheduleOptimizationConstraints
   ): boolean {
@@ -423,8 +438,8 @@ export class ScheduleOptimizationService {
   }
 
   private calculateAssignmentMetrics(
-    _shift: any,
-    _caregiver: any
+    _shift: ShiftEntity,
+    _caregiver: CaregiverEntity
   ): {
     distance_miles: number;
     travel_time_minutes: number;
@@ -488,8 +503,8 @@ export class ScheduleOptimizationService {
 
   private calculateMetrics(
     assignments: ScheduleAssignment[],
-    shifts: any[],
-    caregivers: any[]
+    shifts: ShiftEntity[],
+    caregivers: CaregiverEntity[]
   ): ScheduleOptimizationMetrics {
     const totalTravelTime = assignments.reduce((sum, a) => sum + a.travel_time_minutes, 0);
     const totalTravelDistance = assignments.reduce((sum, a) => sum + a.travel_distance_miles, 0);
@@ -549,9 +564,9 @@ export class ScheduleOptimizationService {
     return 'POOR';
   }
 
-  private parseJsonField(value: any): any {
+  private parseJsonField<T>(value: unknown): T | null {
     if (!value) return null;
-    return typeof value === 'string' ? JSON.parse(value) : value;
+    return typeof value === 'string' ? (JSON.parse(value) as T) : (value as T);
   }
 
   private async getOptimizationById(id: string): Promise<ScheduleOptimization> {
@@ -563,11 +578,11 @@ export class ScheduleOptimizationService {
       throw new Error(`Optimization ${id} not found`);
     }
 
-    const shiftIds = typeof row.shift_ids === 'string' ? JSON.parse(row.shift_ids) : row.shift_ids;
-    const caregiverIds = this.parseJsonField(row.caregiver_ids);
-    const constraints = typeof row.constraints === 'string' ? JSON.parse(row.constraints) : row.constraints;
-    const assignments = this.parseJsonField(row.assignments);
-    const metrics = this.parseJsonField(row.metrics);
+    const shiftIds = typeof row.shift_ids === 'string' ? JSON.parse(row.shift_ids) : (row.shift_ids as string[]);
+    const caregiverIds = this.parseJsonField<string[]>(row.caregiver_ids);
+    const constraints = typeof row.constraints === 'string' ? JSON.parse(row.constraints) : (row.constraints as ScheduleOptimizationConstraints);
+    const assignments = this.parseJsonField<ScheduleOptimization['assignments']>(row.assignments);
+    const metrics = this.parseJsonField<ScheduleOptimization['metrics']>(row.metrics);
 
     return {
       id: row.id,
@@ -596,8 +611,8 @@ export class ScheduleOptimizationService {
   // Genetic algorithm helpers (simplified)
   private initializePopulation(
     size: number,
-    shifts: any[],
-    caregivers: any[],
+    shifts: ShiftEntity[],
+    caregivers: CaregiverEntity[],
     matchMatrix: Map<string, Map<string, number>>,
     _constraints: ScheduleOptimizationConstraints
   ): ScheduleAssignment[][] {
@@ -609,6 +624,7 @@ export class ScheduleOptimizationService {
       for (const shift of shifts) {
         // eslint-disable-next-line sonarjs/pseudo-random
         const randomCaregiver = caregivers[Math.floor(Math.random() * caregivers.length)];
+        if (!randomCaregiver) continue;
         const metrics = this.calculateAssignmentMetrics(shift, randomCaregiver);
 
         individual.push({
@@ -700,7 +716,7 @@ export class ScheduleOptimizationService {
 
   private mutate(
     individual: ScheduleAssignment[],
-    caregivers: any[],
+    caregivers: CaregiverEntity[],
     matchMatrix: Map<string, Map<string, number>>,
     _constraints: ScheduleOptimizationConstraints
   ): void {

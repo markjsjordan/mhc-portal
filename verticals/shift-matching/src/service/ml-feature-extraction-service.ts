@@ -5,6 +5,14 @@ import { MatchCandidate, OpenShift } from '../types/shift-matching';
 /**
  * Service for extracting ML features from shift matching context
  */
+interface MLTrainingDataRow {
+  features: string | MLFeatureVector;
+  was_accepted: boolean;
+  was_completed: boolean;
+  was_no_show: boolean;
+  matched_at: string | Date;
+}
+
 export class MLFeatureExtractionService {
   constructor(private db: Knex) {}
 
@@ -232,7 +240,7 @@ export class MLFeatureExtractionService {
 
     const rows = await query.orderBy('matched_at', 'desc');
 
-    return rows.map((row: any) => {
+    return rows.map((row: MLTrainingDataRow) => {
       // Parse features from JSONB
       const features = typeof row.features === 'string'
         ? JSON.parse(row.features)
