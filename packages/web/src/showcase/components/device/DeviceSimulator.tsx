@@ -232,3 +232,6 @@ export const DeviceSimulator: React.FC<DeviceSimulatorProps> = ({
     </div>
   );
 };
+
+// eslint-disable-next-line react-refresh/only-export-components -- DEVICE_CONFIGS is a showcase utility
+export { DEVICE_CONFIGS };

@@ -238,7 +238,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
               Client <span className="text-destructive">*</span>
             </Label>
             <Select
-              value={selectedClientId || ''}
+              value={selectedClientId ?? ''}
               onValueChange={(val) => setValue('clientId', val, { shouldValidate: true })}
             >
               <SelectTrigger id="care-plan-client-select">
@@ -262,7 +262,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
               Organization <span className="text-destructive">*</span>
             </Label>
             <Select
-              value={selectedOrgId || organizationId}
+              value={selectedOrgId ?? organizationId}
               onValueChange={(val) => setValue('organizationId', val, { shouldValidate: true })}
             >
               <SelectTrigger id="care-plan-org-select">
@@ -722,7 +722,7 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
       </div>
 
       {/* Form Content */}
-      <form onSubmit={(e) => { void handleSubmit(onFormSubmit)(e); }}>
+      <form onSubmit={handleSubmit(onFormSubmit)}>
         {currentStep === 0 && renderBasicInfo()}
         {currentStep === 1 && renderGoals()}
         {currentStep === 2 && renderInterventions()}

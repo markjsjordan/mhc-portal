@@ -295,7 +295,7 @@ export function ProfileForm({
           subtitle="Update your personal information"
         />
         <Card.Content>
-          <form onSubmit={(e) => { void handleSubmit(handleFormSubmit)(e); }} className="space-y-6">
+          <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
             {/* Error message */}
             {updateError && (updateError as { response?: { data?: { code?: string } } }).response?.data?.code !== 'VERSION_CONFLICT' && (
               <div className="flex gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">

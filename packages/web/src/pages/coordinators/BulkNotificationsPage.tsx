@@ -296,22 +296,22 @@ export default function BulkNotificationsPage() {
               <Label className="block text-sm font-medium mb-2">Urgency Level:</Label>
               <div style={styles.urgencyButtons}>
                 {(['normal', 'important', 'urgent', 'emergency'] as UrgencyLevel[]).map(
-                  (level) => (
-                    <Button
-                      key={level}
-                      variant={
-                        urgency === level
-                          ? level === 'emergency' || level === 'urgent'
-                            ? 'destructive'
-                            : 'default'
-                          : 'outline'
-                      }
-                      size="sm"
-                      onClick={() => setUrgency(level)}
-                    >
-                      {getUrgencyLabel(level)}
-                    </Button>
-                  )
+                  (level) => {
+                    const isActive = urgency === level;
+                    const isHighUrgency = level === 'emergency' || level === 'urgent';
+                    const variant = isActive ? (isHighUrgency ? 'destructive' : 'default') : 'outline';
+                    
+                    return (
+                      <Button
+                        key={level}
+                        variant={variant}
+                        size="sm"
+                        onClick={() => setUrgency(level)}
+                      >
+                        {getUrgencyLabel(level)}
+                      </Button>
+                    );
+                  }
                 )}
               </div>
             </div>

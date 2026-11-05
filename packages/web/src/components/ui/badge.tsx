@@ -49,4 +49,5 @@ function Badge({
   })
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- badgeVariants is a design system utility
 export { Badge, badgeVariants }

@@ -153,9 +153,9 @@ export function CheckboxField<T extends FieldValues>({
           ref={ref}
           disabled={disabled}
           onCheckedChange={(checked) => {
-            void onChange({ target: { name, value: checked } });
+            onChange({ target: { name, value: checked } });
           }}
-          onBlur={(e) => { void onBlur(e); }}
+          onBlur={onBlur}
         />
         <Label htmlFor={name} className="text-sm font-normal cursor-pointer">
           {label}
@@ -213,7 +213,7 @@ export function RadioField<T extends FieldValues>({
       <RadioGroup
         disabled={disabled}
         onValueChange={(val) => {
-          void onChange({ target: { name, value: val } });
+          onChange({ target: { name, value: val } });
         }}
         className="space-y-2"
       >

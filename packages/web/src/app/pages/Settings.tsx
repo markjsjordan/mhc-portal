@@ -234,7 +234,7 @@ function ProfileSettings({ userProfile, isLoading, onSuccess, onError }: Setting
         subtitle="Update your personal information"
       />
       <Card.Content>
-        <form onSubmit={(e) => { void handleSubmit(onSubmit)(e); }} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <FormField
               name="firstName"
@@ -330,7 +330,7 @@ function AccountSettings({ onSuccess, onError }: Readonly<Omit<SettingsSectionPr
         subtitle="Update your password to keep your account secure"
       />
       <Card.Content>
-        <form onSubmit={(e) => { void handleSubmit(onSubmit)(e); }} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             name="currentPassword"
             label="Current Password"
@@ -452,7 +452,7 @@ function PreferencesSettings({ onSuccess, onError }: Readonly<Omit<SettingsSecti
         subtitle="Customize your experience"
       />
       <Card.Content>
-        <form onSubmit={(e) => { void handleSubmit(onSubmit)(e); }} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-gray-900">Notifications</h3>
 
@@ -658,7 +658,7 @@ function EditMemberModal({
               </div>
             )}
 
-            <form onSubmit={(e) => { void handleSubmit(onSubmit)(e); }} className="space-y-4 text-gray-900">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-gray-900">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   name="firstName"
@@ -1153,7 +1153,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                   </div>
                 </div>
               ) : (
-                <form onSubmit={(e) => { void handleSubmit(onSubmitInvite)(e); }} className="space-y-4">
+                <form onSubmit={handleSubmit(onSubmitInvite)} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       name="firstName"

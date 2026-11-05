@@ -10,6 +10,7 @@
 let sessionKey: CryptoKey | null = null;
 
 function hasSubtle(): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime check for older browsers
   return typeof window !== 'undefined' && !!window.crypto?.subtle;
 }
 

@@ -70,6 +70,7 @@ export const TaskFrequency: React.FC<TaskFrequencyProps> = ({
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- getFrequencyLabel is a utility function
 export const getFrequencyLabel = (pattern: FrequencyPattern): string => {
   const labels: Record<FrequencyPattern, string> = {
     DAILY: 'Daily',

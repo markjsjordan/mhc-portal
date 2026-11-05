@@ -102,22 +102,24 @@ export const GoalSection: React.FC<GoalSectionProps> = ({
               </div>
 
               {/* Progress Bar */}
-              {goal.progressPercentage !== undefined && (
-                <div className="mt-3">
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${
-                        goal.status === 'ACHIEVED' 
-                          ? 'bg-green-500' 
-                          : goal.status === 'AT_RISK'
-                          ? 'bg-orange-500'
-                          : 'bg-blue-500'
-                      }`}
-                      style={{ width: `${goal.progressPercentage}%` }}
-                    />
+              {goal.progressPercentage !== undefined && (() => {
+                const bgColor = goal.status === 'ACHIEVED' 
+                  ? 'bg-green-500' 
+                  : goal.status === 'AT_RISK'
+                    ? 'bg-orange-500'
+                    : 'bg-blue-500';
+                
+                return (
+                  <div className="mt-3">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${bgColor}`}
+                        style={{ width: `${goal.progressPercentage}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Achievement Date */}
               {goal.achievedDate && (

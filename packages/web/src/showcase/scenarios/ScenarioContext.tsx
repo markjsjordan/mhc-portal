@@ -22,6 +22,7 @@ interface ScenarioContextValue {
 
 const ScenarioContext = createContext<ScenarioContextValue | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components -- useScenario is a showcase hook
 export const useScenario = () => {
   const context = useContext(ScenarioContext);
   if (!context) {

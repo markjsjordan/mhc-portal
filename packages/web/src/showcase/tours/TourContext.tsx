@@ -23,6 +23,7 @@ interface TourContextValue {
 
 const TourContext = createContext<TourContextValue | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components -- useTour is a showcase hook
 export const useTour = () => {
   const context = useContext(TourContext);
   if (!context) {

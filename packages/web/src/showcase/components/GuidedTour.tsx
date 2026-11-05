@@ -14,7 +14,7 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({ tourId, onComplete }) =>
   const handleJoyrideCallback = (data: { status: string }) => {
     const { status } = data;
 
-    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status as any)) {
+    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status as typeof STATUS.FINISHED)) {
       setRun(false);
       onComplete?.();
 

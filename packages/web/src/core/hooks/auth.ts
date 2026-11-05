@@ -64,7 +64,16 @@ export const useAuthStore = create<AuthStore>()(
         set({ user, token, isAuthenticated: true, isInitializing: false }),
       clearAuth: () => {
         // HIPAA-008: Purge IndexedDB and WebCrypto encryption keys on logout
-        import('../../db/index.js').then(({ resetDatabase }) => resetDatabase().catch(() => {})).catch(() => {});
+        // Fire-and-forget cleanup - we don't wait for completion
+        const cleanup = async () => {
+          try {
+            const { resetDatabase } = await import('../../db/index.js');
+            await resetDatabase();
+          } catch {
+            // Silently ignore cleanup errors
+          }
+        };
+        void cleanup();
         set({ user: null, token: null, isAuthenticated: false, isInitializing: false });
       },
       setInitializing: (isInitializing: boolean) => set({ isInitializing }),
