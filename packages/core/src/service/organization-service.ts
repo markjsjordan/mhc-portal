@@ -34,6 +34,7 @@ export interface UpdateTeamMemberRequest {
   lastName?: string;
   email?: string;
   roles?: Role[];
+  status?: string;
 }
 
 export interface IOrganizationService {
@@ -47,6 +48,12 @@ export interface IOrganizationService {
     organizationId: UUID,
     userId: UUID,
     updates: UpdateTeamMemberRequest,
+    updatedBy: UUID
+  ): Promise<TeamMember>;
+  setOrganizationUserStatus(
+    organizationId: UUID,
+    userId: UUID,
+    status: 'ACTIVE' | 'INACTIVE',
     updatedBy: UUID
   ): Promise<TeamMember>;
   
@@ -455,6 +462,24 @@ export class OrganizationService implements IOrganizationService {
     }
 
     const updatedUser = await this.userRepo.updateUser(userId, organizationId, updates, updatedBy);
+    return {
+      id: updatedUser.id,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      email: updatedUser.email,
+      roles: updatedUser.roles,
+      status: updatedUser.status,
+      createdAt: new Date(),
+    };
+  }
+
+  async setOrganizationUserStatus(
+    organizationId: UUID,
+    userId: UUID,
+    status: 'ACTIVE' | 'INACTIVE',
+    updatedBy: UUID
+  ): Promise<TeamMember> {
+    const updatedUser = await this.userRepo.updateUser(userId, organizationId, { status }, updatedBy);
     return {
       id: updatedUser.id,
       firstName: updatedUser.firstName,

@@ -274,6 +274,8 @@ describe('Organization Routes', () => {
       // GET /organizations/:id/invitations
       // GET /organizations/:id/users
       // PUT /organizations/:id/users/:userId
+      // POST /organizations/:id/users/:userId/deactivate
+      // POST /organizations/:id/users/:userId/reactivate
       // POST /organizations/:id/invitations/:invitationId/resend
       // DELETE /organizations/:id/invitations/:invitationId
       // GET /invitations/:token
@@ -282,7 +284,7 @@ describe('Organization Routes', () => {
       // POST /organizations/:id/seed-demo
       // DELETE /organizations/:id/demo-data
       // GET /organizations/:id/demo-data/status
-      expect(routes.length).toBe(16);
+      expect(routes.length).toBe(18);
     });
   });
 
