@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth, useAuthService } from '@/core/hooks';
 import { getDashboardRoute } from '@/core/utils';
 import { handleSmartLogin } from '@/core/utils/auth-storage';
@@ -16,6 +16,7 @@ interface CustomLoginFormProps {
 
 export const CustomLoginForm: React.FC<CustomLoginFormProps> = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
   const authService = useAuthService();
   
@@ -25,6 +26,17 @@ export const CustomLoginForm: React.FC<CustomLoginFormProps> = ({ onLoginSuccess
   const [error, setError] = useState<string | null>(null);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const [rateLimitRetryAfter, setRateLimitRetryAfter] = useState<number | null>(null);
+
+  // Check for deactivated or expired reason in query parameters
+  useEffect(() => {
+    const reason = searchParams.get('reason');
+    if (reason === 'deactivated') {
+      setError('Your account is inactive. Please contact your administrator or log in again.');
+      toast.error('Your account is inactive. Please log in again.');
+    } else if (reason === 'expired') {
+      setError('Your session has expired. Please log in again.');
+    }
+  }, [searchParams]);
 
   // Cooldown timer effect
   React.useEffect((): void | (() => void) => {
@@ -137,6 +149,10 @@ export const CustomLoginForm: React.FC<CustomLoginFormProps> = ({ onLoginSuccess
             } before trying again.`,
             { duration: 6000 }
           );
+        } else if (errorObj.response?.data?.code === 'ACCOUNT_INACTIVE') {
+          const errorMessage = 'Your account is inactive. Please contact your administrator or log in again.';
+          setError(errorMessage);
+          toast.error(errorMessage);
         } else {
           const errorMessage =
             errorObj.message || 'Login failed. Please check your credentials.';
