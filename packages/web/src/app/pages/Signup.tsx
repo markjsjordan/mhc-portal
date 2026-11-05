@@ -155,7 +155,7 @@ export const Signup: React.FC = () => {
     setStep((prev) => Math.max(prev - 1, 1));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
 
     if (!validateStep(step)) {

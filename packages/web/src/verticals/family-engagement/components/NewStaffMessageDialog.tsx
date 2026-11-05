@@ -61,7 +61,7 @@ export const NewStaffMessageDialog: React.FC<NewStaffMessageDialogProps> = ({
     setMessage('');
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = (event: React.SyntheticEvent) => {
     event.preventDefault();
     if (!canSubmit) return;
     createThread.mutate(

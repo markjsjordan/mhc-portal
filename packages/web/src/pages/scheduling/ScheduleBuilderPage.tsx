@@ -1160,7 +1160,7 @@ function CreateRecurringPatternModal({
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!clientId && !customClientName) {
       toast.error('Please select or specify a client');
@@ -1470,7 +1470,7 @@ function ScheduleSupervisionVisitModal({
   const selectedClient = clients.find((c) => c.id === clientId);
   const stateCode = selectedClient?.primaryAddress?.state ?? 'FL';
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!clientId) {
       toast.error('Please select a client');
