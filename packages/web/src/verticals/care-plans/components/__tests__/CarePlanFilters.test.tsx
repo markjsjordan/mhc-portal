@@ -111,11 +111,39 @@ describe('CarePlanFilters', () => {
       />
     );
 
-    const filterButton = screen.getByRole('button', { name: /filters/i });
-    fireEvent.click(filterButton);
+    // Wait for the "Reset all" link in the active filter chips to appear
+    const resetLink = await screen.findByRole('button', { name: /reset all/i });
+    fireEvent.click(resetLink);
 
-    const clearButton = await screen.findByRole('button', { name: /clear all/i });
-    fireEvent.click(clearButton);
+    expect(mockOnFiltersChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        query: undefined,
+        status: undefined,
+        priority: undefined,
+      })
+    );
+  });
+
+  it('renders active filter chips with remove and reset all buttons', () => {
+    const existingFilters: CarePlanSearchFilters = {
+      query: 'Physical Therapy',
+      status: ['ACTIVE'],
+      priority: ['HIGH'],
+    };
+
+    render(
+      <CarePlanFilters
+        filters={existingFilters}
+        onFiltersChange={mockOnFiltersChange}
+      />
+    );
+
+    expect(screen.getByText(/Search: "Physical Therapy"/i)).toBeInTheDocument();
+    expect(screen.getByText(/Status: Active/i)).toBeInTheDocument();
+    expect(screen.getByText(/Priority: High/i)).toBeInTheDocument();
+
+    const resetAllBtn = screen.getByRole('button', { name: /reset all/i });
+    fireEvent.click(resetAllBtn);
 
     expect(mockOnFiltersChange).toHaveBeenCalledWith(
       expect.objectContaining({
