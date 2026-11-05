@@ -17,6 +17,8 @@ import {
   NotFoundError,
   AuthMiddleware,
   DemoDataService,
+  AuditService,
+  UserContext,
 } from '@folkcare/core';
 
 export function createOrganizationRouter(db: Database): Router {
@@ -25,6 +27,7 @@ export function createOrganizationRouter(db: Database): Router {
   const signupService = new SignupService(db);
   const authMiddleware = new AuthMiddleware(db);
   const demoDataService = new DemoDataService(db);
+  const auditService = new AuditService(db);
 
   /**
    * @openapi
@@ -737,6 +740,31 @@ export function createOrganizationRouter(db: Database): Router {
           currentUserId
         );
 
+        const userContext: UserContext = {
+          userId: currentUserId,
+          organizationId,
+          roles: req.user?.roles ?? [],
+          permissions: req.user?.permissions ?? [],
+          branchIds: req.user?.branchIds ?? [],
+        };
+
+        void auditService.logEvent(userContext, {
+          eventType: 'DATA_MODIFICATION',
+          resource: 'user',
+          resourceId: userId,
+          action: 'DEACTIVATE_USER',
+          result: 'SUCCESS',
+          metadata: {
+            organizationId,
+            userId,
+            status: 'INACTIVE',
+          },
+          ipAddress: req.ip ?? req.socket.remoteAddress,
+          userAgent: req.headers['user-agent'],
+        }).catch((err) => {
+          console.error('Failed to log audit event for user deactivation:', err);
+        });
+
         res.json({
           success: true,
           data: updatedUser,
@@ -801,6 +829,31 @@ export function createOrganizationRouter(db: Database): Router {
           'ACTIVE',
           currentUserId
         );
+
+        const userContext: UserContext = {
+          userId: currentUserId,
+          organizationId,
+          roles: req.user?.roles ?? [],
+          permissions: req.user?.permissions ?? [],
+          branchIds: req.user?.branchIds ?? [],
+        };
+
+        void auditService.logEvent(userContext, {
+          eventType: 'DATA_MODIFICATION',
+          resource: 'user',
+          resourceId: userId,
+          action: 'REACTIVATE_USER',
+          result: 'SUCCESS',
+          metadata: {
+            organizationId,
+            userId,
+            status: 'ACTIVE',
+          },
+          ipAddress: req.ip ?? req.socket.remoteAddress,
+          userAgent: req.headers['user-agent'],
+        }).catch((err) => {
+          console.error('Failed to log audit event for user reactivation:', err);
+        });
 
         res.json({
           success: true,
