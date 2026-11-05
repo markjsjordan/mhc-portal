@@ -116,12 +116,9 @@ describe('ClientFilters', () => {
       />
     );
 
-    const filterButton = screen.getByRole('button', { name: /filters/i });
-    fireEvent.click(filterButton);
-
-    // Wait for Clear All button to appear
-    const clearButton = await screen.findByRole('button', { name: /clear all/i });
-    fireEvent.click(clearButton);
+    // Wait for the "Reset all" link in the active filter chips to appear
+    const resetLink = await screen.findByRole('button', { name: /reset all/i });
+    fireEvent.click(resetLink);
 
     expect(mockOnFiltersChange).toHaveBeenCalledWith(
       expect.objectContaining({
