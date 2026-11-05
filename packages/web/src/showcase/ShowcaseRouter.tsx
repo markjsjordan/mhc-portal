@@ -54,6 +54,7 @@ export const ShowcaseRouter: React.FC = () => {
       }
     }
     setShowRoleSelector(false);
+    // eslint-disable-next-line sonarjs/void-use
     void navigate('/dashboard');
   };
 
