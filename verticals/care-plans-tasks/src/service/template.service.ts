@@ -65,8 +65,8 @@ export class TemplateService {
     this.repository = repository;
     if (templateFamilyRepository) {
       this.templateFamilyRepository = templateFamilyRepository;
-    } else if (repository && typeof (repository as any).getDatabase === 'function') {
-      const db = (repository as any).getDatabase();
+    } else if (repository && typeof repository.getDatabase === 'function') {
+      const db = repository.getDatabase();
       if (db) {
         this.templateFamilyRepository = new TemplateFamilyRepository(db);
       }
