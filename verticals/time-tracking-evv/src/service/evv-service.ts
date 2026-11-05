@@ -967,14 +967,14 @@ export class EVVService {
   /**
    * Helper: Generate integrity hash using production-grade crypto
    */
-  private generateIntegrityHash(data: any): string {
+  private generateIntegrityHash(data: string | object): string {
     return CryptoUtils.generateIntegrityHash(data);
   }
 
   /**
    * Helper: Generate core data hash for EVV record
    */
-  private generateCoreDataHash(data: any): string {
+  private generateCoreDataHash(data: string | object): string {
     return CryptoUtils.generateIntegrityHash(data);
   }
 
@@ -1114,20 +1114,22 @@ export class EVVService {
 
       // Handle Florida's multi-aggregator submission differently
       if (state === 'FL') {
-        const flProvider = provider as any; // Florida has submitToAggregators (plural)
+        const flProvider = provider as { submitToAggregators: (record: EVVRecord) => Promise<unknown[]> }; // Florida has submitToAggregators (plural)
         const submissions = await flProvider.submitToAggregators(evvRecord);
         return { submissions, state };
       }
 
       // Handle all other states (single aggregator)
-      const submission = await (provider as any).submitToAggregator(evvRecord);
+      const nonFlProvider = provider as { submitToAggregator: (record: EVVRecord) => Promise<unknown> };
+      const submission = await nonFlProvider.submitToAggregator(evvRecord);
       return {
         submissions: [submission],
         state,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(
-        `Failed to submit EVV record to ${state} aggregator: ${error.message}`
+        `Failed to submit EVV record to ${state} aggregator: ${errorMessage}`
       );
     }
   }
@@ -1135,12 +1137,12 @@ export class EVVService {
   /**
     * Helper: Generate checksum
     */
-  private generateChecksum(data: any): string {
+  private generateChecksum(data: string | object): string {
     return CryptoUtils.generateChecksum(data);
   }
 }
 
 interface SubmissionResult {
-  submissions: any[];
+  submissions: unknown[];
   state: string;
 }

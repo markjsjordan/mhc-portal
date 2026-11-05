@@ -251,7 +251,7 @@ export class IntegrationService {
     updatedBy?: UUID
   ): Promise<void> {
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let paramIndex = 1;
 
     if (actualStartTime) {
@@ -307,7 +307,7 @@ export class IntegrationService {
   /**
    * Helper: Generate a consistent address ID from address components
    */
-  private generateAddressId(address: any): UUID {
+  private generateAddressId(address: { line1: string; city: string; state: string; postalCode: string }): UUID {
     // In a real system, this would query a addresses table
     // For now, generate a deterministic ID based on address
     const addressString = `${address.line1}|${address.city}|${address.state}|${address.postalCode}`;

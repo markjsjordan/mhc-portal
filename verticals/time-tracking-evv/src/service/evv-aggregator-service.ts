@@ -176,12 +176,13 @@ export class EVVAggregatorService {
 
         await this.submissionRepository.updateSubmission(submission.id, updateData);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle submission error
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       await this.submissionRepository.updateSubmission(submission.id, {
         submissionStatus: 'RETRY',
         errorCode: 'NETWORK_ERROR',
-        errorMessage: error.message || 'Unknown error',
+        errorMessage,
         retryCount: 0,
         nextRetryAt: this.calculateNextRetry(0),
       });
@@ -270,12 +271,13 @@ export class EVVAggregatorService {
 
         return await this.submissionRepository.updateSubmission(sub.id, updateData);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle submission error
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return await this.submissionRepository.updateSubmission(sub.id, {
         submissionStatus: 'RETRY',
         errorCode: 'NETWORK_ERROR',
-        errorMessage: error.message || 'Unknown error',
+        errorMessage,
         retryCount: sub.retryCount + 1,
         nextRetryAt: this.calculateNextRetry(sub.retryCount + 1),
       });

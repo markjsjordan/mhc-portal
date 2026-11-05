@@ -267,12 +267,12 @@ export class EVVComplianceOrchestrator {
     try {
       // Florida has multi-aggregator support
       if (state === 'FL' && 'submitToAggregators' in provider) {
-        const submissions = await (provider as any).submitToAggregators(evvRecord);
+        const submissions = await (provider as { submitToAggregators: (record: EVVRecord) => Promise<Array<{ aggregator: string; success?: boolean; submissionId?: string; confirmationId?: string; errorCode?: string; errorMessage?: string }>> }).submitToAggregators(evvRecord);
         
         for (const submission of submissions) {
           results.push({
             aggregatorName: submission.aggregator,
-            success: submission.success,
+            success: submission.success ?? true,
             submissionId: submission.submissionId,
             confirmationId: submission.confirmationId,
             errorCode: submission.errorCode,
@@ -282,11 +282,11 @@ export class EVVComplianceOrchestrator {
         }
       } else {
         // Single aggregator for other states
-        const submission = await (provider as any).submitToAggregator(evvRecord);
+        const submission = await (provider as { submitToAggregator: (record: EVVRecord) => Promise<{ success?: boolean; submissionId?: string; confirmationId?: string; errorCode?: string; errorMessage?: string }> }).submitToAggregator(evvRecord);
         
         results.push({
           aggregatorName: stateConfig.aggregatorType,
-          success: submission.success,
+          success: submission.success ?? true,
           submissionId: submission.submissionId,
           confirmationId: submission.confirmationId,
           errorCode: submission.errorCode,
