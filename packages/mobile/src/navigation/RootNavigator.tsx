@@ -36,6 +36,9 @@ import IncidentReportScreen from '../screens/incidents/IncidentReportScreen';
 import { CarePlanScreen } from '../screens/careplan/CarePlanScreen';
 import { TrainingScreen } from '../screens/training/TrainingScreen';
 import { DirectDepositScreen } from '../screens/payroll/DirectDepositScreen';
+import { ShiftSwapScreen } from '../screens/shiftswap/ShiftSwapScreen';
+import { TimeOffScreen } from '../screens/timeoff/TimeOffScreen';
+import { MileageScreen } from '../screens/mileage/MileageScreen';
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -80,6 +83,9 @@ export type RootStackParamList = {
   };
   Training: undefined;
   DirectDeposit: undefined;
+  ShiftSwap: undefined;
+  TimeOff: undefined;
+  Mileage: undefined;
 };
 
 export type MainTabParamList = {
@@ -285,6 +291,27 @@ export function RootNavigator({ isAuthenticated }: { isAuthenticated: boolean })
               component={DirectDepositScreen}
               options={{
                 title: 'Direct Deposit',
+              }}
+            />
+            <RootStack.Screen
+              name="ShiftSwap"
+              component={ShiftSwapScreen}
+              options={{
+                title: 'Shift Swap',
+              }}
+            />
+            <RootStack.Screen
+              name="TimeOff"
+              component={TimeOffScreen}
+              options={{
+                title: 'Request Time Off',
+              }}
+            />
+            <RootStack.Screen
+              name="Mileage"
+              component={MileageScreen}
+              options={{
+                title: 'Mileage Tracking',
               }}
             />
           </>

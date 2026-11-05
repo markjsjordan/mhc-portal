@@ -284,7 +284,7 @@ export function createMedicationHandlers(service: MedicationService) {
         const validatedData = checkInteractionsSchema.parse(req.body);
 
         // Use the interaction service (get db from service)
-        const db = (service as any).db; // Access private db from medicationService
+        const db = (service as unknown as { db: ConstructorParameters<typeof MedicationInteractionService>[0] }).db; // Access private db from medicationService
         const interactionService = new MedicationInteractionService(db);
 
         const result = await interactionService.checkMedicationInteractions({

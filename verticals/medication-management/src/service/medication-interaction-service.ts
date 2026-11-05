@@ -9,6 +9,25 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { Knex } from 'knex';
 
+export interface InteractionClient {
+  id?: string;
+  first_name?: string;
+  last_name?: string;
+  date_of_birth?: string | Date;
+  medical_history?: string | string[];
+  allergies?: string | string[];
+}
+
+export interface InteractionMedication {
+  id?: string;
+  medication_name?: string;
+  generic_name?: string | null;
+  dosage?: string;
+  route?: string;
+  frequency?: string;
+  warnings?: string[] | string | null;
+}
+
 export interface MedicationInteractionRequest {
   clientId: string;
   newMedicationName?: string; // Check interactions for a new medication
@@ -179,8 +198,8 @@ export class MedicationInteractionService {
    * Build comprehensive interaction check prompt for Claude
    */
   private buildInteractionCheckPrompt(
-    client: any,
-    currentMedications: any[],
+    client: InteractionClient,
+    currentMedications: InteractionMedication[],
     newMedicationName?: string,
     newMedicationDosage?: string,
     newMedicationRoute?: string,

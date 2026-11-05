@@ -1,7 +1,4 @@
 import React from 'react';
-import { Search, X } from 'lucide-react';
-import { Input } from '@/components/ui/input.js';
-import { Button } from '@/components/ui/button.js';
 import {
   FilterDropdown,
   FilterCheckboxSection,
@@ -43,25 +40,6 @@ export const CaregiverFilters: React.FC<CaregiverFiltersProps> = ({
   filters,
   onFiltersChange,
 }) => {
-  const [queryInput, setQueryInput] = React.useState(filters.query ?? '');
-
-  // Sync input when filters change externally
-  React.useEffect(() => {
-    if (filters.query !== queryInput) {
-      setQueryInput(filters.query ?? '');
-    }
-  }, [filters.query, queryInput]);
-
-  // Debounced query update
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      if ((filters.query ?? '') !== queryInput) {
-        onFiltersChange({ ...filters, query: queryInput.trim() !== '' ? queryInput : undefined });
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [queryInput, filters, onFiltersChange]);
-
   const activeCount = React.useMemo(() => {
     let count = 0;
     if (filters.status?.length) count++;
@@ -107,9 +85,7 @@ export const CaregiverFilters: React.FC<CaregiverFiltersProps> = ({
   };
 
   const handleClearAll = () => {
-    setQueryInput('');
     onFiltersChange({
-      query: undefined,
       status: undefined,
       employmentType: undefined,
       complianceStatus: undefined,
@@ -119,92 +95,63 @@ export const CaregiverFilters: React.FC<CaregiverFiltersProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm space-y-3">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        {/* Search Bar */}
-        <div className="relative flex-1 max-w-lg">
-          <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <Input
-            type="text"
-            placeholder="Search by name or employee #..."
-            value={queryInput}
-            onChange={(e) => setQueryInput(e.target.value)}
-            className="pl-9 pr-9"
-          />
-          {queryInput && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setQueryInput('')}
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground"
-              aria-label="Clear search"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
+    <FilterDropdown
+      title="Filter Caregivers"
+      activeCount={activeCount}
+      onClearAll={handleClearAll}
+      width="md"
+    >
+      {/* Status Section */}
+      <FilterCheckboxSection
+        label="Status"
+        options={STATUS_OPTIONS.map((opt) => ({
+          value: opt.value,
+          label: opt.label,
+          isChecked: filters.status?.includes(opt.value) ?? false,
+        }))}
+        onToggle={toggleStatus}
+      />
 
-        {/* Filter Dropdown */}
-        <FilterDropdown
-          title="Filter Caregivers"
-          activeCount={activeCount}
-          onClearAll={handleClearAll}
-          width="md"
-        >
-          {/* Status Section */}
-          <FilterCheckboxSection
-            label="Status"
-            options={STATUS_OPTIONS.map((opt) => ({
-              value: opt.value,
-              label: opt.label,
-              isChecked: filters.status?.includes(opt.value) ?? false,
-            }))}
-            onToggle={toggleStatus}
-          />
+      {/* Employment Type Section */}
+      <FilterCheckboxSection
+        label="Employment Type"
+        options={EMPLOYMENT_TYPE_OPTIONS.map((opt) => ({
+          value: opt.value,
+          label: opt.label,
+          isChecked: filters.employmentType?.includes(opt.value) ?? false,
+        }))}
+        onToggle={toggleEmploymentType}
+      />
 
-          {/* Employment Type Section */}
-          <FilterCheckboxSection
-            label="Employment Type"
-            options={EMPLOYMENT_TYPE_OPTIONS.map((opt) => ({
-              value: opt.value,
-              label: opt.label,
-              isChecked: filters.employmentType?.includes(opt.value) ?? false,
-            }))}
-            onToggle={toggleEmploymentType}
-          />
+      {/* Compliance Status Section */}
+      <FilterCheckboxSection
+        label="Compliance Status"
+        options={COMPLIANCE_STATUS_OPTIONS.map((opt) => ({
+          value: opt.value,
+          label: opt.label,
+          isChecked: filters.complianceStatus?.includes(opt.value) ?? false,
+        }))}
+        onToggle={toggleComplianceStatus}
+      />
 
-          {/* Compliance Status Section */}
-          <FilterCheckboxSection
-            label="Compliance Status"
-            options={COMPLIANCE_STATUS_OPTIONS.map((opt) => ({
-              value: opt.value,
-              label: opt.label,
-              isChecked: filters.complianceStatus?.includes(opt.value) ?? false,
-            }))}
-            onToggle={toggleComplianceStatus}
-          />
-
-          {/* Date Range Section */}
-          <FilterDateRangeSection
-            label="Hire Date"
-            fromValue={filters.hireDateFrom}
-            toValue={filters.hireDateTo}
-            onFromChange={(value) =>
-              onFiltersChange({
-                ...filters,
-                hireDateFrom: value || undefined,
-              })
-            }
-            onToChange={(value) =>
-              onFiltersChange({
-                ...filters,
-                hireDateTo: value || undefined,
-              })
-            }
-          />
-        </FilterDropdown>
-      </div>
-    </div>
+      {/* Date Range Section */}
+      <FilterDateRangeSection
+        label="Hire Date"
+        fromValue={filters.hireDateFrom}
+        toValue={filters.hireDateTo}
+        onFromChange={(value) =>
+          onFiltersChange({
+            ...filters,
+            hireDateFrom: value || undefined,
+          })
+        }
+        onToChange={(value) =>
+          onFiltersChange({
+            ...filters,
+            hireDateTo: value || undefined,
+          })
+        }
+      />
+    </FilterDropdown>
   );
 };

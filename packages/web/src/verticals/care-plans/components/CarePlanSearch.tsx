@@ -68,6 +68,9 @@ export const CarePlanSearch: React.FC<CarePlanSearchProps> = ({ filters, onFilte
       }
     }, 300);
     return () => clearTimeout(timer);
+    // Intentionally keyed on queryInput only: adding filters/onFiltersChange would
+    // restart the 300ms debounce on every filter change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryInput]);
 
   // Count active filters

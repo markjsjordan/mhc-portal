@@ -71,7 +71,7 @@ export function InvitePanel({ organizationId }: Readonly<InvitePanelProps>): Rea
     void loadPendingInvites();
   }, [loadPendingInvites]);
 
-  const handleGenerateInvite = async (e: React.FormEvent) => {
+  const handleGenerateInvite = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setIsLoading(true);
 

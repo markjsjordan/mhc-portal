@@ -366,9 +366,9 @@ export class SandataAggregator implements IAggregator {
     }
 
     // Get auth endpoint and credentials from config
-    const authEndpoint = (config as any).aggregatorAuthEndpoint;
-    const clientId = (config as any).aggregatorClientId;
-    const clientSecret = (config as any).aggregatorClientSecret;
+    const authEndpoint = config['aggregatorAuthEndpoint'] as string | undefined;
+    const clientId = config['aggregatorClientId'] as string | undefined;
+    const clientSecret = config['aggregatorClientSecret'] as string | undefined;
 
     if (!authEndpoint || !clientId || !clientSecret) {
       throw new Error(

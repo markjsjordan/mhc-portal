@@ -531,7 +531,7 @@ export class MLPerformanceMonitoringService {
       };
     }
 
-    const errors = predictions.map((p: any) => p.prediction_error || 0);
+    const errors = predictions.map((p: PredictionRecord) => p.prediction_error || 0);
     const mae = errors.reduce((sum, e) => sum + Math.abs(e), 0) / errors.length;
     const mse = errors.reduce((sum, e) => sum + e * e, 0) / errors.length;
 

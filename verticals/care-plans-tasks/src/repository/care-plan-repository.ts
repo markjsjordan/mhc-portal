@@ -8,6 +8,7 @@ import { Repository, Database } from '@folkcare/core';
 import { UUID, PaginatedResult, PaginationParams } from '@folkcare/core';
 import {
   CarePlan,
+  CarePlanGoal,
   CreateCarePlanInput,
   UpdateCarePlanInput,
   CarePlanSearchFilters,
@@ -862,11 +863,11 @@ export class CarePlanRepository extends Repository<CarePlan> {
    */
   async updateGoals(
     carePlanId: UUID,
-    goals: any[],
+    goals: CarePlanGoal[],
     updatedBy: UUID,
     executor: Queryable = this.database
   ): Promise<void> {
-    const db = (executor as any) || this.database;
+    const db = executor || this.database;
     const query = `
       UPDATE care_plans 
       SET goals = $1,
@@ -885,11 +886,11 @@ export class CarePlanRepository extends Repository<CarePlan> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private mapRowToCarePlan(row: any): CarePlan {
     // Safe JSON parsing helper
-    const safeParseJson = (value: any, defaultValue: any = null) => {
+    const safeParseJson = (value: unknown, defaultValue: unknown = null): unknown => {
       if (value === null || value === undefined) return defaultValue;
       if (typeof value === 'object') return value; // Already parsed
       try {
-        return JSON.parse(value);
+        return JSON.parse(value as string);
       } catch {
         console.warn('Failed to parse JSON field:', value);
         return defaultValue;

@@ -310,6 +310,15 @@ export const Onboarding: React.FC = () => {
     }
   };
 
+  const handleNavigateAndComplete = async (targetRoute: string, stepId: OnboardingStepId) => {
+    try {
+      await Promise.resolve(navigate(targetRoute));
+      await handleMarkComplete(stepId);
+    } catch {
+      toast.error('Failed to navigate to target page');
+    }
+  };
+
   const handleSkipOnboarding = () => {
     Promise.resolve(navigate('/dashboard')).catch(() => {});
   };
@@ -600,8 +609,7 @@ export const Onboarding: React.FC = () => {
             <div className="flex gap-3">
               <Button
                 onClick={() => {
-                  void handleMarkComplete(step.id);
-                  Promise.resolve(navigate('/billing/payors')).catch(() => {});
+                  void handleNavigateAndComplete('/billing', step.id);
                 }}
               >
                 Add Payors
@@ -631,8 +639,7 @@ export const Onboarding: React.FC = () => {
             <div className="flex gap-3">
               <Button
                 onClick={() => {
-                  void handleMarkComplete(step.id);
-                  Promise.resolve(navigate('/settings/evv')).catch(() => {});
+                  void handleNavigateAndComplete('/time-tracking/aggregator-submissions', step.id);
                 }}
               >
                 Configure EVV
@@ -863,8 +870,7 @@ export const Onboarding: React.FC = () => {
             <div className="flex gap-3">
               <Button
                 onClick={() => {
-                  void handleMarkComplete(step.id);
-                  Promise.resolve(navigate('/schedule')).catch(() => {});
+                  void handleNavigateAndComplete('/scheduling/builder', step.id);
                 }}
               >
                 Schedule Visit
@@ -889,8 +895,7 @@ export const Onboarding: React.FC = () => {
             <div className="flex gap-3">
               <Button
                 onClick={() => {
-                  void handleMarkComplete(step.id);
-                  Promise.resolve(navigate('/settings/team')).catch(() => {});
+                  void handleNavigateAndComplete('/settings/team', step.id);
                 }}
               >
                 Invite Team

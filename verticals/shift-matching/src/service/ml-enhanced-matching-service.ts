@@ -3,7 +3,7 @@ import { MLFeatureExtractionService } from './ml-feature-extraction-service';
 import { MLModelService } from './ml-model-service';
 import { MLABTestingService } from './ml-ab-testing-service';
 import { MatchCandidate, OpenShift } from '../types/shift-matching';
-import { HybridScoringConfig } from '../types/ml-matching';
+import { HybridScoringConfig, ABTestAssignment, ABTestConfig, ABTestVariant, MLFeatureVector } from '../types/ml-matching';
 
 /**
  * ML-Enhanced Matching Service
@@ -195,7 +195,7 @@ export class MLEnhancedMatchingService {
     caregiverId: string,
     matchScore: number,
     matchQuality: string,
-    features: any
+    features: MLFeatureVector
   ): Promise<void> {
     // This will be updated when proposal is accepted/rejected
     await this.featureExtractor.createTrainingDataPoint(
@@ -322,8 +322,8 @@ export class MLEnhancedMatchingService {
   /**
    * Get variant config from A/B test
    */
-  private getVariantConfig(testConfig: any, variantName: string): HybridScoringConfig | null {
-    const variant = testConfig.variants.find((v: any) => v.name === variantName);
+  private getVariantConfig(testConfig: ABTestConfig, variantName: string): HybridScoringConfig | null {
+    const variant = testConfig.variants.find((v: ABTestVariant) => v.name === variantName);
     return variant?.config ?? null;
   }
 
@@ -333,7 +333,7 @@ export class MLEnhancedMatchingService {
   private async recordMatchingAttempt(
     _shiftId: string,
     candidates: MatchCandidate[],
-    testVariant: any
+    testVariant: ABTestAssignment | null
   ): Promise<void> {
     // Update A/B test if active
     if (testVariant) {

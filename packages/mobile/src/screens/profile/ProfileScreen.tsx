@@ -412,6 +412,45 @@ export function ProfileScreen() {
             <Text style={styles.linkArrow}>›</Text>
           </Pressable>
 
+          <Pressable
+            style={[styles.settingItem, styles.settingItemBorder]}
+            onPress={() => navigation.navigate('ShiftSwap')}
+          >
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Shift Swap</Text>
+              <Text style={styles.settingDesc}>
+                Exchange upcoming visits with other caregivers
+              </Text>
+            </View>
+            <Text style={styles.linkArrow}>›</Text>
+          </Pressable>
+
+          <Pressable
+            style={[styles.settingItem, styles.settingItemBorder]}
+            onPress={() => navigation.navigate('TimeOff')}
+          >
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Time Off</Text>
+              <Text style={styles.settingDesc}>
+                Submit and review paid or unpaid leave requests
+              </Text>
+            </View>
+            <Text style={styles.linkArrow}>›</Text>
+          </Pressable>
+
+          <Pressable
+            style={[styles.settingItem, styles.settingItemBorder]}
+            onPress={() => navigation.navigate('Mileage')}
+          >
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Mileage & Travel</Text>
+              <Text style={styles.settingDesc}>
+                Review recorded travel distances and reimbursement
+              </Text>
+            </View>
+            <Text style={styles.linkArrow}>›</Text>
+          </Pressable>
+
           <View style={[styles.settingItem, styles.settingItemBorder]}>
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Notifications</Text>

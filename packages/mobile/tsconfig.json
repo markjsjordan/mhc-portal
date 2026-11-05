@@ -33,6 +33,9 @@
       ],
       "@folkcare/time-tracking-evv/*": [
         "../../verticals/time-tracking-evv/src/*"
+      ],
+      "expo-av": [
+        "test-stubs/expo-av.ts"
       ]
     }
   },

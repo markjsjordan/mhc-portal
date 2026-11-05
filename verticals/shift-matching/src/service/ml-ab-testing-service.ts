@@ -189,7 +189,15 @@ export class MLABTestingService {
     const assignments = await query;
 
     const totalAssignments = assignments.length;
-    const variants: Record<string, any> = {};
+    const variants: Record<string, {
+      count: number;
+      match_rate: number;
+      acceptance_rate: number;
+      completion_rate: number;
+      avg_match_score: number;
+      avg_response_time_minutes: number;
+      avg_client_satisfaction: number;
+    }> = {};
 
     // Group by variant
     const variantGroups = this.groupBy(assignments, 'test_variant');
@@ -236,31 +244,36 @@ export class MLABTestingService {
     let statisticalSignificance = null;
     const variantNames = Object.keys(variants);
 
-    if (variantNames.length === 2 && variantNames[0] && variantNames[1]) {
-      const control = variants[variantNames[0]];
-      const treatment = variants[variantNames[1]];
+    const firstVariant = variantNames[0];
+    const secondVariant = variantNames[1];
 
-      // Simple two-proportion z-test for match rate
-      const p1 = control.match_rate / 100;
-      const n1 = control.count;
-      const p2 = treatment.match_rate / 100;
-      const n2 = treatment.count;
+    if (variantNames.length === 2 && firstVariant && secondVariant) {
+      const control = variants[firstVariant];
+      const treatment = variants[secondVariant];
 
-      const pooled = (p1 * n1 + p2 * n2) / (n1 + n2);
-      const se = Math.sqrt(pooled * (1 - pooled) * (1 / n1 + 1 / n2));
-      const z = Math.abs(p1 - p2) / se;
+      if (control && treatment) {
+        // Simple two-proportion z-test for match rate
+        const p1 = control.match_rate / 100;
+        const n1 = control.count;
+        const p2 = treatment.match_rate / 100;
+        const n2 = treatment.count;
 
-      // Approximate p-value from z-score
-      const pValue = 2 * (1 - this.normalCDF(z));
-      const isSignificant = pValue < 0.05;
-      const confidenceLevel = (1 - pValue) * 100;
+        const pooled = (p1 * n1 + p2 * n2) / (n1 + n2);
+        const se = Math.sqrt(pooled * (1 - pooled) * (1 / n1 + 1 / n2));
+        const z = Math.abs(p1 - p2) / se;
 
-      statisticalSignificance = {
-        variant_comparison: `${variantNames[0]} vs ${variantNames[1]}`,
-        p_value: pValue,
-        is_significant: isSignificant,
-        confidence_level: confidenceLevel,
-      };
+        // Approximate p-value from z-score
+        const pValue = 2 * (1 - this.normalCDF(z));
+        const isSignificant = pValue < 0.05;
+        const confidenceLevel = (1 - pValue) * 100;
+
+        statisticalSignificance = {
+          variant_comparison: `${firstVariant} vs ${secondVariant}`,
+          p_value: pValue,
+          is_significant: isSignificant,
+          confidence_level: confidenceLevel,
+        };
+      }
     }
 
     return {

@@ -59,16 +59,16 @@ export class CarePlanService {
     this.userRepository = userRepository;
     if (versionRepository) {
       this.versionRepository = versionRepository;
-    } else if (repository && typeof (repository as any).getDatabase === 'function') {
-      const db = (repository as any).getDatabase();
+    } else if (repository && typeof repository.getDatabase === 'function') {
+      const db = repository.getDatabase();
       if (db) {
         this.versionRepository = new CarePlanVersionRepository(db);
       }
     }
     if (auditService) {
       this.auditService = auditService;
-    } else if (repository && typeof (repository as any).getDatabase === 'function') {
-      const db = (repository as any).getDatabase();
+    } else if (repository && typeof repository.getDatabase === 'function') {
+      const db = repository.getDatabase();
       if (db) {
         this.auditService = new AuditService(db);
       }
@@ -1093,7 +1093,8 @@ export class CarePlanService {
     }
 
     // Determine state jurisdiction and compliance interval
-    const jurisdiction = input.stateJurisdiction || (existing as any).stateJurisdiction;
+    const statePlan = existing as StateSpecificCarePlanData;
+    const jurisdiction = input.stateJurisdiction || statePlan.stateJurisdiction;
     
     // Review intervals:
     // Texas HHSC: 60-day review interval requirement (26 TAC §558.287)
@@ -1102,7 +1103,7 @@ export class CarePlanService {
     if (jurisdiction === 'FL') {
       const isSkilledOrDelegated =
         existing.planType === 'SKILLED_NURSING' ||
-        Boolean((existing as any).rnDelegationId) ||
+        Boolean(statePlan.rnDelegationId) ||
         existing.interventions?.some((i) =>
           ['MEDICATION_ADMINISTRATION', 'WOUND_CARE', 'VITAL_SIGNS_MONITORING'].includes(i.category)
         );

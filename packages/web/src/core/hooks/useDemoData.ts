@@ -192,11 +192,13 @@ export function useDemoData() {
     }
   }, [organizationId, initialized, store.hasDemoData, checkStatus]);
 
-  // Reset when organization changes
+  // Reset when organization changes. Intentionally keyed on organizationId only:
+  // adding `store` would run the cleanup (and wipe demo state) on every store update.
   useEffect(() => {
     return () => {
       store.reset();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId]);
 
   return {

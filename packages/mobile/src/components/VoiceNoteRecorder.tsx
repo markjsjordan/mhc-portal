@@ -36,6 +36,7 @@ export function VoiceNoteRecorder({
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const durationInterval = useRef<NodeJS.Timeout | null>(null);
+  const stopRecordingRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   // Pulse animation for recording indicator
   useEffect(() => {
@@ -57,7 +58,7 @@ export function VoiceNoteRecorder({
     } else {
       pulseAnim.setValue(1);
     }
-  }, [isRecording]);
+  }, [isRecording, pulseAnim]);
 
   // Duration counter
   useEffect(() => {
@@ -66,7 +67,7 @@ export function VoiceNoteRecorder({
         setRecordingDuration(prev => {
           const newDuration = prev + 1;
           if (newDuration >= maxDurationSeconds) {
-            stopRecording();
+            stopRecordingRef.current();
           }
           return newDuration;
         });
@@ -83,7 +84,7 @@ export function VoiceNoteRecorder({
         clearInterval(durationInterval.current);
       }
     };
-  }, [isRecording]);
+  }, [isRecording, maxDurationSeconds]);
 
   async function startRecording() {
     try {
@@ -135,6 +136,7 @@ export function VoiceNoteRecorder({
       setErrorMessage('Failed to save recording');
     }
   }
+  stopRecordingRef.current = stopRecording;
 
   async function transcribeAudio(audioUri: string) {
     setIsTranscribing(true);
@@ -143,7 +145,7 @@ export function VoiceNoteRecorder({
     try {
       // Read audio file as blob
       const response = await fetch(audioUri);
-      const audioBlob = await response.blob();
+      await response.blob();
 
       // TODO: Replace with actual API call to backend
       // For now, simulate transcription with mock data

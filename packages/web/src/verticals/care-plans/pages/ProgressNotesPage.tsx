@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, FileText, Plus } from 'lucide-react';
-import { LoadingSpinner, ErrorMessage, StatusBadge } from '@/core/components';
+import { LoadingSpinner, ErrorMessage, StatusBadge, Badge } from '@/core/components';
 import { Button } from '@/components/ui/button.js';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
-import { Badge } from '@/components/ui/badge.js';
 import { useAuth } from '@/core/hooks';
 import { formatDate } from '@/core/utils';
 import { useCarePlan, useProgressNotes, useCreateProgressNote } from '../hooks';
@@ -107,7 +106,7 @@ export const ProgressNotesPage: React.FC = () => {
                   {note.tags && note.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {note.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary">
+                        <Badge key={tag} variant="default">
                           {tag}
                         </Badge>
                       ))}
