@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Plus, Grid, List } from 'lucide-react';
 import { LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
 import { Button } from '@/components/ui/button';

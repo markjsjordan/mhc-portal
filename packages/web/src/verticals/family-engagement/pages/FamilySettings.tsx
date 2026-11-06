@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useFamilyMemberProfile } from '../hooks';
 import { useAuth } from '@/core/hooks';
 import { NotificationSettings } from '../components/NotificationSettings';
