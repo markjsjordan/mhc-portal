@@ -74,9 +74,18 @@ export function createApiProvider(config: ApiProviderConfig): ApiProvider {
     }
   };
 
+  const onAccountInactive = () => {
+    // Clear auth and redirect to login with deactivated reason
+    useAuthStore.getState().clearAuth();
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login?reason=deactivated';
+    }
+  };
+
   return new ProductionApiProvider(baseUrl, getAuthToken, getUserContext, {
     onRefresh,
     onAuthFailure,
+    onAccountInactive,
   });
 }
 

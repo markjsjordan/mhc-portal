@@ -12,6 +12,7 @@ export interface UserContextHeaders {
 export interface ApiClientOptions {
   onRefresh?: () => Promise<{ token: string }>;
   onAuthFailure?: () => void;
+  onAccountInactive?: () => void;
 }
 
 export interface ApiClient {
@@ -28,6 +29,7 @@ class ApiClientImpl implements ApiClient {
   private getUserContext: () => UserContextHeaders | null;
   private onRefresh?: () => Promise<{ token: string }>;
   private onAuthFailure?: () => void;
+  private onAccountInactive?: () => void;
   private refreshPromise: Promise<{ token: string }> | null = null;
 
   constructor(
@@ -41,6 +43,7 @@ class ApiClientImpl implements ApiClient {
     this.getUserContext = getUserContext;
     this.onRefresh = options?.onRefresh;
     this.onAuthFailure = options?.onAuthFailure;
+    this.onAccountInactive = options?.onAccountInactive;
   }
 
   /**
@@ -154,6 +157,26 @@ class ApiClientImpl implements ApiClient {
               }
             );
           } catch (error) {
+            // Check for ACCOUNT_INACTIVE code: force logout and notify
+            const apiError = (error as { response?: { data?: ApiError } }).response?.data;
+            const errObj = apiError?.error;
+            const errorCode = apiError?.code ?? (typeof errObj === 'object' ? errObj.code : undefined);
+            if (errorCode === 'ACCOUNT_INACTIVE') {
+              if (this.onAccountInactive) {
+                requestDeduplicator.clear();
+                this.onAccountInactive();
+                return new Promise<T>(() => {
+                  // Intentionally never resolve - redirect/logout happens immediately
+                });
+              } else if (this.onAuthFailure) {
+                requestDeduplicator.clear();
+                this.onAuthFailure();
+                return new Promise<T>(() => {
+                  // Intentionally never resolve
+                });
+              }
+            }
+
             // Check if it's a 401 error that should trigger refresh
             const err = error as { status?: number };
             if (

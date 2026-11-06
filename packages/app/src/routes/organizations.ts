@@ -17,6 +17,8 @@ import {
   NotFoundError,
   AuthMiddleware,
   DemoDataService,
+  AuditService,
+  UserContext,
 } from '@folkcare/core';
 
 export function createOrganizationRouter(db: Database): Router {
@@ -25,6 +27,7 @@ export function createOrganizationRouter(db: Database): Router {
   const signupService = new SignupService(db);
   const authMiddleware = new AuthMiddleware(db);
   const demoDataService = new DemoDataService(db);
+  const auditService = new AuditService(db);
 
   /**
    * @openapi
@@ -689,6 +692,186 @@ export function createOrganizationRouter(db: Database): Router {
         res.status(500).json({
           success: false,
           error: error instanceof Error ? error.message : 'Failed to update team member',
+        });
+      }
+    }
+  );
+
+  /**
+   * POST /api/organizations/:id/users/:userId/deactivate
+   * Deactivate a team member (admin-only)
+   */
+  router.post('/organizations/:id/users/:userId/deactivate',
+    authMiddleware.requireAuth,
+    authMiddleware.requireSameOrganization('id'),
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']),
+    async (req: Request, res: Response): Promise<void> => {
+      try {
+        const organizationId = req.params['id'];
+        const userId = req.params['userId'];
+        if (organizationId === undefined || organizationId.length === 0 || userId === undefined || userId.length === 0) {
+          res.status(400).json({
+            success: false,
+            error: 'Organization ID and User ID are required',
+          });
+          return;
+        }
+
+        const userRoles = req.user?.roles ?? [];
+        if (
+          !userRoles.includes('ORG_ADMIN') &&
+          !userRoles.includes('BRANCH_ADMIN') &&
+          !userRoles.includes('SUPER_ADMIN') &&
+          !userRoles.includes('ADMIN')
+        ) {
+          res.status(403).json({
+            success: false,
+            error: 'Insufficient permissions',
+            code: 'INSUFFICIENT_PERMISSIONS',
+          });
+          return;
+        }
+
+        const currentUserId = req.user?.userId ?? '00000000-0000-0000-0000-000000000000';
+        const updatedUser = await organizationService.setOrganizationUserStatus(
+          organizationId,
+          userId,
+          'INACTIVE',
+          currentUserId
+        );
+
+        const userContext: UserContext = {
+          userId: currentUserId,
+          organizationId,
+          roles: req.user?.roles ?? [],
+          permissions: req.user?.permissions ?? [],
+          branchIds: req.user?.branchIds ?? [],
+        };
+
+        void auditService.logEvent(userContext, {
+          eventType: 'DATA_MODIFICATION',
+          resource: 'user',
+          resourceId: userId,
+          action: 'DEACTIVATE_USER',
+          result: 'SUCCESS',
+          metadata: {
+            organizationId,
+            userId,
+            status: 'INACTIVE',
+          },
+          ipAddress: req.ip ?? req.socket.remoteAddress,
+          userAgent: req.headers['user-agent'],
+        }).catch((err) => {
+          console.error('Failed to log audit event for user deactivation:', err);
+        });
+
+        res.json({
+          success: true,
+          data: updatedUser,
+        });
+      } catch (error) {
+        if (error instanceof NotFoundError) {
+          res.status(404).json({
+            success: false,
+            error: error.message,
+          });
+          return;
+        }
+
+        console.error('Deactivate organization user error:', error);
+        res.status(500).json({
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to deactivate team member',
+        });
+      }
+    }
+  );
+
+  /**
+   * POST /api/organizations/:id/users/:userId/reactivate
+   * Reactivate a team member (admin-only)
+   */
+  router.post('/organizations/:id/users/:userId/reactivate',
+    authMiddleware.requireAuth,
+    authMiddleware.requireSameOrganization('id'),
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']),
+    async (req: Request, res: Response): Promise<void> => {
+      try {
+        const organizationId = req.params['id'];
+        const userId = req.params['userId'];
+        if (organizationId === undefined || organizationId.length === 0 || userId === undefined || userId.length === 0) {
+          res.status(400).json({
+            success: false,
+            error: 'Organization ID and User ID are required',
+          });
+          return;
+        }
+
+        const userRoles = req.user?.roles ?? [];
+        if (
+          !userRoles.includes('ORG_ADMIN') &&
+          !userRoles.includes('BRANCH_ADMIN') &&
+          !userRoles.includes('SUPER_ADMIN') &&
+          !userRoles.includes('ADMIN')
+        ) {
+          res.status(403).json({
+            success: false,
+            error: 'Insufficient permissions',
+            code: 'INSUFFICIENT_PERMISSIONS',
+          });
+          return;
+        }
+
+        const currentUserId = req.user?.userId ?? '00000000-0000-0000-0000-000000000000';
+        const updatedUser = await organizationService.setOrganizationUserStatus(
+          organizationId,
+          userId,
+          'ACTIVE',
+          currentUserId
+        );
+
+        const userContext: UserContext = {
+          userId: currentUserId,
+          organizationId,
+          roles: req.user?.roles ?? [],
+          permissions: req.user?.permissions ?? [],
+          branchIds: req.user?.branchIds ?? [],
+        };
+
+        void auditService.logEvent(userContext, {
+          eventType: 'DATA_MODIFICATION',
+          resource: 'user',
+          resourceId: userId,
+          action: 'REACTIVATE_USER',
+          result: 'SUCCESS',
+          metadata: {
+            organizationId,
+            userId,
+            status: 'ACTIVE',
+          },
+          ipAddress: req.ip ?? req.socket.remoteAddress,
+          userAgent: req.headers['user-agent'],
+        }).catch((err) => {
+          console.error('Failed to log audit event for user reactivation:', err);
+        });
+
+        res.json({
+          success: true,
+          data: updatedUser,
+        });
+      } catch (error) {
+        if (error instanceof NotFoundError) {
+          res.status(404).json({
+            success: false,
+            error: error.message,
+          });
+          return;
+        }
+
+        console.error('Reactivate organization user error:', error);
+        res.status(500).json({
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to reactivate team member',
         });
       }
     }

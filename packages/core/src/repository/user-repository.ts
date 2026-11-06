@@ -55,7 +55,7 @@ export interface IUserRepository {
   updateUser(
     id: UUID,
     organizationId: UUID,
-    updates: { firstName?: string; lastName?: string; email?: string; roles?: Role[] },
+    updates: { firstName?: string; lastName?: string; email?: string; roles?: Role[]; status?: string },
     updatedBy: UUID
   ): Promise<User>;
   resendInviteToken(invitationId: UUID, organizationId: UUID, resendBy: UUID): Promise<void>;
@@ -578,7 +578,7 @@ export class UserRepository implements IUserRepository {
   async updateUser(
     id: UUID,
     organizationId: UUID,
-    updates: { firstName?: string; lastName?: string; email?: string; roles?: Role[] },
+    updates: { firstName?: string; lastName?: string; email?: string; roles?: Role[]; status?: string },
     updatedBy: UUID
   ): Promise<User> {
     const setClauses: string[] = ['updated_at = NOW()', 'version = version + 1', 'updated_by = $3'];
@@ -600,6 +600,10 @@ export class UserRepository implements IUserRepository {
     if (updates.roles !== undefined) {
       setClauses.push(`roles = $${paramIndex++}`);
       values.push(updates.roles);
+    }
+    if (updates.status !== undefined) {
+      setClauses.push(`status = $${paramIndex++}`);
+      values.push(updates.status);
     }
 
     const query = `

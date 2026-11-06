@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button.js';
 import { Input } from '@/components/ui/input.js';
 import { Label } from '@/components/ui/label.js';
 import { Checkbox } from '@/components/ui/checkbox.js';
+import { NativeSelect } from '@/components/ui/select.js';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs.js';
 import { FormField } from '@/components/forms/FormField';
 import { useApiClient } from '@/core/hooks';
@@ -826,6 +827,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
   const [isCopied, setIsCopied] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [editMemberError, setEditMemberError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ACTIVE');
 
   // Fetch team members
   const { data: teamMembers, isLoading: isLoadingTeam } = useQuery({
@@ -834,6 +836,11 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
       const res = await apiClient.get<TeamMember[] | { data?: TeamMember[] }>(`/api/organizations/${organizationId}/users`);
       return Array.isArray(res) ? res : (res.data ?? []);
     },
+  });
+
+  const filteredTeamMembers = (teamMembers ?? []).filter((member) => {
+    if (statusFilter === 'ALL') return true;
+    return member.status === statusFilter;
   });
 
   // Fetch pending invitations
@@ -993,19 +1000,32 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
           title="Team Members"
           subtitle="Manage your organization's team"
           action={
-            <Button
-              size="sm"
-              onClick={() => setShowInviteModal(true)}
-            >
-              <UserPlus className="h-4 w-4 mr-2" />
-              Invite Member
-            </Button>
+            <div className="flex items-center gap-3">
+              <Label htmlFor="team-status-filter" className="sr-only">Filter by status</Label>
+              <NativeSelect
+                id="team-status-filter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE')}
+                className="h-9 w-auto"
+              >
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+                <option value="ALL">All Statuses</option>
+              </NativeSelect>
+              <Button
+                size="sm"
+                onClick={() => setShowInviteModal(true)}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Invite Member
+              </Button>
+            </div>
           }
         />
         <Card.Content>
           <TeamMemberList
             isLoading={isLoading}
-            teamMembers={teamMembers}
+            teamMembers={filteredTeamMembers}
             onEditMember={(member) => {
               setEditMemberError(null);
               setEditingMember(member);
