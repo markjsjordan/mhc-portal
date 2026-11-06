@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useAuthStore } from '../../core/hooks/auth';
 import { Button } from '@/components/ui/button.js';
 import { Checkbox } from '@/components/ui/checkbox.js';

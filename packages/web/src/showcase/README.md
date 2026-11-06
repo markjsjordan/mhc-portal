@@ -257,7 +257,7 @@ The showcase uses the following configuration:
 ### State Management
 - `@tanstack/react-query` - Data fetching
 - `zustand` - Local state
-- `react-hot-toast` - Notifications
+- `sonner` - Notifications
 
 ## Best Practices
 

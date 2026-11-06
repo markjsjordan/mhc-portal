@@ -9,7 +9,7 @@ import {
   ShieldCheck,
   FileSpreadsheet,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from 'sonner';
 import { Button } from "@/components/ui/button.js";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs.js";
 import {
