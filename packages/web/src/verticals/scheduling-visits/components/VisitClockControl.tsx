@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Clock, MapPin, AlertTriangle, CheckCircle2, LogIn, LogOut, WifiOff } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.js';
 import { Textarea } from '@/components/ui/textarea.js';
 import { Label } from '@/components/ui/label.js';

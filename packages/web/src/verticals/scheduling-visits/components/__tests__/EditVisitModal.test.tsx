@@ -6,9 +6,9 @@ import { EditVisitModal } from '../EditVisitModal';
 import { formatCaregiverOptionLabel } from '../../utils/caregiverOptionLabel';
 import type { Visit } from '../../types';
 
-// Mock react-hot-toast
-vi.mock('react-hot-toast', () => ({
-  default: {
+// Mock sonner
+vi.mock('sonner', () => ({
+  toast: {
     success: vi.fn(),
     error: vi.fn(),
   },
