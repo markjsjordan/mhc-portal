@@ -35,6 +35,7 @@ import { GlobalSearch, useGlobalSearch } from './components/search/index.js';
 // Lazy loaded dashboards
 const AdministratorDashboard = React.lazy(() => import('./app/pages/AdministratorDashboard').then((m) => ({ default: m.AdministratorDashboard })));
 const BulkDataHub = React.lazy(() => import('./app/pages/admin/BulkDataHub').then((m) => ({ default: m.BulkDataHub })));
+const SystemActivityPage = React.lazy(() => import('./app/pages/admin/SystemActivityPage').then((m) => ({ default: m.SystemActivityPage })));
 const AgencyManagement = React.lazy(() => import('./app/pages/AgencyManagement'));
 const BrandingSettings = React.lazy(() => import('./app/pages/BrandingSettings'));
 const ComplianceDashboard = React.lazy(() => import('./app/pages/ComplianceDashboard').then((m) => ({ default: m.ComplianceDashboard })));
@@ -753,6 +754,18 @@ function AppRoutes() {
           >
             <AppShell>
               <BulkDataHub />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/activity"
+        element={
+          <ProtectedRoute
+            requiredRoles={['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']}
+          >
+            <AppShell>
+              <SystemActivityPage />
             </AppShell>
           </ProtectedRoute>
         }
