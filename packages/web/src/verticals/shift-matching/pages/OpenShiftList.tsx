@@ -15,7 +15,7 @@ import {
 import { useOpenShifts, useMatchingMetrics } from '../hooks';
 import { OpenShiftCard, MatchingMetricsCard } from '../components';
 import type { OpenShiftSearchFilters, MatchingStatus, ShiftPriority } from '../types';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export const OpenShiftList: React.FC = () => {
   const [filters, setFilters] = useState<OpenShiftSearchFilters>({});

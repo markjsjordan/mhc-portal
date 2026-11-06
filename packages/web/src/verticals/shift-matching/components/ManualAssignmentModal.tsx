@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label.js';
 import { Textarea } from '@/components/ui/textarea.js';
 import { cn } from '@/lib/utils.js';
 import type { MatchCandidate, OpenShift } from '../types';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 interface ManualAssignmentModalProps {
   shift: OpenShift;

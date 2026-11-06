@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button.js';
 import { Card, CardContent } from '@/components/ui/card.js';
 import { Badge } from '@/components/ui/badge.js';
 import { useEVVRecord } from '../hooks';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export const EVVRecordDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
