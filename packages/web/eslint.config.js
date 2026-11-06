@@ -184,7 +184,6 @@ export default [
       'vitest.config.ts',
       'vitest.config.js',
       'postcss.config.js',
-      'tailwind.config.js',
       'knexfile.js',
       'migrations/**/*.js',
       'migrations/**/*.d.ts',
