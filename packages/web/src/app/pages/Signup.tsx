@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/core/hooks';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { US_STATES } from '@/core/constants/us-states';
 import { Button } from '@/components/ui/button.js';
 import { Input } from '@/components/ui/input.js';

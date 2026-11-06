@@ -7,7 +7,7 @@
 import { useState, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useApiClient } from '@/core/hooks';
 import { Button } from '@/components/ui/button.js';
 import { Input } from '@/components/ui/input.js';
