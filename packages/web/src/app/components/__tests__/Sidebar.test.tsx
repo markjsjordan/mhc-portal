@@ -97,4 +97,20 @@ describe('Sidebar component', () => {
     const backdrop = container.querySelector('.fixed.inset-0.bg-gray-900');
     expect(backdrop).toBeNull();
   });
+
+  it('renders updated navigation items for an admin-role user', () => {
+    render(
+      <MemoryRouter>
+        <Sidebar isOpen={true} onClose={vi.fn()} isDesktopOpen={true} />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Visits')).toBeInTheDocument();
+    expect(screen.getByText('Calendar')).toBeInTheDocument();
+
+    expect(screen.queryByText('Scheduling')).not.toBeInTheDocument();
+    expect(screen.queryByText('Calendar View')).not.toBeInTheDocument();
+    expect(screen.queryByText('Create Care Plan')).not.toBeInTheDocument();
+    expect(screen.queryByText('Import / Export')).not.toBeInTheDocument();
+  });
 });
