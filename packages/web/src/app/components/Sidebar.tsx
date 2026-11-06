@@ -11,11 +11,9 @@ import {
   Settings,
   LogOut,
   X,
-  Plus,
   ClipboardCheck,
   AlertTriangle,
   Shield,
-  FileSpreadsheet,
   MessageCircle,
 } from 'lucide-react';
 import { cn } from '@/core/utils';
@@ -50,13 +48,13 @@ const navItems: NavItem[] = [
     permission: 'caregivers:read',
   },
   {
-    label: 'Scheduling',
+    label: 'Visits',
     path: '/scheduling',
     icon: <Calendar className="h-5 w-5" />,
     permission: 'visits:read',
   },
   {
-    label: 'Calendar View',
+    label: 'Calendar',
     path: '/scheduling/calendar',
     icon: <Calendar className="h-5 w-5" />,
     permission: 'visits:read',
@@ -66,12 +64,6 @@ const navItems: NavItem[] = [
     path: '/care-plans',
     icon: <ClipboardList className="h-5 w-5" />,
     permission: 'care_plans:read',
-  },
-  {
-    label: 'Create Care Plan',
-    path: '/care-plans/new',
-    icon: <Plus className="h-5 w-5" />,
-    permission: 'care_plans:create',
   },
   {
     label: 'Tasks',
@@ -119,12 +111,6 @@ const navItems: NavItem[] = [
     label: 'Admin',
     path: '/admin',
     icon: <Settings className="h-5 w-5" />,
-    permission: 'admin:access',
-  },
-  {
-    label: 'Import / Export',
-    path: '/admin/data',
-    icon: <FileSpreadsheet className="h-5 w-5" />,
     permission: 'admin:access',
   },
 ];
