@@ -3,13 +3,19 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { Database, AuthMiddleware, UserContext } from '@folkcare/core';
+import { Database, AuthMiddleware, UserContext, AuditService, NotFoundError, PermissionError } from '@folkcare/core';
+import { z } from 'zod';
 import { 
   CaregiverService,
+  CaregiverRepository,
+  CaregiverAvailabilityService,
+  AvailabilityConflictError,
+  AvailabilityCutoffError,
   CredentialExpirationService,
   ExclusionListService,
 } from '@folkcare/caregiver-staff';
 import type { 
+  WeeklyAvailability,
   CreateCaregiverInput, 
   UpdateCaregiverInput, 
   CaregiverSearchFilters,
@@ -28,6 +34,61 @@ function getUserContext(req: Request): UserContext {
     roles: user.roles,
     permissions: user.permissions,
   };
+}
+
+async function handleSaveAvailabilityError(
+  saveError: unknown,
+  caregiverId: string,
+  weekStart: string,
+  context: UserContext,
+  auditService: AuditService,
+  res: Response
+): Promise<void> {
+  if (saveError instanceof AvailabilityConflictError) {
+    try {
+      await auditService.logEvent(context, {
+        eventType: 'COMPLIANCE',
+        resource: 'caregiver_availability',
+        resourceId: caregiverId,
+        action: 'AVAILABILITY_EDIT_BLOCKED_CONFLICT',
+        result: 'FAILURE',
+        metadata: {
+          weekStart,
+          conflicts: saveError.conflicts.map((c) => c.visitId),
+        },
+      });
+    } catch (auditErr) {
+      console.error('Audit write failure on conflict block:', auditErr);
+    }
+    res.status(409).json({
+      success: false,
+      error: saveError.message,
+      code: 'AVAILABILITY_CONFLICT_BOOKED_VISITS',
+      conflicts: saveError.conflicts,
+    });
+    return;
+  }
+  if (saveError instanceof AvailabilityCutoffError) {
+    try {
+      await auditService.logEvent(context, {
+        eventType: 'COMPLIANCE',
+        resource: 'caregiver_availability',
+        resourceId: caregiverId,
+        action: 'AVAILABILITY_EDIT_BLOCKED_CUTOFF',
+        result: 'FAILURE',
+        metadata: { weekStart },
+      });
+    } catch (auditErr) {
+      console.error('Audit write failure on cutoff block:', auditErr);
+    }
+    res.status(409).json({
+      success: false,
+      error: saveError.message,
+      code: 'AVAILABILITY_EDIT_CUTOFF_PASSED',
+    });
+    return;
+  }
+  throw saveError;
 }
 
 export function createCaregiverRouter(db: Database): Router {
@@ -55,6 +116,171 @@ export function createCaregiverRouter(db: Database): Router {
       next(error);
     }
   });
+
+  const saveAvailabilitySchema = z.object({
+    weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'weekStart must be YYYY-MM-DD'),
+    schedule: z.record(z.string(), z.any()),
+    expectedVersion: z.number().int(),
+  });
+
+  const requireRoleSafe = (roles: string[]): ((req: Request, res: Response, next: NextFunction) => void) => {
+    return typeof authMiddleware.requireRole === 'function'
+      ? authMiddleware.requireRole(roles)
+      : (_req: Request, _res: Response, next: NextFunction): void => next();
+  };
+
+  const requirePermissionSafe = (permissions: string[]): ((req: Request, res: Response, next: NextFunction) => void) => {
+    return typeof authMiddleware.requirePermission === 'function'
+      ? authMiddleware.requirePermission(permissions)
+      : (_req: Request, _res: Response, next: NextFunction): void => next();
+  };
+
+  /**
+   * GET /api/caregivers/me/availability
+   * Get resolved weekly availability schedule for authenticated caregiver
+   */
+  router.get(
+    '/me/availability',
+    requireRoleSafe(['CAREGIVER']),
+    requirePermissionSafe(['availability:read-own']),
+    async (req: Request, res: Response, next: NextFunction) => {
+      const auditService = new AuditService(db);
+      const context = getUserContext(req);
+      try {
+        const weekStart = typeof req.query['weekStart'] === 'string' ? req.query['weekStart'] : undefined;
+        if (!weekStart) {
+          res.status(400).json({
+            success: false,
+            error: 'Query parameter weekStart (YYYY-MM-DD) is required',
+            code: 'VALIDATION_ERROR',
+          });
+          return;
+        }
+
+        const caregiverRepo = new CaregiverRepository(db);
+        if (!context.organizationId) {
+          throw new PermissionError('Organization context required');
+        }
+        const caregiver = await caregiverRepo.findByUserId(context.userId, context.organizationId);
+        if (!caregiver) {
+          throw new NotFoundError("Caregiver profile not found for user: " + context.userId);
+        }
+
+        const availService = new CaregiverAvailabilityService(db);
+        const resolved = await availService.getAvailability(caregiver.id, weekStart, context);
+
+        try {
+          await auditService.logEvent(context, {
+            eventType: 'DATA_ACCESS',
+            resource: 'caregiver_availability',
+            resourceId: caregiver.id,
+            action: 'READ',
+            result: 'SUCCESS',
+            metadata: { weekStart },
+          });
+        } catch (auditErr) {
+          console.error('Audit write failure on availability read:', auditErr);
+        }
+
+        res.json({
+          schedule: resolved.schedule,
+          editable: resolved.editable,
+          cutoffAt: resolved.cutoffAt,
+          conflicts: resolved.conflicts,
+          version: resolved.version,
+          source: resolved.source,
+        });
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  /**
+   * PUT /api/caregivers/me/availability
+   * Save weekly availability override for authenticated caregiver
+   */
+  router.put(
+    '/me/availability',
+    requireRoleSafe(['CAREGIVER']),
+    requirePermissionSafe(['availability:update-own']),
+    async (req: Request, res: Response, next: NextFunction) => {
+      const auditService = new AuditService(db);
+      const context = getUserContext(req);
+      try {
+        const userSession = req.user as { impersonation?: unknown } | undefined;
+        if (userSession?.impersonation) {
+          res.status(403).json({
+            success: false,
+            error: 'Availability edits are not permitted in impersonated sessions',
+            code: 'IMPERSONATION_BLOCKED',
+          });
+          return;
+        }
+
+        const parsed = saveAvailabilitySchema.safeParse(req.body);
+        if (!parsed.success) {
+          res.status(400).json({
+            success: false,
+            error: 'Invalid request body',
+            code: 'VALIDATION_ERROR',
+            details: parsed.error.issues,
+          });
+          return;
+        }
+
+        const caregiverRepo = new CaregiverRepository(db);
+        if (!context.organizationId) {
+          throw new PermissionError('Organization context required');
+        }
+        const caregiver = await caregiverRepo.findByUserId(context.userId, context.organizationId);
+        if (!caregiver) {
+          throw new NotFoundError("Caregiver profile not found for user: " + context.userId);
+        }
+
+        const availService = new CaregiverAvailabilityService(db);
+        try {
+          const result = await availService.saveAvailabilityOverride(
+            caregiver.id,
+            {
+              weekStart: parsed.data.weekStart,
+              schedule: parsed.data.schedule as WeeklyAvailability,
+              expectedVersion: parsed.data.expectedVersion,
+            },
+            context
+          );
+
+          try {
+            await auditService.logEvent(context, {
+              eventType: 'DATA_MODIFICATION',
+              resource: 'caregiver_availability',
+              resourceId: caregiver.id,
+              action: 'UPDATE',
+              result: 'SUCCESS',
+              metadata: {
+                weekStart: parsed.data.weekStart,
+                before: result.before,
+                after: result.schedule,
+                version: result.version,
+              },
+            });
+          } catch (auditErr) {
+            console.error('Audit write failure on availability save:', auditErr);
+          }
+
+          res.json({
+            success: true,
+            version: result.version,
+            schedule: result.schedule,
+          });
+        } catch (saveError) {
+          await handleSaveAvailabilityError(saveError, caregiver.id, parsed.data.weekStart, context, auditService, res);
+        }
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
 
   /**
    * GET /api/caregivers/expiring-credentials
