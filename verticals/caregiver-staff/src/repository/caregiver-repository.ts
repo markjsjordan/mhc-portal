@@ -86,11 +86,15 @@ export class CaregiverRepository extends Repository<Caregiver> {
     const userId = row['user_id'];
     if (userId !== undefined && userId !== null) entity.userId = userId as string;
 
+    const timezone = row['timezone'];
+    if (typeof timezone === 'string') entity.timezone = timezone;
+
     const middleName = row['middle_name'] as string | undefined;
     if (middleName !== undefined) entity.middleName = middleName;
 
     const preferredName = row['preferred_name'] as string | undefined;
     if (preferredName !== undefined) entity.preferredName = preferredName;
+
 
     const ssn = row['ssn'] as string | undefined;
     if (ssn !== undefined) entity.ssn = ssn;

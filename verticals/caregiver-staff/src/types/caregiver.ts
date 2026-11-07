@@ -271,6 +271,7 @@ export interface Caregiver extends Entity, SoftDeletable {
   branchIds: UUID[]; // Can work at multiple branches
   primaryBranchId: UUID;
   userId?: UUID; // Linked auth user account
+  timezone?: string; // Caregiver scheduling timezone
 
   // Identity
   employeeNumber: string; // Human-readable identifier
