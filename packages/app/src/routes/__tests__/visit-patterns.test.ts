@@ -80,9 +80,9 @@ vi.mock('@folkcare/core', async () => {
       return {
         requireAuth: (req: any, _res: any, next: any) => {
           req.user = {
-            userId: req.headers['x-user-id'] || 'user-admin-001',
+            userId: (req.headers['x-user-id'] as string | undefined) ?? 'user-admin-001',
             email: 'admin@folkcare.example',
-            organizationId: req.headers['x-organization-id'] || ORG_ID,
+            organizationId: (req.headers['x-organization-id'] as string | undefined) ?? ORG_ID,
             branchIds: [BRANCH_ID],
             roles: ['SUPER_ADMIN', 'COORDINATOR'],
             permissions: ['visits:read', 'visits:write'],
@@ -367,6 +367,162 @@ describe('Visit Patterns Endpoints (FC-SCHED-002)', () => {
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
       expect(res.body.error).toContain('targetVisitId is required when updateMode is THIS_VISIT');
+    });
+  });
+
+  describe('Lifecycle operations (POST /pause, /resume, /end)', () => {
+    it('pauses a pattern successfully', async () => {
+      mockPausePattern.mockResolvedValueOnce({
+        id: PATTERN_ID,
+        organizationId: ORG_ID,
+        clientId: CLIENT_ID,
+        status: 'PAUSED',
+        pauseReason: 'Client in hospital',
+      });
+      mockListPatternsWithDetails.mockResolvedValueOnce({
+        patterns: [
+          {
+            id: PATTERN_ID,
+            status: 'PAUSED',
+            pauseReason: 'Client in hospital',
+            clientName: 'Alice Smith',
+            caregiverName: null,
+          },
+        ],
+        total: 1,
+      });
+
+      const res = await request(app)
+        .post(`/api/visits/patterns/${PATTERN_ID}/pause`)
+        .set('x-organization-id', ORG_ID)
+        .send({
+          reason: 'Client in hospital',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.status).toBe('PAUSED');
+      expect(mockPausePattern).toHaveBeenCalledWith(
+        PATTERN_ID,
+        ORG_ID,
+        'Client in hospital',
+        expect.anything()
+      );
+    });
+
+    it('rejects pause when reason exceeds 500 characters', async () => {
+      const res = await request(app)
+        .post(`/api/visits/patterns/${PATTERN_ID}/pause`)
+        .set('x-organization-id', ORG_ID)
+        .send({
+          reason: 'a'.repeat(501),
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error).toBe('Validation failed');
+    });
+
+    it('resumes a paused pattern successfully', async () => {
+      mockGetPatternById.mockResolvedValueOnce({
+        id: PATTERN_ID,
+        organizationId: ORG_ID,
+        clientId: CLIENT_ID,
+        serviceTypeId: SERVICE_TYPE_ID,
+        frequency: 'WEEKLY',
+        dayOfWeek: ['MONDAY'],
+        duration: 120,
+        startDate: '2026-10-01',
+        endDate: '2026-12-31',
+        status: 'PAUSED',
+      });
+      mockResumePattern.mockResolvedValueOnce({
+        id: PATTERN_ID,
+        organizationId: ORG_ID,
+        clientId: CLIENT_ID,
+        status: 'ACTIVE',
+      });
+      mockListPatternsWithDetails.mockResolvedValueOnce({
+        patterns: [
+          {
+            id: PATTERN_ID,
+            status: 'ACTIVE',
+            clientName: 'Alice Smith',
+          },
+        ],
+        total: 1,
+      });
+
+      const res = await request(app)
+        .post(`/api/visits/patterns/${PATTERN_ID}/resume`)
+        .set('x-organization-id', ORG_ID)
+        .send();
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.status).toBe('ACTIVE');
+      expect(mockResumePattern).toHaveBeenCalledWith(
+        PATTERN_ID,
+        ORG_ID,
+        expect.anything()
+      );
+    });
+
+    it('ends a pattern and retains future visits without hard delete', async () => {
+      mockEndPattern.mockResolvedValueOnce({
+        pattern: {
+          id: PATTERN_ID,
+          organizationId: ORG_ID,
+          clientId: CLIENT_ID,
+          status: 'CANCELLED',
+          endReason: 'Discharged from service',
+        },
+        retainedFutureVisits: 4,
+      });
+      mockListPatternsWithDetails.mockResolvedValueOnce({
+        patterns: [
+          {
+            id: PATTERN_ID,
+            status: 'CANCELLED',
+            endReason: 'Discharged from service',
+            clientName: 'Alice Smith',
+          },
+        ],
+        total: 1,
+      });
+
+      const res = await request(app)
+        .post(`/api/visits/patterns/${PATTERN_ID}/end`)
+        .set('x-organization-id', ORG_ID)
+        .send({
+          reason: 'Discharged from service',
+          effectiveDate: '2026-10-31',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.status).toBe('CANCELLED');
+      expect(res.body.retainedFutureVisits).toBe(4);
+      expect(mockEndPattern).toHaveBeenCalledWith(
+        PATTERN_ID,
+        ORG_ID,
+        'Discharged from service',
+        '2026-10-31',
+        expect.anything()
+      );
+    });
+
+    it('rejects ending a pattern without reason', async () => {
+      const res = await request(app)
+        .post(`/api/visits/patterns/${PATTERN_ID}/end`)
+        .set('x-organization-id', ORG_ID)
+        .send({
+          effectiveDate: '2026-10-31',
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error).toBe('Validation failed');
     });
   });
 });

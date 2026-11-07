@@ -1039,11 +1039,12 @@ export function createVisitRouter(db: Database): Router {
 
       // Return details in list-item format for convenience
       const patternRepo = new VisitPatternRepository(db.getPool());
-      const { patterns } = await patternRepo.listPatternsWithDetails({
+      const listRes = await patternRepo.listPatternsWithDetails({
         organizationId: context.organizationId!,
         clientId: updated.clientId,
         status: ['ACTIVE', 'PAUSED', 'CANCELLED'],
       });
+      const patterns = listRes?.patterns ?? [];
       const item = patterns.find((p) => p.id === patternId);
 
       res.status(200).json({
@@ -1153,11 +1154,12 @@ export function createVisitRouter(db: Database): Router {
         console.error('Audit trail logging failed for pattern resume:', err);
       }
 
-      const { patterns } = await patternRepo.listPatternsWithDetails({
+      const listRes = await patternRepo.listPatternsWithDetails({
         organizationId: context.organizationId!,
         clientId: updated.clientId,
         status: ['ACTIVE', 'PAUSED', 'CANCELLED'],
       });
+      const patterns = listRes?.patterns ?? [];
       const item = patterns.find((p) => p.id === patternId);
 
       res.status(200).json({
@@ -1234,11 +1236,12 @@ export function createVisitRouter(db: Database): Router {
       }
 
       const patternRepo = new VisitPatternRepository(db.getPool());
-      const { patterns } = await patternRepo.listPatternsWithDetails({
+      const listRes = await patternRepo.listPatternsWithDetails({
         organizationId: context.organizationId!,
         clientId: updated.clientId,
         status: ['ACTIVE', 'PAUSED', 'CANCELLED'],
       });
+      const patterns = listRes?.patterns ?? [];
       const item = patterns.find((p) => p.id === patternId);
 
       res.status(200).json({
