@@ -24,6 +24,7 @@ const OTHER_ORG_ID = '990e8400-e29b-41d4-a716-446655440099';
 const BRANCH_ID = '660e8400-e29b-41d4-a716-446655440000';
 const CLIENT_ID = 'aa0e8400-e29b-41d4-a716-446655440000';
 const CAREGIVER_ID = '770e8400-e29b-41d4-a716-446655440000';
+const SERVICE_TYPE_ID = '880e8400-e29b-41d4-a716-446655440000';
 const PATTERN_ID = 'bb0e8400-e29b-41d4-a716-446655440000';
 const VISIT_ID = 'cc0e8400-e29b-41d4-a716-446655440000';
 
@@ -32,6 +33,11 @@ const mockCreatePatternAndGenerateVisits = vi.fn();
 const mockGetPatternWithVisits = vi.fn();
 const mockUpdatePatternInstances = vi.fn();
 const mockListPatterns = vi.fn();
+const mockListPatternsWithDetails = vi.fn();
+const mockGetPatternById = vi.fn();
+const mockPausePattern = vi.fn();
+const mockResumePattern = vi.fn();
+const mockEndPattern = vi.fn();
 
 vi.mock('@folkcare/scheduling-visits', async () => {
   const actual = await vi.importActual('@folkcare/scheduling-visits');
@@ -42,11 +48,16 @@ vi.mock('@folkcare/scheduling-visits', async () => {
         createPatternAndGenerateVisits: mockCreatePatternAndGenerateVisits,
         getPatternWithVisits: mockGetPatternWithVisits,
         updatePatternInstances: mockUpdatePatternInstances,
+        pausePattern: mockPausePattern,
+        resumePattern: mockResumePattern,
+        endPattern: mockEndPattern,
       };
     }),
     VisitPatternRepository: vi.fn().mockImplementation(function () {
       return {
         listPatterns: mockListPatterns,
+        listPatternsWithDetails: mockListPatternsWithDetails,
+        getPatternById: mockGetPatternById,
       };
     }),
   };
@@ -137,7 +148,7 @@ describe('Visit Patterns Endpoints (FC-SCHED-002)', () => {
       const payload = {
         clientId: CLIENT_ID,
         caregiverId: CAREGIVER_ID,
-        serviceTypeId: 'svc-personal-care',
+        serviceTypeId: SERVICE_TYPE_ID,
         serviceTypeName: 'Personal Care Assistance',
         frequency: 'WEEKLY',
         dayOfWeek: ['MONDAY', 'WEDNESDAY', 'FRIDAY'],
@@ -182,7 +193,7 @@ describe('Visit Patterns Endpoints (FC-SCHED-002)', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
-      expect(res.body.error).toContain('Missing required fields');
+      expect(res.body.error).toBe('Validation failed');
     });
   });
 
@@ -193,11 +204,25 @@ describe('Visit Patterns Endpoints (FC-SCHED-002)', () => {
           id: PATTERN_ID,
           organizationId: ORG_ID,
           clientId: CLIENT_ID,
+          clientName: 'Jane Doe',
+          caregiverId: CAREGIVER_ID,
+          caregiverName: 'John Smith',
+          serviceTypeId: SERVICE_TYPE_ID,
+          serviceTypeName: 'Personal Care Assistance',
           frequency: 'WEEKLY',
+          dayOfWeek: ['MONDAY'],
+          startTime: '09:00',
+          duration: 120,
+          recurrenceSummary: 'Weekly Mon 09:00–11:00',
+          startDate: '2026-10-15',
+          endDate: null,
           status: 'ACTIVE',
+          nextVisitDate: '2026-10-19',
+          futureVisitCount: 4,
+          updatedAt: '2026-10-15T00:00:00.000Z',
         },
       ];
-      mockListPatterns.mockResolvedValueOnce(mockList);
+      mockListPatternsWithDetails.mockResolvedValueOnce({ patterns: mockList, total: 1 });
 
       const res = await request(app)
         .get('/api/visits/patterns')
@@ -209,12 +234,12 @@ describe('Visit Patterns Endpoints (FC-SCHED-002)', () => {
       expect(res.body.data).toHaveLength(1);
       expect(res.body.count).toBe(1);
 
-      expect(mockListPatterns).toHaveBeenCalledWith({
-        organizationId: ORG_ID,
-        clientId: CLIENT_ID,
-        caregiverId: undefined,
-        status: undefined,
-      });
+      expect(mockListPatternsWithDetails).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organizationId: ORG_ID,
+          clientId: CLIENT_ID,
+        })
+      );
     });
   });
 
@@ -259,6 +284,19 @@ describe('Visit Patterns Endpoints (FC-SCHED-002)', () => {
   });
 
   describe('PUT /api/visits/patterns/:id', () => {
+    beforeEach(() => {
+      mockGetPatternById.mockResolvedValue({
+        id: PATTERN_ID,
+        organizationId: ORG_ID,
+        clientId: CLIENT_ID,
+        serviceTypeId: SERVICE_TYPE_ID,
+        dayOfWeek: ['MONDAY', 'WEDNESDAY', 'FRIDAY'],
+        duration: 120,
+        startDate: new Date('2026-10-15'),
+        status: 'ACTIVE',
+      });
+    });
+
     it('updates all future instances with updateMode ALL_FUTURE', async () => {
       mockUpdatePatternInstances.mockResolvedValueOnce({
         updatedPattern: { id: PATTERN_ID, duration: 180 },

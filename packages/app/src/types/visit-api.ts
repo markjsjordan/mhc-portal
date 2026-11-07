@@ -100,3 +100,24 @@ export const VISIT_TYPE_LABELS: Record<VisitType, string> = {
   CONCIERGE: 'Concierge',
   ONGOING_SUPPORT: 'Ongoing Support',
 };
+
+export interface PausePatternPayload {
+  reason?: string;
+}
+
+export interface EndPatternPayload {
+  effectiveDate?: string;
+  reason: string;
+}
+
+export interface ListPatternsQueryParams {
+  status?: string;
+  includeEnded?: string;
+  client_id?: string;
+  caregiver_id?: string;
+  unassigned?: string;
+  search?: string;
+  limit?: string;
+  offset?: string;
+}
+
