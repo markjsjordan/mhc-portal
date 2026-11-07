@@ -33,6 +33,15 @@ interface NavItem {
   permission?: string;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
+export const HIDDEN_NAV_LABELS: readonly string[] = [
+  'Tasks',
+  'Time Tracking',
+  'Billing',
+  'Quality Assurance',
+  'Compliance',
+];
+
 const navItems: NavItem[] = [
   { label: 'Dashboard', path: '/', icon: <Home className="h-5 w-5" /> },
   {
@@ -128,6 +137,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isDesktopOpen
 
   // Filter navigation items based on permissions and roles
   const filteredNavItems = navItems.filter((item) => {
+    // Hide items specified in HIDDEN_NAV_LABELS
+    if (HIDDEN_NAV_LABELS.includes(item.label)) {
+      return false;
+    }
+
     // Always show dashboard
     if (item.path === '/') return true;
 

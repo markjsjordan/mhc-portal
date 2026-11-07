@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { Sidebar } from '../Sidebar';
+import { Sidebar, HIDDEN_NAV_LABELS } from '../Sidebar';
 
 const mockUser = {
   id: 'usr_123',
@@ -112,5 +112,25 @@ describe('Sidebar component', () => {
     expect(screen.queryByText('Calendar View')).not.toBeInTheDocument();
     expect(screen.queryByText('Create Care Plan')).not.toBeInTheDocument();
     expect(screen.queryByText('Import / Export')).not.toBeInTheDocument();
+  });
+
+  it('hides the configured navigation items defined in HIDDEN_NAV_LABELS', () => {
+    render(
+      <MemoryRouter>
+        <Sidebar isOpen={true} onClose={vi.fn()} isDesktopOpen={true} />
+      </MemoryRouter>
+    );
+
+    expect(HIDDEN_NAV_LABELS).toEqual([
+      'Tasks',
+      'Time Tracking',
+      'Billing',
+      'Quality Assurance',
+      'Compliance',
+    ]);
+
+    for (const label of HIDDEN_NAV_LABELS) {
+      expect(screen.queryByText(label)).not.toBeInTheDocument();
+    }
   });
 });
