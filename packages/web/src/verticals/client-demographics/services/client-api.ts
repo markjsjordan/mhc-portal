@@ -1,6 +1,6 @@
 import type { ApiClient } from '@/core/services';
 import type { PaginatedResult, SearchParams } from '@/core/types';
-import type { Client, CreateClientInput, UpdateClientInput, ClientSearchFilters } from '../types';
+import type { Client, CreateClientInput, UpdateClientInput, ClientSearchFilters, FamilyPortalAccessRow } from '../types';
 
 export interface DashboardClient {
   id: string;
@@ -38,6 +38,9 @@ export interface ClientApiService {
   updateClient(id: string, input: UpdateClientInput): Promise<Client>;
   deleteClient(id: string): Promise<void>;
   getBranches(): Promise<Array<{ id: string; name: string; code?: string; status?: string }>>;
+  getFamilyPortalAccess(clientId: string): Promise<FamilyPortalAccessRow[]>;
+  inviteFamilyPortal(familyMemberId: string): Promise<FamilyPortalAccessRow>;
+  revokeFamilyPortal(familyMemberId: string, reason: string): Promise<FamilyPortalAccessRow>;
 }
 
 export const createClientApiService = (apiClient: ApiClient): ClientApiService => {
@@ -119,6 +122,40 @@ export const createClientApiService = (apiClient: ApiClient): ClientApiService =
         return response;
       }
       return [];
+    },
+
+    async getFamilyPortalAccess(clientId: string): Promise<FamilyPortalAccessRow[]> {
+      const response = await apiClient.get<{ success?: boolean; data?: FamilyPortalAccessRow[] } | FamilyPortalAccessRow[]>(
+        `/api/clients/${clientId}/family-portal-access`
+      );
+      if ('data' in response && Array.isArray(response.data)) {
+        return response.data;
+      }
+      if (Array.isArray(response)) {
+        return response;
+      }
+      return [];
+    },
+
+    async inviteFamilyPortal(familyMemberId: string): Promise<FamilyPortalAccessRow> {
+      const response = await apiClient.post<{ success?: boolean; data?: FamilyPortalAccessRow } | FamilyPortalAccessRow>(
+        `/api/family-members/${familyMemberId}/portal-invite`
+      );
+      if ('data' in response && response.data) {
+        return response.data;
+      }
+      return response as FamilyPortalAccessRow;
+    },
+
+    async revokeFamilyPortal(familyMemberId: string, reason: string): Promise<FamilyPortalAccessRow> {
+      const response = await apiClient.post<{ success?: boolean; data?: FamilyPortalAccessRow } | FamilyPortalAccessRow>(
+        `/api/family-members/${familyMemberId}/portal-revoke`,
+        { reason }
+      );
+      if ('data' in response && response.data) {
+        return response.data;
+      }
+      return response as FamilyPortalAccessRow;
     },
   };
 };
