@@ -14,6 +14,7 @@ import { UserContext, Role, JWTUtils, TokenPayload } from '@folkcare/core';
  */
 declare module 'express' {
   interface Request {
+    user?: TokenPayload;
     userContext?: UserContext;
   }
 }
@@ -41,6 +42,9 @@ export function authContextMiddleware(
       branchIds: req.user.branchIds,
       roles: req.user.roles,
       permissions: req.user.permissions,
+      caregiverId: req.user.caregiverId,
+      familyMemberIds: req.user.familyMemberIds,
+      familyClientIds: req.user.familyClientIds,
     };
     next();
     return;
@@ -60,6 +64,9 @@ export function authContextMiddleware(
           branchIds: payload.branchIds,
           roles: payload.roles,
           permissions: payload.permissions,
+          caregiverId: payload.caregiverId,
+          familyMemberIds: payload.familyMemberIds,
+          familyClientIds: payload.familyClientIds,
         };
         next();
         return;
@@ -115,6 +122,9 @@ export function requireAuth(
       branchIds: req.user.branchIds,
       roles: req.user.roles,
       permissions: req.user.permissions,
+      caregiverId: req.user.caregiverId,
+      familyMemberIds: req.user.familyMemberIds,
+      familyClientIds: req.user.familyClientIds,
     };
   }
 
