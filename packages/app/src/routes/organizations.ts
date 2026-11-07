@@ -748,7 +748,7 @@ export function createOrganizationRouter(db: Database): Router {
           branchIds: req.user?.branchIds ?? [],
         };
 
-        void auditService.logEvent(userContext, {
+        auditService.logEvent(userContext, {
           eventType: 'DATA_MODIFICATION',
           resource: 'user',
           resourceId: userId,
@@ -838,7 +838,7 @@ export function createOrganizationRouter(db: Database): Router {
           branchIds: req.user?.branchIds ?? [],
         };
 
-        void auditService.logEvent(userContext, {
+        auditService.logEvent(userContext, {
           eventType: 'DATA_MODIFICATION',
           resource: 'user',
           resourceId: userId,
