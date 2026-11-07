@@ -628,7 +628,7 @@ function DashboardScreen({ navigation }: { navigation: { navigate: (screen: stri
 
   const stats = [
     { label: "Today's Visits", value: '12', color: colors.primary },
-    { label: 'Clocked In Now', value: '8', color: colors.success },
+    { label: 'Checked In Now', value: '8', color: colors.success },
     { label: 'Pending', value: '4', color: colors.warning },
     { label: 'Completed', value: '0', color: '#9C27B0' },
   ];
@@ -709,7 +709,7 @@ function DashboardScreen({ navigation }: { navigation: { navigate: (screen: stri
           <View style={styles.visitItemHeader}>
             <View>
               <Text style={styles.visitItemCaregiver}>Maria Garcia → Robert Johnson</Text>
-              <Text style={styles.visitItemTime}>Clocked in 8:03 AM</Text>
+              <Text style={styles.visitItemTime}>Checked in 8:03 AM</Text>
             </View>
             <Text style={styles.visitDuration}>2h 15m</Text>
           </View>
@@ -735,7 +735,7 @@ function DashboardScreen({ navigation }: { navigation: { navigate: (screen: stri
           <View style={styles.visitItemHeader}>
             <View>
               <Text style={styles.visitItemCaregiver}>John Smith → Susan Williams</Text>
-              <Text style={styles.visitItemTime}>Clocked in 9:15 AM</Text>
+              <Text style={styles.visitItemTime}>Checked in 9:15 AM</Text>
             </View>
             <Text style={styles.visitDuration}>1h 03m</Text>
           </View>
