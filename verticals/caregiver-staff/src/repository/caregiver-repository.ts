@@ -83,6 +83,9 @@ export class CaregiverRepository extends Repository<Caregiver> {
     };
 
     // Handle optional properties properly for exactOptionalPropertyTypes
+    const userId = row['user_id'];
+    if (userId !== undefined && userId !== null) entity.userId = userId as string;
+
     const middleName = row['middle_name'] as string | undefined;
     if (middleName !== undefined) entity.middleName = middleName;
 
@@ -228,6 +231,7 @@ export class CaregiverRepository extends Repository<Caregiver> {
     if (entity.organizationId !== undefined) row['organization_id'] = entity.organizationId;
     if (entity.branchIds !== undefined) row['branch_ids'] = entity.branchIds;
     if (entity.primaryBranchId !== undefined) row['primary_branch_id'] = entity.primaryBranchId;
+    if (entity.userId !== undefined) row['user_id'] = entity.userId;
     if (entity.employeeNumber !== undefined) row['employee_number'] = entity.employeeNumber;
     if (entity.firstName !== undefined) row['first_name'] = entity.firstName;
     if (entity.middleName !== undefined) row['middle_name'] = entity.middleName;
@@ -289,6 +293,30 @@ export class CaregiverRepository extends Repository<Caregiver> {
     if (entity.customFields !== undefined) row['custom_fields'] = JSON.stringify(entity.customFields);
 
     return row;
+  }
+
+  /**
+   * Find caregiver by user ID and organization ID
+   *
+   * @param userId - Auth user ID linked to caregiver profile
+   * @param organizationId - Tenant organization ID
+   * @returns Caregiver profile if found, null otherwise
+   */
+  async findByUserId(userId: string, organizationId: string): Promise<Caregiver | null> {
+    const query = `
+      SELECT * FROM ${this.tableName}
+      WHERE user_id = $1
+        AND organization_id = $2
+        AND deleted_at IS NULL
+    `;
+
+    const result = await this.database.query(query, [userId, organizationId]);
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    return this.mapRowToEntity(result.rows[0]!);
   }
 
   /**
