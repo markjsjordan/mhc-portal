@@ -235,24 +235,10 @@ jobs:
           npm run db:migrate
           echo "✅ Migrations complete"
 
-      - name: Seed Base Data (Preview)
-        continue-on-error: true  # Don't block deployment if seeding fails
-        env:
-          DATABASE_URL: ${{ secrets.PREVIEW_DATABASE_URL }}
-        run: |
-          echo "🌱 Seeding base operational data..."
-          npm run db:seed:base
-          echo "✅ Base data seeded"
-
-      - name: Seed Demo Data (Preview)
-        continue-on-error: true  # Don't block deployment if seeding fails
-        env:
-          DATABASE_URL: ${{ secrets.PREVIEW_DATABASE_URL }}
-        run: |
-          echo "🎭 Seeding evergreen demo data..."
-          echo "⚠️  SAFETY: Only deletes records with is_demo_data = true"
-          npm run db:seed:demo
-          echo "✅ Demo data seeded with fresh dates"
+      # NO SEEDING ON PREVIEW - Migrations are schema-only (DDL).
+      # Preview holds real data now. Seed scripts refuse protected environments
+      # (packages/core/src/service/seed-guard.ts); never re-add db:seed* here.
+      # See: https://app.clickup.com/t/wdvf3acun7
 
       - name: Build for Preview
         env:

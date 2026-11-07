@@ -6,17 +6,24 @@ The Folk platform requires database seeding to create demo/test users and data. 
 
 ## Important Note
 
-**Database seeding is NOT automatic on deployment.** After deploying to Vercel, you must manually run the seed script to populate the database with demo data and user accounts.
+**Seeding is never part of a deploy, and production and preview are protected.** Both hold real data (purged of the original demo dataset on 2026-11-06). Deploy workflows run migrations only.
 
-## Quick Start - Seed Production Database
+Every seed path (`db:seed:base`, `db:seed:demo`, and `POST /organizations/:id/seed-demo`) calls the guard in `packages/core/src/service/seed-guard.ts` and refuses unless:
+
+- the database is local (`localhost`/`127.0.0.1`) and `NODE_ENV` is `development` or `test`, or
+- `ALLOW_DEMO_SEED=1` is set **by hand** for a disposable, non-protected database.
+
+It always refuses when `ENVIRONMENT`/`NODE_ENV` is `production`, `preview` or `staging`, or when the host is in `PROTECTED_DB_HOSTS`. `ALLOW_DEMO_SEED` cannot override either. To seed a new dataset into a real-data environment, make a reviewed code change to the guard; do not add a seed step to a workflow.
+
+## Quick Start - Seed a Local Database
 
 ```bash
-# Set your production DATABASE_URL
-export DATABASE_URL="your-neon-production-connection-string"
-
-# Run comprehensive seed (all 50 states + DC)
-npm run db:seed-comprehensive
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/folkcare"
+export NODE_ENV=development
+npm run db:migrate && npm run db:seed:base && npm run db:seed:demo
 ```
+
+> The sections below predate this guard and describe the retired dataset. Commands that target a production or preview URL will now refuse.
 
 ## Available Seed Scripts
 

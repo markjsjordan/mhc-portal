@@ -17,6 +17,7 @@ import {
   NotFoundError,
   AuthMiddleware,
   DemoDataService,
+  SeedNotAllowedError,
   AuditService,
   UserContext,
 } from '@folkcare/core';
@@ -1186,6 +1187,14 @@ export function createOrganizationRouter(db: Database): Router {
           data: stats,
         });
       } catch (error) {
+        if (error instanceof SeedNotAllowedError) {
+          res.status(403).json({
+            success: false,
+            error: error.message,
+            code: 'SEED_NOT_ALLOWED',
+          });
+          return;
+        }
         if (error instanceof NotFoundError) {
           res.status(404).json({
             success: false,

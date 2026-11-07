@@ -12,8 +12,9 @@
  * 
  * ⚠️  ENVIRONMENT SAFETY:
  * - This script should ONLY be run against dev/preview databases
- * - NEVER run against production (DATABASE_URL ending in flat-hat-84119673.*.neon.tech)
- * - The script includes an environment guard to prevent production use
+ * - NEVER run against production or preview
+ * - assertSeedAllowed() (src/service/seed-guard.ts) refuses protected environments and hosts
+ * - Existing accounts keep their password: ON CONFLICT never overwrites password_hash
  * 
  * Usage:
  *   npm run db:seed:base    # Seeds base operational data
@@ -28,6 +29,7 @@
 import { config as dotenvConfig } from "dotenv";
 import { Pool } from 'pg';
 import { PasswordUtils } from '../src/utils/password-utils.js';
+import { assertSeedAllowed } from '../src/service/seed-guard.js';
 
 dotenvConfig({ path: '.env', quiet: true });
 
@@ -38,39 +40,13 @@ const FIXED_ADMIN_ID = '00000000-0000-0000-0000-000000000003';
 const FIXED_FAMILY_ID = '00000000-0000-0000-0000-000000000004';
 
 /**
- * Environment guard - prevents accidental execution against production
- */
-function validateEnvironment(): void {
-  const dbUrl = process.env.DATABASE_URL || '';
-  
-  // Check for production database indicators
-  const isProduction = 
-    dbUrl.includes('flat-hat-84119673') ||  // Neon production project
-    process.env.ENVIRONMENT === 'production' ||
-    process.env.NODE_ENV === 'production';
-  
-  if (isProduction) {
-    console.error('❌ ERROR: Refusing to seed base data in production environment');
-    console.error('   DATABASE_URL:', dbUrl.replace(/:[^:@]+@/, ':***@')); // Mask password
-    console.error('   ENVIRONMENT:', process.env.ENVIRONMENT);
-    console.error('   NODE_ENV:', process.env.NODE_ENV);
-    console.error('');
-    console.error('   Base seeding is for dev/preview environments only.');
-    console.error('   Production should use secure signup with real credentials.');
-    console.error('');
-    process.exit(1);
-  }
-  
-  console.log('✅ Environment check passed: non-production database detected\n');
-}
-
-/**
  * Seeds base operational data
  */
 async function seedBaseData(): Promise<void> {
   console.log('🌱 Seeding base operational data...\n');
   
-  validateEnvironment();
+  assertSeedAllowed();
+  console.log('✅ Seed guard passed\n');
   
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -163,7 +139,6 @@ async function seedBaseData(): Promise<void> {
         created_by, updated_by
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::text[], $9::text[], $10::uuid[], $11, $12, $13)
       ON CONFLICT (email) DO UPDATE SET
-        password_hash = EXCLUDED.password_hash,
         first_name = EXCLUDED.first_name,
         last_name = EXCLUDED.last_name,
         roles = EXCLUDED.roles,
@@ -201,7 +176,6 @@ async function seedBaseData(): Promise<void> {
         created_by, updated_by
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::text[], $9::text[], $10::uuid[], $11, $12, $13)
       ON CONFLICT (email) DO UPDATE SET
-        password_hash = EXCLUDED.password_hash,
         first_name = EXCLUDED.first_name,
         last_name = EXCLUDED.last_name,
         roles = EXCLUDED.roles,
