@@ -26,6 +26,7 @@ import { EVVRecord } from '../types/evv.js';
 import { StateCode } from '../types/state-specific.js';
 import { StateProviderFactory } from '../providers/state-provider-factory.js';
 import { getStateConfig } from '../config/state-evv-configs.js';
+import { assertLocationSubmittable } from './aggregator-submission-guard.js';
 
 /**
  * Real-time validation feedback with state-specific context
@@ -158,34 +159,42 @@ export class EVVComplianceOrchestrator {
     evvRecord: EVVRecord,
     state: StateCode
   ): Promise<RealTimeValidationFeedback> {
+    const isClockInCaptured = evvRecord.clockInVerification?.locationCaptured !== false;
+
     // Build visit data for validation
     const visitData: VisitData = {
       clientLatitude: evvRecord.serviceAddress.latitude,
       clientLongitude: evvRecord.serviceAddress.longitude,
-      clockInLatitude: evvRecord.clockInVerification.latitude,
-      clockInLongitude: evvRecord.clockInVerification.longitude,
+      clockInLatitude: isClockInCaptured && 'latitude' in evvRecord.clockInVerification ? evvRecord.clockInVerification.latitude : 0,
+      clockInLongitude: isClockInCaptured && 'longitude' in evvRecord.clockInVerification ? evvRecord.clockInVerification.longitude : 0,
       clockInTime: evvRecord.clockInTime,
       scheduledStartTime: evvRecord.serviceDate, // Would use actual scheduled time
-      gpsAccuracy: evvRecord.clockInVerification.accuracy,
+      gpsAccuracy: isClockInCaptured && 'accuracy' in evvRecord.clockInVerification ? evvRecord.clockInVerification.accuracy : 0,
     };
     
     // Add clock-out data if present
     if (evvRecord.clockOutTime && evvRecord.clockOutVerification) {
-      visitData.clockOutLatitude = evvRecord.clockOutVerification.latitude;
-      visitData.clockOutLongitude = evvRecord.clockOutVerification.longitude;
+      const outVerif = evvRecord.clockOutVerification;
+      const isOutCaptured = outVerif.locationCaptured !== false;
+      visitData.clockOutLatitude = isOutCaptured && 'latitude' in outVerif ? outVerif.latitude : 0;
+      visitData.clockOutLongitude = isOutCaptured && 'longitude' in outVerif ? outVerif.longitude : 0;
       visitData.clockOutTime = evvRecord.clockOutTime;
     }
     
     // Perform state-specific validation
-    const validation = this.stateComplianceService.validateEVVForState(state, visitData);
+    const validation = this.stateComplianceService.validateEVVForState(state, visitData, {
+      skipLocation: !isClockInCaptured,
+    });
     
     // Calculate geofence details
-    const distance = this.calculateDistance(
-      visitData.clientLatitude,
-      visitData.clientLongitude,
-      visitData.clockInLatitude,
-      visitData.clockInLongitude
-    );
+    const distance = isClockInCaptured
+      ? this.calculateDistance(
+          visitData.clientLatitude,
+          visitData.clientLongitude,
+          visitData.clockInLatitude,
+          visitData.clockInLongitude
+        )
+      : 0;
     
     const allowedRadius = this.stateComplianceService.getGeofenceRadius(
       state,
@@ -193,7 +202,7 @@ export class EVVComplianceOrchestrator {
     );
     
     const geofenceCheck = {
-      withinBounds: distance <= allowedRadius,
+      withinBounds: !isClockInCaptured || distance <= allowedRadius,
       distance: Math.round(distance),
       allowedRadius,
       gpsAccuracy: visitData.gpsAccuracy,
@@ -254,6 +263,7 @@ export class EVVComplianceOrchestrator {
     evvRecord: EVVRecord,
     state: StateCode
   ): Promise<AggregatorSubmissionStatus[]> {
+    assertLocationSubmittable(evvRecord);
     const results: AggregatorSubmissionStatus[] = [];
     const stateConfig = getStateConfig(state);
     
@@ -401,21 +411,22 @@ export class EVVComplianceOrchestrator {
     const complianceRate = totalVisits > 0 ? (compliantVisits / totalVisits) * 100 : 0;
     
     // Calculate geofence metrics
-    const geofenceChecks = filteredRecords.filter(r => r.clockInVerification).length;
-    const geofencePassed = filteredRecords.filter(r =>
-      r.clockInVerification?.geofencePassed
+    const capturedRecords = filteredRecords.filter(r => r.clockInVerification && r.clockInVerification.locationCaptured !== false);
+    const geofenceChecks = capturedRecords.length;
+    const geofencePassed = capturedRecords.filter(r =>
+      r.clockInVerification && 'geofencePassed' in r.clockInVerification && r.clockInVerification.geofencePassed
     ).length;
     const geofenceFailed = geofenceChecks - geofencePassed;
     
-    const distances = filteredRecords
-      .map(r => r.clockInVerification?.distanceFromAddress)
+    const distances = capturedRecords
+      .map(r => r.clockInVerification && 'distanceFromAddress' in r.clockInVerification ? r.clockInVerification.distanceFromAddress : undefined)
       .filter((d): d is number => d !== undefined);
     const averageDistance = distances.length > 0
       ? distances.reduce((sum, d) => sum + d, 0) / distances.length
       : 0;
     
-    const accuracies = filteredRecords
-      .map(r => r.clockInVerification?.accuracy)
+    const accuracies = capturedRecords
+      .map(r => r.clockInVerification && 'accuracy' in r.clockInVerification ? r.clockInVerification.accuracy : undefined)
       .filter((a): a is number => a !== undefined);
     const averageAccuracy = accuracies.length > 0
       ? accuracies.reduce((sum, a) => sum + a, 0) / accuracies.length

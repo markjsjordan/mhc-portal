@@ -42,6 +42,8 @@ import { Database } from '@folkcare/core';
 import { StateCode } from '../types/state-specific';
 import { StateProviderFactory } from '../providers/state-provider-factory';
 import { getNotificationService, type NotificationChannel } from '@folkcare/core';
+import { loadOrgLocationPolicy } from '../config/location-policy.js';
+import { assertLocationSubmittable } from './aggregator-submission-guard.js';
 
 export class EVVService {
   private stateComplianceService: StateComplianceService;
@@ -69,8 +71,13 @@ export class EVVService {
     input: ClockInInput,
     userContext: UserContext
   ): Promise<{ evvRecord: EVVRecord; timeEntry: TimeEntry; verification: VerificationResult }> {
-    // Validate input
-    this.validator.validateClockIn(input);
+    // Resolve organization location policy
+    const policy = userContext.organizationId
+      ? await loadOrgLocationPolicy(this.database, userContext.organizationId)
+      : { locationRequired: false };
+
+    // Validate input with policy
+    this.validator.validateClockIn(input, policy);
 
     // Check permissions
     if (!this.hasPermission(userContext, 'evv:clock_in')) {
@@ -131,7 +138,7 @@ export class EVVService {
       role === 'BRANCH_ADMIN'
     );
     
-    if (!isDemoUser && !isAdminUser) {
+    if (policy.locationRequired && !isDemoUser && !isAdminUser) {
       // Production user: enforce geocoding validation
       if (!visitData.serviceAddress.latitude || !visitData.serviceAddress.longitude) {
         throw new ValidationError(
@@ -150,7 +157,7 @@ export class EVVService {
     let geofence: { id: UUID; centerLatitude: number; centerLongitude: number; radiusMeters: number; allowedVariance?: number } | null = null;
     let geofenceRadius = 100; // Default radius for demo/admin users
 
-    if (visitData.serviceAddress.latitude && visitData.serviceAddress.longitude) {
+    if (policy.locationRequired && visitData.serviceAddress.latitude && visitData.serviceAddress.longitude && input.location) {
       // Get state-specific geofence radius using StateComplianceService
       const stateGeofenceRadius = this.stateComplianceService.getGeofenceRadius(
         state,
@@ -188,13 +195,23 @@ export class EVVService {
         geofenceCheck.isWithinGeofence,
         input.location.accuracy
       );
+    } else if (!policy.locationRequired) {
+      // Location policy is off: synthetic result that is not isWithinGeofence: true
+      geofenceCheck = {
+        isWithinGeofence: false,
+        distanceFromCenter: 0,
+        distanceFromAddress: 0,
+        accuracy: 0,
+        requiresManualReview: false,
+        reason: 'Location capture not required by organization policy',
+      };
     } else {
       // Demo/admin user without geocoding: create a passing geofence check
       geofenceCheck = {
         isWithinGeofence: true,
         distanceFromCenter: 0,
         distanceFromAddress: 0,
-        accuracy: input.location.accuracy,
+        accuracy: input.location?.accuracy ?? 0,
         requiresManualReview: false,
         reason: 'Geocoding validation bypassed for demo/admin user',
       };
@@ -202,15 +219,19 @@ export class EVVService {
 
     // Perform state-specific EVV validation
     // For demo/admin users without geocoding, use placeholder coordinates
-    const evvValidation = this.stateComplianceService.validateEVVForState(state, {
-      clientLatitude: visitData.serviceAddress.latitude ?? 0,
-      clientLongitude: visitData.serviceAddress.longitude ?? 0,
-      clockInLatitude: input.location.latitude,
-      clockInLongitude: input.location.longitude,
-      clockInTime: new Date(),
-      scheduledStartTime: new Date(visitData.scheduledStartTime),
-      gpsAccuracy: input.location.accuracy,
-    });
+    const evvValidation = this.stateComplianceService.validateEVVForState(
+      state,
+      {
+        clientLatitude: visitData.serviceAddress.latitude ?? 0,
+        clientLongitude: visitData.serviceAddress.longitude ?? 0,
+        clockInLatitude: input.location?.latitude ?? 0,
+        clockInLongitude: input.location?.longitude ?? 0,
+        clockInTime: new Date(),
+        scheduledStartTime: new Date(visitData.scheduledStartTime),
+        gpsAccuracy: input.location?.accuracy ?? 0,
+      },
+      { skipLocation: !policy.locationRequired }
+    );
     
     // If EVV validation fails, include state-specific error messages
     if (!evvValidation.valid) {
@@ -231,40 +252,57 @@ export class EVVService {
     }
 
     // Create location verification object
-    const baseLocationVerification = {
-      latitude: input.location.latitude,
-      longitude: input.location.longitude,
-      accuracy: input.location.accuracy,
-      timestamp: input.location.timestamp,
-      timestampSource: 'DEVICE' as const, // Would be determined by device
-      isWithinGeofence: geofenceCheck.isWithinGeofence,
-      distanceFromAddress: geofenceCheck.distanceFromAddress,
-      geofencePassed: geofenceCheck.isWithinGeofence,
-      deviceId: input.deviceInfo.deviceId,
-      deviceModel: input.deviceInfo.deviceModel,
-      deviceOS: input.deviceInfo.deviceOS,
-      appVersion: input.deviceInfo.appVersion,
-      method: input.location.method,
-      locationSource: 'GPS_SATELLITE' as const, // Would be determined
-      mockLocationDetected: input.location.mockLocationDetected,
-      verificationPassed: geofenceCheck.isWithinGeofence,
-    };
+    let locationVerification: LocationVerification;
+    if (policy.locationRequired && input.location) {
+      const baseLocationVerification = {
+        locationCaptured: true as const,
+        latitude: input.location.latitude,
+        longitude: input.location.longitude,
+        accuracy: input.location.accuracy,
+        timestamp: input.location.timestamp,
+        timestampSource: 'DEVICE' as const,
+        isWithinGeofence: geofenceCheck.isWithinGeofence,
+        distanceFromAddress: geofenceCheck.distanceFromAddress,
+        geofencePassed: geofenceCheck.isWithinGeofence,
+        deviceId: input.deviceInfo.deviceId,
+        deviceModel: input.deviceInfo.deviceModel,
+        deviceOS: input.deviceInfo.deviceOS,
+        appVersion: input.deviceInfo.appVersion,
+        method: input.location.method,
+        locationSource: 'GPS_SATELLITE' as const,
+        mockLocationDetected: input.location.mockLocationDetected,
+        verificationPassed: geofenceCheck.isWithinGeofence,
+      };
 
-    const clockInOptionalFields = {
-      altitude: input.location.altitude,
-      heading: input.location.heading,
-      speed: input.location.speed,
-      photoUrl: input.location.photoUrl,
-      biometricVerified: input.location.biometricVerified,
-      biometricMethod: input.location.biometricMethod,
-      verificationFailureReasons: geofenceCheck.isWithinGeofence ? undefined : [geofenceCheck.reason || 'Location outside geofence'],
-    };
+      const clockInOptionalFields = {
+        altitude: input.location.altitude,
+        heading: input.location.heading,
+        speed: input.location.speed,
+        photoUrl: input.location.photoUrl,
+        biometricVerified: input.location.biometricVerified,
+        biometricMethod: input.location.biometricMethod,
+        verificationFailureReasons: geofenceCheck.isWithinGeofence ? undefined : [geofenceCheck.reason || 'Location outside geofence'],
+      };
 
-    const clockInFilteredOptional = Object.fromEntries(
-      Object.entries(clockInOptionalFields).filter(([_, value]) => value !== undefined)
-    );
+      const clockInFilteredOptional = Object.fromEntries(
+        Object.entries(clockInOptionalFields).filter(([_, value]) => value !== undefined)
+      );
 
-    const locationVerification: LocationVerification = { ...baseLocationVerification, ...clockInFilteredOptional };
+      locationVerification = { ...baseLocationVerification, ...clockInFilteredOptional };
+    } else {
+      locationVerification = {
+        locationCaptured: false,
+        reason: 'ORG_LOCATION_NOT_REQUIRED',
+        timestamp: new Date(),
+        timestampSource: 'DEVICE',
+        deviceId: input.deviceInfo.deviceId,
+        method: input.location?.method ?? 'MANUAL',
+        deviceModel: input.deviceInfo.deviceModel,
+        deviceOS: input.deviceInfo.deviceOS,
+        appVersion: input.deviceInfo.appVersion,
+        verificationPassed: true,
+      };
+    }
 
     // Create time entry first
     const now = new Date();
@@ -291,9 +329,13 @@ export class EVVService {
         syncStatus: 'SYNCED',
       },
       offlineRecorded: false,
-      status: geofenceCheck.isWithinGeofence ? 'VERIFIED' : 'FLAGGED',
-      verificationPassed: geofenceCheck.isWithinGeofence,
-      verificationIssues: geofenceCheck.isWithinGeofence ? [] : [geofenceCheck.reason || 'Location verification failed'],
+      status: policy.locationRequired
+        ? (geofenceCheck.isWithinGeofence ? 'VERIFIED' : 'FLAGGED')
+        : 'VERIFIED',
+      verificationPassed: policy.locationRequired ? geofenceCheck.isWithinGeofence : true,
+      verificationIssues: policy.locationRequired
+        ? (geofenceCheck.isWithinGeofence ? [] : [geofenceCheck.reason || 'Location verification failed'])
+        : [],
       createdBy: userContext.userId,
       updatedBy: userContext.userId,
     });
@@ -338,8 +380,12 @@ export class EVVService {
       clockOutTime: null,
       clockInVerification: locationVerification,
       recordStatus: 'PENDING' as const,
-      verificationLevel: (geofenceCheck.isWithinGeofence ? 'FULL' : 'PARTIAL') as VerificationLevel,
-      complianceFlags: (geofenceCheck.isWithinGeofence ? ['COMPLIANT'] : ['GEOFENCE_VIOLATION']) as ComplianceFlag[],
+      verificationLevel: (policy.locationRequired
+        ? (geofenceCheck.isWithinGeofence ? 'FULL' : 'PARTIAL')
+        : 'PARTIAL') as VerificationLevel,
+      complianceFlags: (policy.locationRequired
+        ? (geofenceCheck.isWithinGeofence ? ['COMPLIANT'] : ['GEOFENCE_VIOLATION'])
+        : ['LOCATION_NOT_CAPTURED']) as ComplianceFlag[],
       integrityHash: this.generateCoreDataHash({
         visitId: input.visitId,
         clientId: visitData.clientId,
@@ -450,8 +496,13 @@ export class EVVService {
     input: ClockOutInput,
     userContext: UserContext
   ): Promise<{ evvRecord: EVVRecord; timeEntry: TimeEntry; verification: VerificationResult }> {
-    // Validate input
-    this.validator.validateClockOut(input);
+    // Resolve organization location policy
+    const policy = userContext.organizationId
+      ? await loadOrgLocationPolicy(this.database, userContext.organizationId)
+      : { locationRequired: false };
+
+    // Validate input with policy
+    this.validator.validateClockOut(input, policy);
 
     // Check permissions
     if (!this.hasPermission(userContext, 'evv:clock_out')) {
@@ -491,7 +542,7 @@ export class EVVService {
     const visitData = await this.visitProvider.getVisitForEVV(evvRecord.visitId);
     
     // Only enforce geocoding validation for production users
-    if (!isDemoUser && !isAdminUser) {
+    if (policy.locationRequired && !isDemoUser && !isAdminUser) {
       if (!visitData.serviceAddress.latitude || !visitData.serviceAddress.longitude) {
         throw new ValidationError(
           'Visit address must have valid geocoded coordinates for EVV compliance',
@@ -504,7 +555,7 @@ export class EVVService {
     let geofenceCheck: GeofenceCheckResult;
     let geofence: Geofence | null = null;
 
-    if (visitData.serviceAddress.latitude && visitData.serviceAddress.longitude) {
+    if (policy.locationRequired && visitData.serviceAddress.latitude && visitData.serviceAddress.longitude && input.location) {
       const addressId = visitData.serviceAddress.addressId || this.generateFallbackAddressId(visitData.serviceAddress);
       geofence = await this.repository.getGeofenceByAddress(addressId);
       if (!geofence) {
@@ -528,13 +579,23 @@ export class EVVService {
         geofenceCheck.isWithinGeofence,
         input.location.accuracy
       );
+    } else if (!policy.locationRequired) {
+      // Location policy is off: synthetic result that is not isWithinGeofence: true
+      geofenceCheck = {
+        isWithinGeofence: false,
+        distanceFromCenter: 0,
+        distanceFromAddress: 0,
+        accuracy: 0,
+        requiresManualReview: false,
+        reason: 'Location capture not required by organization policy',
+      };
     } else {
       // Demo/admin user without geocoding: create a passing geofence check
       geofenceCheck = {
         isWithinGeofence: true,
         distanceFromCenter: 0,
         distanceFromAddress: 0,
-        accuracy: input.location.accuracy,
+        accuracy: input.location?.accuracy ?? 0,
         requiresManualReview: false,
         reason: 'Geocoding validation bypassed for demo/admin user',
       };
@@ -543,18 +604,23 @@ export class EVVService {
     // Perform state-specific EVV validation for clock-out
     const state = evvRecord.serviceAddress.state as StateCode;
     const clockOutTime = new Date();
-    const evvValidation = this.stateComplianceService.validateEVVForState(state, {
-      clientLatitude: evvRecord.serviceAddress.latitude,
-      clientLongitude: evvRecord.serviceAddress.longitude,
-      clockInLatitude: evvRecord.clockInVerification.latitude,
-      clockInLongitude: evvRecord.clockInVerification.longitude,
-      clockOutLatitude: input.location.latitude,
-      clockOutLongitude: input.location.longitude,
-      clockInTime: evvRecord.clockInTime,
-      clockOutTime: clockOutTime,
-      scheduledStartTime: new Date(evvRecord.serviceDate), // Would use actual scheduled time from visit
-      gpsAccuracy: input.location.accuracy,
-    });
+    const isClockInCaptured = evvRecord.clockInVerification.locationCaptured;
+    const evvValidation = this.stateComplianceService.validateEVVForState(
+      state,
+      {
+        clientLatitude: evvRecord.serviceAddress.latitude,
+        clientLongitude: evvRecord.serviceAddress.longitude,
+        clockInLatitude: isClockInCaptured ? evvRecord.clockInVerification.latitude : 0,
+        clockInLongitude: isClockInCaptured ? evvRecord.clockInVerification.longitude : 0,
+        clockOutLatitude: input.location?.latitude ?? 0,
+        clockOutLongitude: input.location?.longitude ?? 0,
+        clockInTime: evvRecord.clockInTime,
+        clockOutTime: clockOutTime,
+        scheduledStartTime: new Date(evvRecord.serviceDate), // Would use actual scheduled time from visit
+        gpsAccuracy: input.location?.accuracy ?? 0,
+      },
+      { skipLocation: !policy.locationRequired }
+    );
     
     // If EVV validation fails, include state-specific error messages
     if (!evvValidation.valid) {
@@ -575,40 +641,57 @@ export class EVVService {
     }
 
     // Create location verification
-    const baseLocationVerification = {
-      latitude: input.location.latitude,
-      longitude: input.location.longitude,
-      accuracy: input.location.accuracy,
-      timestamp: input.location.timestamp,
-      timestampSource: 'DEVICE' as const,
-      isWithinGeofence: geofenceCheck.isWithinGeofence,
-      distanceFromAddress: geofenceCheck.distanceFromAddress,
-      geofencePassed: geofenceCheck.isWithinGeofence,
-      deviceId: input.deviceInfo.deviceId,
-      deviceModel: input.deviceInfo.deviceModel,
-      deviceOS: input.deviceInfo.deviceOS,
-      appVersion: input.deviceInfo.appVersion,
-      method: input.location.method,
-      locationSource: 'GPS_SATELLITE' as const,
-      mockLocationDetected: input.location.mockLocationDetected,
-      verificationPassed: geofenceCheck.isWithinGeofence,
-    };
+    let locationVerification: LocationVerification;
+    if (policy.locationRequired && input.location) {
+      const baseLocationVerification = {
+        locationCaptured: true as const,
+        latitude: input.location.latitude,
+        longitude: input.location.longitude,
+        accuracy: input.location.accuracy,
+        timestamp: input.location.timestamp,
+        timestampSource: 'DEVICE' as const,
+        isWithinGeofence: geofenceCheck.isWithinGeofence,
+        distanceFromAddress: geofenceCheck.distanceFromAddress,
+        geofencePassed: geofenceCheck.isWithinGeofence,
+        deviceId: input.deviceInfo.deviceId,
+        deviceModel: input.deviceInfo.deviceModel,
+        deviceOS: input.deviceInfo.deviceOS,
+        appVersion: input.deviceInfo.appVersion,
+        method: input.location.method,
+        locationSource: 'GPS_SATELLITE' as const,
+        mockLocationDetected: input.location.mockLocationDetected,
+        verificationPassed: geofenceCheck.isWithinGeofence,
+      };
 
-    const clockOutOptionalFields = {
-      altitude: input.location.altitude,
-      heading: input.location.heading,
-      speed: input.location.speed,
-      photoUrl: input.location.photoUrl,
-      biometricVerified: input.location.biometricVerified,
-      biometricMethod: input.location.biometricMethod,
-      verificationFailureReasons: geofenceCheck.isWithinGeofence ? undefined : [geofenceCheck.reason || 'Location outside geofence'],
-    };
+      const clockOutOptionalFields = {
+        altitude: input.location.altitude,
+        heading: input.location.heading,
+        speed: input.location.speed,
+        photoUrl: input.location.photoUrl,
+        biometricVerified: input.location.biometricVerified,
+        biometricMethod: input.location.biometricMethod,
+        verificationFailureReasons: geofenceCheck.isWithinGeofence ? undefined : [geofenceCheck.reason || 'Location outside geofence'],
+      };
 
-    const clockOutFilteredOptional = Object.fromEntries(
-      Object.entries(clockOutOptionalFields).filter(([_, value]) => value !== undefined)
-    );
+      const clockOutFilteredOptional = Object.fromEntries(
+        Object.entries(clockOutOptionalFields).filter(([_, value]) => value !== undefined)
+      );
 
-    const locationVerification: LocationVerification = { ...baseLocationVerification, ...clockOutFilteredOptional };
+      locationVerification = { ...baseLocationVerification, ...clockOutFilteredOptional };
+    } else {
+      locationVerification = {
+        locationCaptured: false,
+        reason: 'ORG_LOCATION_NOT_REQUIRED',
+        timestamp: new Date(),
+        timestampSource: 'DEVICE',
+        deviceId: input.deviceInfo.deviceId,
+        method: input.location?.method ?? 'MANUAL',
+        deviceModel: input.deviceInfo.deviceModel,
+        deviceOS: input.deviceInfo.deviceOS,
+        appVersion: input.deviceInfo.appVersion,
+        verificationPassed: true,
+      };
+    }
 
     // Create time entry
     const now = new Date();
@@ -636,9 +719,13 @@ export class EVVService {
         syncStatus: 'SYNCED',
       },
       offlineRecorded: false,
-      status: geofenceCheck.isWithinGeofence ? 'VERIFIED' : 'FLAGGED',
-      verificationPassed: geofenceCheck.isWithinGeofence,
-      verificationIssues: geofenceCheck.isWithinGeofence ? [] : [geofenceCheck.reason || 'Location verification failed'],
+      status: policy.locationRequired
+        ? (geofenceCheck.isWithinGeofence ? 'VERIFIED' : 'FLAGGED')
+        : 'VERIFIED',
+      verificationPassed: policy.locationRequired ? geofenceCheck.isWithinGeofence : true,
+      verificationIssues: policy.locationRequired
+        ? (geofenceCheck.isWithinGeofence ? [] : [geofenceCheck.reason || 'Location verification failed'])
+        : [],
       createdBy: userContext.userId,
       updatedBy: userContext.userId,
     });
@@ -699,8 +786,19 @@ export class EVVService {
     // Perform comprehensive verification
     const verification = this.validator.performVerification(updatedRecord, geofenceCheck);
 
+    if (!policy.locationRequired) {
+      verification.verificationLevel = 'PARTIAL';
+      if (!verification.complianceFlags.includes('LOCATION_NOT_CAPTURED')) {
+        verification.complianceFlags.push('LOCATION_NOT_CAPTURED');
+      }
+      const compliantIndex = verification.complianceFlags.indexOf('COMPLIANT');
+      if (compliantIndex > -1) {
+        verification.complianceFlags.splice(compliantIndex, 1);
+      }
+    }
+
     // Update compliance flags based on verification
-    if (!verification.passed) {
+    if (!verification.passed || !policy.locationRequired) {
       await this.repository.updateEVVRecord(
         evvRecord.id,
         {
@@ -1096,6 +1194,9 @@ export class EVVService {
     if (!evvRecord) {
       throw new NotFoundError('EVV record not found');
     }
+
+    // Assert record has captured location required for Medicaid aggregator submission
+    assertLocationSubmittable(evvRecord);
 
     // Extract state from service address
     const state = evvRecord.serviceAddress.state as StateCode;

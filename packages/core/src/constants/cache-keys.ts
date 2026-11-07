@@ -29,6 +29,7 @@ export const CacheKeys = {
 
   // EVV state config caching
   evvStateConfig: (orgId: string, state: string) => `evv:config:${orgId}:${state}`,
+  evvLocationPolicy: (orgId: string) => `evv:location-policy:${orgId}`,
 
   // Shift matching caching
   shiftMatchScores: (visitId: string) => `shift:match:${visitId}`,

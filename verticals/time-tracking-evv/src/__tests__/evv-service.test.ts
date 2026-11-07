@@ -206,7 +206,10 @@ describe('EVVService', () => {
       expect(result.timeEntry).toBeDefined();
       expect(result.verification.passed).toBe(true);
 
-      expect(mockValidator.validateClockIn).toHaveBeenCalledWith(validClockInInput);
+      expect(mockValidator.validateClockIn).toHaveBeenCalledWith(
+        validClockInInput,
+        expect.objectContaining({ locationRequired: expect.any(Boolean) })
+      );
       expect(mockVisitProvider.canClockIn).toHaveBeenCalledWith('visit-123', 'caregiver-123', {
         supervisorOverride: false,
       });
@@ -385,6 +388,50 @@ describe('EVVService', () => {
       expect(result.verification.passed).toBe(false);
       expect(result.verification.complianceFlags).toContain('GEOFENCE_VIOLATION');
       expect(result.verification.requiresSupervisorReview).toBe(true);
+    });
+
+    it('should clock in with policy off, storing UncapturedLocation and VERIFIED status with LOCATION_NOT_CAPTURED', async () => {
+      // Mock db returns locationRequired: false
+      (mockDatabase.query as any).mockResolvedValueOnce({
+        rows: [{ settings: { evv: { locationRequired: false } } }],
+      });
+
+      mockValidator.performVerification.mockReturnValue({
+        passed: true,
+        verificationLevel: 'PARTIAL',
+        complianceFlags: ['LOCATION_NOT_CAPTURED'],
+        issues: [],
+        requiresSupervisorReview: false,
+      });
+
+      const clockInWithoutLocation: ClockInInput = {
+        visitId: 'visit-123' as UUID,
+        caregiverId: 'caregiver-123' as UUID,
+        deviceInfo: {
+          deviceId: 'device-123',
+          deviceModel: 'iPhone 14',
+          deviceOS: 'iOS',
+          osVersion: '16.0',
+          appVersion: '1.0.0',
+        },
+      };
+
+      const result = await service.clockIn(clockInWithoutLocation, userContext);
+      expect(result.evvRecord).toBeDefined();
+      expect(mockRepository.createTimeEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'VERIFIED',
+        })
+      );
+      expect(mockRepository.createEVVRecord).toHaveBeenCalledWith(
+        expect.objectContaining({
+          clockInVerification: expect.objectContaining({
+            locationCaptured: false,
+            reason: 'ORG_LOCATION_NOT_REQUIRED',
+          }),
+          complianceFlags: expect.arrayContaining(['LOCATION_NOT_CAPTURED']),
+        })
+      );
     });
   });
 
@@ -608,6 +655,72 @@ describe('EVVService', () => {
       expect(result.evvRecord.clientAttestation?.attestedByName).toBe('John Doe');
       expect(result.evvRecord.clientAttestation?.signatureHash).toBeDefined();
     });
+
+    it('should clock out with policy off without throwing Geofence not found and store UncapturedLocation', async () => {
+      // Mock db returns locationRequired: false
+      (mockDatabase.query as any).mockResolvedValueOnce({
+        rows: [{ settings: { evv: { locationRequired: false } } }],
+      });
+
+      const clockOutWithoutLocation: ClockOutInput = {
+        visitId: 'visit-123' as UUID,
+        evvRecordId: 'evv-123' as UUID,
+        caregiverId: 'caregiver-123' as UUID,
+        deviceInfo: {
+          deviceId: 'device-123',
+          deviceModel: 'iPhone 14',
+          deviceOS: 'iOS',
+          osVersion: '16.0',
+          appVersion: '1.0.0',
+        },
+      };
+
+      mockValidator.validateClockOut.mockReturnValue(undefined);
+      mockRepository.getEVVRecordById.mockResolvedValue(existingEVVRecord);
+      // geofence lookup returns null - should NOT throw 'Geofence not found'
+      mockRepository.getGeofenceByAddress.mockResolvedValue(null);
+
+      mockRepository.createTimeEntry.mockResolvedValue({
+        id: 'time-entry-clockout',
+        entryType: 'CLOCK_OUT',
+        status: 'VERIFIED',
+        verificationPassed: true,
+      });
+
+      mockRepository.updateEVVRecord.mockResolvedValue({
+        ...existingEVVRecord,
+        clockOutTime: new Date(),
+        totalDuration: 120,
+        recordStatus: 'COMPLETE',
+      });
+
+      mockValidator.performVerification.mockReturnValue({
+        passed: true,
+        verificationLevel: 'PARTIAL',
+        complianceFlags: ['LOCATION_NOT_CAPTURED'],
+        issues: [],
+        requiresSupervisorReview: false,
+      });
+
+      const result = await service.clockOut(clockOutWithoutLocation, userContext);
+      expect(result.evvRecord).toBeDefined();
+      expect(mockRepository.createTimeEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'VERIFIED',
+        })
+      );
+      expect(mockRepository.updateEVVRecord).toHaveBeenNthCalledWith(
+        1,
+        'evv-123',
+        expect.objectContaining({
+          clockOutVerification: expect.objectContaining({
+            locationCaptured: false,
+            reason: 'ORG_LOCATION_NOT_REQUIRED',
+          }),
+        }),
+        'caregiver-123'
+      );
+    });
   });
 
   describe('applyManualOverride', () => {
@@ -809,6 +922,7 @@ describe('EVVService', () => {
       clockOutTime: new Date('2025-11-04T12:00:00Z'),
       totalDuration: 120,
       clockInVerification: {
+        locationCaptured: true,
         latitude: 39.9612,
         longitude: -82.9988,
         accuracy: 10,
@@ -827,6 +941,7 @@ describe('EVVService', () => {
         mockLocationDetected: false,
       },
       clockOutVerification: {
+        locationCaptured: true,
         latitude: 39.9612,
         longitude: -82.9988,
         accuracy: 10,

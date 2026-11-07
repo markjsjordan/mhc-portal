@@ -40,6 +40,11 @@ export class ArizonaEVVProvider implements IArizonaEVVProvider {
       throw new Error('AZ EVV configuration not found for organization');
     }
 
+    if (!evvRecord.clockInVerification || !('latitude' in evvRecord.clockInVerification)) {
+      throw new Error('AZ EVV submission requires captured coordinates');
+    }
+    const clockInLoc = evvRecord.clockInVerification;
+
     // Determine program type (DDD, ALTCS, EPD, SMI)
     const programType = await this.determineProgram(evvRecord.clientId);
 
@@ -53,9 +58,9 @@ export class ArizonaEVVProvider implements IArizonaEVVProvider {
       serviceStartTime: evvRecord.clockInTime,
       serviceEndTime: evvRecord.clockOutTime,
       serviceLocation: {
-        latitude: evvRecord.clockInVerification.latitude,
-        longitude: evvRecord.clockInVerification.longitude,
-        accuracy: evvRecord.clockInVerification.accuracy
+        latitude: clockInLoc.latitude,
+        longitude: clockInLoc.longitude,
+        accuracy: clockInLoc.accuracy
       },
 
       // Arizona-specific fields
@@ -151,6 +156,10 @@ export class ArizonaEVVProvider implements IArizonaEVVProvider {
    */
   validateGeofence(location: LocationVerification, serviceAddress: ServiceAddress): boolean {
     const AZ_GEOFENCE_RADIUS_METERS = 1609; // 1 mile
+
+    if (!location || !('latitude' in location)) {
+      return false;
+    }
 
     if (!serviceAddress.latitude || !serviceAddress.longitude) {
       return false;

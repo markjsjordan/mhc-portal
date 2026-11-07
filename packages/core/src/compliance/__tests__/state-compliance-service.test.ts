@@ -58,6 +58,18 @@ describe('StateComplianceService', () => {
       expect(result.errors[0]?.field).toBe('clockInLocation');
     });
 
+    it('should skip geofence validation when skipLocation option is true', () => {
+      const visitData: VisitData = {
+        ...baseVisitData,
+        clockInLatitude: 30.2680,
+        clockInLongitude: -97.7440,
+      };
+
+      const result = service.validateEVVForState('TX', visitData, { skipLocation: true });
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
     it('should fail when clocking in too early', () => {
       const visitData: VisitData = {
         ...baseVisitData,

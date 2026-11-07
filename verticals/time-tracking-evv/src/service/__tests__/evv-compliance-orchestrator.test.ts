@@ -51,6 +51,7 @@ describe('EVVComplianceOrchestrator', () => {
     clockInTime: CLOCK_IN_TIME,
     clockOutTime: null,
     clockInVerification: {
+      locationCaptured: true,
       latitude: 30.2672,
       longitude: -97.7431,
       accuracy: 15,

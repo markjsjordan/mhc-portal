@@ -92,6 +92,11 @@ export class FloridaEVVProvider implements IFloridaEVVProvider {
   async submitToAggregators(evvRecord: EVVRecord): Promise<AggregatorSubmission[]> {
     const aggregator = await this.routeByMCO(evvRecord.clientId);
 
+    if (!evvRecord.clockInVerification || !('latitude' in evvRecord.clockInVerification)) {
+      throw new Error('FL EVV submission requires captured coordinates');
+    }
+    const clockInLoc = evvRecord.clockInVerification;
+
     const payload = {
       visitId: evvRecord.visitId,
       curesActData: {
@@ -100,8 +105,8 @@ export class FloridaEVVProvider implements IFloridaEVVProvider {
         serviceProvider: evvRecord.caregiverEmployeeId,
         serviceDate: evvRecord.serviceDate,
         location: {
-          latitude: evvRecord.clockInVerification.latitude,
-          longitude: evvRecord.clockInVerification.longitude
+          latitude: clockInLoc.latitude,
+          longitude: clockInLoc.longitude
         },
         timeStart: evvRecord.clockInTime,
         timeEnd: evvRecord.clockOutTime

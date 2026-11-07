@@ -39,6 +39,11 @@ export class GeorgiaEVVProvider implements IGeorgiaEVVProvider {
       throw new Error('GA EVV configuration not found for organization');
     }
 
+    if (!evvRecord.clockInVerification || !('latitude' in evvRecord.clockInVerification)) {
+      throw new Error('GA EVV submission requires captured coordinates');
+    }
+    const clockInLoc = evvRecord.clockInVerification;
+
     // Determine program type (CFC vs HCBS)
     const programType = await this.determineProgram(evvRecord.clientId);
 
@@ -52,9 +57,9 @@ export class GeorgiaEVVProvider implements IGeorgiaEVVProvider {
       serviceStartTime: evvRecord.clockInTime,
       serviceEndTime: evvRecord.clockOutTime,
       serviceLocation: {
-        latitude: evvRecord.clockInVerification.latitude,
-        longitude: evvRecord.clockInVerification.longitude,
-        accuracy: evvRecord.clockInVerification.accuracy
+        latitude: clockInLoc.latitude,
+        longitude: clockInLoc.longitude,
+        accuracy: clockInLoc.accuracy
       },
 
       // Georgia-specific fields
@@ -152,6 +157,10 @@ export class GeorgiaEVVProvider implements IGeorgiaEVVProvider {
    */
   validateGeofence(location: LocationVerification, serviceAddress: ServiceAddress): boolean {
     const GA_GEOFENCE_RADIUS_METERS = 1609; // 1 mile
+
+    if (!location || !('latitude' in location)) {
+      return false;
+    }
 
     if (!serviceAddress.latitude || !serviceAddress.longitude) {
       return false;

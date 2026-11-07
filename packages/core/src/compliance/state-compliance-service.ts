@@ -56,6 +56,14 @@ export interface VisitData {
 }
 
 /**
+ * Options for EVV validation
+ */
+export interface EVVValidationOptions {
+  /** Skip location and geofence checks (e.g. org location policy is off) */
+  skipLocation?: boolean;
+}
+
+/**
  * Validation result for EVV checks
  */
 export interface EVVValidationResult {
@@ -177,7 +185,11 @@ export class StateComplianceService {
    * }
    * ```
    */
-  validateEVVForState(stateCode: StateCode, visitData: VisitData): EVVValidationResult {
+  validateEVVForState(
+    stateCode: StateCode,
+    visitData: VisitData,
+    options?: EVVValidationOptions
+  ): EVVValidationResult {
     const config = this.getStateConfig(stateCode);
     const errors: EVVValidationError[] = [];
     const warnings: string[] = [];
@@ -187,9 +199,10 @@ export class StateComplianceService {
       warnings.push(`EVV is not mandated in ${config.stateName}, but validation proceeding as best practice.`);
     }
 
-    // Validate geofencing if required
-    if (config.evv.geofencing.required) {
-      const geofenceError = this.validateGeofence(stateCode, visitData, config.evv);
+    // Validate geofencing if required and not skipped
+    const skipLocation = options?.skipLocation === true;
+    if (config.evv.geofencing.required && !skipLocation) {
+      const geofenceError = this.validateGeofence(stateCode, visitData, config.evv, options);
       if (geofenceError !== undefined) {
         errors.push(geofenceError);
       }
@@ -503,8 +516,12 @@ export class StateComplianceService {
   private validateGeofence(
     stateCode: StateCode,
     visitData: VisitData,
-    evvConfig: EVVConfig
+    evvConfig: EVVConfig,
+    options?: EVVValidationOptions
   ): EVVValidationError | undefined {
+    if (options?.skipLocation === true) {
+      return undefined;
+    }
     const distance = this.calculateDistance(
       visitData.clientLatitude,
       visitData.clientLongitude,

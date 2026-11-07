@@ -140,6 +140,20 @@ describe('validateCaptureTimeClockEvent', () => {
         expect(result.status).toBe('ok');
       });
 
+      it('should accept location 1 meter beyond effective radius when locationRequired is false', () => {
+        const input: ClockEventInput = {
+          captureTimestamp: SCHEDULED_START,
+          state: 'TX',
+          gpsAccuracyMeters: 20,
+          distanceFromVisitMeters: 171, // 100 + 50 + 20 + 1 = 171
+          scheduledStartTime: SCHEDULED_START,
+          locationRequired: false,
+        };
+
+        const result = validateCaptureTimeClockEvent(input);
+        expect(result.status).toBe('ok');
+      });
+
       it('should reject location 1 meter beyond effective radius', () => {
         const input: ClockEventInput = {
           captureTimestamp: SCHEDULED_START,

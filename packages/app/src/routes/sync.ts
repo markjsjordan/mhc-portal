@@ -8,6 +8,7 @@ import { Router, type Request, type Response } from 'express';
 import { Database, AuthMiddleware } from '@folkcare/core';
 import {
   validateCaptureTimeClockEvent,
+  loadOrgLocationPolicy,
   type StateCode,
   type CaptureTimeValidationResult,
 } from '@folkcare/time-tracking-evv';
@@ -335,9 +336,13 @@ router.post('/sync/push', async (req: Request, res: Response): Promise<void> => 
                 continue;
               }
 
-              // Validate geofence & grace period if GPS provided (evaluate against capture timestamp)
+              // Resolve organization location policy
+              const orgId = req.user?.organizationId;
+              const policy = orgId ? await loadOrgLocationPolicy(db, orgId) : { locationRequired: true };
+
+              // Validate EVV clock event at capture time (geofence + grace period)
               let validationResult: CaptureTimeValidationResult | undefined;
-              if (gps && (data.status === 'IN_PROGRESS' || data.status === 'COMPLETED')) {
+              if (data.status === 'IN_PROGRESS' || data.status === 'COMPLETED') {
                 const visitRecord = existing.rows[0] as Record<string, unknown>;
                 const stateRaw = (data.state as string) || (visitRecord.state as string) || 'TX';
                 const state: StateCode = stateRaw === 'FL' ? 'FL' : 'TX';
@@ -345,7 +350,7 @@ router.post('/sync/push', async (req: Request, res: Response): Promise<void> => 
                   typeof data.distanceFromVisitMeters === 'number'
                     ? data.distanceFromVisitMeters
                     // eslint-disable-next-line sonarjs/no-nested-conditional
-                    : typeof gps.distanceMeters === 'number'
+                    : typeof gps?.distanceMeters === 'number'
                     ? gps.distanceMeters
                     : 0;
 
@@ -360,9 +365,10 @@ router.post('/sync/push', async (req: Request, res: Response): Promise<void> => 
                 validationResult = validateCaptureTimeClockEvent({
                   captureTimestamp,
                   state,
-                  gpsAccuracyMeters: gps.accuracy ?? 0,
+                  gpsAccuracyMeters: gps?.accuracy ?? 0,
                   distanceFromVisitMeters: distanceMeters,
                   scheduledStartTime: scheduledStart,
+                  locationRequired: policy.locationRequired,
                 });
               }
 
@@ -401,7 +407,13 @@ router.post('/sync/push', async (req: Request, res: Response): Promise<void> => 
               }
 
               // Store EVV event with GPS, capture timestamp, and capture-time validation results
-              if (gps && (data.status === 'IN_PROGRESS' || data.status === 'COMPLETED')) {
+              if (data.status === 'IN_PROGRESS' || data.status === 'COMPLETED') {
+                const effectiveGps = policy.locationRequired ? gps : null;
+                let complianceStatus = 'LOCATION_NOT_CAPTURED';
+                if (policy.locationRequired) {
+                  complianceStatus = validationResult && validationResult.status !== 'ok' ? 'FLAGGED' : 'COMPLIANT';
+                }
+
                 // Store verification data with validation status (never drop the EVV event)
                 await db.query(
                   `UPDATE visits 
@@ -416,12 +428,12 @@ router.post('/sync/push', async (req: Request, res: Response): Promise<void> => 
                    WHERE id = $1`,
                   [
                     entityId,
-                    JSON.stringify(gps),
+                    JSON.stringify(effectiveGps),
                     captureTimestamp.toISOString(),
                     capturedOffline ?? false,
                     deviceId,
                     JSON.stringify(validationResult ?? { status: 'ok' }),
-                    validationResult && validationResult.status !== 'ok' ? 'FLAGGED' : 'COMPLIANT',
+                    complianceStatus,
                   ]
                 );
               }

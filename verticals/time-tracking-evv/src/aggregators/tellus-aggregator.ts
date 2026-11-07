@@ -247,7 +247,7 @@ export class TellusAggregator implements IAggregator {
       });
     }
 
-    if (!evvRecord.clockInVerification?.latitude || !evvRecord.clockInVerification?.longitude) {
+    if (!evvRecord.clockInVerification || !('latitude' in evvRecord.clockInVerification) || !evvRecord.clockInVerification.latitude || !evvRecord.clockInVerification.longitude) {
       errors.push({
         field: 'clockInVerification',
         code: 'MISSING_LOCATION',
@@ -270,7 +270,7 @@ export class TellusAggregator implements IAggregator {
       }
 
       // Georgia's lenient GPS accuracy tolerance
-      if (evvRecord.clockInVerification && evvRecord.clockInVerification.accuracy > 250) {
+      if (evvRecord.clockInVerification && 'accuracy' in evvRecord.clockInVerification && evvRecord.clockInVerification.accuracy > 250) {
         // 150m base + 100m tolerance = 250m total
         warnings.push({
           field: 'clockInVerification.accuracy',
@@ -294,6 +294,11 @@ export class TellusAggregator implements IAggregator {
    * Tellus expects a more detailed payload structure than Sandata.
    */
   private formatPayload(evvRecord: EVVRecord, config: StateEVVConfig): TellusPayload {
+    if (!('latitude' in evvRecord.clockInVerification)) {
+      throw new Error('Cannot format Tellus payload without captured clock-in coordinates');
+    }
+    const clockInLoc = evvRecord.clockInVerification;
+
     const payload: TellusPayload = {
       visitReference: evvRecord.visitId,
       clientInfo: {
@@ -317,14 +322,14 @@ export class TellusAggregator implements IAggregator {
       },
       locationInfo: {
         checkInLocation: {
-          latitude: evvRecord.clockInVerification.latitude,
-          longitude: evvRecord.clockInVerification.longitude,
-          accuracy: evvRecord.clockInVerification.accuracy,
-          timestamp: evvRecord.clockInVerification.timestamp.toISOString(),
+          latitude: clockInLoc.latitude,
+          longitude: clockInLoc.longitude,
+          accuracy: clockInLoc.accuracy,
+          timestamp: clockInLoc.timestamp.toISOString(),
         },
       },
       verificationInfo: {
-        method: this.mapVerificationMethod(evvRecord.clockInVerification.method),
+        method: this.mapVerificationMethod(clockInLoc.method),
         level: evvRecord.verificationLevel,
         geofenceCompliant: !evvRecord.complianceFlags.includes('GEOFENCE_VIOLATION'),
       },
@@ -332,6 +337,9 @@ export class TellusAggregator implements IAggregator {
 
     // Add clock-out location if available
     if (evvRecord.clockOutVerification) {
+      if (!('latitude' in evvRecord.clockOutVerification)) {
+        throw new Error('Cannot format Tellus payload without captured clock-out coordinates');
+      }
       payload.locationInfo.checkOutLocation = {
         latitude: evvRecord.clockOutVerification.latitude,
         longitude: evvRecord.clockOutVerification.longitude,

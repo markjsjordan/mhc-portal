@@ -136,6 +136,7 @@ export function VisitCheckOutScreen() {
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       const mockLocation: LocationVerification = {
+        locationCaptured: true,
         latitude: 30.2672,
         longitude: -97.7431,
         accuracy: 12,
@@ -198,7 +199,7 @@ export function VisitCheckOutScreen() {
       validationErrors.push('Location verification required');
     }
 
-    if (location?.mockLocationDetected) {
+    if (location?.locationCaptured && location.mockLocationDetected) {
       validationErrors.push('Mock location detected - please disable');
     }
 
@@ -460,7 +461,7 @@ export function VisitCheckOutScreen() {
             )}
           </View>
 
-          {location && (
+          {location?.locationCaptured && (
             <View style={styles.statusRow}>
               <Text style={styles.statusLabel}>GPS Accuracy:</Text>
               <Text style={styles.statusValue}>

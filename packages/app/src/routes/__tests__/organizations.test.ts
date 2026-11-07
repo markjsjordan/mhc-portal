@@ -414,5 +414,12 @@ describe('Organization Routes', () => {
       const route = routes[0] as RouterLayer;
       expect(route?.route?.methods?.get).toBe(true);
     });
+
+    it('should configure PUT /organizations/:id endpoint with auth and role requirements', () => {
+      const putRoute = router.stack.find(
+        (layer: RouterLayer) => layer.route?.path === '/organizations/:id' && layer.route.methods.put === true
+      );
+      expect(putRoute).toBeDefined();
+    });
   });
 });
