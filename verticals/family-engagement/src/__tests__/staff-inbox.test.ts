@@ -38,7 +38,7 @@ describe('FamilyEngagementService staff inbox', () => {
     };
     audit = { logDataAccess: vi.fn().mockResolvedValue(undefined) };
     service = new FamilyEngagementService(
-      { findById: vi.fn().mockResolvedValue({ id: 'fam-1', userId: 'user-1' }) } as any,
+      { findById: vi.fn().mockResolvedValue({ id: 'fam-1', userId: 'user-1', portalAccessStatus: 'ACTIVE' }) } as any,
       {} as any,
       {} as any,
       messageRepo,
