@@ -19,6 +19,10 @@ import {
   ImportPreviewRow,
   ImportPreviewResult,
   CommitImportResult,
+  PortalAccessService,
+  PermissionService,
+  AuditService,
+  ClientStatus as CoreClientStatus,
 } from '@folkcare/core';
 import { Client, CreateClientInput, ClientStatus, Gender } from '../types/client.js';
 import { ClientRepository } from '../repository/client-repository.js';
@@ -74,11 +78,36 @@ export class ClientImportService implements ImportService<ClientImportRow, Clien
   private repository: ClientRepository;
   private validator: ClientValidator;
   private database: Database;
+  private portalAccessHook: {
+    handleClientStatusChange(
+      clientId: string,
+      previousStatus: CoreClientStatus,
+      newStatus: CoreClientStatus,
+      context: UserContext
+    ): Promise<void>;
+  };
 
-  constructor(database: Database) {
+  constructor(
+    database: Database,
+    portalAccessHook?: {
+      handleClientStatusChange(
+        clientId: string,
+        previousStatus: CoreClientStatus,
+        newStatus: CoreClientStatus,
+        context: UserContext
+      ): Promise<void>;
+    }
+  ) {
     this.database = database;
     this.repository = new ClientRepository(database);
     this.validator = new ClientValidator();
+    this.portalAccessHook =
+      portalAccessHook ??
+      new PortalAccessService(
+        database,
+        new PermissionService(),
+        new AuditService(database)
+      );
   }
 
   /**
@@ -385,6 +414,17 @@ export class ClientImportService implements ImportService<ClientImportRow, Clien
               // Update existing client
               const updateInput = this.mapRowToUpdateInput(record);
               await this.repository.update(existingClient.id, updateInput, context);
+              if (
+                updateInput.status &&
+                updateInput.status !== existingClient.status
+              ) {
+                await this.portalAccessHook.handleClientStatusChange(
+                  existingClient.id,
+                  existingClient.status as CoreClientStatus,
+                  updateInput.status as CoreClientStatus,
+                  context
+                );
+              }
               importedIds.push(existingClient.id);
               updated++;
             } else {

@@ -10,7 +10,10 @@ import {
   NotFoundError,
   PermissionError,
   ConflictError,
-  UserRepository,
+  PortalAccessService,
+  PermissionService,
+  AuditService,
+  CaregiverEmploymentStatus,
 } from '@folkcare/core';
 import { CaregiverRepository } from '../repository/caregiver-repository';
 import {
@@ -21,6 +24,7 @@ import {
   CaregiverEligibility,
   EligibilityReason,
   ComplianceStatus,
+  EmploymentStatus,
 } from '../types/caregiver';
 import { CaregiverValidator } from '../validation/caregiver-validator';
 
@@ -55,15 +59,30 @@ interface StateScreening {
   updatedAt: Date;
 }
 
+export interface CaregiverStatusHook {
+  handleCaregiverStatusChange(
+    caregiverId: string,
+    previousStatus: CaregiverEmploymentStatus,
+    newStatus: CaregiverEmploymentStatus,
+    context: UserContext
+  ): Promise<void>;
+}
+
 export class CaregiverService {
   private repository: CaregiverRepository;
-  private userRepository: UserRepository;
   private validator: CaregiverValidator;
+  private portalAccessHook: CaregiverStatusHook;
 
-  constructor(database: Database) {
+  constructor(database: Database, portalAccessHook?: CaregiverStatusHook) {
     this.repository = new CaregiverRepository(database);
-    this.userRepository = new UserRepository(database);
     this.validator = new CaregiverValidator();
+    this.portalAccessHook =
+      portalAccessHook ??
+      new PortalAccessService(
+        database,
+        new PermissionService(),
+        new AuditService(database)
+      );
   }
 
   /**
@@ -138,7 +157,7 @@ export class CaregiverService {
    */
   async updateCaregiver(
     id: string,
-    input: UpdateCaregiverInput,
+    input: UpdateCaregiverInput & { employmentStatus?: EmploymentStatus },
     context: UserContext
   ): Promise<Caregiver> {
     // Validate permissions
@@ -169,7 +188,21 @@ export class CaregiverService {
       updates.complianceStatus = complianceStatus;
     }
 
-    return this.repository.update(id, updates, context);
+    const updated = await this.repository.update(id, updates, context);
+
+    if (
+      input.employmentStatus &&
+      input.employmentStatus !== existing.employmentStatus
+    ) {
+      await this.portalAccessHook.handleCaregiverStatusChange(
+        id,
+        existing.employmentStatus as CaregiverEmploymentStatus,
+        input.employmentStatus as CaregiverEmploymentStatus,
+        context
+      );
+    }
+
+    return updated;
   }
 
   /**
@@ -227,14 +260,8 @@ export class CaregiverService {
    * @throws NotFoundError if user or caregiver profile not found
    */
   async getCurrentCaregiverProfile(context: UserContext): Promise<Caregiver> {
-    // Get user email from user repository
-    const user = await this.userRepository.getUserById(context.userId);
-    if (!user) {
-      throw new NotFoundError(`User not found: ${context.userId}`);
-    }
-
-    // Find caregiver by email
-    const caregiver = await this.repository.findByEmail(user.email);
+    // Find caregiver by linked user_id
+    const caregiver = await this.repository.findByUserId(context.userId);
     if (!caregiver) {
       throw new NotFoundError(`Caregiver profile not found for user: ${context.userId}`);
     }

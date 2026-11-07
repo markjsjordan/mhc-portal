@@ -10,6 +10,7 @@ import {
   NotFoundError,
   PaginatedResult,
   GeocodingService,
+  ClientStatus as CoreClientStatus,
 } from '@folkcare/core';
 import { getPermissionService } from '@folkcare/core';
 import { getCacheService } from '@folkcare/core/service/cache.service';
@@ -19,17 +20,32 @@ import { ClientRepository } from '../repository/client-repository';
 import { ClientValidator } from '../validation/client-validator';
 import type { ClientAuditService, AuditQuery, AuditReport } from './client-audit-service';
 
+export interface ClientStatusHook {
+  handleClientStatusChange(
+    clientId: string,
+    previousStatus: CoreClientStatus,
+    newStatus: CoreClientStatus,
+    context: UserContext
+  ): Promise<void>;
+}
+
 export class ClientService {
   private repository: ClientRepository;
   private validator: ClientValidator;
   private permissionService = getPermissionService();
   private auditService?: ClientAuditService;
   private geocodingService: GeocodingService;
+  private portalAccessHook?: ClientStatusHook;
 
-  constructor(repository: ClientRepository, auditService?: ClientAuditService) {
+  constructor(
+    repository: ClientRepository,
+    auditService?: ClientAuditService,
+    portalAccessHook?: ClientStatusHook
+  ) {
     this.repository = repository;
     this.validator = new ClientValidator();
     this.auditService = auditService;
+    this.portalAccessHook = portalAccessHook;
     // Use environment variable to determine provider, default to mapbox
     const provider = (process.env.GEOCODING_PROVIDER || 'mapbox') as 'google' | 'mapbox' | 'nominatim';
     this.geocodingService = new GeocodingService(provider);
@@ -254,7 +270,7 @@ export class ClientService {
     this.permissionService.requirePermission(context, 'clients:update');
 
     // Verify client exists (internal existence check, not a PHI read — skip audit log)
-    await this.getClientById(id, context, true);
+    const existing = await this.getClientById(id, context, true);
 
     // Validate updates
     const validation = this.validator.validateUpdate(updates);
@@ -289,6 +305,19 @@ export class ClientService {
 
     // Apply updates
     const updated = await this.repository.update(id, updates, context);
+
+    if (
+      updates.status &&
+      updates.status !== existing.status &&
+      this.portalAccessHook
+    ) {
+      await this.portalAccessHook.handleClientStatusChange(
+        id,
+        existing.status as CoreClientStatus,
+        updates.status as CoreClientStatus,
+        context
+      );
+    }
 
     // Invalidate cache
     const cache = getCacheService();
