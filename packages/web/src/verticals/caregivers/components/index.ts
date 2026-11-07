@@ -7,3 +7,4 @@ export { CaregiverActionButtons, type CaregiverActionButtonsProps } from './Care
 export { EditCaregiverModal, type EditCaregiverModalProps } from './EditCaregiverModal.js';
 export { DeleteCaregiverConfirmation, type DeleteCaregiverConfirmationProps } from './DeleteCaregiverConfirmation.js';
 export { DuplicateCaregiverModal, type DuplicateCaregiverModalProps } from './DuplicateCaregiverModal.js';
+export { PortalAccessCard, type PortalAccessCardProps } from './PortalAccessCard.js';

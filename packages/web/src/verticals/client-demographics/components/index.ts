@@ -4,3 +4,6 @@ export * from './ClientSearch';
 export * from './ClientFilters';
 
 export * from './StateSelector';
+
+export * from './FamilyPortalAccessCard';
+

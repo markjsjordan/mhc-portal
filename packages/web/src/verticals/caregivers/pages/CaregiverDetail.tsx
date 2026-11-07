@@ -22,6 +22,7 @@ import {
   EditCaregiverModal,
   DeleteCaregiverConfirmation,
   DuplicateCaregiverModal,
+  PortalAccessCard,
 } from '../components/index.js';
 
 export const CaregiverDetail: React.FC = () => {
@@ -144,6 +145,9 @@ export const CaregiverDetail: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Portal Access */}
+      <PortalAccessCard caregiverId={caregiver.id} />
 
       {/* Compliance */}
       <Card>
