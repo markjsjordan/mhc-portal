@@ -5,7 +5,7 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { Database, isValidUUID, ComplianceAutopilotService, AuditService, UserContext, AuthMiddleware } from '@folkcare/core';
+import { Database, isValidUUID, ComplianceAutopilotService, AuditService, UserContext, AuthMiddleware, UUID } from '@folkcare/core';
 import { ScheduleRepository, StaffingDemandPredictionService, CaregiverMatchingService, RecurringVisitPatternEngine, VisitPatternRepository } from '@folkcare/scheduling-visits';
 import { ComplianceCheckingService, complianceCheckRequestSchema, DocumentationQualityService, HospitalizationRiskService, VitalsAnomalyService, SentimentAnalysisService, ReportGenerationService } from '@folkcare/visit-notes';
 import { VisitDurationPredictionService } from '@folkcare/scheduling-visits';
@@ -104,12 +104,16 @@ function isMissingRequiredVisitFields(fields: {
  */
 function getUserContext(req: Request): UserContext {
   const user = req.user ?? (req as unknown as { userContext?: UserContext }).userContext;
+  const anyUser = user as (UserContext & { [key: string]: unknown }) | undefined;
   return {
     userId: user?.userId ?? '',
     organizationId: user?.organizationId ?? '',
     branchIds: user?.branchIds ?? [],
     roles: user?.roles ?? [],
     permissions: user?.permissions ?? [],
+    caregiverId: anyUser?.caregiverId as UUID | undefined,
+    familyMemberIds: anyUser?.familyMemberIds as UUID[] | undefined,
+    familyClientIds: anyUser?.familyClientIds as UUID[] | undefined,
   };
 }
 
@@ -254,29 +258,20 @@ export function createVisitRouter(db: Database): Router {
         return;
       }
 
-      // Look up the user's email to find their caregiver record
-      const userResult = await db.query(
-        `SELECT email FROM users WHERE id = $1`,
-        [context.userId]
-      );
+      // Look up caregiver ID via context or database (user_id, ACTIVE, not deleted)
+      let caregiverId: string | null = context.caregiverId ?? null;
 
-      if (userResult.rows.length === 0) {
-        res.status(404).json({
-          success: false,
-          error: 'User not found',
-        });
-        return;
+      if (!caregiverId) {
+        const caregiverResult = await db.query(
+          `SELECT id FROM caregivers WHERE user_id = $1 AND portal_access_status = 'ACTIVE' AND deleted_at IS NULL`,
+          [context.userId]
+        );
+        if (caregiverResult.rows.length > 0) {
+          caregiverId = (caregiverResult.rows[0] as { id: string }).id;
+        }
       }
 
-      const userEmail = (userResult.rows[0] as { email: string }).email;
-
-      // Find caregiver record by email
-      const caregiverResult = await db.query(
-        `SELECT id FROM caregivers WHERE email = $1 AND deleted_at IS NULL`,
-        [userEmail]
-      );
-
-      if (caregiverResult.rows.length === 0) {
+      if (!caregiverId) {
         // User doesn't have a caregiver record - return empty array
         // This is valid for coordinators, admins, etc.
         res.json({
@@ -291,8 +286,6 @@ export function createVisitRouter(db: Database): Router {
         });
         return;
       }
-
-      const caregiverId = (caregiverResult.rows[0] as { id: string }).id;
 
       // Fetch visits
       const repository = new ScheduleRepository(db.getPool());

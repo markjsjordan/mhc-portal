@@ -82,6 +82,7 @@ describe('EVVService', () => {
 
     userContext = {
       userId: 'caregiver-123' as UUID,
+      caregiverId: 'caregiver-123' as UUID,
       organizationId: 'org-123' as UUID,
       branchIds: ['branch-123' as UUID],
       roles: ['CAREGIVER' as any],
@@ -89,6 +90,7 @@ describe('EVVService', () => {
     };
 
     vi.clearAllMocks();
+    mockDatabase.query.mockResolvedValue({ rows: [{ id: 'caregiver-123' }] } as any);
   });
 
   afterEach(() => {
@@ -264,6 +266,140 @@ describe('EVVService', () => {
 
       await expect(service.clockIn(otherCaregiverInput, userContext))
         .rejects.toThrow(PermissionError);
+    });
+
+    it('should allow supervisor to clock in for another caregiver', async () => {
+      mockValidator.validateClockIn.mockReturnValue(undefined);
+      mockVisitProvider.canClockIn.mockResolvedValue(true);
+      mockVisitProvider.getVisitForEVV.mockResolvedValue({
+        visitId: 'visit-123' as UUID,
+        organizationId: 'org-123' as UUID,
+        branchId: 'branch-123' as UUID,
+        clientId: 'client-123' as UUID,
+        caregiverId: 'other-caregiver-456' as UUID,
+        clientName: 'John Doe',
+        serviceTypeId: 'service-123' as UUID,
+        serviceTypeCode: 'T1019',
+        serviceTypeName: 'Personal Care',
+        serviceDate: new Date(),
+        scheduledStartTime: '09:00',
+        scheduledEndTime: '11:00',
+        scheduledDuration: 120,
+        serviceAddress: {
+          line1: '123 Main St',
+          city: 'Austin',
+          state: 'TX',
+          postalCode: '78701',
+          country: 'USA',
+          latitude: 40.7128,
+          longitude: -74.006,
+          addressVerified: true,
+        },
+      });
+      mockClientProvider.getClientForEVV.mockResolvedValue({
+        id: 'client-123',
+        name: 'John Doe',
+        medicaidId: 'MED123',
+      });
+      mockCaregiverProvider.getCaregiverForEVV.mockResolvedValue({
+        id: 'other-caregiver-456',
+        name: 'Other Caregiver',
+        employeeId: 'EMP456',
+      });
+      mockCaregiverProvider.canProvideService.mockResolvedValue({
+        authorized: true,
+      });
+
+      const supervisorContext = {
+        ...userContext,
+        userId: 'supervisor-1' as UUID,
+        roles: ['COORDINATOR' as any],
+        caregiverId: undefined,
+      };
+
+      const otherCaregiverInput = {
+        ...validClockInInput,
+        caregiverId: 'other-caregiver-456' as UUID,
+      };
+
+      const result = await service.clockIn(otherCaregiverInput, supervisorContext);
+      expect(result).toBeDefined();
+    });
+
+    it('should deny non-supervisor when no ACTIVE caregiver link exists', async () => {
+      mockValidator.validateClockIn.mockReturnValue(undefined);
+      mockDatabase.query.mockImplementation(async (sql: string) => {
+        if (sql.includes('FROM caregivers WHERE user_id')) {
+          return { rows: [] };
+        }
+        return { rows: [{ id: 'caregiver-123' }] };
+      });
+
+      const noLinkContext = {
+        ...userContext,
+        userId: 'user-without-caregiver' as UUID,
+        caregiverId: undefined,
+      };
+
+      await expect(service.clockIn(validClockInInput, noLinkContext))
+        .rejects.toThrow(PermissionError);
+    });
+
+    it('should resolve caregiver ID from database when not present on context', async () => {
+      mockValidator.validateClockIn.mockReturnValue(undefined);
+      mockVisitProvider.canClockIn.mockResolvedValue(true);
+      mockVisitProvider.getVisitForEVV.mockResolvedValue({
+        visitId: 'visit-123' as UUID,
+        organizationId: 'org-123' as UUID,
+        branchId: 'branch-123' as UUID,
+        clientId: 'client-123' as UUID,
+        caregiverId: 'caregiver-123' as UUID,
+        clientName: 'John Doe',
+        serviceTypeId: 'service-123' as UUID,
+        serviceTypeCode: 'T1019',
+        serviceTypeName: 'Personal Care',
+        serviceDate: new Date(),
+        scheduledStartTime: '09:00',
+        scheduledEndTime: '11:00',
+        scheduledDuration: 120,
+        serviceAddress: {
+          line1: '123 Main St',
+          city: 'Austin',
+          state: 'TX',
+          postalCode: '78701',
+          country: 'USA',
+          latitude: 40.7128,
+          longitude: -74.006,
+          addressVerified: true,
+        },
+      });
+      mockClientProvider.getClientForEVV.mockResolvedValue({
+        id: 'client-123',
+        name: 'John Doe',
+        medicaidId: 'MED123',
+      });
+      mockCaregiverProvider.getCaregiverForEVV.mockResolvedValue({
+        id: 'caregiver-123',
+        name: 'Jane Smith',
+        employeeId: 'EMP123',
+      });
+      mockCaregiverProvider.canProvideService.mockResolvedValue({
+        authorized: true,
+      });
+
+      mockDatabase.query.mockResolvedValueOnce({ rows: [{ id: 'caregiver-123' }] } as any);
+
+      const fallbackContext = {
+        ...userContext,
+        caregiverId: undefined,
+      };
+
+      const result = await service.clockIn(validClockInInput, fallbackContext);
+      expect(result).toBeDefined();
+      expect(mockDatabase.query).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT id FROM caregivers WHERE user_id = $1 AND portal_access_status = 'ACTIVE' AND deleted_at IS NULL"),
+        ['caregiver-123']
+      );
     });
 
     it('should throw ValidationError when visit does not allow clock in', async () => {

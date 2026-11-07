@@ -155,6 +155,10 @@ export class FamilyEngagementService {
       throw new Error('Insufficient permissions to view client family members') as PermissionError;
     }
 
+    if (!this.isStaffContext(context) && context.familyClientIds && !context.familyClientIds.includes(clientId)) {
+      throw new Error('Insufficient permissions to view client family members') as PermissionError;
+    }
+
     return await this.familyMemberRepo.findByClientId(clientId);
   }
 
@@ -542,12 +546,9 @@ export class FamilyEngagementService {
 
     // Security check: family user can only view their own threads unless staff
     if (!this.isStaffContext(context)) {
-      if (familyMemberId !== context.userId) {
-        const familyMember = await this.familyMemberRepo.findById(familyMemberId);
-        const fmUserId = familyMember?.userId;
-        if (!familyMember || (fmUserId && fmUserId !== context.userId)) {
-          throw new Error('Insufficient permissions to view message threads') as PermissionError;
-        }
+      const allowed = await this.isFamilyMemberAllowed(familyMemberId, context);
+      if (!allowed) {
+        throw new Error('Insufficient permissions to view message threads') as PermissionError;
       }
     }
 
@@ -586,6 +587,26 @@ export class FamilyEngagementService {
 
   private isStaffContext(context: UserContext): boolean {
     return !context.roles.some((role) => role === 'FAMILY' || role === 'CLIENT');
+  }
+
+  /**
+   * Helper: Check if a non-staff caller is allowed access to a family member record.
+   * Allowed if context.familyMemberIds?.includes(id), or (fallback) the family member
+   * row's user_id === context.userId AND portal_access_status === 'ACTIVE'.
+   * A NULL user_id or non-ACTIVE status means deny.
+   */
+  private async isFamilyMemberAllowed(familyMemberId: UUID, context: UserContext): Promise<boolean> {
+    if (context.familyMemberIds?.includes(familyMemberId)) {
+      return true;
+    }
+    const familyMember = await this.familyMemberRepo.findById(familyMemberId);
+    if (!familyMember || !familyMember.userId) {
+      return false;
+    }
+    return (
+      familyMember.userId === context.userId &&
+      familyMember.portalAccessStatus === 'ACTIVE'
+    );
   }
 
   /**
@@ -629,14 +650,13 @@ export class FamilyEngagementService {
         throw new Error('Message thread not found') as NotFoundError;
       }
     } else {
-      // Family context: user ID must match familyMemberId (or family member's user record)
-      if (thread.familyMemberId !== context.userId) {
-        // Also check if family member record has user_id matching context.userId
-        const familyMember = await this.familyMemberRepo.findById(thread.familyMemberId);
-        const fmUserId = familyMember?.userId;
-        if (!familyMember || (fmUserId && fmUserId !== context.userId)) {
-          throw new Error('Message thread not found') as NotFoundError;
-        }
+      // Family context: caller allowed only if familyMemberIds contains id, or fallback ACTIVE user link
+      const allowed = await this.isFamilyMemberAllowed(thread.familyMemberId, context);
+      if (!allowed) {
+        throw new Error('Message thread not found') as NotFoundError;
+      }
+      if (context.familyClientIds && !context.familyClientIds.includes(thread.clientId)) {
+        throw new Error('Message thread not found') as NotFoundError;
       }
     }
     return thread;
@@ -730,9 +750,15 @@ export class FamilyEngagementService {
     }
 
     // IMPORTANT: Family members can only view their own dashboard
-    // For FAMILY role, ensure familyMemberId matches userId (they should be the same)
-    if (context.roles.includes('FAMILY') && familyMemberId !== context.userId) {
-      throw new Error('You can only access your own family portal') as PermissionError;
+    // For non-staff callers, ensure caller has access to this family member
+    if (!this.isStaffContext(context)) {
+      const allowed = await this.isFamilyMemberAllowed(familyMemberId, context);
+      if (!allowed) {
+        throw new Error('You can only access your own family portal') as PermissionError;
+      }
+      if (context.familyClientIds && !context.familyClientIds.includes(profile.clientId)) {
+        throw new Error('You can only access your own family portal') as PermissionError;
+      }
     }
 
     // Get recent activity

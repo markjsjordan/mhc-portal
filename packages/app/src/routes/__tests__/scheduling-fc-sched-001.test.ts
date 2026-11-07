@@ -299,12 +299,8 @@ describe('FC-SCHED-001 Integration Test Suite', () => {
     });
 
     it('should fetch caregiver personal visits via GET /my-visits', async () => {
-      // 1. User email lookup
+      // Caregiver record lookup by user_id
       vi.mocked(mockDb.query)
-        .mockResolvedValueOnce({
-          rows: [{ email: 'elena.cruz@folkcare.example' }],
-        } as any)
-        // 2. Caregiver record lookup
         .mockResolvedValueOnce({
           rows: [{ id: CAREGIVER_ID }],
         } as any);
