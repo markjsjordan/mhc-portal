@@ -38,6 +38,51 @@ export interface ConflictCheckResult {
   }>;
 }
 
+export interface PatternListItem {
+  id: string;
+  clientId: string;
+  clientName: string;
+  caregiverId: string | null;
+  caregiverName: string | null;
+  serviceTypeId: string;
+  serviceTypeName: string;
+  frequency: string;
+  dayOfWeek: string[];
+  startTime: string;
+  duration: number;
+  recurrenceSummary: string;
+  startDate: string;
+  endDate: string | null;
+  status: 'ACTIVE' | 'PAUSED' | 'CANCELLED';
+  nextVisitDate: string | null;
+  futureVisitCount: number;
+  updatedAt: string;
+}
+
+export interface ListPatternsParams {
+  clientId?: string;
+  caregiverId?: string;
+  status?: string;
+  includeEnded?: boolean;
+  unassigned?: boolean;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface ListPatternsResponse {
+  patterns: PatternListItem[];
+  count: number;
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface EndPatternResult {
+  pattern: PatternListItem;
+  retainedFutureVisits: number;
+}
+
 export interface VisitApiService {
   getMyVisits(startDate: Date, endDate: Date): Promise<Visit[]>;
   getVisitsByFilters(filters: VisitSearchFilters): Promise<Visit[]>;
@@ -51,7 +96,11 @@ export interface VisitApiService {
   createPattern(data: CreatePatternPayload): Promise<{ pattern: unknown; visits: Visit[]; generatedVisitsCount: number; exceptions: unknown[] }>;
   getPattern(id: string): Promise<PatternDetailsResponse>;
   updatePattern(id: string, data: UpdatePatternPayload): Promise<unknown>;
-  listPatterns(clientId?: string): Promise<unknown[]>;
+  listPatterns(params?: string | ListPatternsParams): Promise<PatternListItem[]>;
+  listPatternsWithPagination(params?: ListPatternsParams): Promise<ListPatternsResponse>;
+  pausePattern(id: string, reason?: string): Promise<PatternListItem>;
+  resumePattern(id: string): Promise<PatternListItem>;
+  endPattern(id: string, payload: { reason: string; effectiveDate?: string }): Promise<EndPatternResult>;
 }
 
 export interface CreatePatternPayload {
@@ -247,12 +296,68 @@ export const createVisitApiService = (apiClient: ApiClient): VisitApiService => 
       return response.data;
     },
 
-    async listPatterns(clientId?: string): Promise<unknown[]> {
-      const params = new URLSearchParams();
-      if (clientId) params.append('client_id', clientId);
-      const url = `/api/visits/patterns${params.toString() ? '?' + params.toString() : ''}`;
-      const response = await apiClient.get<{ success: boolean; data: unknown[] }>(url);
+    async listPatterns(paramsOrClientId?: string | ListPatternsParams): Promise<PatternListItem[]> {
+      const response = await this.listPatternsWithPagination(
+        typeof paramsOrClientId === 'string' ? { clientId: paramsOrClientId } : paramsOrClientId
+      );
+      return response.patterns;
+    },
+
+    async listPatternsWithPagination(params?: ListPatternsParams): Promise<ListPatternsResponse> {
+      const urlParams = new URLSearchParams();
+      if (params?.clientId) urlParams.append('client_id', params.clientId);
+      if (params?.caregiverId) urlParams.append('caregiver_id', params.caregiverId);
+      if (params?.status) urlParams.append('status', params.status);
+      if (params?.includeEnded) urlParams.append('includeEnded', 'true');
+      if (params?.unassigned) urlParams.append('unassigned', 'true');
+      if (params?.search) urlParams.append('search', params.search);
+      if (params?.limit !== undefined) urlParams.append('limit', String(params.limit));
+      if (params?.offset !== undefined) urlParams.append('offset', String(params.offset));
+
+      const url = `/api/visits/patterns${urlParams.toString() ? '?' + urlParams.toString() : ''}`;
+      const response = await apiClient.get<{
+        success: boolean;
+        data: PatternListItem[];
+        count: number;
+        total: number;
+        limit: number;
+        offset: number;
+      }>(url);
+
+      return {
+        patterns: response.data,
+        count: response.count ?? response.data.length,
+        total: response.total ?? response.data.length,
+        limit: response.limit ?? 50,
+        offset: response.offset ?? 0,
+      };
+    },
+
+    async pausePattern(id: string, reason?: string): Promise<PatternListItem> {
+      const response = await apiClient.post<{ success: boolean; data: PatternListItem }>(
+        `/api/visits/patterns/${id}/pause`,
+        { reason }
+      );
       return response.data;
+    },
+
+    async resumePattern(id: string): Promise<PatternListItem> {
+      const response = await apiClient.post<{ success: boolean; data: PatternListItem }>(
+        `/api/visits/patterns/${id}/resume`,
+        {}
+      );
+      return response.data;
+    },
+
+    async endPattern(id: string, payload: { reason: string; effectiveDate?: string }): Promise<EndPatternResult> {
+      const response = await apiClient.post<{ success: boolean; data: PatternListItem; retainedFutureVisits: number }>(
+        `/api/visits/patterns/${id}/end`,
+        payload
+      );
+      return {
+        pattern: response.data,
+        retainedFutureVisits: response.retainedFutureVisits ?? 0,
+      };
     },
   };
 };

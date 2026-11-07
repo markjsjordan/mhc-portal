@@ -95,6 +95,7 @@ const MatchAnalyticsDashboard = React.lazy(() => import('./verticals/shift-match
 const VisitList = React.lazy(() => import('./verticals/scheduling-visits/pages/VisitList').then((m) => ({ default: m.VisitList })));
 const CalendarView = React.lazy(() => import('./verticals/scheduling-visits/pages/CalendarView').then((m) => ({ default: m.CalendarView })));
 const ScheduleBuilderPage = React.lazy(() => import('./pages/scheduling/ScheduleBuilderPage'));
+const RecurringPatternsPage = React.lazy(() => import('./pages/scheduling/RecurringPatternsPage'));
 const VisitDetailPage = React.lazy(() => import('./pages/scheduling/VisitDetailPage').then((m) => ({ default: m.VisitDetailPage })));
 
 
@@ -397,6 +398,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <AppShell>
               <ScheduleBuilderPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/scheduling/patterns"
+        element={
+          <ProtectedRoute>
+            <AppShell>
+              <RecurringPatternsPage />
             </AppShell>
           </ProtectedRoute>
         }
