@@ -61,7 +61,7 @@ export interface EVVDeviceInfo {
 export interface ClockInRequest {
   visitId: string;
   caregiverId: string;
-  location: EVVLocationInput;
+  location?: EVVLocationInput;
   deviceInfo: EVVDeviceInfo;
   clientPresent?: boolean;
   notes?: string;
@@ -72,7 +72,7 @@ export interface ClockOutRequest {
   visitId: string;
   evvRecordId: string;
   caregiverId: string;
-  location: EVVLocationInput;
+  location?: EVVLocationInput;
   deviceInfo: EVVDeviceInfo;
   completionNotes?: string;
   tasksCompleted?: number;
@@ -127,7 +127,9 @@ export interface ClockOutResponse {
   };
 }
 
+// Matches LocationVerification in verticals/time-tracking-evv/src/types/evv.ts
 export interface EVVLocationVerification {
+  locationCaptured?: boolean;
   isWithinGeofence?: boolean;
   distanceFromAddress?: number;
   accuracy?: number;
@@ -168,6 +170,10 @@ export interface EVVSearchFilters {
   startDate?: string;
   endDate?: string;
   verificationLevel?: string;
+}
+
+export interface LocationPolicy {
+  locationRequired: boolean;
 }
 
 export interface EVVListResponse {

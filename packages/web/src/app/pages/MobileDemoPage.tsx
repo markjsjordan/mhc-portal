@@ -28,7 +28,7 @@ export const MobileDemoPage: React.FC = () => {
     {
       icon: Clock,
       title: 'EVV Visit Check-In/Out',
-      description: 'GPS-verified time tracking with state-specific compliance',
+      description: 'Visit check-in/out time tracking with state-specific compliance',
       color: 'text-blue-600',
       bg: 'bg-blue-50',
     },
@@ -218,7 +218,7 @@ export const MobileDemoPage: React.FC = () => {
               <div className="space-y-2">
                 {[
                   { name: "Today's Visits", desc: 'Dashboard with upcoming visits and alerts' },
-                  { name: 'Visit Check-In/Out', desc: 'GPS-verified EVV time tracking' },
+                  { name: 'Visit Check-In/Out', desc: 'EVV visit check-in/out time tracking' },
                   { name: 'Visit Documentation', desc: 'Notes, tasks, and client signatures' },
                   { name: 'Schedule', desc: 'Full schedule with navigation' },
                 ].map((screen) => (

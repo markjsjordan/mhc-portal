@@ -97,7 +97,19 @@ export const EVVRecordDetail: React.FC = () => {
             </div>
           </div>
 
-          {record.clockInVerification?.latitude != null && record.clockInVerification.longitude != null && (
+          {record.clockInVerification?.locationCaptured === false && (
+            <div className="pt-6 border-t">
+              <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-gray-400" />
+                GPS Coordinates
+              </h3>
+              <p className="text-sm text-gray-600">Location not captured</p>
+            </div>
+          )}
+
+          {record.clockInVerification?.locationCaptured !== false &&
+            record.clockInVerification?.latitude != null &&
+            record.clockInVerification.longitude != null && (
             <div className="pt-6 border-t">
               <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center gap-2">
                 <MapPin className="h-4 w-4" />

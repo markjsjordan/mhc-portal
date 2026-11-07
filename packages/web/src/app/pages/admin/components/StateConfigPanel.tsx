@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card.js';
 import { Button } from '@/components/ui/button.js';
 import { Input } from '@/components/ui/input.js';
@@ -12,6 +12,10 @@ import {
   SelectValue,
 } from '@/components/ui/select.js';
 import { Settings, Save, RotateCcw, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth, useApiClient } from '@/core/hooks/index.js';
+import { useLocationPolicy } from '@/verticals/time-tracking-evv/hooks/index.js';
 
 type StateCode = 'TX' | 'FL' | 'OH' | 'PA' | 'GA' | 'NC' | 'AZ';
 
@@ -107,11 +111,73 @@ const DOCUMENT_OPTIONS = [
 ];
 
 export const StateConfigPanel: React.FC = () => {
+  const { user } = useAuth();
+  const apiClient = useApiClient();
+  const queryClient = useQueryClient();
+  const { data: locationPolicy } = useLocationPolicy();
+
   const [selectedState, setSelectedState] = useState<StateCode>('TX');
   const [configs, setConfigs] = useState<Record<StateCode, StateConfig>>(
     DEFAULT_STATE_CONFIGS
   );
   const [unsavedChanges, setUnsavedChanges] = useState(false);
+
+  // Organization-level location policy switch state
+  const [locationRequired, setLocationRequired] = useState<boolean>(
+    locationPolicy.locationRequired
+  );
+  const [isUpdatingPolicy, setIsUpdatingPolicy] = useState(false);
+
+  useEffect(() => {
+    setLocationRequired(locationPolicy.locationRequired);
+  }, [locationPolicy.locationRequired]);
+
+  const organizationId = user?.organizationId;
+
+  const handleToggleLocationRequired = async (checked: boolean) => {
+    if (!organizationId) {
+      toast.error('Organization ID is missing');
+      return;
+    }
+
+    const previousValue = locationRequired;
+    setLocationRequired(checked);
+    setIsUpdatingPolicy(true);
+
+    try {
+      await apiClient.put(`/api/organizations/${organizationId}`, {
+        settings: {
+          evv: {
+            locationRequired: checked,
+          },
+        },
+      });
+      await queryClient.invalidateQueries({ queryKey: ['evv-location-policy'] });
+      toast.success(
+        checked
+          ? 'Location capture required for visits'
+          : 'Location capture disabled for visits'
+      );
+    } catch (err: unknown) {
+      setLocationRequired(previousValue);
+      const isForbidden =
+        typeof err === 'object' &&
+        err !== null &&
+        ('status' in err
+          ? (err as { status?: number }).status === 403
+          : 'response' in err &&
+            (err as { response?: { status?: number; data?: { code?: string } } }).response?.status === 403);
+
+      if (isForbidden) {
+        toast.error('You do not have permission to change this setting');
+      } else {
+        const message = err instanceof Error ? err.message : 'Failed to update location policy';
+        toast.error(message);
+      }
+    } finally {
+      setIsUpdatingPolicy(false);
+    }
+  };
 
   const currentConfig = configs[selectedState];
 
@@ -301,6 +367,28 @@ export const StateConfigPanel: React.FC = () => {
                   />
                   <p className="text-xs text-gray-600 mt-1">
                     How early caregivers can check in before scheduled visit start time
+                  </p>
+                </div>
+
+                {/* Require location capture for visits (Org Location Policy) */}
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="require-location-capture" className="text-sm font-medium text-gray-900 cursor-pointer">
+                        Require location capture for visits
+                      </Label>
+                    </div>
+                    <Checkbox
+                      id="require-location-capture"
+                      checked={locationRequired}
+                      disabled={isUpdatingPolicy}
+                      onCheckedChange={(checked) => {
+                        void handleToggleLocationRequired(Boolean(checked));
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-amber-800 mt-2">
+                    Turning this off means visits are recorded without location. Visits without location cannot be submitted to a state Medicaid aggregator (21st Century Cures Act EVV location element). Turn it on before enrolling any Medicaid-funded client.
                   </p>
                 </div>
 

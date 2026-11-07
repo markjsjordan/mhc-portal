@@ -382,30 +382,51 @@ export const ClaimsQueueTable: React.FC<ClaimsQueueTableProps> = ({
                   GPS Geofence & Location Verification
                 </h4>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className={`p-2.5 rounded border ${
-                    activeEvvModal.evvValidation.details.clockInGeofencePassed
-                      ? 'bg-green-50 border-green-200 text-green-900'
-                      : 'bg-red-50 border-red-200 text-red-900'
-                  }`}>
-                    <p className="font-semibold">Check-In GPS</p>
-                    <p className="text-[11px] mt-0.5">
-                      {activeEvvModal.evvValidation.details.clockInGeofencePassed
-                        ? 'Confirmed within 100m geofence'
-                        : 'Outside geofence or missing'}
-                    </p>
-                  </div>
-                  <div className={`p-2.5 rounded border ${
-                    activeEvvModal.evvValidation.details.clockOutGeofencePassed
-                      ? 'bg-green-50 border-green-200 text-green-900'
-                      : 'bg-red-50 border-red-200 text-red-900'
-                  }`}>
-                    <p className="font-semibold">Check-Out GPS</p>
-                    <p className="text-[11px] mt-0.5">
-                      {activeEvvModal.evvValidation.details.clockOutGeofencePassed
-                        ? 'Confirmed within 100m geofence'
-                        : 'Outside geofence or missing'}
-                    </p>
-                  </div>
+                  {(() => {
+                    const isLocationNotCaptured = activeEvvModal.evvValidation.errors.some(
+                      (e) => e.includes('LOCATION_NOT_CAPTURED')
+                    );
+                    return (
+                      <>
+                        <div
+                          className={`p-2.5 rounded border ${
+                            isLocationNotCaptured
+                              ? 'bg-gray-50 border-gray-200 text-gray-700'
+                              : activeEvvModal.evvValidation.details.clockInGeofencePassed
+                              ? 'bg-green-50 border-green-200 text-green-900'
+                              : 'bg-red-50 border-red-200 text-red-900'
+                          }`}
+                        >
+                          <p className="font-semibold">Check-In GPS</p>
+                          <p className="text-[11px] mt-0.5">
+                            {isLocationNotCaptured
+                              ? 'Not captured'
+                              : activeEvvModal.evvValidation.details.clockInGeofencePassed
+                              ? 'Confirmed within 100m geofence'
+                              : 'Outside geofence or missing'}
+                          </p>
+                        </div>
+                        <div
+                          className={`p-2.5 rounded border ${
+                            isLocationNotCaptured
+                              ? 'bg-gray-50 border-gray-200 text-gray-700'
+                              : activeEvvModal.evvValidation.details.clockOutGeofencePassed
+                              ? 'bg-green-50 border-green-200 text-green-900'
+                              : 'bg-red-50 border-red-200 text-red-900'
+                          }`}
+                        >
+                          <p className="font-semibold">Check-Out GPS</p>
+                          <p className="text-[11px] mt-0.5">
+                            {isLocationNotCaptured
+                              ? 'Not captured'
+                              : activeEvvModal.evvValidation.details.clockOutGeofencePassed
+                              ? 'Confirmed within 100m geofence'
+                              : 'Outside geofence or missing'}
+                          </p>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
 

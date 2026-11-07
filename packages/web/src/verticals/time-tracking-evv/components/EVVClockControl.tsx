@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button.js';
 import { Card } from '@/components/ui/card.js';
 import { useAuth } from '@/core/hooks';
-import { useClockIn, useClockOut, useEVVRecord } from '../hooks';
+import { useClockIn, useClockOut, useEVVRecord, useLocationPolicy } from '../hooks';
 import type { EVVDeviceInfo, EVVLocationInput } from '../types';
 
 interface EVVClockControlProps {
@@ -72,6 +72,7 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
 
   const clockIn = useClockIn();
   const clockOut = useClockOut();
+  const { locationRequired } = useLocationPolicy();
   // Re-fetch the persisted record after clock-in/out so we show the real
   // server-confirmed state (clockInTime/clockOutTime/recordStatus), not
   // just the mutation response.
@@ -88,31 +89,36 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
     }
     setGeoError(null);
     setLastWarning(null);
-    setIsLocating(true);
-    let location: EVVLocationInput;
-    try {
-      location = await getCurrentPosition();
-    } catch (err) {
+
+    let location: EVVLocationInput | undefined;
+    if (locationRequired) {
+      setIsLocating(true);
+      try {
+        location = await getCurrentPosition();
+      } catch (err) {
+        setIsLocating(false);
+        const message = err instanceof Error ? err.message : 'Failed to get location';
+        setGeoError(message);
+        toast.error(`Check-in failed: ${message}`);
+        return;
+      }
       setIsLocating(false);
-      const message = err instanceof Error ? err.message : 'Failed to get location';
-      setGeoError(message);
-      toast.error(`Check-in failed: ${message}`);
-      return;
     }
-    setIsLocating(false);
+
+    const payload: Parameters<typeof clockIn.mutate>[0] = {
+      visitId,
+      caregiverId,
+      deviceInfo: getBrowserDeviceInfo(),
+      ...(location !== undefined ? { location } : {}),
+    };
 
     clockIn.mutate(
-      {
-        visitId,
-        caregiverId,
-        location,
-        deviceInfo: getBrowserDeviceInfo(),
-      },
+      payload,
       {
         onSuccess: (result) => {
           setEvvRecordId(result.evvRecordId);
           void refetchEvvRecord();
-          if (!result.location.isWithinGeofence) {
+          if (locationRequired && result.location.isWithinGeofence === false) {
             const msg = 'You are outside the expected service address geofence. This check-in has been flagged for supervisor review.';
             setLastWarning(msg);
             toast.error(msg, { duration: 8000 });
@@ -131,31 +137,36 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
     }
     setGeoError(null);
     setLastWarning(null);
-    setIsLocating(true);
-    let location: EVVLocationInput;
-    try {
-      location = await getCurrentPosition();
-    } catch (err) {
+
+    let location: EVVLocationInput | undefined;
+    if (locationRequired) {
+      setIsLocating(true);
+      try {
+        location = await getCurrentPosition();
+      } catch (err) {
+        setIsLocating(false);
+        const message = err instanceof Error ? err.message : 'Failed to get location';
+        setGeoError(message);
+        toast.error(`Check-out failed: ${message}`);
+        return;
+      }
       setIsLocating(false);
-      const message = err instanceof Error ? err.message : 'Failed to get location';
-      setGeoError(message);
-      toast.error(`Check-out failed: ${message}`);
-      return;
     }
-    setIsLocating(false);
+
+    const payload: Parameters<typeof clockOut.mutate>[0] = {
+      id: evvRecordId,
+      visitId,
+      caregiverId,
+      deviceInfo: getBrowserDeviceInfo(),
+      ...(location !== undefined ? { location } : {}),
+    };
 
     clockOut.mutate(
-      {
-        id: evvRecordId,
-        visitId,
-        caregiverId,
-        location,
-        deviceInfo: getBrowserDeviceInfo(),
-      },
+      payload,
       {
         onSuccess: (result) => {
           void refetchEvvRecord();
-          if (!result.location.isWithinGeofence) {
+          if (locationRequired && result.location.isWithinGeofence === false) {
             const msg = 'You were outside the expected service address geofence at check-out. This visit has been flagged for supervisor review.';
             setLastWarning(msg);
             toast.error(msg, { duration: 8000 });
@@ -202,7 +213,10 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
         </div>
       )}
 
-      {evvRecord?.clockInVerification?.isWithinGeofence && !lastWarning && (
+      {evvRecord?.clockInVerification?.isWithinGeofence &&
+        evvRecord.clockInVerification.locationCaptured !== false &&
+        evvRecord.clockInVerification.latitude != null &&
+        !lastWarning && (
         <div className="mb-3 flex items-center gap-2 text-sm text-green-700">
           {/* @ts-ignore */}
           <MapPin className="h-4 w-4" />
@@ -232,7 +246,7 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
           className="w-full"
         >
           <Clock className="h-4 w-4 mr-2" />
-          {busy ? 'Getting location…' : 'Check In'}
+          {isLocating ? 'Getting location…' : 'Check In'}
         </Button>
       )}
 
@@ -248,7 +262,7 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
           className="w-full"
         >
           <Clock className="h-4 w-4 mr-2" />
-          {busy ? 'Getting location…' : 'Check Out'}
+          {isLocating ? 'Getting location…' : 'Check Out'}
         </Button>
       )}
     </Card>
