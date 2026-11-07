@@ -73,13 +73,13 @@ export const EVVRecordDetail: React.FC = () => {
             </div>
 
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-1">Clock In</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Check In</h3>
               <p className="text-lg">{new Date(record.clockInTime).toLocaleString()}</p>
             </div>
 
             {record.clockOutTime && (
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Clock Out</h3>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">Check Out</h3>
                 <p className="text-lg">{new Date(record.clockOutTime).toLocaleString()}</p>
               </div>
             )}

@@ -33,7 +33,7 @@ describe('StateConfigPanel', () => {
 
   it('should render grace period input', () => {
     render(<StateConfigPanel />);
-    const input = screen.getByLabelText(/clock-in grace period/i);
+    const input = screen.getByLabelText(/check-in grace period/i);
     expect(input).toBeInTheDocument();
     expect(input).toHaveAttribute('type', 'number');
   });
@@ -114,7 +114,7 @@ describe('StateConfigPanel', () => {
     expect(geofenceInput).toHaveAttribute('max', '300');
     expect(geofenceInput).toHaveAttribute('step', '10');
 
-    const graceInput = screen.getByLabelText(/clock-in grace period/i);
+    const graceInput = screen.getByLabelText(/check-in grace period/i);
     expect(graceInput).toHaveAttribute('min', '5');
     expect(graceInput).toHaveAttribute('max', '30');
     expect(graceInput).toHaveAttribute('step', '5');

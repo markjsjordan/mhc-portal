@@ -387,7 +387,7 @@ export const ClaimsQueueTable: React.FC<ClaimsQueueTableProps> = ({
                       ? 'bg-green-50 border-green-200 text-green-900'
                       : 'bg-red-50 border-red-200 text-red-900'
                   }`}>
-                    <p className="font-semibold">Clock-In GPS</p>
+                    <p className="font-semibold">Check-In GPS</p>
                     <p className="text-[11px] mt-0.5">
                       {activeEvvModal.evvValidation.details.clockInGeofencePassed
                         ? 'Confirmed within 100m geofence'
@@ -399,7 +399,7 @@ export const ClaimsQueueTable: React.FC<ClaimsQueueTableProps> = ({
                       ? 'bg-green-50 border-green-200 text-green-900'
                       : 'bg-red-50 border-red-200 text-red-900'
                   }`}>
-                    <p className="font-semibold">Clock-Out GPS</p>
+                    <p className="font-semibold">Check-Out GPS</p>
                     <p className="text-[11px] mt-0.5">
                       {activeEvvModal.evvValidation.details.clockOutGeofencePassed
                         ? 'Confirmed within 100m geofence'

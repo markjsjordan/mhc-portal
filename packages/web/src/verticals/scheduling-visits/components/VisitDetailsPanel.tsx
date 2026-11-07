@@ -191,8 +191,8 @@ export const VisitDetailsPanel: React.FC<VisitDetailsPanelProps> = ({
                 <h3 className="flex items-center gap-2 font-medium text-gray-900">
                   <Clock className="h-4 w-4 text-gray-500" /> EVV / Clock Times
                 </h3>
-                <p>Clock in: {formatTimestamp(visit.actualStartTime)}</p>
-                <p>Clock out: {formatTimestamp(visit.actualEndTime)}</p>
+                <p>Check in: {formatTimestamp(visit.actualStartTime)}</p>
+                <p>Check out: {formatTimestamp(visit.actualEndTime)}</p>
                 {visit.actualDuration != null && <p>Actual duration: {visit.actualDuration} min</p>}
               </section>
 

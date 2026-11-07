@@ -82,7 +82,7 @@ const MOCK_EVV_EXCEPTIONS: EVVException[] = [
     id: '1',
     type: 'GEOFENCE_VIOLATION',
     severity: 'critical',
-    description: 'Clock-in location 245m from client address',
+    description: 'Check-in location 245m from client address',
     visitId: '3',
     caregiverName: 'Jennifer Wilson',
     detectedAt: new Date('2024-01-15T14:30:00Z'), // 30 mins ago (example)
@@ -102,7 +102,7 @@ const MOCK_EVV_EXCEPTIONS: EVVException[] = [
     id: '3',
     type: 'CLOCK_IN_TOO_EARLY',
     severity: 'error',
-    description: 'Clock-in 18 minutes early (TX allows max 10 minutes)',
+    description: 'Check-in 18 minutes early (TX allows max 10 minutes)',
     visitId: '5',
     caregiverName: 'David Martinez',
     detectedAt: new Date('2024-01-15T14:00:00Z'), // 1 hour ago (example)

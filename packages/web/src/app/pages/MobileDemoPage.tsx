@@ -27,7 +27,7 @@ export const MobileDemoPage: React.FC = () => {
   const features = [
     {
       icon: Clock,
-      title: 'EVV Clock In/Out',
+      title: 'EVV Visit Check-In/Out',
       description: 'GPS-verified time tracking with state-specific compliance',
       color: 'text-blue-600',
       bg: 'bg-blue-50',
@@ -128,7 +128,7 @@ export const MobileDemoPage: React.FC = () => {
               </AlertTitle>
               <AlertDescription className="text-sm text-gray-700">
                 This is the actual React Native mobile app running in your browser via Expo Web.
-                Caregivers use this on iOS and Android devices for clock in/out, visit documentation,
+                Caregivers use this on iOS and Android devices for visit check-in/out, day clock in/out, visit documentation,
                 and EVV compliance.
               </AlertDescription>
             </Alert>
@@ -218,7 +218,7 @@ export const MobileDemoPage: React.FC = () => {
               <div className="space-y-2">
                 {[
                   { name: "Today's Visits", desc: 'Dashboard with upcoming visits and alerts' },
-                  { name: 'Clock In/Out', desc: 'GPS-verified EVV time tracking' },
+                  { name: 'Visit Check-In/Out', desc: 'GPS-verified EVV time tracking' },
                   { name: 'Visit Documentation', desc: 'Notes, tasks, and client signatures' },
                   { name: 'Schedule', desc: 'Full schedule with navigation' },
                 ].map((screen) => (

@@ -37,7 +37,7 @@ export const adminTour: Tour = {
       target: '[data-tour="dashboard-kpis"]',
       title: 'Key Performance Indicators',
       content:
-        'Your dashboard displays real-time KPIs: active visits, compliance rate, revenue metrics, and staff utilization. These metrics update automatically as caregivers clock in/out and complete visits.',
+        'Your dashboard displays real-time KPIs: active visits, compliance rate, revenue metrics, and staff utilization. These metrics update automatically as caregivers check in/out and complete visits.',
       placement: 'bottom',
       highlightElement: true,
     },
@@ -64,7 +64,7 @@ export const adminTour: Tour = {
       target: '[data-tour="visits-map"]',
       title: 'Live Visit Tracking',
       content:
-        'This map displays all active visits with real-time GPS locations of caregivers. Geofence boundaries are shown in blue - caregivers must be within these boundaries to clock in/out.',
+        'This map displays all active visits with real-time GPS locations of caregivers. Geofence boundaries are shown in blue - caregivers must be within these boundaries to check in/out.',
       placement: 'top',
       highlightElement: true,
     },

@@ -47,12 +47,12 @@ export const EVVRecordCard: React.FC<EVVRecordCardProps> = ({ record, compact = 
 
       <div className="space-y-2 text-sm text-gray-600">
         <div className="flex justify-between">
-          <span>Clock In:</span>
+          <span>Check In:</span>
           <span className="font-medium">{new Date(record.clockInTime).toLocaleString()}</span>
         </div>
         {record.clockOutTime && (
           <div className="flex justify-between">
-            <span>Clock Out:</span>
+            <span>Check Out:</span>
             <span className="font-medium">{new Date(record.clockOutTime).toLocaleString()}</span>
           </div>
         )}

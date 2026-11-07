@@ -73,7 +73,7 @@ export const EVVRecordList: React.FC = () => {
       {records.length === 0 ? (
         <EmptyState
           title="No EVV records found"
-          description="Visit records will appear here once caregivers clock in."
+          description="Visit records will appear here once caregivers check in."
           icon={(() => { 
             // @ts-ignore 
             return <Clock className="h-12 w-12" />; 

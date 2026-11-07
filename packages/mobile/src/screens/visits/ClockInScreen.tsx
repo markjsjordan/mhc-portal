@@ -1,7 +1,7 @@
 /**
- * Clock In Screen with GPS Verification
+ * Check In Screen with GPS Verification
  *
- * Full-featured clock-in screen with:
+ * Full-featured check-in screen with:
  * - Live GPS tracking and accuracy display
  * - Interactive map with geofence visualization
  * - Distance meter from client address
@@ -124,7 +124,7 @@ export function ClockInScreen({ route, navigation }: Props) {
         if (!gpsEnabled) {
           Alert.alert(
             'GPS Required',
-            'Please enable location services to clock in.',
+            'Please enable location services to check in.',
             [{ text: 'OK' }]
           );
           setIsLoading(false);
@@ -264,7 +264,7 @@ export function ClockInScreen({ route, navigation }: Props) {
   const handleBiometricVerification = async () => {
     setBiometricChecking(true);
     try {
-      const success = await BiometricService.authenticate('Verify your identity to clock in');
+      const success = await BiometricService.authenticate('Verify your identity to check in');
       if (success) {
         setBiometricVerified(true);
         Alert.alert('Success', 'Biometric verification successful');
@@ -291,7 +291,7 @@ export function ClockInScreen({ route, navigation }: Props) {
     if (!preFlightPassed) {
       Alert.alert(
         'Pre-Flight Checks Failed',
-        'Please resolve all issues before clocking in.',
+        'Please resolve all issues before checking in.',
         [{ text: 'OK' }]
       );
       return;
@@ -301,7 +301,7 @@ export function ClockInScreen({ route, navigation }: Props) {
     if (biometricAvailable && !biometricVerified) {
       Alert.alert(
         'Biometric Verification Required',
-        'Please verify your identity before clocking in.',
+        'Please verify your identity before checking in.',
         [{ text: 'OK' }]
       );
       return;
@@ -354,7 +354,7 @@ export function ClockInScreen({ route, navigation }: Props) {
 
       Alert.alert(
         'Success',
-        'Clocked in successfully! Your visit has started.',
+        'Checked in successfully! Your visit has started.',
         [
           {
             text: 'OK',
@@ -372,7 +372,7 @@ export function ClockInScreen({ route, navigation }: Props) {
       console.error('Clock-in error:', error);
       Alert.alert(
         'Error',
-        'Failed to clock in. Your request has been queued and will be sent when connection is restored.',
+        'Failed to check in. Your request has been queued and will be sent when connection is restored.',
         [{ text: 'OK' }]
       );
     } finally {
@@ -571,14 +571,14 @@ export function ClockInScreen({ route, navigation }: Props) {
           loading={isClocking}
           style={styles.clockInButton}
         >
-          {isClocking ? 'Clocking In...' : 'Clock In'}
+          {isClocking ? 'Checking In...' : 'Check In'}
         </Button>
 
         {(!preFlightPassed || (biometricAvailable && !biometricVerified)) && (
           <View style={styles.warningBox}>
             <Text style={styles.warningText}>
               ⚠️ Please resolve all pre-flight check issues
-              {biometricAvailable && !biometricVerified && ' and complete biometric verification'} before clocking in
+              {biometricAvailable && !biometricVerified && ' and complete biometric verification'} before checking in
             </Text>
           </View>
         )}

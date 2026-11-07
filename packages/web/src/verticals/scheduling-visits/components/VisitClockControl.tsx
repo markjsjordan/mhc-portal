@@ -282,13 +282,13 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
             setPendingAction('clockIn');
             setShowOverrideModal(true);
           } else if (overrideReason) {
-            toast.success('Clocked in with manual override. Supervisor notification sent.', {
+            toast.success('Checked in with manual override. Supervisor notification sent.', {
               duration: 6000,
             });
           }
         },
         onError: (err: Error) => {
-          setGeoError(err.message || 'Clock-in failed');
+          setGeoError(err.message || 'Check-in failed');
         },
       }
     );
@@ -304,7 +304,7 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
       setIsLocating(false);
       const message = err instanceof Error ? err.message : 'Failed to get location';
       setGeoError(message);
-      toast.error(`Clock-in failed: ${message}`);
+      toast.error(`Check-in failed: ${message}`);
       return;
     }
     setIsLocating(false);
@@ -323,7 +323,7 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
   // ---- Clock Out execution ----
   const executeClockOut = (location: EVVLocationInput, overrideReason?: string) => {
     if (!user?.id || !evvRecordId) {
-      toast.error('No active clock-in found for this visit');
+      toast.error('No active check-in found for this visit');
       return;
     }
 
@@ -360,13 +360,13 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
             setPendingAction('clockOut');
             setShowOverrideModal(true);
           } else if (overrideReason) {
-            toast.success('Clocked out with manual override. Supervisor notification sent.', {
+            toast.success('Checked out with manual override. Supervisor notification sent.', {
               duration: 6000,
             });
           }
         },
         onError: (err: Error) => {
-          setGeoError(err.message || 'Clock-out failed');
+          setGeoError(err.message || 'Check-out failed');
         },
       }
     );
@@ -382,7 +382,7 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
       setIsLocating(false);
       const message = err instanceof Error ? err.message : 'Failed to get location';
       setGeoError(message);
-      toast.error(`Clock-out failed: ${message}`);
+      toast.error(`Check-out failed: ${message}`);
       return;
     }
     setIsLocating(false);
@@ -457,7 +457,7 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
           <div className="flex items-start gap-1.5 rounded-md bg-amber-50 border border-amber-200 px-2.5 py-1.5 text-xs text-amber-800">
             <Clock className="h-3.5 w-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
             <span>
-              Outside clock-in window ({gracePeriodMinutes} min grace — {state})
+              Outside check-in window ({gracePeriodMinutes} min grace — {state})
             </span>
           </div>
         )}
@@ -508,15 +508,15 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
             className="min-h-[44px] w-full sm:w-auto whitespace-nowrap"
             title={
               !withinWindow && !isAdmin
-                ? `Clock-in opens ${gracePeriodMinutes} min before scheduled start`
+                ? `Check-in opens ${gracePeriodMinutes} min before scheduled start`
                 : undefined
             }
           >
             <LogIn className="h-4 w-4" />
             {(() => {
               if (busy) return 'Locating…';
-              if (isAdmin) return 'Clock In (Admin)';
-              return 'Clock In';
+              if (isAdmin) return 'Check In (Admin)';
+              return 'Check In';
             })()}
           </Button>
         )}
@@ -534,8 +534,8 @@ export const VisitClockControl: React.FC<VisitClockControlProps> = ({
             <LogOut className="h-4 w-4" />
             {(() => {
               if (busy) return 'Locating…';
-              if (isAdmin) return 'Clock Out (Admin)';
-              return 'Clock Out';
+              if (isAdmin) return 'Check Out (Admin)';
+              return 'Check Out';
             })()}
           </Button>
         )}

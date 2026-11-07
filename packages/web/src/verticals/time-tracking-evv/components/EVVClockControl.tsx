@@ -96,7 +96,7 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
       setIsLocating(false);
       const message = err instanceof Error ? err.message : 'Failed to get location';
       setGeoError(message);
-      toast.error(`Clock-in failed: ${message}`);
+      toast.error(`Check-in failed: ${message}`);
       return;
     }
     setIsLocating(false);
@@ -113,7 +113,7 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
           setEvvRecordId(result.evvRecordId);
           void refetchEvvRecord();
           if (!result.location.isWithinGeofence) {
-            const msg = 'You are outside the expected service address geofence. This clock-in has been flagged for supervisor review.';
+            const msg = 'You are outside the expected service address geofence. This check-in has been flagged for supervisor review.';
             setLastWarning(msg);
             toast.error(msg, { duration: 8000 });
           } else {
@@ -126,7 +126,7 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
 
   const handleClockOut = async () => {
     if (!caregiverId || !evvRecordId) {
-      toast.error('No active clock-in found for this visit');
+      toast.error('No active check-in found for this visit');
       return;
     }
     setGeoError(null);
@@ -139,7 +139,7 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
       setIsLocating(false);
       const message = err instanceof Error ? err.message : 'Failed to get location';
       setGeoError(message);
-      toast.error(`Clock-out failed: ${message}`);
+      toast.error(`Check-out failed: ${message}`);
       return;
     }
     setIsLocating(false);
@@ -156,7 +156,7 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
         onSuccess: (result) => {
           void refetchEvvRecord();
           if (!result.location.isWithinGeofence) {
-            const msg = 'You were outside the expected service address geofence at clock-out. This visit has been flagged for supervisor review.';
+            const msg = 'You were outside the expected service address geofence at check-out. This visit has been flagged for supervisor review.';
             setLastWarning(msg);
             toast.error(msg, { duration: 8000 });
           } else {
@@ -175,7 +175,7 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
         <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
           {/* @ts-ignore */}
           <Clock className="h-4 w-4" />
-          EVV Clock In/Out
+          Visit Check-In/Out
         </h3>
         {isComplete && (
           <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700">
@@ -212,12 +212,12 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
 
       {evvRecord?.clockInTime && (
         <p className="text-xs text-gray-500 mb-1">
-          Clocked in: {new Date(evvRecord.clockInTime).toLocaleString()}
+          Checked in: {new Date(evvRecord.clockInTime).toLocaleString()}
         </p>
       )}
       {evvRecord?.clockOutTime && (
         <p className="text-xs text-gray-500 mb-3">
-          Clocked out: {new Date(evvRecord.clockOutTime).toLocaleString()}
+          Checked out: {new Date(evvRecord.clockOutTime).toLocaleString()}
         </p>
       )}
 
@@ -225,14 +225,14 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
         <Button
           onClick={() => {
             handleClockIn().catch((err: unknown) => {
-              toast.error(err instanceof Error ? err.message : 'Clock-in failed');
+              toast.error(err instanceof Error ? err.message : 'Check-in failed');
             });
           }}
           disabled={busy}
           className="w-full"
         >
           <Clock className="h-4 w-4 mr-2" />
-          {busy ? 'Getting location…' : 'Clock In'}
+          {busy ? 'Getting location…' : 'Check In'}
         </Button>
       )}
 
@@ -240,7 +240,7 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
         <Button
           onClick={() => {
             handleClockOut().catch((err: unknown) => {
-              toast.error(err instanceof Error ? err.message : 'Clock-out failed');
+              toast.error(err instanceof Error ? err.message : 'Check-out failed');
             });
           }}
           disabled={busy}
@@ -248,7 +248,7 @@ export const EVVClockControl: React.FC<EVVClockControlProps> = ({ visitId, evvRe
           className="w-full"
         >
           <Clock className="h-4 w-4 mr-2" />
-          {busy ? 'Getting location…' : 'Clock Out'}
+          {busy ? 'Getting location…' : 'Check Out'}
         </Button>
       )}
     </Card>

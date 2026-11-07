@@ -27,7 +27,7 @@ export const VisitStatusLegend: React.FC<VisitStatusLegendProps> = ({
       color: 'bg-cyan-500',
       border: 'border border-cyan-600',
       label: 'In Progress',
-      description: 'Caregiver has clocked in',
+      description: 'Caregiver has checked in',
     },
     {
       color: 'bg-green-500',
