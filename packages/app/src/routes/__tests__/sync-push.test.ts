@@ -57,6 +57,11 @@ describe('POST /sync/push - Idempotent Capture-Time EVV', () => {
         if (sql.includes('SELECT * FROM visits WHERE id')) {
           return queryResults.get('visit_lookup') ?? { rows: [] };
         }
+        if (sql.includes('SELECT settings FROM organizations')) {
+          return queryResults.get('org_settings') ?? {
+            rows: [{ settings: { evv: { locationRequired: true } } }],
+          };
+        }
         if (sql.includes('UPDATE sync_metadata')) {
           return { rows: [] };
         }
@@ -450,6 +455,75 @@ describe('POST /sync/push - Idempotent Capture-Time EVV', () => {
         'device-abc',
       ])
     );
+  });
+
+  it('should store no coordinates and no geofence conflict when org location policy is off', async () => {
+    const clientMutationId = 'mutation-evv-policy-off';
+
+    mockReq.body = {
+      deviceId: 'device-abc',
+      mutations: [
+        {
+          clientMutationId,
+          entityType: 'VISIT',
+          entityId: 'visit-policy-off',
+          operation: 'UPDATE',
+          data: {
+            status: 'IN_PROGRESS',
+            actualStart: true,
+          },
+          capturedAt: FIXED_CAPTURE_TIME.toISOString(),
+          capturedOffline: true,
+          gps: {
+            latitude: 30.2672,
+            longitude: -97.7431,
+            accuracy: 10,
+          },
+        },
+      ],
+    };
+
+    (mockDb as any).__setQueryResult('visit_lookup', [
+      { id: 'visit-policy-off', status: 'SCHEDULED' },
+    ]);
+    (mockDb as any).__setQueryResult('org_settings', [
+      { settings: { evv: { locationRequired: false } } },
+    ]);
+
+    const handler = router.stack.find((layer: any) =>
+      layer.route?.path === '/sync/push' && layer.route?.methods?.post
+    )?.route?.stack[0]?.handle;
+
+    if (!handler) {
+      throw new Error('POST /sync/push handler not found');
+    }
+
+    await handler(mockReq as Request, mockRes as Response, vi.fn());
+
+    // Visit mutation still applied, and no geofence conflict is raised
+    expect(jsonSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({
+          syncedCount: 1,
+          conflictCount: 0,
+        }),
+      })
+    );
+
+    const updateVisitCalls = (mockDb.query as ReturnType<typeof vi.fn>).mock.calls.filter(
+      (call) => typeof call[0] === 'string' && call[0].includes('UPDATE visits')
+    );
+    const verificationDataCall = updateVisitCalls.find((call) =>
+      call[0].includes('verification_data')
+    );
+
+    expect(verificationDataCall).toBeDefined();
+    const params = verificationDataCall?.[1] as unknown[];
+    // Coordinates are discarded (data minimization), compliance status is explicit
+    expect(params).toContain('LOCATION_NOT_CAPTURED');
+    expect(params.some((value) => typeof value === 'string' && value.includes('30.2672'))).toBe(false);
+    expect(params).toContain('device-abc');
   });
 
   it('should validate GPS coordinates', async () => {

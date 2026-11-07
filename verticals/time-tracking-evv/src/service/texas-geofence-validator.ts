@@ -94,8 +94,23 @@ export class TexasGeofenceValidator {
    */
   validate(
     actualLocation: LocationCoordinates,
-    expectedLocation: LocationCoordinates
+    expectedLocation: LocationCoordinates,
+    options?: { skipGeofence?: boolean }
   ): GeofenceValidationResult {
+    if (options?.skipGeofence === true) {
+      return {
+        isValid: true,
+        validationType: 'WITHIN_BASE_RADIUS',
+        distanceMeters: 0,
+        baseRadiusMeters: this.config.baseRadiusMeters,
+        gpsAccuracyMeters: 0,
+        effectiveRadiusMeters: this.config.baseRadiusMeters,
+        message: 'Geofence validation skipped per location policy',
+        complianceLevel: 'COMPLIANT',
+        requiresException: false,
+      };
+    }
+
     // 1. Validate input
     this.validateInput(actualLocation, expectedLocation);
 

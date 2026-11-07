@@ -22,8 +22,9 @@ import {
   StateAggregatorSubmission,
   TexasEVVConfig,
   FloridaEVVConfig,
-} from '../types/state-specific';
-import { getAggregatorRouter } from '../aggregators/aggregator-router';
+} from '../types/state-specific.js';
+import { getAggregatorRouter } from '../aggregators/aggregator-router.js';
+import { assertLocationSubmittable } from './aggregator-submission-guard.js';
 
 /**
  * Aggregator submission payload for HHAeXchange
@@ -99,6 +100,9 @@ export class EVVAggregatorService {
    * @throws NotFoundError if aggregator configuration not found
    */
   async submitToAggregator(evvRecord: EVVRecord): Promise<StateAggregatorSubmission[]> {
+    // Assert record has captured location required for Medicaid aggregator submission
+    assertLocationSubmittable(evvRecord);
+
     // Validate EVV record is complete
     this.validateEVVRecord(evvRecord);
 
@@ -234,6 +238,7 @@ export class EVVAggregatorService {
 
     try {
       // Use aggregator router to retry
+      assertLocationSubmittable(evvRecord);
       const router = getAggregatorRouter();
       const result = await router.submit(evvRecord, stateCode);
 

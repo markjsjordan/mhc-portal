@@ -74,6 +74,14 @@ export { IntegrationService } from './utils/integration-service';
 // Platform-specific: will use crypto-utils.native.ts in React Native
 export { CryptoUtils } from './utils/crypto-utils';
 
+// Config & Location Policy
+export {
+  resolveLocationPolicy,
+  loadOrgLocationPolicy,
+  type LocationPolicy,
+} from './config/location-policy.js';
+
+
 // API Handlers
 export { EVVHandlers } from './api/evv-handlers';
 export { AggregatorHandlers } from './api/aggregator-handlers';

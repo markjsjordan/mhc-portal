@@ -49,6 +49,11 @@ export class PennsylvaniaEVVProvider implements IPennsylvaniaEVVProvider {
       throw new Error('PA requires valid prior authorization for EVV submission');
     }
 
+    if (!evvRecord.clockInVerification || !('latitude' in evvRecord.clockInVerification)) {
+      throw new Error('PA EVV submission requires captured coordinates');
+    }
+    const clockInLoc = evvRecord.clockInVerification;
+
     // Prepare payload per Sandata Pennsylvania specs
     const payload = {
       // Federal EVV elements
@@ -59,9 +64,9 @@ export class PennsylvaniaEVVProvider implements IPennsylvaniaEVVProvider {
       serviceStartTime: evvRecord.clockInTime,
       serviceEndTime: evvRecord.clockOutTime,
       serviceLocation: {
-        latitude: evvRecord.clockInVerification.latitude,
-        longitude: evvRecord.clockInVerification.longitude,
-        accuracy: evvRecord.clockInVerification.accuracy
+        latitude: clockInLoc.latitude,
+        longitude: clockInLoc.longitude,
+        accuracy: clockInLoc.accuracy
       },
 
       // Pennsylvania-specific fields
@@ -157,6 +162,10 @@ export class PennsylvaniaEVVProvider implements IPennsylvaniaEVVProvider {
    */
   validateGeofence(location: LocationVerification, serviceAddress: ServiceAddress): boolean {
     const PA_GEOFENCE_RADIUS_METERS = 804; // 0.5 mile - STRICTER than other states
+
+    if (!location || !('latitude' in location)) {
+      return false;
+    }
 
     if (!serviceAddress.latitude || !serviceAddress.longitude) {
       return false;

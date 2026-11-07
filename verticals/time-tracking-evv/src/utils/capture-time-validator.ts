@@ -55,6 +55,8 @@ export interface ClockEventInput {
   distanceFromVisitMeters: number;
   /** Optional scheduled start time for grace period validation */
   scheduledStartTime?: Date;
+  /** Whether location capture is required. Defaults to true if omitted */
+  locationRequired?: boolean;
 }
 
 /**
@@ -117,15 +119,17 @@ export function validateCaptureTimeClockEvent(input: ClockEventInput): CaptureTi
 
   const rules = STATE_RULES[input.state];
 
+  const locationRequired = input.locationRequired !== false;
+
   // Validate negative/invalid inputs
-  if (input.gpsAccuracyMeters < 0) {
+  if (locationRequired && input.gpsAccuracyMeters < 0) {
     return {
       status: 'flagged',
       reasons: ['GPS accuracy cannot be negative'],
     };
   }
 
-  if (input.distanceFromVisitMeters < 0) {
+  if (locationRequired && input.distanceFromVisitMeters < 0) {
     return {
       status: 'flagged',
       reasons: ['Distance from visit cannot be negative'],
@@ -162,7 +166,11 @@ export function validateCaptureTimeClockEvent(input: ClockEventInput): CaptureTi
     }
   }
 
-  // Geofence validation
+  // Geofence validation (skipped if locationRequired is false)
+  if (!locationRequired) {
+    return { status: 'ok' };
+  }
+
   // Effective radius = base + tolerance + GPS accuracy allowance
   // Per location.ts:136-138 and AGENTS.md
   const effectiveRadiusMeters =

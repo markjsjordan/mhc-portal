@@ -164,6 +164,53 @@ describe('EVVBillingGateService - 21st Century Cures Act Compliance', () => {
       expect(result.errors.some((e) => e.includes('Clock-in GPS verification missing or outside geofence'))).toBe(true);
     });
 
+    it('should block billing for Medicaid payer when locationCaptured is false', () => {
+      const visit = createValidVisit({
+        clockInWithinGeofence: false,
+        clockInVerification: {
+          locationCaptured: false,
+          isWithinGeofence: false,
+        },
+      });
+      const result = gateService.validateVisitEVV(visit, 'MEDICAID');
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('LOCATION_NOT_CAPTURED: cannot be submitted to the aggregator');
+    });
+
+    it('should block billing for MANAGED_CARE payer when locationCaptured is false', () => {
+      const visit = createValidVisit({
+        clockInWithinGeofence: false,
+        clockInVerification: {
+          locationCaptured: false,
+          isWithinGeofence: false,
+        },
+      });
+      const result = gateService.validateVisitEVV(visit, 'MANAGED_CARE');
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('LOCATION_NOT_CAPTURED: cannot be submitted to the aggregator');
+    });
+
+    it('should pass billing for PRIVATE_PAY payer when locationCaptured is false', () => {
+      const visit = createValidVisit({
+        clockInWithinGeofence: false,
+        clockInVerification: {
+          locationCaptured: false,
+          isWithinGeofence: false,
+        },
+        clockOutWithinGeofence: false,
+        clockOutVerification: {
+          locationCaptured: false,
+          isWithinGeofence: false,
+        },
+      });
+      const result = gateService.validateVisitEVV(visit, 'PRIVATE_PAY');
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
     it('should block visit when clock-out is outside geofence without manual override', () => {
       const visit = createValidVisit({
         clockOutWithinGeofence: false,

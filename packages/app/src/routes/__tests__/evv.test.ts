@@ -152,7 +152,7 @@ describe('EVV Routes', () => {
   });
 
   describe('Route Count', () => {
-    it('should have exactly 9 EVV routes configured', () => {
+    it('should have exactly 10 EVV routes configured', () => {
       const routes = router.stack
         .filter((layer: RouterLayer) => layer.route)
         .map((layer: RouterLayer) => ({
@@ -160,8 +160,9 @@ describe('EVV Routes', () => {
           methods: Object.keys(layer.route.methods),
         }));
 
-      // 9 endpoints:
+      // 10 endpoints:
       // GET / - search EVV records
+      // GET /location-policy - get org location policy
       // GET /:id - get EVV record by ID
       // POST /clock-in - clock in
       // POST /:id/clock-out - clock out
@@ -170,7 +171,20 @@ describe('EVV Routes', () => {
       // POST /aggregator/submissions/retry-all - retry all pending aggregator submissions
       // POST /aggregator/submissions/:id/retry - retry one aggregator submission
       // GET /aggregator/submissions/:evvRecordId - submission history for a record
-      expect(routes.length).toBe(9);
+      expect(routes.length).toBe(10);
+    });
+
+    it('should have GET /location-policy endpoint for getting org location policy', () => {
+      const routes = router.stack
+        .filter((layer: RouterLayer) => layer.route)
+        .map((layer: RouterLayer) => ({
+          path: layer.route.path,
+          methods: Object.keys(layer.route.methods),
+        }));
+
+      const locationPolicyRoute = routes.find((r: any) => r.path === '/location-policy');
+      expect(locationPolicyRoute).toBeDefined();
+      expect(locationPolicyRoute?.methods).toContain('get');
     });
   });
 

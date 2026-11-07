@@ -31,6 +31,11 @@ export class TexasEVVProvider implements ITexasEVVProvider {
       throw new Error('TX EVV configuration not found for organization');
     }
 
+    if (!evvRecord.clockInVerification || !('latitude' in evvRecord.clockInVerification)) {
+      throw new Error('TX EVV submission requires captured coordinates');
+    }
+    const clockInLoc = evvRecord.clockInVerification;
+
     // Prepare payload per HHSC specs
     const payload = {
       visitId: evvRecord.visitId,
@@ -39,9 +44,9 @@ export class TexasEVVProvider implements ITexasEVVProvider {
       clockInTime: evvRecord.clockInTime,
       clockOutTime: evvRecord.clockOutTime,
       location: {
-        latitude: evvRecord.clockInVerification.latitude,
-        longitude: evvRecord.clockInVerification.longitude,
-        method: evvRecord.clockInVerification.method
+        latitude: clockInLoc.latitude,
+        longitude: clockInLoc.longitude,
+        method: clockInLoc.method
       },
       caregiverNPI: evvRecord.caregiverNationalProviderId,
       programType: config['medicaid_program']
@@ -72,9 +77,9 @@ export class TexasEVVProvider implements ITexasEVVProvider {
           serviceStartDateTime: evvRecord.clockInTime.toISOString(),
           serviceEndDateTime: evvRecord.clockOutTime?.toISOString(),
           location: {
-            latitude: evvRecord.clockInVerification.latitude,
-            longitude: evvRecord.clockInVerification.longitude,
-            accuracy: evvRecord.clockInVerification.accuracy
+            latitude: clockInLoc.latitude,
+            longitude: clockInLoc.longitude,
+            accuracy: clockInLoc.accuracy
           },
           programType: (config['medicaid_program'] as string) || 'STAR+PLUS'
         };
@@ -146,6 +151,11 @@ export class TexasEVVProvider implements ITexasEVVProvider {
   async validateClockMethod(method: string, location: LocationVerification): Promise<boolean> {
     if (method !== 'GPS' && method !== 'TELEPHONY') {
       throw new Error('TX requires GPS or telephony (TVV) methods per HHSC policy');
+    }
+
+    // For uncaptured location, GPS accuracy checks don't apply
+    if (!location || !('latitude' in location)) {
+      return false;
     }
 
     // GPS accuracy must be ≤100m per TX standards

@@ -109,6 +109,7 @@ export function VisitCheckInScreen() {
 
       // Simulate location verification
       const mockLocation: LocationVerification = {
+        locationCaptured: true,
         latitude: 30.2672,
         longitude: -97.7431,
         accuracy: 10,
@@ -133,7 +134,7 @@ export function VisitCheckInScreen() {
         location: mockLocation,
         withinGeofence,
         distance,
-        mockLocationDetected: mockLocation.mockLocationDetected,
+        mockLocationDetected: mockLocation.locationCaptured ? mockLocation.mockLocationDetected : false,
         error: null,
       });
     } catch {
@@ -300,7 +301,7 @@ export function VisitCheckInScreen() {
             </View>
           )}
 
-          {locationStatus.location && (
+          {locationStatus.location?.locationCaptured && (
             <>
               <View style={styles.statusRow}>
                 <Text style={styles.statusLabel}>GPS Accuracy:</Text>

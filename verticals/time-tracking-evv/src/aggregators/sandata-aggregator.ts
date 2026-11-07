@@ -212,7 +212,7 @@ export class SandataAggregator implements IAggregator {
       });
     }
 
-    if (!evvRecord.clockInVerification?.latitude || !evvRecord.clockInVerification?.longitude) {
+    if (!evvRecord.clockInVerification || !('latitude' in evvRecord.clockInVerification) || !evvRecord.clockInVerification.latitude || !evvRecord.clockInVerification.longitude) {
       errors.push({
         field: 'clockInVerification',
         code: 'MISSING_LOCATION',
@@ -232,7 +232,7 @@ export class SandataAggregator implements IAggregator {
       });
     }
 
-    if (evvRecord.clockInVerification && evvRecord.clockInVerification.accuracy > config.geofenceRadiusMeters) {
+    if (evvRecord.clockInVerification && 'accuracy' in evvRecord.clockInVerification && evvRecord.clockInVerification.accuracy > config.geofenceRadiusMeters) {
       warnings.push({
         field: 'clockInVerification.accuracy',
         code: 'LOW_GPS_ACCURACY',
@@ -255,6 +255,11 @@ export class SandataAggregator implements IAggregator {
    * State-specific data goes in stateSpecific object.
    */
   private formatPayload(evvRecord: EVVRecord, config: StateEVVConfig): SandataPayload {
+    if (!('latitude' in evvRecord.clockInVerification)) {
+      throw new Error('Cannot format Sandata payload without captured clock-in coordinates');
+    }
+    const clockInLoc = evvRecord.clockInVerification;
+
     const payload: SandataPayload = {
       // Federal EVV required elements
       serviceType: evvRecord.serviceTypeCode,
@@ -266,15 +271,15 @@ export class SandataAggregator implements IAggregator {
       serviceStartTime: evvRecord.clockInTime.toISOString(),
       serviceEndTime: evvRecord.clockOutTime!.toISOString(), // Validated earlier
       serviceLocation: {
-        latitude: evvRecord.clockInVerification.latitude,
-        longitude: evvRecord.clockInVerification.longitude,
-        accuracy: evvRecord.clockInVerification.accuracy,
+        latitude: clockInLoc.latitude,
+        longitude: clockInLoc.longitude,
+        accuracy: clockInLoc.accuracy,
       },
       
       // Additional tracking fields
       visitId: evvRecord.visitId,
       organizationId: evvRecord.organizationId,
-      verificationType: this.mapVerificationMethod(evvRecord.clockInVerification.method),
+      verificationType: this.mapVerificationMethod(clockInLoc.method),
       duration: evvRecord.totalDuration || 0,
       
       // State-specific extensions
