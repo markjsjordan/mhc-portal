@@ -16,6 +16,7 @@ import {
   ValidationError,
   NotFoundError,
   ConflictError,
+  PermissionError,
 } from '../types/base.js';
 import { randomBytes } from '../utils/crypto.js';
 
@@ -284,6 +285,100 @@ export class PortalAccessService {
     return { token, expiresAt };
   }
 
+  private async linkCaregiverOnInviteAccept(
+    client: PoolClient,
+    caregiverId: string,
+    userId: UUID
+  ): Promise<void> {
+    const cgRes = await client.query<{
+      id: string;
+      user_id: string | null;
+      portal_access_status: string;
+      employment_status: string;
+    }>(
+      `SELECT id, user_id, portal_access_status, employment_status FROM caregivers WHERE id = $1 AND deleted_at IS NULL FOR UPDATE`,
+      [caregiverId]
+    );
+    const cg = cgRes.rows[0];
+    if (cg === undefined) {
+      throw new NotFoundError(`Caregiver not found: ${caregiverId}`);
+    }
+
+    if (
+      cg.portal_access_status !== 'INVITED' ||
+      ['TERMINATED', 'RETIRED'].includes(cg.employment_status)
+    ) {
+      throw new ConflictError('Portal invitation is no longer valid');
+    }
+
+    if (typeof cg.user_id === 'string' && cg.user_id !== userId) {
+      throw new ConflictError(
+        `Caregiver is already linked to a different user account`
+      );
+    }
+
+    await client.query(
+      `UPDATE caregivers
+       SET user_id = $2,
+           portal_access_status = 'ACTIVE',
+           portal_activated_at = NOW(),
+           updated_at = NOW(),
+           updated_by = $2
+       WHERE id = $1`,
+      [caregiverId, userId]
+    );
+  }
+
+  private async linkFamilyMemberOnInviteAccept(
+    client: PoolClient,
+    familyMemberId: string,
+    userId: UUID
+  ): Promise<void> {
+    const fmRes = await client.query<{
+      id: string;
+      user_id: string | null;
+      portal_access_status: string;
+      client_status: string;
+    }>(
+      `SELECT fm.id, fm.user_id, fm.portal_access_status, c.status as client_status
+       FROM family_members fm
+       JOIN clients c ON c.id = fm.client_id
+       WHERE fm.id = $1
+       FOR UPDATE`,
+      [familyMemberId]
+    );
+    const fm = fmRes.rows[0];
+    if (fm === undefined) {
+      throw new NotFoundError(`Family member not found: ${familyMemberId}`);
+    }
+
+    if (
+      fm.portal_access_status !== 'INVITED' ||
+      ['DISCHARGED', 'DECEASED'].includes(fm.client_status)
+    ) {
+      throw new ConflictError('Portal invitation is no longer valid');
+    }
+
+    if (typeof fm.user_id === 'string' && fm.user_id !== userId) {
+      throw new ConflictError(
+        `Family member is already linked to a different user account`
+      );
+    }
+
+    await client.query(
+      `UPDATE family_members
+       SET user_id = $2,
+           portal_access_status = 'ACTIVE',
+           portal_activated_at = NOW(),
+           invitation_status = 'ACCEPTED',
+           invitation_accepted_at = NOW(),
+           updated_at = NOW(),
+           updated_by = $2
+       WHERE id = $1`,
+      [familyMemberId, userId]
+    );
+  }
+
   /**
    * Accept an invitation token and link the identity to the portal record
    */
@@ -292,12 +387,13 @@ export class PortalAccessService {
       id: string;
       token: string;
       organization_id: string;
+      email: string;
       status: string;
       expires_at: Date;
       target_type: 'STAFF' | 'CAREGIVER' | 'FAMILY' | null;
       target_id: string | null;
     }>(
-      `SELECT id, token, organization_id, status, expires_at, target_type, target_id
+      `SELECT id, token, organization_id, email, status, expires_at, target_type, target_id
        FROM invite_tokens
        WHERE token = $1`,
       [token]
@@ -325,9 +421,10 @@ export class PortalAccessService {
     const userRes = await this.db.query<{
       id: string;
       organization_id: string;
+      email: string;
       status: string;
     }>(
-      `SELECT id, organization_id, status FROM users WHERE id = $1 AND deleted_at IS NULL`,
+      `SELECT id, organization_id, email, status FROM users WHERE id = $1 AND deleted_at IS NULL`,
       [userId]
     );
 
@@ -336,69 +433,23 @@ export class PortalAccessService {
       throw new NotFoundError(`User not found: ${userId}`);
     }
 
+    if (user.organization_id !== invite.organization_id) {
+      throw new PermissionError('Invite belongs to a different organization');
+    }
+
+    if (user.email.trim().toLowerCase() !== invite.email.trim().toLowerCase()) {
+      throw new PermissionError('Invite was issued to a different email address');
+    }
+
+    if (user.status === 'INACTIVE') {
+      throw new PermissionError('Deactivated accounts cannot accept invitations');
+    }
+
     await this.db.transaction(async (client: PoolClient) => {
       if (targetType === 'CAREGIVER') {
-        const cgRes = await client.query<{
-          id: string;
-          user_id: string | null;
-          portal_access_status: string;
-        }>(
-          `SELECT id, user_id, portal_access_status FROM caregivers WHERE id = $1 AND deleted_at IS NULL FOR UPDATE`,
-          [targetId]
-        );
-        const cg = cgRes.rows[0];
-        if (cg === undefined) {
-          throw new NotFoundError(`Caregiver not found: ${targetId}`);
-        }
-
-        if (typeof cg.user_id === 'string' && cg.user_id !== userId) {
-          throw new ConflictError(
-            `Caregiver is already linked to a different user account`
-          );
-        }
-
-        await client.query(
-          `UPDATE caregivers
-           SET user_id = $2,
-               portal_access_status = 'ACTIVE',
-               portal_activated_at = NOW(),
-               updated_at = NOW(),
-               updated_by = $2
-           WHERE id = $1`,
-          [targetId, userId]
-        );
+        await this.linkCaregiverOnInviteAccept(client, targetId, userId);
       } else if (targetType === 'FAMILY') {
-        const fmRes = await client.query<{
-          id: string;
-          user_id: string | null;
-          portal_access_status: string;
-        }>(
-          `SELECT id, user_id, portal_access_status FROM family_members WHERE id = $1 FOR UPDATE`,
-          [targetId]
-        );
-        const fm = fmRes.rows[0];
-        if (fm === undefined) {
-          throw new NotFoundError(`Family member not found: ${targetId}`);
-        }
-
-        if (typeof fm.user_id === 'string' && fm.user_id !== userId) {
-          throw new ConflictError(
-            `Family member is already linked to a different user account`
-          );
-        }
-
-        await client.query(
-          `UPDATE family_members
-           SET user_id = $2,
-               portal_access_status = 'ACTIVE',
-               portal_activated_at = NOW(),
-               invitation_status = 'ACCEPTED',
-               invitation_accepted_at = NOW(),
-               updated_at = NOW(),
-               updated_by = $2
-           WHERE id = $1`,
-          [targetId, userId]
-        );
+        await this.linkFamilyMemberOnInviteAccept(client, targetId, userId);
       } else {
         throw new ValidationError(`Unsupported portal target type: ${String(targetType)}`);
       }
@@ -720,7 +771,7 @@ export class PortalAccessService {
         // If user was suspended, restore them to ACTIVE and bump token_version
         await client.query(
           `UPDATE users
-           SET status = 'ACTIVE',
+           SET status = CASE WHEN status = 'SUSPENDED' THEN 'ACTIVE' ELSE status END,
                token_version = token_version + 1,
                updated_at = NOW(),
                updated_by = $2

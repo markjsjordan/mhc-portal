@@ -212,8 +212,9 @@ describe('PortalAccessService', () => {
               id: 'token-uuid',
               token: inviteToken,
               organization_id: adminContext.organizationId,
+              email: 'caregiver@example.com',
               status: 'PENDING',
-              expires_at: new Date(Date.now() + 86400000),
+              expires_at: new Date('2026-11-08T12:00:00Z'),
               target_type: 'CAREGIVER',
               target_id: targetCaregiverId,
             },
@@ -228,6 +229,7 @@ describe('PortalAccessService', () => {
             {
               id: targetUserId,
               organization_id: adminContext.organizationId,
+              email: 'caregiver@example.com',
               status: 'ACTIVE',
             },
           ],
@@ -239,7 +241,14 @@ describe('PortalAccessService', () => {
 
       vi.mocked(mockClientQuery)
         .mockResolvedValueOnce({
-          rows: [{ id: targetCaregiverId, user_id: null, portal_access_status: 'INVITED' }],
+          rows: [
+            {
+              id: targetCaregiverId,
+              user_id: null,
+              portal_access_status: 'INVITED',
+              employment_status: 'ACTIVE',
+            },
+          ],
           command: 'SELECT',
           rowCount: 1,
           oid: 0,
@@ -282,8 +291,9 @@ describe('PortalAccessService', () => {
               id: 'token-uuid',
               token: inviteToken,
               organization_id: adminContext.organizationId,
+              email: 'caregiver@example.com',
               status: 'PENDING',
-              expires_at: new Date(Date.now() + 86400000),
+              expires_at: new Date('2026-11-08T12:00:00Z'),
               target_type: 'CAREGIVER',
               target_id: targetCaregiverId,
             },
@@ -294,7 +304,14 @@ describe('PortalAccessService', () => {
           fields: [],
         })
         .mockResolvedValueOnce({
-          rows: [{ id: targetUserId, organization_id: adminContext.organizationId, status: 'ACTIVE' }],
+          rows: [
+            {
+              id: targetUserId,
+              organization_id: adminContext.organizationId,
+              email: 'caregiver@example.com',
+              status: 'ACTIVE',
+            },
+          ],
           command: 'SELECT',
           rowCount: 1,
           oid: 0,
@@ -306,7 +323,8 @@ describe('PortalAccessService', () => {
           {
             id: targetCaregiverId,
             user_id: '99999999-9999-4999-8999-999999999999',
-            portal_access_status: 'ACTIVE',
+            portal_access_status: 'INVITED',
+            employment_status: 'ACTIVE',
           },
         ],
         command: 'SELECT',
@@ -317,6 +335,349 @@ describe('PortalAccessService', () => {
 
       await expect(service.acceptPortalInvite(inviteToken, targetUserId)).rejects.toThrow(
         ConflictError
+      );
+    });
+
+    it('rejects accept when user organization_id does not match invite organization_id', async () => {
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'token-uuid',
+              token: inviteToken,
+              organization_id: adminContext.organizationId,
+              email: 'caregiver@example.com',
+              status: 'PENDING',
+              expires_at: new Date('2026-11-08T12:00:00Z'),
+              target_type: 'CAREGIVER',
+              target_id: targetCaregiverId,
+            },
+          ],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: targetUserId,
+              organization_id: '99999999-0000-0000-0000-000000000000',
+              email: 'caregiver@example.com',
+              status: 'ACTIVE',
+            },
+          ],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        });
+
+      await expect(service.acceptPortalInvite(inviteToken, targetUserId)).rejects.toThrow(
+        PermissionError
+      );
+    });
+
+    it('rejects accept when user email does not match invite email', async () => {
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'token-uuid',
+              token: inviteToken,
+              organization_id: adminContext.organizationId,
+              email: 'caregiver@example.com',
+              status: 'PENDING',
+              expires_at: new Date('2026-11-08T12:00:00Z'),
+              target_type: 'CAREGIVER',
+              target_id: targetCaregiverId,
+            },
+          ],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: targetUserId,
+              organization_id: adminContext.organizationId,
+              email: 'different@example.com',
+              status: 'ACTIVE',
+            },
+          ],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        });
+
+      await expect(service.acceptPortalInvite(inviteToken, targetUserId)).rejects.toThrow(
+        'Invite was issued to a different email address'
+      );
+    });
+
+    it('accepts invite when email matches case-insensitively with whitespace', async () => {
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'token-uuid',
+              token: inviteToken,
+              organization_id: adminContext.organizationId,
+              email: 'Caregiver@Example.COM ',
+              status: 'PENDING',
+              expires_at: new Date('2026-11-08T12:00:00Z'),
+              target_type: 'CAREGIVER',
+              target_id: targetCaregiverId,
+            },
+          ],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: targetUserId,
+              organization_id: adminContext.organizationId,
+              email: ' caregiver@example.com',
+              status: 'ACTIVE',
+            },
+          ],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        });
+
+      vi.mocked(mockClientQuery)
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: targetCaregiverId,
+              user_id: null,
+              portal_access_status: 'INVITED',
+              employment_status: 'ACTIVE',
+            },
+          ],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({ rows: [], rowCount: 1, command: 'UPDATE', oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [], rowCount: 1, command: 'UPDATE', oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [], rowCount: 1, command: 'UPDATE', oid: 0, fields: [] });
+
+      await expect(service.acceptPortalInvite(inviteToken, targetUserId)).resolves.toBeUndefined();
+    });
+
+    it('rejects accept when user status is INACTIVE', async () => {
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'token-uuid',
+              token: inviteToken,
+              organization_id: adminContext.organizationId,
+              email: 'caregiver@example.com',
+              status: 'PENDING',
+              expires_at: new Date('2026-11-08T12:00:00Z'),
+              target_type: 'CAREGIVER',
+              target_id: targetCaregiverId,
+            },
+          ],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: targetUserId,
+              organization_id: adminContext.organizationId,
+              email: 'caregiver@example.com',
+              status: 'INACTIVE',
+            },
+          ],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        });
+
+      await expect(service.acceptPortalInvite(inviteToken, targetUserId)).rejects.toThrow(
+        PermissionError
+      );
+    });
+
+    it('rejects accept when caregiver employment_status is TERMINATED', async () => {
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'token-uuid',
+              token: inviteToken,
+              organization_id: adminContext.organizationId,
+              email: 'caregiver@example.com',
+              status: 'PENDING',
+              expires_at: new Date('2026-11-08T12:00:00Z'),
+              target_type: 'CAREGIVER',
+              target_id: targetCaregiverId,
+            },
+          ],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: targetUserId,
+              organization_id: adminContext.organizationId,
+              email: 'caregiver@example.com',
+              status: 'ACTIVE',
+            },
+          ],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        });
+
+      vi.mocked(mockClientQuery).mockResolvedValueOnce({
+        rows: [
+          {
+            id: targetCaregiverId,
+            user_id: null,
+            portal_access_status: 'INVITED',
+            employment_status: 'TERMINATED',
+          },
+        ],
+        command: 'SELECT',
+        rowCount: 1,
+        oid: 0,
+        fields: [],
+      });
+
+      await expect(service.acceptPortalInvite(inviteToken, targetUserId)).rejects.toThrow(
+        'Portal invitation is no longer valid'
+      );
+    });
+
+    it('rejects accept when caregiver portal_access_status is no longer INVITED', async () => {
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'token-uuid',
+              token: inviteToken,
+              organization_id: adminContext.organizationId,
+              email: 'caregiver@example.com',
+              status: 'PENDING',
+              expires_at: new Date('2026-11-08T12:00:00Z'),
+              target_type: 'CAREGIVER',
+              target_id: targetCaregiverId,
+            },
+          ],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: targetUserId,
+              organization_id: adminContext.organizationId,
+              email: 'caregiver@example.com',
+              status: 'ACTIVE',
+            },
+          ],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        });
+
+      vi.mocked(mockClientQuery).mockResolvedValueOnce({
+        rows: [
+          {
+            id: targetCaregiverId,
+            user_id: null,
+            portal_access_status: 'REVOKED',
+            employment_status: 'ACTIVE',
+          },
+        ],
+        command: 'SELECT',
+        rowCount: 1,
+        oid: 0,
+        fields: [],
+      });
+
+      await expect(service.acceptPortalInvite(inviteToken, targetUserId)).rejects.toThrow(
+        'Portal invitation is no longer valid'
+      );
+    });
+
+    it('rejects accept when family target client is DISCHARGED', async () => {
+      const targetFamilyMemberId = '55555555-5555-4555-8555-555555555555';
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'token-uuid',
+              token: inviteToken,
+              organization_id: adminContext.organizationId,
+              email: 'family@example.com',
+              status: 'PENDING',
+              expires_at: new Date('2026-11-08T12:00:00Z'),
+              target_type: 'FAMILY',
+              target_id: targetFamilyMemberId,
+            },
+          ],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: targetUserId,
+              organization_id: adminContext.organizationId,
+              email: 'family@example.com',
+              status: 'ACTIVE',
+            },
+          ],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        });
+
+      vi.mocked(mockClientQuery).mockResolvedValueOnce({
+        rows: [
+          {
+            id: targetFamilyMemberId,
+            user_id: null,
+            portal_access_status: 'INVITED',
+            client_status: 'DISCHARGED',
+          },
+        ],
+        command: 'SELECT',
+        rowCount: 1,
+        oid: 0,
+        fields: [],
+      });
+
+      await expect(service.acceptPortalInvite(inviteToken, targetUserId)).rejects.toThrow(
+        'Portal invitation is no longer valid'
       );
     });
   });
@@ -551,7 +912,7 @@ describe('PortalAccessService', () => {
       );
     });
 
-    it('restores SUSPENDED caregiver to ACTIVE and restores user account status to ACTIVE with token bump', async () => {
+    it('restores SUSPENDED caregiver to ACTIVE and restores user account status to ACTIVE with token bump when SUSPENDED', async () => {
       vi.mocked(mockDb.query).mockResolvedValueOnce({
         rows: [
           {
@@ -574,7 +935,7 @@ describe('PortalAccessService', () => {
 
       const clientQueries = vi.mocked(mockClientQuery).mock.calls;
       expect(clientQueries[0]?.[0]).toContain("portal_access_status = 'ACTIVE'");
-      expect(clientQueries[1]?.[0]).toContain("status = 'ACTIVE'");
+      expect(clientQueries[1]?.[0]).toContain("status = CASE WHEN status = 'SUSPENDED' THEN 'ACTIVE' ELSE status END");
       expect(clientQueries[1]?.[0]).toContain('token_version = token_version + 1');
 
       expect(mockAudit.logEvent).toHaveBeenCalledWith(
@@ -586,6 +947,34 @@ describe('PortalAccessService', () => {
           }),
         })
       );
+    });
+
+    it('leaves user status unchanged when restoring caregiver if user was INACTIVE (CASE statement)', async () => {
+      vi.mocked(mockDb.query).mockResolvedValueOnce({
+        rows: [
+          {
+            id: caregiverId,
+            user_id: linkedUserId,
+            portal_access_status: 'SUSPENDED',
+          },
+        ],
+        command: 'SELECT',
+        rowCount: 1,
+        oid: 0,
+        fields: [],
+      });
+
+      vi.mocked(mockClientQuery)
+        .mockResolvedValueOnce({ rows: [], rowCount: 1, command: 'UPDATE', oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [], rowCount: 1, command: 'UPDATE', oid: 0, fields: [] });
+
+      await service.handleCaregiverStatusChange(caregiverId, 'SUSPENDED', 'ACTIVE', adminContext);
+
+      const clientQueries = vi.mocked(mockClientQuery).mock.calls;
+      expect(clientQueries[0]?.[0]).toContain("portal_access_status = 'ACTIVE'");
+      expect(clientQueries[1]?.[0]).toContain("status = CASE WHEN status = 'SUSPENDED' THEN 'ACTIVE' ELSE status END");
+      expect(clientQueries[1]?.[0]).not.toContain("SET status = 'ACTIVE'");
+      expect(clientQueries[1]?.[0]).toContain('token_version = token_version + 1');
     });
   });
 
