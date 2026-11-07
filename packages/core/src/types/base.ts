@@ -74,6 +74,18 @@ export interface UserContext {
   branchIds: UUID[];
   ipAddress?: string | null;
   userAgent?: string | null;
+  /**
+   * Associated caregiver entity ID derived from ACTIVE portal links, not from users.roles
+   */
+  caregiverId?: UUID;
+  /**
+   * Associated family member entity IDs derived from ACTIVE portal links, not from users.roles
+   */
+  familyMemberIds?: UUID[];
+  /**
+   * Associated client entity IDs accessible via ACTIVE family portal links, not from users.roles
+   */
+  familyClientIds?: UUID[];
 }
 
 /**
