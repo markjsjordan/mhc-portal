@@ -94,8 +94,8 @@ export class FamilyEngagementService {
     input: InviteFamilyMemberInput,
     context: UserContext
   ): Promise<FamilyMember> {
-    // Validate permissions
-    if (!this.permissions.hasPermission(context, 'family-portal:invite')) {
+    // Validate permissions: staff with clients:update invite, family cannot
+    if (!this.permissions.hasPermission(context, 'clients:update')) {
       throw new Error('Insufficient permissions to invite family members') as PermissionError;
     }
 
