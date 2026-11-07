@@ -320,6 +320,33 @@ export class CaregiverRepository extends Repository<Caregiver> {
   }
 
   /**
+   * Find caregiver by email and organization ID
+   *
+   * @param email - Email address to search for (case-insensitive)
+   * @param organizationId - Tenant organization ID
+   * @returns Caregiver profile if found, null otherwise
+   */
+  async findByEmailAndOrganization(
+    email: string,
+    organizationId: string
+  ): Promise<Caregiver | null> {
+    const query = `
+      SELECT * FROM ${this.tableName}
+      WHERE LOWER(email) = LOWER($1)
+        AND organization_id = $2
+        AND deleted_at IS NULL
+    `;
+
+    const result = await this.database.query(query, [email, organizationId]);
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    return this.mapRowToEntity(result.rows[0]!);
+  }
+
+  /**
    * Find caregiver by email
    * 
    * Used to link authenticated users to their caregiver profile.

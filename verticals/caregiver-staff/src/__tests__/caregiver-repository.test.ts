@@ -445,4 +445,76 @@ describe('CaregiverRepository', () => {
       expect(sql).toContain('deleted_at IS NULL');
     });
   });
+
+  describe('findByEmailAndOrganization', () => {
+    it('returns caregiver matching email and organization', async () => {
+      const mockCaregiverRow = {
+        id: 'cg-1',
+        organization_id: 'org-123',
+        user_id: null,
+        employee_number: 'EMP001',
+        first_name: 'Jane',
+        last_name: 'Doe',
+        date_of_birth: new Date('1990-01-01'),
+        email: 'jane.doe@example.com',
+        primary_phone: JSON.stringify({ type: 'MOBILE', number: '555-0100', canReceiveSMS: true }),
+        primary_address: JSON.stringify({ type: 'HOME', line1: '123 Main St', city: 'Austin', state: 'TX', postalCode: '78701', country: 'US' }),
+        emergency_contacts: JSON.stringify([]),
+        employment_type: 'FULL_TIME',
+        employment_status: 'ACTIVE',
+        hire_date: new Date('2023-01-01'),
+        role: 'CAREGIVER',
+        permissions: [],
+        credentials: JSON.stringify([]),
+        training: JSON.stringify([]),
+        skills: JSON.stringify([]),
+        specializations: [],
+        languages: ['English'],
+        availability: JSON.stringify({ schedule: {}, lastUpdated: new Date() }),
+        compliance_status: 'COMPLIANT',
+        preferred_clients: [],
+        restricted_clients: [],
+        status: 'ACTIVE',
+        created_at: new Date(),
+        created_by: 'system',
+        updated_at: new Date(),
+        updated_by: 'system',
+        version: 1,
+        deleted_at: null,
+        deleted_by: null,
+      };
+
+      vi.mocked(mockDb.query).mockResolvedValueOnce({
+        rows: [mockCaregiverRow],
+        command: '',
+        rowCount: 1,
+        oid: 0,
+        fields: [],
+      });
+
+      const result = await repository.findByEmailAndOrganization('jane.doe@example.com', 'org-123');
+      expect(result).not.toBeNull();
+      expect(result?.id).toBe('cg-1');
+      expect(result?.organizationId).toBe('org-123');
+
+      const [sql, params] = vi.mocked(mockDb.query).mock.calls[0] as [string, unknown[]];
+      expect(sql).toContain('LOWER(email) = LOWER($1)');
+      expect(sql).toContain('organization_id = $2');
+      expect(sql).toContain('deleted_at IS NULL');
+      expect(params).toEqual(['jane.doe@example.com', 'org-123']);
+    });
+
+    it('returns null when no matching record in org', async () => {
+      vi.mocked(mockDb.query).mockResolvedValueOnce({
+        rows: [],
+        command: '',
+        rowCount: 0,
+        oid: 0,
+        fields: [],
+      });
+
+      const result = await repository.findByEmailAndOrganization('jane.doe@example.com', 'org-other');
+      expect(result).toBeNull();
+    });
+  });
 });

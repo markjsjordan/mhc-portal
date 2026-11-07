@@ -205,4 +205,34 @@ describe('CaregiverService - getCurrentCaregiverProfile', () => {
       'Caregiver profile not found for user: user-123'
     );
   });
+
+  it('does NOT return a caregiver with the same email in another organization', async () => {
+    const otherOrgCaregiver = {
+      ...mockCaregiverRow,
+      id: 'caregiver-other-org',
+      organization_id: 'org-other',
+      user_id: null,
+    };
+
+    vi.mocked(mockDatabase.query).mockImplementation((sql: string, params?: unknown[]) => {
+      if (sql.includes('FROM caregivers') && sql.includes('user_id = $1')) {
+        return Promise.resolve({ rows: [] } as any);
+      }
+      if (sql.includes('FROM users') && sql.includes('WHERE id = $1')) {
+        return Promise.resolve({ rows: [mockUserRow] } as any);
+      }
+      if (sql.includes('FROM caregivers') && sql.includes('organization_id = $2')) {
+        // params[1] is context.organizationId ('org-123'). Other org has different id.
+        if (params?.[1] === 'org-other') {
+          return Promise.resolve({ rows: [otherOrgCaregiver] } as any);
+        }
+        return Promise.resolve({ rows: [] } as any);
+      }
+      return Promise.resolve({ rows: [] } as any);
+    });
+
+    await expect(service.getCurrentCaregiverProfile(mockContext)).rejects.toThrow(
+      'Caregiver profile not found for user: user-123'
+    );
+  });
 });

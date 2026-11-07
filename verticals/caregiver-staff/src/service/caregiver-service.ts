@@ -234,13 +234,20 @@ export class CaregiverService {
     }
 
     if (!caregiver) {
-      // Fallback: get user email from user repository and lookup by email
+      // Fallback: get user email from user repository and lookup by email scoped to organization
       const user = await this.userRepository.getUserById(context.userId);
       if (!user) {
         throw new NotFoundError(`User not found: ${context.userId}`);
       }
 
-      caregiver = await this.repository.findByEmail(user.email);
+      if (context.organizationId) {
+        caregiver = await this.repository.findByEmailAndOrganization(
+          user.email,
+          context.organizationId
+        );
+      } else {
+        caregiver = await this.repository.findByEmail(user.email);
+      }
     }
 
     if (!caregiver) {
