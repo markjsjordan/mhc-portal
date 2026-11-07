@@ -200,4 +200,107 @@ describe('UserRepository', () => {
       );
     });
   });
+
+  describe('createInviteToken', () => {
+    it('should insert invite token with targetType and targetId when provided', async () => {
+      const mockInviteRow = {
+        id: 'token-id-1',
+        token: 'mock-secure-token',
+        organization_id: 'org-123',
+        email: 'caregiver@example.com',
+        first_name: 'Alex',
+        last_name: 'Rivera',
+        roles: [],
+        branch_ids: [],
+        expires_at: new Date('2026-11-14T00:00:00Z'),
+        status: 'PENDING',
+        accepted_user_id: null,
+        accepted_at: null,
+        target_type: 'CAREGIVER',
+        target_id: 'cg-uuid-123',
+        created_at: new Date('2026-11-07T00:00:00Z'),
+        created_by: 'admin-123',
+        updated_at: new Date('2026-11-07T00:00:00Z'),
+        updated_by: 'admin-123',
+      };
+
+      vi.spyOn(mockDb, 'query').mockResolvedValueOnce({
+        rows: [mockInviteRow],
+        rowCount: 1,
+        command: 'INSERT',
+        oid: 0,
+        fields: [],
+      });
+
+      const invite = await repository.createInviteToken(
+        'org-123',
+        {
+          email: 'caregiver@example.com',
+          firstName: 'Alex',
+          lastName: 'Rivera',
+          roles: [],
+          targetType: 'CAREGIVER',
+          targetId: 'cg-uuid-123',
+        },
+        'admin-123'
+      );
+
+      expect(invite.targetType).toBe('CAREGIVER');
+      expect(invite.targetId).toBe('cg-uuid-123');
+      expect(invite.status).toBe('PENDING');
+
+      const sql = vi.mocked(mockDb.query).mock.calls[0]?.[0] as string;
+      const params = vi.mocked(mockDb.query).mock.calls[0]?.[1];
+      expect(sql).toContain('target_type, target_id');
+      expect(params).toContain('CAREGIVER');
+      expect(params).toContain('cg-uuid-123');
+    });
+
+    it('should default targetType and targetId to null when omitted', async () => {
+      const mockInviteRow = {
+        id: 'token-id-2',
+        token: 'mock-secure-token-2',
+        organization_id: 'org-123',
+        email: 'staff@example.com',
+        first_name: null,
+        last_name: null,
+        roles: ['ORG_ADMIN'],
+        branch_ids: [],
+        expires_at: new Date('2026-11-14T00:00:00Z'),
+        status: 'PENDING',
+        accepted_user_id: null,
+        accepted_at: null,
+        target_type: null,
+        target_id: null,
+        created_at: new Date('2026-11-07T00:00:00Z'),
+        created_by: 'admin-123',
+        updated_at: new Date('2026-11-07T00:00:00Z'),
+        updated_by: 'admin-123',
+      };
+
+      vi.spyOn(mockDb, 'query').mockResolvedValueOnce({
+        rows: [mockInviteRow],
+        rowCount: 1,
+        command: 'INSERT',
+        oid: 0,
+        fields: [],
+      });
+
+      const invite = await repository.createInviteToken(
+        'org-123',
+        {
+          email: 'staff@example.com',
+          roles: ['ORG_ADMIN'],
+        },
+        'admin-123'
+      );
+
+      expect(invite.targetType).toBeUndefined();
+      expect(invite.targetId).toBeUndefined();
+
+      const params = vi.mocked(mockDb.query).mock.calls[0]?.[1];
+      expect(params?.[9]).toBeNull();
+      expect(params?.[10]).toBeNull();
+    });
+  });
 });

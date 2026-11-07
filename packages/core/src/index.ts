@@ -37,6 +37,7 @@ export * from './service/reference-data.service';
 export * from './service/geocoding.service';
 export * from './service/email-service';
 export * from './service/stripe.service';
+export * from './service/portal-access-service';
 export * from './constants/cache-keys';
 export * from './constants/us-states';
 export * from './middleware/auth-middleware';

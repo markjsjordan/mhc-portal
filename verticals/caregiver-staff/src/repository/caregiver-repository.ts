@@ -216,6 +216,29 @@ export class CaregiverRepository extends Repository<Caregiver> {
     const isDemoData = row['is_demo_data'] as boolean | undefined;
     if (isDemoData !== undefined) entity.isDemoData = isDemoData;
 
+    const userId = row['user_id'];
+    if (typeof userId === 'string') entity.userId = userId;
+
+    const portalAccessStatus = row['portal_access_status'];
+    if (typeof portalAccessStatus === 'string') {
+      entity.portalAccessStatus = portalAccessStatus as Caregiver['portalAccessStatus'];
+    }
+
+    const portalInvitedAt = row['portal_invited_at'];
+    if (portalInvitedAt instanceof Date) entity.portalInvitedAt = portalInvitedAt;
+
+    const portalActivatedAt = row['portal_activated_at'];
+    if (portalActivatedAt instanceof Date) entity.portalActivatedAt = portalActivatedAt;
+
+    const portalRevokedAt = row['portal_revoked_at'];
+    if (portalRevokedAt instanceof Date) entity.portalRevokedAt = portalRevokedAt;
+
+    const portalRevokedBy = row['portal_revoked_by'];
+    if (typeof portalRevokedBy === 'string') entity.portalRevokedBy = portalRevokedBy;
+
+    const portalRevokedReason = row['portal_revoked_reason'];
+    if (typeof portalRevokedReason === 'string') entity.portalRevokedReason = portalRevokedReason;
+
     return entity;
   }
 
@@ -309,6 +332,28 @@ export class CaregiverRepository extends Repository<Caregiver> {
     `;
 
     const result = await this.database.query(query, [email]);
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    return this.mapRowToEntity(result.rows[0]!);
+  }
+
+  /**
+   * Find caregiver by user ID (linked portal user)
+   *
+   * @param userId - User account ID
+   * @returns Caregiver profile if found, null otherwise
+   */
+  async findByUserId(userId: string): Promise<Caregiver | null> {
+    const query = `
+      SELECT * FROM ${this.tableName}
+      WHERE user_id = $1
+        AND deleted_at IS NULL
+    `;
+
+    const result = await this.database.query(query, [userId]);
 
     if (result.rows.length === 0) {
       return null;

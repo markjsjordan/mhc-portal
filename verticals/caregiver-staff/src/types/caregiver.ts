@@ -366,6 +366,15 @@ export interface Caregiver extends Entity, SoftDeletable {
   notes?: string;
   customFields?: Record<string, unknown>;
   isDemoData?: boolean; // Indicates if this is demo/sample data
+
+  // Portal access fields (unified identity)
+  userId?: UUID;
+  portalAccessStatus?: 'NONE' | 'INVITED' | 'ACTIVE' | 'SUSPENDED' | 'REVOKED';
+  portalInvitedAt?: Date;
+  portalActivatedAt?: Date;
+  portalRevokedAt?: Date;
+  portalRevokedBy?: UUID;
+  portalRevokedReason?: string;
 }
 
 export type Gender = 'MALE' | 'FEMALE' | 'NON_BINARY' | 'OTHER' | 'PREFER_NOT_TO_SAY';
