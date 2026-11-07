@@ -66,7 +66,7 @@ describe('Visit Routes', () => {
       };
     });
 
-    it('should lookup user email and caregiver record', async () => {
+    it('should lookup caregiver record by context or user_id (never by email)', async () => {
       // NOTE: Full integration test would require mocking ScheduleRepository
       // This test verifies that the route exists and is properly configured
       const router = createVisitRouter(mockDb);
@@ -78,16 +78,54 @@ describe('Visit Routes', () => {
       expect(myVisitsRoute?.route?.path).toBe('/my-visits');
     });
 
+    it('should never query users or caregivers by email', async () => {
+      vi.mocked(mockDb.query).mockResolvedValueOnce({ rows: [] } as any);
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find((layer: any) => layer.route?.path === '/my-visits')?.route?.stack[0]?.handle;
+      if (!handler) {
+        throw new Error('Handler not found');
+      }
+
+      await handler(mockRequest as Request, mockResponse as Response, nextMock);
+
+      // Verify no queries had 'email' in SQL
+      for (const call of vi.mocked(mockDb.query).mock.calls) {
+        const sql = (call[0] as string).toLowerCase();
+        expect(sql).not.toContain('email');
+      }
+      expect(mockDb.query).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT id FROM caregivers WHERE user_id = $1 AND portal_access_status = 'ACTIVE' AND deleted_at IS NULL"),
+        ['user-123']
+      );
+    });
+
+    it('should use context.caregiverId directly without querying db when present', async () => {
+      mockRequest.user = {
+        ...mockRequest.user,
+        caregiverId: 'cg-from-context',
+      } as any;
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find((layer: any) => layer.route?.path === '/my-visits')?.route?.stack[0]?.handle;
+      if (!handler) {
+        throw new Error('Handler not found');
+      }
+
+      await handler(mockRequest as Request, mockResponse as Response, nextMock);
+
+      // Should not have queried caregivers table because caregiverId was in context
+      for (const call of vi.mocked(mockDb.query).mock.calls) {
+        const sql = (call[0] as string).toLowerCase();
+        expect(sql).not.toContain('from caregivers');
+      }
+    });
+
     it('should return empty array for user without caregiver record', async () => {
-      // Mock user lookup
-      vi.mocked(mockDb.query)
-        .mockResolvedValueOnce({
-          rows: [{ email: 'coordinator@example.com' }],
-        } as any)
-        // Mock caregiver lookup - no results
-        .mockResolvedValueOnce({
-          rows: [],
-        } as any);
+      // Mock caregiver lookup - no results
+      vi.mocked(mockDb.query).mockResolvedValueOnce({
+        rows: [],
+      } as any);
 
       const router = createVisitRouter(mockDb);
       const handler = router.stack.find((layer: any) => layer.route?.path === '/my-visits')?.route?.stack[0]?.handle;
@@ -194,8 +232,8 @@ describe('Visit Routes', () => {
       );
     });
 
-    it('should return 404 when user not found', async () => {
-      // Mock user lookup - no results
+    it('should return empty array when caregiver record not found', async () => {
+      // Mock caregiver lookup - no results
       vi.mocked(mockDb.query).mockResolvedValueOnce({
         rows: [],
       } as any);
@@ -209,11 +247,14 @@ describe('Visit Routes', () => {
 
       await handler(mockRequest as Request, mockResponse as Response, nextMock);
 
-      expect(statusMock).toHaveBeenCalledWith(404);
       expect(jsonMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          success: false,
-          error: 'User not found',
+          success: true,
+          data: [],
+          meta: expect.objectContaining({
+            count: 0,
+            message: 'No caregiver record found for this user',
+          }),
         })
       );
     });
