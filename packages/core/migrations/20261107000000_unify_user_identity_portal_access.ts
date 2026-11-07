@@ -124,9 +124,9 @@ export async function up(knex: Knex): Promise<void> {
         ELSE 'NONE'
       END,
       portal_activated_at = CASE WHEN fm.invitation_status = 'ACCEPTED' THEN NOW() ELSE NULL END
-    FROM users u
-    JOIN clients cl ON cl.id = fm.client_id
-    WHERE fm.id = u.id
+    FROM users u, clients cl
+    WHERE cl.id = fm.client_id
+      AND fm.id = u.id
       AND cl.organization_id = u.organization_id
       AND fm.user_id IS NULL;
   `);
@@ -144,9 +144,10 @@ export async function up(knex: Knex): Promise<void> {
         ELSE 'NONE'
       END,
       portal_activated_at = CASE WHEN fm.invitation_status = 'ACCEPTED' THEN NOW() ELSE NULL END
-    FROM clients cl
-    JOIN users u ON u.organization_id = cl.organization_id AND LOWER(TRIM(u.email)) = LOWER(TRIM(fm.email))
-    WHERE fm.client_id = cl.id
+    FROM clients cl, users u
+    WHERE cl.id = fm.client_id
+      AND u.organization_id = cl.organization_id
+      AND LOWER(TRIM(u.email)) = LOWER(TRIM(fm.email))
       AND fm.user_id IS NULL;
   `);
 
