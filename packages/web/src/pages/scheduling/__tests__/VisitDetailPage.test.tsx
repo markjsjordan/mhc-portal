@@ -255,7 +255,7 @@ describe('VisitDetailPage', () => {
     expect(screen.getByText('PENDING')).toBeInTheDocument();
     expect(screen.getByText('GPS Mobile App (Planned)')).toBeInTheDocument();
     expect(screen.getByText('Pending arrival')).toBeInTheDocument();
-    expect(screen.getByText('Pending')).toBeInTheDocument(); // actual clock-in
+    expect(screen.getByText('Pending')).toBeInTheDocument(); // actual check-in
   });
 
   it('dynamically renders EVV records, verified status, and completed progress for COMPLETED visits', () => {

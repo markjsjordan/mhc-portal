@@ -803,14 +803,14 @@ export const VisitDetailPage: React.FC = () => {
                   <span className="font-semibold text-gray-800">{visit.scheduledStartTime}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500 block text-[11px]">Actual Clock-In</span>
+                  <span className="text-gray-500 block text-[11px]">Actual Check-In</span>
                   <span className={`font-semibold ${clockInDisplay !== 'Not started' && clockInDisplay !== 'Pending' ? 'text-emerald-700' : 'text-gray-500'}`}>
                     {clockInDisplay}
                   </span>
                 </div>
                 {clockOutDisplay && clockOutDisplay !== 'Not completed' && clockOutDisplay !== 'Pending' && (
                   <div>
-                    <span className="text-gray-500 block text-[11px]">Actual Clock-Out</span>
+                    <span className="text-gray-500 block text-[11px]">Actual Check-Out</span>
                     <span className="font-semibold text-gray-800">{clockOutDisplay}</span>
                   </div>
                 )}

@@ -286,7 +286,7 @@ export const StateConfigPanel: React.FC = () => {
                 {/* Grace Period */}
                 <div>
                   <Label htmlFor="grace-period" className="block text-sm font-medium text-gray-900 mb-2">
-                    Clock-In Grace Period (minutes)
+                    Check-In Grace Period (minutes)
                   </Label>
                   <Input
                     id="grace-period"
@@ -300,7 +300,7 @@ export const StateConfigPanel: React.FC = () => {
                     }
                   />
                   <p className="text-xs text-gray-600 mt-1">
-                    How early caregivers can clock in before scheduled visit start time
+                    How early caregivers can check in before scheduled visit start time
                   </p>
                 </div>
 

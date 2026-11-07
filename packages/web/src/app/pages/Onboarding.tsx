@@ -865,7 +865,7 @@ export const Onboarding: React.FC = () => {
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
               Schedule a test visit to see the complete workflow from scheduling
-              through EVV clock-in/out and documentation.
+              through EVV check-in/out and documentation.
             </p>
             <div className="flex gap-3">
               <Button

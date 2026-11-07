@@ -9,7 +9,7 @@ import { Tour } from '../types';
 export const caregiverTour: Tour = {
   id: 'caregiver-mobile',
   name: 'Caregiver Mobile Experience',
-  description: 'Complete visit workflow with GPS clock-in, task completion, and offline mode',
+  description: 'Complete visit workflow with GPS check-in, task completion, and offline mode',
   role: 'caregiver',
   estimatedTime: 12,
   steps: [
@@ -18,7 +18,7 @@ export const caregiverTour: Tour = {
       target: 'body',
       title: 'Welcome to the Mobile App!',
       content:
-        'As a caregiver, you\'ll use this mobile app in the field to manage your visits, clock in/out with GPS verification, complete care tasks, and document your work - even when offline!',
+        'As a caregiver, you\'ll use this mobile app in the field to manage your visits, check in/out with GPS verification, complete care tasks, and document your work - even when offline!',
       placement: 'bottom',
       highlightElement: false,
     },
@@ -52,9 +52,9 @@ export const caregiverTour: Tour = {
     {
       id: 'clock-in',
       target: '[data-tour="clock-in-button"]',
-      title: 'Clock In with EVV',
+      title: 'Check In with EVV',
       content:
-        'When you arrive at the client location, tap "Clock In". The app captures: your GPS coordinates, current time, device ID, and verifies you\'re within the geofence boundary (typically 100-150 meters).',
+        'When you arrive at the client location, tap "Check In". The app captures: your GPS coordinates, current time, device ID, and verifies you\'re within the geofence boundary (typically 100-150 meters).',
       placement: 'bottom',
       highlightElement: true,
     },
@@ -63,7 +63,7 @@ export const caregiverTour: Tour = {
       target: '[data-tour="gps-status"]',
       title: 'Geofence Verification',
       content:
-        'You must be within the blue geofence circle to clock in. If GPS shows you\'re too far away, move closer to the address or wait for better GPS accuracy. This ensures EVV compliance.',
+        'You must be within the blue geofence circle to check in. If GPS shows you\'re too far away, move closer to the address or wait for better GPS accuracy. This ensures EVV compliance.',
       placement: 'top',
       highlightElement: true,
     },
@@ -106,9 +106,9 @@ export const caregiverTour: Tour = {
     {
       id: 'clock-out',
       target: '[data-tour="clock-out-button"]',
-      title: 'Clock Out Process',
+      title: 'Check Out Process',
       content:
-        'Before clocking out, ensure all required tasks are checked off and you\'ve added visit notes. Clock out captures the same EVV elements as clock in: GPS, time, device ID.',
+        'Before checking out, ensure all required tasks are checked off and you\'ve added visit notes. Check-out captures the same EVV elements as check in: GPS, time, device ID.',
       placement: 'bottom',
       highlightElement: true,
     },
@@ -117,7 +117,7 @@ export const caregiverTour: Tour = {
       target: '[data-tour="offline-indicator"]',
       title: 'Works Offline',
       content:
-        'The app works even without internet connection. All your visits, tasks, and clock in/out data is stored locally on your device and automatically syncs when you\'re back online.',
+        'The app works even without internet connection. All your visits, tasks, and check in/out data is stored locally on your device and automatically syncs when you\'re back online.',
       placement: 'bottom',
       highlightElement: true,
     },
@@ -135,7 +135,7 @@ export const caregiverTour: Tour = {
       target: 'body',
       title: 'You\'re Ready to Go!',
       content:
-        'You now know how to use the mobile app for your visits: check your schedule, navigate to clients, clock in/out with GPS, complete tasks, document your work, and work offline. Great job!',
+        'You now know how to use the mobile app for your visits: check your schedule, navigate to clients, check in/out, complete tasks, document your work, and work offline. Great job!',
       placement: 'bottom',
       highlightElement: false,
     },

@@ -334,7 +334,7 @@ const renderEVVConfiguration = () => (
               { label: 'Individual Receiving Service', value: 'Robert Martinez (CLT-2024-1847)', icon: '✓' },
               { label: 'Date of Service', value: 'Auto-captured from mobile device', icon: '✓' },
               { label: 'Location of Service', value: '1847 Oak Street, Austin, TX', icon: '✓' },
-              { label: 'Time In/Time Out', value: 'GPS-verified clock in/out required', icon: '✓' },
+              { label: 'Time In/Time Out', value: 'Visit check-in/out required', icon: '✓' },
               { label: 'Service Provider', value: 'Caregiver ID auto-captured', icon: '✓' },
             ].map((item, idx) => (
               <div key={idx} className="flex items-start gap-2 text-sm">

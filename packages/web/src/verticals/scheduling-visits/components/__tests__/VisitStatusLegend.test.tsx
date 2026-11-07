@@ -42,7 +42,7 @@ describe('VisitStatusLegend', () => {
 
     expect(screen.getByText('Visit needs caregiver assignment')).toBeInTheDocument();
     expect(screen.getByText('Visit has assigned caregiver (color-coded by caregiver)')).toBeInTheDocument();
-    expect(screen.getByText('Caregiver has clocked in')).toBeInTheDocument();
+    expect(screen.getByText('Caregiver has checked in')).toBeInTheDocument();
   });
 
   it('renders additional information about caregiver colors', () => {

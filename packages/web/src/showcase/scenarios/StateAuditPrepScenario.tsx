@@ -160,7 +160,7 @@ const EVVComplianceReport: React.FC = () => (
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <div>
               <div className="font-medium text-sm">5. Time In/Time Out</div>
-              <div className="text-xs text-gray-500">Clock in/out timestamps</div>
+              <div className="text-xs text-gray-500">Check-in/out timestamps</div>
             </div>
             <span className="text-green-700 font-bold">1,437/1,437 ✓</span>
           </div>

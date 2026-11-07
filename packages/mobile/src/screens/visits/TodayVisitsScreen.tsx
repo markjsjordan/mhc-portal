@@ -228,7 +228,7 @@ export function TodayVisitsScreen() {
                   size="sm"
                   onPress={() => navigation.navigate('ClockIn', { visitId: visit.id })}
                 >
-                  Clock In
+                  Check In
                 </Button>
               )}
               {visit.status === 'IN_PROGRESS' && (

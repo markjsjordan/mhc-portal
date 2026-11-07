@@ -141,7 +141,7 @@ class TrainingService {
       {
         id: 'tr-2',
         title: 'EVV System Training',
-        description: 'Learn how to use the electronic visit verification system for clock-in/out.',
+        description: 'Learn how to use the electronic visit verification system for check-in/out.',
         category: 'ORIENTATION',
         format: 'INTERACTIVE',
         durationMinutes: 30,

@@ -208,7 +208,7 @@ export function RootNavigator({ isAuthenticated }: { isAuthenticated: boolean })
               name="ClockIn"
               component={ClockInScreen}
               options={{
-                title: 'Clock In',
+                title: 'Check In',
                 presentation: 'modal',
               }}
             />

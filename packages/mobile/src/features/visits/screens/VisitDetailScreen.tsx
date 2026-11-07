@@ -1,10 +1,10 @@
 /**
- * VisitDetailScreen - Main screen for visit details and EVV clock-in/out
+ * VisitDetailScreen - Main screen for visit details and EVV check-in/out
  * 
  * This demonstrates the core mobile EVV workflow:
  * 1. View visit details
- * 2. Clock in with GPS verification
- * 3. Clock out with task completion
+ * 2. Check in with GPS verification
+ * 3. Check out with task completion
  * 4. Offline-first operation with sync queue
  */
 
@@ -84,12 +84,12 @@ export function VisitDetailScreen({ visitId }: VisitDetailScreenProps) {
       await offlineQueue.queueClockIn(clockInInput);
 
       Alert.alert(
-        'Clock In Successful',
-        'You have clocked in to this visit. Location recorded.'
+        'Check In Successful',
+        'You have checked in to this visit. Location recorded.'
       );
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      Alert.alert('Clock In Failed', errorMessage);
+      Alert.alert('Check In Failed', errorMessage);
     } finally {
       setClockingIn(false);
     }
@@ -123,12 +123,12 @@ export function VisitDetailScreen({ visitId }: VisitDetailScreenProps) {
       await offlineQueue.queueClockOut(clockOutInput);
 
       Alert.alert(
-        'Clock Out Successful',
-        'You have clocked out of this visit. Visit complete.'
+        'Check Out Successful',
+        'You have checked out of this visit. Visit complete.'
       );
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      Alert.alert('Clock Out Failed', errorMessage);
+      Alert.alert('Check Out Failed', errorMessage);
     } finally {
       setClockingOut(false);
     }
@@ -206,7 +206,7 @@ export function VisitDetailScreen({ visitId }: VisitDetailScreenProps) {
             disabled={clockingIn}
             style={styles.button}
           >
-            Clock In
+            Check In
           </Button>
         )}
 
@@ -218,7 +218,7 @@ export function VisitDetailScreen({ visitId }: VisitDetailScreenProps) {
             disabled={clockingOut}
             style={styles.button}
           >
-            Clock Out
+            Check Out
           </Button>
         )}
 
