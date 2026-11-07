@@ -68,7 +68,6 @@ export const EVVRecordCard: React.FC<EVVRecordCardProps> = ({ record, compact = 
         <div className="flex items-center gap-2 text-sm text-gray-500">
           {record.clockInVerification?.locationCaptured === false ? (
             <>
-              {/* @ts-ignore */}
               <MapPin className="h-4 w-4 text-gray-400" />
               <span>Location not captured</span>
             </>
