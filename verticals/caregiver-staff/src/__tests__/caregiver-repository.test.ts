@@ -353,4 +353,88 @@ describe('CaregiverRepository', () => {
       expect(dataQuery).not.toContain('DROP TABLE');
     });
   });
+
+  describe('findByUserId', () => {
+    it('should query caregivers table with user_id and deleted_at IS NULL', async () => {
+      const mockRow = {
+        id: 'cg-123',
+        organization_id: 'org-123',
+        branch_ids: ['branch-1'],
+        primary_branch_id: 'branch-1',
+        employee_number: 'EMP001',
+        first_name: 'Jane',
+        last_name: 'Doe',
+        date_of_birth: new Date('1990-01-01'),
+        primary_phone: { number: '555-0100', type: 'MOBILE' },
+        primary_address: { street1: '123 Main St', city: 'Austin', state: 'TX', zipCode: '78701' },
+        emergency_contacts: [],
+        email: 'jane.caregiver@example.com',
+        preferred_contact_method: 'EMAIL',
+        employment_type: 'FULL_TIME',
+        employment_status: 'ACTIVE',
+        hire_date: new Date('2023-01-01'),
+        role: 'CAREGIVER',
+        permissions: [],
+        credentials: [],
+        training: [],
+        skills: [],
+        specializations: [],
+        availability: {},
+        pay_rate: { amount: 20, currency: 'USD', type: 'HOURLY' },
+        compliance_status: 'COMPLIANT',
+        preferred_clients: [],
+        restricted_clients: [],
+        status: 'ACTIVE',
+        created_at: new Date('2023-01-01'),
+        created_by: 'admin-1',
+        updated_at: new Date('2023-01-01'),
+        updated_by: 'admin-1',
+        version: 1,
+        deleted_at: null,
+        deleted_by: null,
+        user_id: 'user-abc',
+        portal_access_status: 'ACTIVE',
+        portal_invited_at: new Date('2023-01-02'),
+        portal_activated_at: new Date('2023-01-03'),
+        portal_revoked_at: null,
+        portal_revoked_by: null,
+        portal_revoked_reason: null,
+      };
+
+      vi.mocked(mockDb.query).mockResolvedValueOnce({
+        rows: [mockRow],
+        command: 'SELECT',
+        rowCount: 1,
+        oid: 0,
+        fields: [],
+      });
+
+      const caregiver = await repository.findByUserId('user-abc');
+
+      expect(caregiver).not.toBeNull();
+      expect(caregiver?.id).toBe('cg-123');
+      expect(caregiver?.userId).toBe('user-abc');
+      expect(caregiver?.portalAccessStatus).toBe('ACTIVE');
+      expect(caregiver?.portalActivatedAt).toEqual(new Date('2023-01-03'));
+
+      const sql = vi.mocked(mockDb.query).mock.calls[0]?.[0] as string;
+      const params = vi.mocked(mockDb.query).mock.calls[0]?.[1];
+      expect(sql).toContain('user_id = $1');
+      expect(sql).toContain('deleted_at IS NULL');
+      expect(params).toEqual(['user-abc']);
+    });
+
+    it('should return null when no caregiver is linked to the user_id', async () => {
+      vi.mocked(mockDb.query).mockResolvedValueOnce({
+        rows: [],
+        command: 'SELECT',
+        rowCount: 0,
+        oid: 0,
+        fields: [],
+      });
+
+      const caregiver = await repository.findByUserId('user-nonexistent');
+      expect(caregiver).toBeNull();
+    });
+  });
 });

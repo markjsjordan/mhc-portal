@@ -58,6 +58,13 @@ export class FamilyMemberRepository extends Repository<FamilyMember> {
       notificationPreferences: row.notification_preferences,
       lastLoginAt: row.last_login_at,
       passwordResetRequired: row.password_reset_required,
+      userId: row.user_id,
+      portalAccessStatus: row.portal_access_status,
+      portalInvitedAt: row.portal_invited_at,
+      portalActivatedAt: row.portal_activated_at,
+      portalRevokedAt: row.portal_revoked_at,
+      portalRevokedBy: row.portal_revoked_by,
+      portalRevokedReason: row.portal_revoked_reason,
       organizationId: row.organization_id,
       branchId: row.branch_id,
       createdAt: row.created_at,
@@ -174,6 +181,20 @@ export class FamilyMemberRepository extends Repository<FamilyMember> {
 
     const result = await this.database.query(query, [email]);
     return result.rows.length > 0 ? this.mapRowToEntity(result.rows[0]) : null;
+  }
+
+  /**
+   * Find family members by user ID (linked portal user)
+   */
+  async findByUserId(userId: UUID): Promise<FamilyMember[]> {
+    const query = `
+      SELECT * FROM family_members
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+    `;
+
+    const result = await this.database.query(query, [userId]);
+    return result.rows.map(row => this.mapRowToEntity(row));
   }
 
   /**
