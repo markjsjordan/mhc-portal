@@ -145,7 +145,7 @@ describe('FamilyEngagementService', () => {
       expect(result).toEqual(createdMember);
       expect(mockPermissions.hasPermission).toHaveBeenCalledWith(
         userContext,
-        'family-portal:invite'
+        'clients:update'
       );
       expect(mockFamilyMemberRepo.createFamilyMember).toHaveBeenCalled();
       expect(mockNotificationRepo.createNotification).toHaveBeenCalledWith(
@@ -165,6 +165,7 @@ describe('FamilyEngagementService', () => {
       await expect(
         service.inviteFamilyMember(inviteInput, userContext)
       ).rejects.toThrow('Insufficient permissions');
+      expect(mockFamilyMemberRepo.createFamilyMember).not.toHaveBeenCalled();
     });
 
     it('should reject duplicate email for same client', async () => {

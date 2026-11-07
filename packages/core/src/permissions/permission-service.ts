@@ -127,7 +127,6 @@ export class PermissionService {
         'notes:read',
         'visits:read',
         'family-portal:view',
-        'family-portal:invite',
         'activity-feed:view',
         'notifications:view',
         'notifications:send',
