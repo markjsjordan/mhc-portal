@@ -583,4 +583,292 @@ describe('RecurringVisitPatternEngine', () => {
       expect(patternUpdateCalls.length).toBe(0);
     });
   });
+
+  describe('Lifecycle operations (pause, resume, end)', () => {
+    it('pauses active pattern and is idempotent on already-paused pattern', async () => {
+      // 1. Get pattern (ACTIVE)
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: TEST_IDS.pattern,
+            organization_id: TEST_IDS.org,
+            client_id: TEST_IDS.client,
+            service_type_id: TEST_IDS.serviceType,
+            frequency: 'WEEKLY',
+            start_date: '2026-10-01',
+            day_of_week: JSON.stringify(['MONDAY']),
+            start_time: '09:00',
+            duration: 120,
+            status: 'ACTIVE',
+            created_at: FIXED_BASE_DATE,
+            created_by: TEST_IDS.user,
+            updated_at: FIXED_BASE_DATE,
+            updated_by: TEST_IDS.user,
+          },
+        ],
+      });
+
+      // 2. Update pattern to PAUSED
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: TEST_IDS.pattern,
+            organization_id: TEST_IDS.org,
+            client_id: TEST_IDS.client,
+            service_type_id: TEST_IDS.serviceType,
+            frequency: 'WEEKLY',
+            start_date: '2026-10-01',
+            day_of_week: JSON.stringify(['MONDAY']),
+            start_time: '09:00',
+            duration: 120,
+            status: 'PAUSED',
+            pause_reason: 'Client requested hold',
+            created_at: FIXED_BASE_DATE,
+            created_by: TEST_IDS.user,
+            updated_at: FIXED_BASE_DATE,
+            updated_by: TEST_IDS.user,
+          },
+        ],
+      });
+
+      const paused = await engine.pausePattern(
+        TEST_IDS.pattern,
+        TEST_IDS.org,
+        'Client requested hold',
+        testContext
+      );
+      expect(paused.status).toBe('PAUSED');
+
+      // Idempotent test: already PAUSED pattern returns directly without DB update
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: TEST_IDS.pattern,
+            organization_id: TEST_IDS.org,
+            status: 'PAUSED',
+            start_date: '2026-10-01',
+            day_of_week: JSON.stringify(['MONDAY']),
+            start_time: '09:00',
+            duration: 120,
+            frequency: 'WEEKLY',
+            created_at: FIXED_BASE_DATE,
+            created_by: TEST_IDS.user,
+            updated_at: FIXED_BASE_DATE,
+            updated_by: TEST_IDS.user,
+          },
+        ],
+      });
+
+      const secondPause = await engine.pausePattern(
+        TEST_IDS.pattern,
+        TEST_IDS.org,
+        'Client requested hold again',
+        testContext
+      );
+      expect(secondPause.status).toBe('PAUSED');
+    });
+
+    it('rejects pausing a cancelled pattern with ConflictError (409)', async () => {
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: TEST_IDS.pattern,
+            organization_id: TEST_IDS.org,
+            status: 'CANCELLED',
+            start_date: '2026-10-01',
+            day_of_week: JSON.stringify(['MONDAY']),
+            start_time: '09:00',
+            duration: 120,
+            frequency: 'WEEKLY',
+            created_at: FIXED_BASE_DATE,
+            created_by: TEST_IDS.user,
+            updated_at: FIXED_BASE_DATE,
+            updated_by: TEST_IDS.user,
+          },
+        ],
+      });
+
+      await expect(
+        engine.pausePattern(TEST_IDS.pattern, TEST_IDS.org, 'pause cancelled', testContext)
+      ).rejects.toThrow('Cannot pause a cancelled pattern');
+    });
+
+    it('resumes a paused pattern when valid', async () => {
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: TEST_IDS.pattern,
+            organization_id: TEST_IDS.org,
+            client_id: TEST_IDS.client,
+            service_type_id: TEST_IDS.serviceType,
+            frequency: 'WEEKLY',
+            start_date: '2026-10-01',
+            end_date: '2026-12-31',
+            day_of_week: JSON.stringify(['MONDAY']),
+            start_time: '09:00',
+            duration: 120,
+            status: 'PAUSED',
+            created_at: FIXED_BASE_DATE,
+            created_by: TEST_IDS.user,
+            updated_at: FIXED_BASE_DATE,
+            updated_by: TEST_IDS.user,
+          },
+        ],
+      });
+
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: TEST_IDS.pattern,
+            organization_id: TEST_IDS.org,
+            client_id: TEST_IDS.client,
+            service_type_id: TEST_IDS.serviceType,
+            frequency: 'WEEKLY',
+            start_date: '2026-10-01',
+            end_date: '2026-12-31',
+            day_of_week: JSON.stringify(['MONDAY']),
+            start_time: '09:00',
+            duration: 120,
+            status: 'ACTIVE',
+            created_at: FIXED_BASE_DATE,
+            created_by: TEST_IDS.user,
+            updated_at: FIXED_BASE_DATE,
+            updated_by: TEST_IDS.user,
+          },
+        ],
+      });
+
+      const resumed = await engine.resumePattern(
+        TEST_IDS.pattern,
+        TEST_IDS.org,
+        testContext,
+        '2026-10-15'
+      );
+      expect(resumed.status).toBe('ACTIVE');
+    });
+
+    it('rejects resuming an expired pattern whose end_date is in the past', async () => {
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: TEST_IDS.pattern,
+            organization_id: TEST_IDS.org,
+            client_id: TEST_IDS.client,
+            service_type_id: TEST_IDS.serviceType,
+            frequency: 'WEEKLY',
+            start_date: '2026-01-01',
+            end_date: '2026-06-30',
+            day_of_week: JSON.stringify(['MONDAY']),
+            start_time: '09:00',
+            duration: 120,
+            status: 'PAUSED',
+            created_at: FIXED_BASE_DATE,
+            created_by: TEST_IDS.user,
+            updated_at: FIXED_BASE_DATE,
+            updated_by: TEST_IDS.user,
+          },
+        ],
+      });
+
+      await expect(
+        engine.resumePattern(TEST_IDS.pattern, TEST_IDS.org, testContext, '2026-10-15')
+      ).rejects.toThrow('Cannot resume expired pattern');
+    });
+
+    it('ends pattern, sets end_date to LEAST(existing, effectiveDate), and retains future visits', async () => {
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: TEST_IDS.pattern,
+            organization_id: TEST_IDS.org,
+            client_id: TEST_IDS.client,
+            service_type_id: TEST_IDS.serviceType,
+            frequency: 'WEEKLY',
+            start_date: '2026-10-01',
+            end_date: '2026-12-31',
+            day_of_week: JSON.stringify(['MONDAY']),
+            start_time: '09:00',
+            duration: 120,
+            status: 'ACTIVE',
+            created_at: FIXED_BASE_DATE,
+            created_by: TEST_IDS.user,
+            updated_at: FIXED_BASE_DATE,
+            updated_by: TEST_IDS.user,
+          },
+        ],
+      });
+
+      // Update query
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: TEST_IDS.pattern,
+            organization_id: TEST_IDS.org,
+            client_id: TEST_IDS.client,
+            service_type_id: TEST_IDS.serviceType,
+            frequency: 'WEEKLY',
+            start_date: '2026-10-01',
+            end_date: '2026-10-20',
+            day_of_week: JSON.stringify(['MONDAY']),
+            start_time: '09:00',
+            duration: 120,
+            status: 'CANCELLED',
+            end_reason: 'Client discharged',
+            created_at: FIXED_BASE_DATE,
+            created_by: TEST_IDS.user,
+            updated_at: FIXED_BASE_DATE,
+            updated_by: TEST_IDS.user,
+          },
+        ],
+      });
+
+      // Retained visit count query
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ count: 5 }],
+      });
+
+      const res = await engine.endPattern(
+        TEST_IDS.pattern,
+        TEST_IDS.org,
+        'Client discharged',
+        '2026-10-20',
+        testContext,
+        '2026-10-15'
+      );
+
+      expect(res.pattern.status).toBe('CANCELLED');
+      expect(res.retainedFutureVisits).toBe(5);
+
+      // Verify no visit deletion or cancellation was called
+      const deleteCalls = mockQuery.mock.calls.filter(call =>
+        typeof call[0] === 'string' && (call[0].includes('DELETE FROM visits') || call[0].includes("status = 'CANCELLED' WHERE pattern_id"))
+      );
+      expect(deleteCalls.length).toBe(0);
+    });
+
+    it('generates zero visits when pattern is paused or ended', async () => {
+      const pausedPattern: VisitPattern = {
+        id: TEST_IDS.pattern,
+        organizationId: TEST_IDS.org,
+        clientId: TEST_IDS.client,
+        serviceTypeId: TEST_IDS.serviceType,
+        frequency: 'WEEKLY',
+        startDate: FIXED_BASE_DATE,
+        dayOfWeek: ['MONDAY'],
+        startTime: '09:00',
+        duration: 120,
+        status: 'PAUSED',
+        createdAt: FIXED_BASE_DATE,
+        createdBy: TEST_IDS.user,
+        updatedAt: FIXED_BASE_DATE,
+        updatedBy: TEST_IDS.user,
+        deletedAt: null,
+        deletedBy: null,
+        version: 1,
+      };
+
+      const result = await engine.generateConcreteVisits(pausedPattern, {}, testContext);
+      expect(result.visits.length).toBe(0);
+    });
+  });
 });

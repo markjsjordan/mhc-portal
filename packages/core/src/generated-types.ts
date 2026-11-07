@@ -4909,6 +4909,50 @@ export type CreateUsers = Omit<Users, 'id' | 'createdAt' | 'updatedAt'>;
 export type UpdateUsers = Partial<Omit<Users, 'id' | 'createdAt'>> & { id: string };
 
 /**
+ * Table: visit_patterns
+ */
+export interface VisitPatterns {
+  /** Primary key (UUID) */
+  id?: string;
+  organizationId: string;
+  branchId?: string;
+  clientId: string;
+  caregiverId?: string;
+  serviceTypeId: string;
+  serviceTypeName?: string;
+  frequency: string;
+  rrule?: string;
+  startDate: Date | string;
+  endDate?: Date | string;
+  dayOfWeek?: Record<string, unknown> | string[];
+  startTime: string;
+  duration: number;
+  status: string;
+  notes?: string;
+  clientInstructions?: string;
+  caregiverInstructions?: string;
+  skipHolidays?: boolean;
+  exceptions?: Record<string, unknown>;
+  pausedAt?: Date | string;
+  pausedBy?: string;
+  pauseReason?: string;
+  endedAt?: Date | string;
+  endedBy?: string;
+  endReason?: string;
+  /** Timestamp when record was created */
+  createdAt?: Date | string;
+  createdBy: string;
+  /** Timestamp when record was last updated */
+  updatedAt?: Date | string;
+  updatedBy: string;
+  deletedAt?: Date | string;
+  deletedBy?: string;
+}
+
+export type CreateVisitPatterns = Omit<VisitPatterns, 'id' | 'createdAt' | 'updatedAt'>;
+export type UpdateVisitPatterns = Partial<Omit<VisitPatterns, 'id' | 'createdAt'>> & { id: string };
+
+/**
  * Table: visit_exceptions
  */
 export interface VisitExceptions {
@@ -5257,5 +5301,6 @@ export interface Database {
   visitExceptions: VisitExceptions;
   visitNoteTemplates: VisitNoteTemplates;
   visitNotes: VisitNotes;
+  visitPatterns: VisitPatterns;
   visits: Visits;
 }

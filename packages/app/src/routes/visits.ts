@@ -6,11 +6,66 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { Database, isValidUUID, ComplianceAutopilotService, AuditService, UserContext, AuthMiddleware } from '@folkcare/core';
-import { ScheduleRepository, StaffingDemandPredictionService, CaregiverMatchingService, RecurringVisitPatternEngine, VisitPatternRepository } from '@folkcare/scheduling-visits';
+import {
+  ScheduleRepository,
+  StaffingDemandPredictionService,
+  CaregiverMatchingService,
+  RecurringVisitPatternEngine,
+  VisitPatternRepository,
+  PatternAuthorizationGuard,
+  type IServiceAuthorizationReader,
+  type IClientFundingReader,
+  type IPatternHoursSummaryReader,
+} from '@folkcare/scheduling-visits';
+import { ServiceAuthorizationRepository } from '@folkcare/care-plans-tasks';
+import { ClientRepository } from '@folkcare/client-demographics';
 import { ComplianceCheckingService, complianceCheckRequestSchema, DocumentationQualityService, HospitalizationRiskService, VitalsAnomalyService, SentimentAnalysisService, ReportGenerationService } from '@folkcare/visit-notes';
 import { VisitDurationPredictionService } from '@folkcare/scheduling-visits';
 import { HOME_CARE_SERVICE_TYPES } from './service-types.js';
 import knex from 'knex';
+import { z } from 'zod';
+
+const SCHEDULING_ROLES = [
+  'SUPER_ADMIN',
+  'ORG_ADMIN',
+  'BRANCH_ADMIN',
+  'COORDINATOR',
+  'SCHEDULER',
+  'SUPERVISOR',
+  'ADMINISTRATOR',
+];
+
+export function hasSchedulingAccess(context: UserContext, action: 'read' | 'update'): boolean {
+  const hasRole = (context.roles ?? []).some((role) => SCHEDULING_ROLES.includes(role));
+  const hasPerm = (context.permissions ?? []).some((perm) => {
+    if (perm === '*:*' || perm === 'schedules:*' || perm === 'visits:*') return true;
+    if (action === 'read') {
+      return perm === 'schedules:read' || perm === 'visits:read' || perm === 'schedules:update' || perm === 'visits:update';
+    }
+    return perm === 'schedules:update' || perm === 'visits:update';
+  });
+
+  return hasRole || hasPerm;
+}
+
+export function requireSchedulingAccess(action: 'read' | 'update') {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const context = getUserContext(req);
+    if (!context.organizationId) {
+      res.status(400).json({ success: false, error: 'Organization ID is required' });
+      return;
+    }
+    if (!hasSchedulingAccess(context, action)) {
+      res.status(403).json({
+        success: false,
+        error: `Access denied: Scheduling ${action} permission required`,
+        code: 'PERMISSION_DENIED',
+      });
+      return;
+    }
+    next();
+  };
+}
 
 /**
  * Returns an error message when date/time/visitType format is invalid, otherwise null.
@@ -623,44 +678,113 @@ export function createVisitRouter(db: Database): Router {
   // Recurring Visit Patterns Endpoints
   // =========================================================================
 
+  const getAuthorizationGuard = (): PatternAuthorizationGuard => {
+    const authRepo = new ServiceAuthorizationRepository(db);
+    const authReader: IServiceAuthorizationReader = {
+      findActiveByClientAndService: async (clientId: string, serviceCode: string) => {
+        return authRepo.findActiveByClientAndService(clientId, serviceCode);
+      },
+    };
+
+    const clientRepo = new ClientRepository(db);
+    const clientFundingReader: IClientFundingReader = {
+      getClientFundingSources: async (clientId: string, organizationId: string) => {
+        const client = await clientRepo.findById(clientId);
+        if (client?.organizationId === organizationId) {
+          return (client.fundingSources as Array<{ type: string; name?: string }>) ?? null;
+        }
+        return null;
+      },
+    };
+
+    const patternSummaryReader: IPatternHoursSummaryReader = {
+      getActivePatternsForClientAndService: async (clientId, serviceTypeId, organizationId, excludePatternId) => {
+        const q = `
+          SELECT day_of_week, duration, frequency
+          FROM visit_patterns
+          WHERE client_id = $1
+            AND service_type_id = $2
+            AND organization_id = $3
+            AND status = 'ACTIVE'
+            AND deleted_at IS NULL
+            ${excludePatternId ? 'AND id != $4' : ''}
+        `;
+        const params = excludePatternId
+          ? [clientId, serviceTypeId, organizationId, excludePatternId]
+          : [clientId, serviceTypeId, organizationId];
+        const res = await db.query(q, params);
+        return res.rows.map((row: Record<string, unknown>) => ({
+          dayOfWeek: typeof row.day_of_week === 'string' ? JSON.parse(row.day_of_week) : row.day_of_week,
+          duration: Number(row.duration),
+          frequency: row.frequency as string | undefined,
+        }));
+      },
+    };
+
+    return new PatternAuthorizationGuard(authReader, clientFundingReader, patternSummaryReader);
+  };
+
   /**
    * POST /api/visits/patterns
    * Create a recurring pattern and generate concrete visits up to rolling horizon
    */
-  router.post('/patterns', async (req: Request, res: Response, next: NextFunction) => {
+  router.post('/patterns', requireSchedulingAccess('update'), async (req: Request, res: Response, next: NextFunction) => {
     try {
       const context = getUserContext(req);
-      if (!context.organizationId) {
-        res.status(400).json({ success: false, error: 'Organization ID is required' });
+
+      const createSchema = z.object({
+        clientId: z.string().uuid('Invalid clientId format'),
+        caregiverId: z.string().uuid('Invalid caregiverId format').optional().nullable(),
+        serviceTypeId: z.string().uuid('Invalid serviceTypeId format'),
+        serviceTypeName: z.string().optional(),
+        frequency: z.enum(['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'CUSTOM']).optional(),
+        rrule: z.string().optional(),
+        startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'startDate must be YYYY-MM-DD'),
+        endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'endDate must be YYYY-MM-DD').optional().nullable(),
+        dayOfWeek: z.array(z.string()).optional(),
+        startTime: z.string().regex(/^([01]?\d|2[0-3]):[0-5]\d$/, 'startTime must be HH:MM'),
+        duration: z.coerce.number().positive(),
+        status: z.enum(['ACTIVE', 'PAUSED', 'CANCELLED']).optional(),
+        notes: z.string().optional(),
+        clientInstructions: z.string().optional(),
+        caregiverInstructions: z.string().optional(),
+        skipHolidays: z.boolean().optional(),
+        horizonDays: z.coerce.number().optional(),
+        caregiverTimeOffExceptions: z.array(z.any()).optional(),
+        clientHospitalHolds: z.array(z.any()).optional(),
+      });
+
+      const parseResult = createSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        res.status(400).json({
+          success: false,
+          error: 'Validation failed',
+          details: parseResult.error.issues,
+        });
         return;
       }
 
-      const {
-        clientId,
-        caregiverId,
-        serviceTypeId,
-        serviceTypeName,
-        frequency = 'WEEKLY',
-        rrule,
-        startDate,
-        endDate,
-        dayOfWeek = [],
-        startTime,
-        duration,
-        status = 'ACTIVE',
-        notes,
-        clientInstructions,
-        caregiverInstructions,
-        skipHolidays = true,
-        horizonDays = 60,
-        caregiverTimeOffExceptions,
-        clientHospitalHolds,
-      } = req.body;
+      const validated = parseResult.data;
 
-      if (!clientId || !serviceTypeId || !startDate || !startTime || !duration) {
-        res.status(400).json({
+      // Enforce authorization limit on create
+      const guard = getAuthorizationGuard();
+      const authCheck = await guard.validatePattern({
+        organizationId: context.organizationId!,
+        clientId: validated.clientId,
+        serviceTypeId: validated.serviceTypeId,
+        dayOfWeek: (validated.dayOfWeek ?? []) as unknown as import('@folkcare/scheduling-visits').DayOfWeek[],
+        duration: validated.duration,
+        startDate: validated.startDate,
+        endDate: validated.endDate,
+        frequency: validated.frequency,
+      });
+
+      if (!authCheck.allowed) {
+        res.status(422).json({
           success: false,
-          error: 'Missing required fields: clientId, serviceTypeId, startDate, startTime, duration are required',
+          error: authCheck.message ?? 'Authorization limit exceeded',
+          code: authCheck.code ?? 'AUTHORIZATION_LIMIT_EXCEEDED',
+          details: authCheck.details,
         });
         return;
       }
@@ -668,30 +792,51 @@ export function createVisitRouter(db: Database): Router {
       const patternEngine = new RecurringVisitPatternEngine(db.getPool());
       const result = await patternEngine.createPatternAndGenerateVisits(
         {
-          organizationId: context.organizationId,
+          organizationId: context.organizationId!,
           branchId: context.branchIds?.[0],
-          clientId,
-          caregiverId: caregiverId || undefined,
-          serviceTypeId,
-          serviceTypeName,
-          frequency,
-          rrule,
-          startDate,
-          endDate,
-          dayOfWeek,
-          startTime,
-          duration: Number(duration),
-          status,
-          notes,
-          clientInstructions,
-          caregiverInstructions,
-          skipHolidays,
-          horizonDays: Number(horizonDays),
-          caregiverTimeOffExceptions,
-          clientHospitalHolds,
+          clientId: validated.clientId,
+          caregiverId: validated.caregiverId || undefined,
+          serviceTypeId: validated.serviceTypeId,
+          serviceTypeName: validated.serviceTypeName,
+          frequency: validated.frequency as import('@folkcare/scheduling-visits').Frequency | undefined,
+          rrule: validated.rrule,
+          startDate: validated.startDate,
+          endDate: validated.endDate || undefined,
+          dayOfWeek: validated.dayOfWeek as unknown as import('@folkcare/scheduling-visits').DayOfWeek[] | undefined,
+          startTime: validated.startTime,
+          duration: validated.duration,
+          status: validated.status,
+          notes: validated.notes,
+          clientInstructions: validated.clientInstructions,
+          caregiverInstructions: validated.caregiverInstructions,
+          skipHolidays: validated.skipHolidays,
+          horizonDays: validated.horizonDays ? Number(validated.horizonDays) : 60,
+          caregiverTimeOffExceptions: validated.caregiverTimeOffExceptions,
+          clientHospitalHolds: validated.clientHospitalHolds,
         },
         context
       );
+
+      // Audit trail
+      try {
+        const auditService = new AuditService(db);
+        await auditService.logEvent(context, {
+          eventType: 'DATA_MODIFICATION',
+          resource: 'VISIT_PATTERN',
+          resourceId: result.pattern.id,
+          action: 'CREATE',
+          result: 'SUCCESS',
+          metadata: {
+            clientId: validated.clientId,
+            caregiverId: validated.caregiverId,
+            status: result.pattern.status,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent'),
+        });
+      } catch (err) {
+        console.error('Audit trail logging failed for pattern create:', err);
+      }
 
       res.status(201).json({
         success: true,
@@ -706,26 +851,90 @@ export function createVisitRouter(db: Database): Router {
    * GET /api/visits/patterns
    * List recurring visit patterns for the organization
    */
-  router.get('/patterns', async (req: Request, res: Response, next: NextFunction) => {
+  router.get('/patterns', requireSchedulingAccess('read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
       const context = getUserContext(req);
-      if (!context.organizationId) {
-        res.status(400).json({ success: false, error: 'Organization ID is required' });
+
+      const querySchema = z.object({
+        status: z.string().optional(),
+        includeEnded: z.string().optional(),
+        client_id: z.string().uuid('Invalid client_id UUID').optional(),
+        caregiver_id: z.string().uuid('Invalid caregiver_id UUID').optional(),
+        unassigned: z.string().optional(),
+        search: z.string().optional(),
+        limit: z.coerce.number().min(1).max(200).optional(),
+        offset: z.coerce.number().min(0).optional(),
+      });
+
+      const parseResult = querySchema.safeParse(req.query);
+      if (!parseResult.success) {
+        res.status(400).json({
+          success: false,
+          error: 'Validation failed',
+          details: parseResult.error.issues,
+        });
         return;
       }
 
+      const q = parseResult.data;
+
+      // Status handling:
+      // If status query provided, use it.
+      // If includeEnded is 'true' and no status given, pass all: ACTIVE, PAUSED, CANCELLED
+      // Default: ACTIVE, PAUSED
+      let statusFilter: string | string[] | undefined = q.status;
+      if (!statusFilter) {
+        if (q.includeEnded === 'true') {
+          statusFilter = ['ACTIVE', 'PAUSED', 'CANCELLED'];
+        } else {
+          statusFilter = ['ACTIVE', 'PAUSED'];
+        }
+      }
+
+      const isOrgAdmin = (context.roles ?? []).some((r) => r === 'SUPER_ADMIN' || r === 'ORG_ADMIN');
+      const branchIds = isOrgAdmin ? undefined : context.branchIds;
+
       const patternRepo = new VisitPatternRepository(db.getPool());
-      const patterns = await patternRepo.listPatterns({
-        organizationId: context.organizationId,
-        clientId: req.query.client_id as string | undefined,
-        caregiverId: req.query.caregiver_id as string | undefined,
-        status: req.query.status as string | undefined,
+      const { patterns, total } = await patternRepo.listPatternsWithDetails({
+        organizationId: context.organizationId!,
+        branchIds,
+        clientId: q.client_id,
+        caregiverId: q.caregiver_id,
+        unassigned: q.unassigned === 'true',
+        status: statusFilter,
+        search: q.search,
+        limit: q.limit ?? 50,
+        offset: q.offset ?? 0,
       });
+
+      // Audit trail: PATTERN_LIST (HIPAA read audit)
+      try {
+        const auditService = new AuditService(db);
+        await auditService.logEvent(context, {
+          eventType: 'DATA_ACCESS',
+          resource: 'VISIT_PATTERN',
+          resourceId: 'list',
+          action: 'PATTERN_LIST',
+          result: 'SUCCESS',
+          metadata: {
+            count: patterns.length,
+            total,
+            filters: q,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent'),
+        });
+      } catch (err) {
+        console.error('Audit trail logging failed for pattern list:', err);
+      }
 
       res.json({
         success: true,
         data: patterns,
         count: patterns.length,
+        total,
+        limit: q.limit ?? 50,
+        offset: q.offset ?? 0,
       });
     } catch (error) {
       next(error);
@@ -736,23 +945,29 @@ export function createVisitRouter(db: Database): Router {
    * GET /api/visits/patterns/:id
    * Get pattern details and generated visits
    */
-  router.get('/patterns/:id', async (req: Request, res: Response, next: NextFunction) => {
+  router.get('/patterns/:id', requireSchedulingAccess('read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
       const context = getUserContext(req);
       const patternId = req.params.id as string | undefined;
 
-      if (!context.organizationId) {
-        res.status(400).json({ success: false, error: 'Organization ID is required' });
-        return;
-      }
-
-      if (!patternId) {
-        res.status(400).json({ success: false, error: 'Pattern ID is required' });
+      if (!patternId || !isValidUUID(patternId)) {
+        res.status(400).json({ success: false, error: 'Valid pattern ID is required' });
         return;
       }
 
       const patternEngine = new RecurringVisitPatternEngine(db.getPool());
-      const result = await patternEngine.getPatternWithVisits(patternId, context.organizationId);
+      const result = await patternEngine.getPatternWithVisits(patternId, context.organizationId!);
+
+      // Branch scope check for non-org admins
+      const isOrgAdmin = (context.roles ?? []).some((r) => r === 'SUPER_ADMIN' || r === 'ORG_ADMIN');
+      if (!isOrgAdmin && result.pattern.branchId && context.branchIds && !context.branchIds.includes(result.pattern.branchId)) {
+        res.status(403).json({
+          success: false,
+          error: 'Access denied: Pattern outside branch scope',
+          code: 'PERMISSION_DENIED',
+        });
+        return;
+      }
 
       res.json({
         success: true,
@@ -773,21 +988,319 @@ export function createVisitRouter(db: Database): Router {
   });
 
   /**
-   * PUT /api/visits/patterns/:id
-   * Update future instances with options (Update this visit only / Update all future visits)
+   * POST /api/visits/patterns/:id/pause
    */
-  router.put('/patterns/:id', async (req: Request, res: Response, next: NextFunction) => {
+  router.post('/patterns/:id/pause', requireSchedulingAccess('update'), async (req: Request, res: Response, next: NextFunction) => {
     try {
       const context = getUserContext(req);
       const patternId = req.params.id as string | undefined;
 
-      if (!context.organizationId) {
-        res.status(400).json({ success: false, error: 'Organization ID is required' });
+      if (!patternId || !isValidUUID(patternId)) {
+        res.status(400).json({ success: false, error: 'Valid pattern ID is required' });
         return;
       }
 
-      if (!patternId) {
-        res.status(400).json({ success: false, error: 'Pattern ID is required' });
+      const pauseSchema = z.object({
+        reason: z.string().max(500, 'Reason must be <= 500 characters').optional(),
+      });
+      const parseResult = pauseSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        res.status(400).json({ success: false, error: 'Validation failed', details: parseResult.error.issues });
+        return;
+      }
+
+      const patternEngine = new RecurringVisitPatternEngine(db.getPool());
+      const updated = await patternEngine.pausePattern(
+        patternId,
+        context.organizationId!,
+        parseResult.data.reason,
+        context
+      );
+
+      // Audit trail
+      try {
+        const auditService = new AuditService(db);
+        await auditService.logEvent(context, {
+          eventType: 'DATA_MODIFICATION',
+          resource: 'VISIT_PATTERN',
+          resourceId: patternId,
+          action: 'PATTERN_PAUSE',
+          result: 'SUCCESS',
+          metadata: {
+            reason: parseResult.data.reason,
+            status: updated.status,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent'),
+        });
+      } catch (err) {
+        console.error('Audit trail logging failed for pattern pause:', err);
+      }
+
+      // Return details in list-item format for convenience
+      const patternRepo = new VisitPatternRepository(db.getPool());
+      const listRes = await patternRepo.listPatternsWithDetails({
+        organizationId: context.organizationId!,
+        clientId: updated.clientId,
+        status: ['ACTIVE', 'PAUSED', 'CANCELLED'],
+      });
+      const patterns = listRes?.patterns ?? [];
+      const item = patterns.find((p) => p.id === patternId);
+
+      res.status(200).json({
+        success: true,
+        data: item ?? updated,
+      });
+    } catch (error: unknown) {
+      const err = error as { name?: string; statusCode?: number; message?: string; code?: string };
+      if (err.name === 'NotFoundError' || err.statusCode === 404) {
+        res.status(404).json({ success: false, error: err.message ?? 'Pattern not found' });
+        return;
+      }
+      if (err.name === 'ConflictError' || err.statusCode === 409) {
+        res.status(409).json({ success: false, error: err.message, code: err.code ?? 'INVALID_PATTERN_STATE' });
+        return;
+      }
+      next(error);
+    }
+  });
+
+  /**
+   * POST /api/visits/patterns/:id/resume
+   */
+  router.post('/patterns/:id/resume', requireSchedulingAccess('update'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const context = getUserContext(req);
+      const patternId = req.params.id as string | undefined;
+
+      if (!patternId || !isValidUUID(patternId)) {
+        res.status(400).json({ success: false, error: 'Valid pattern ID is required' });
+        return;
+      }
+
+      const patternRepo = new VisitPatternRepository(db.getPool());
+      const existing = await patternRepo.getPatternById(patternId, context.organizationId!);
+      if (!existing) {
+        res.status(404).json({ success: false, error: 'Pattern not found' });
+        return;
+      }
+
+      if (existing.status !== 'PAUSED') {
+        res.status(409).json({
+          success: false,
+          error: 'Pattern can only be resumed from PAUSED state',
+          code: 'INVALID_PATTERN_STATE',
+        });
+        return;
+      }
+
+      // Check endDate expiration
+      const todayStr = new Date().toISOString().slice(0, 10);
+      if (existing.endDate) {
+        const endStr = existing.endDate instanceof Date ? existing.endDate.toISOString().slice(0, 10) : String(existing.endDate).slice(0, 10);
+        if (endStr < todayStr) {
+          res.status(409).json({
+            success: false,
+            error: 'Cannot resume expired pattern whose end date is in the past',
+            code: 'PATTERN_EXPIRED',
+          });
+          return;
+        }
+      }
+
+      // Re-validate authorization limits
+      const guard = getAuthorizationGuard();
+      const authCheck = await guard.validatePattern({
+        organizationId: context.organizationId!,
+        clientId: existing.clientId,
+        serviceTypeId: existing.serviceTypeId,
+        dayOfWeek: existing.dayOfWeek,
+        duration: existing.duration,
+        startDate: existing.startDate,
+        endDate: existing.endDate,
+        frequency: existing.frequency,
+        patternIdToExclude: existing.id,
+      });
+
+      if (!authCheck.allowed) {
+        res.status(422).json({
+          success: false,
+          error: authCheck.message ?? 'Authorization limit exceeded',
+          code: authCheck.code ?? 'AUTHORIZATION_LIMIT_EXCEEDED',
+          details: authCheck.details,
+        });
+        return;
+      }
+
+      const patternEngine = new RecurringVisitPatternEngine(db.getPool());
+      const updated = await patternEngine.resumePattern(patternId, context.organizationId!, context);
+
+      // Audit trail
+      try {
+        const auditService = new AuditService(db);
+        await auditService.logEvent(context, {
+          eventType: 'DATA_MODIFICATION',
+          resource: 'VISIT_PATTERN',
+          resourceId: patternId,
+          action: 'PATTERN_RESUME',
+          result: 'SUCCESS',
+          metadata: {
+            status: updated.status,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent'),
+        });
+      } catch (err) {
+        console.error('Audit trail logging failed for pattern resume:', err);
+      }
+
+      const listRes = await patternRepo.listPatternsWithDetails({
+        organizationId: context.organizationId!,
+        clientId: updated.clientId,
+        status: ['ACTIVE', 'PAUSED', 'CANCELLED'],
+      });
+      const patterns = listRes?.patterns ?? [];
+      const item = patterns.find((p) => p.id === patternId);
+
+      res.status(200).json({
+        success: true,
+        data: item ?? updated,
+      });
+    } catch (error: unknown) {
+      const err = error as { name?: string; statusCode?: number; message?: string; code?: string };
+      if (err.name === 'NotFoundError' || err.statusCode === 404) {
+        res.status(404).json({ success: false, error: err.message ?? 'Pattern not found' });
+        return;
+      }
+      if (err.name === 'ConflictError' || err.statusCode === 409) {
+        res.status(409).json({ success: false, error: err.message, code: err.code ?? 'INVALID_PATTERN_STATE' });
+        return;
+      }
+      next(error);
+    }
+  });
+
+  /**
+   * POST /api/visits/patterns/:id/end
+   */
+  router.post('/patterns/:id/end', requireSchedulingAccess('update'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const context = getUserContext(req);
+      const patternId = req.params.id as string | undefined;
+
+      if (!patternId || !isValidUUID(patternId)) {
+        res.status(400).json({ success: false, error: 'Valid pattern ID is required' });
+        return;
+      }
+
+      const endSchema = z.object({
+        effectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'effectiveDate must be YYYY-MM-DD').optional(),
+        reason: z.string().min(1, 'Reason is required').max(500, 'Reason must be <= 500 characters'),
+      });
+
+      const parseResult = endSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        res.status(400).json({ success: false, error: 'Validation failed', details: parseResult.error.issues });
+        return;
+      }
+
+      const patternEngine = new RecurringVisitPatternEngine(db.getPool());
+      const { pattern: updated, retainedFutureVisits } = await patternEngine.endPattern(
+        patternId,
+        context.organizationId!,
+        parseResult.data.reason,
+        parseResult.data.effectiveDate,
+        context
+      );
+
+      // Audit trail
+      try {
+        const auditService = new AuditService(db);
+        await auditService.logEvent(context, {
+          eventType: 'DATA_MODIFICATION',
+          resource: 'VISIT_PATTERN',
+          resourceId: patternId,
+          action: 'PATTERN_END',
+          result: 'SUCCESS',
+          metadata: {
+            reason: parseResult.data.reason,
+            effectiveDate: parseResult.data.effectiveDate,
+            retainedFutureVisits,
+            status: updated.status,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent'),
+        });
+      } catch (err) {
+        console.error('Audit trail logging failed for pattern end:', err);
+      }
+
+      const patternRepo = new VisitPatternRepository(db.getPool());
+      const listRes = await patternRepo.listPatternsWithDetails({
+        organizationId: context.organizationId!,
+        clientId: updated.clientId,
+        status: ['ACTIVE', 'PAUSED', 'CANCELLED'],
+      });
+      const patterns = listRes?.patterns ?? [];
+      const item = patterns.find((p) => p.id === patternId);
+
+      res.status(200).json({
+        success: true,
+        data: item ?? updated,
+        retainedFutureVisits,
+      });
+    } catch (error: unknown) {
+      const err = error as { name?: string; statusCode?: number; message?: string; code?: string };
+      if (err.name === 'NotFoundError' || err.statusCode === 404) {
+        res.status(404).json({ success: false, error: err.message ?? 'Pattern not found' });
+        return;
+      }
+      if (err.name === 'ConflictError' || err.statusCode === 409) {
+        res.status(409).json({ success: false, error: err.message, code: err.code ?? 'INVALID_PATTERN_STATE' });
+        return;
+      }
+      next(error);
+    }
+  });
+
+  /**
+   * PUT /api/visits/patterns/:id
+   * Update future instances with options (Update this visit only / Update all future visits)
+   */
+  router.put('/patterns/:id', requireSchedulingAccess('update'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const context = getUserContext(req);
+      const patternId = req.params.id as string | undefined;
+
+      if (!patternId || !isValidUUID(patternId)) {
+        res.status(400).json({ success: false, error: 'Valid pattern ID is required' });
+        return;
+      }
+
+      const patternRepo = new VisitPatternRepository(db.getPool());
+      const existing = await patternRepo.getPatternById(patternId, context.organizationId!);
+      if (!existing) {
+        res.status(404).json({ success: false, error: 'Pattern not found' });
+        return;
+      }
+
+      // Reject all edits on CANCELLED pattern
+      if (existing.status === 'CANCELLED') {
+        res.status(409).json({
+          success: false,
+          error: 'Cannot edit a cancelled/ended pattern',
+          code: 'INVALID_PATTERN_STATE',
+        });
+        return;
+      }
+
+      // Reject updates.status changes through PUT
+      if (req.body?.updates?.status !== undefined) {
+        res.status(400).json({
+          success: false,
+          error: 'Cannot update pattern status via PUT. Use /pause, /resume, or /end endpoints.',
+          code: 'STATUS_UPDATE_DISALLOWED',
+        });
         return;
       }
 
@@ -804,6 +1317,34 @@ export function createVisitRouter(db: Database): Router {
           error: 'targetVisitId is required when updateMode is THIS_VISIT',
         });
         return;
+      }
+
+      // For ALL_FUTURE edits of startTime, duration or dayOfWeek, check authorization limits
+      if (updateMode === 'ALL_FUTURE' && updates && (updates.startTime || updates.duration || updates.dayOfWeek)) {
+        const proposedDayOfWeek = updates.dayOfWeek ?? existing.dayOfWeek;
+        const proposedDuration = updates.duration ?? existing.duration;
+        const guard = getAuthorizationGuard();
+        const authCheck = await guard.validatePattern({
+          organizationId: context.organizationId!,
+          clientId: existing.clientId,
+          serviceTypeId: existing.serviceTypeId,
+          dayOfWeek: proposedDayOfWeek,
+          duration: proposedDuration,
+          startDate: existing.startDate,
+          endDate: existing.endDate,
+          frequency: existing.frequency,
+          patternIdToExclude: existing.id,
+        });
+
+        if (!authCheck.allowed) {
+          res.status(422).json({
+            success: false,
+            error: authCheck.message ?? 'Authorization limit exceeded',
+            code: authCheck.code ?? 'AUTHORIZATION_LIMIT_EXCEEDED',
+            details: authCheck.details,
+          });
+          return;
+        }
       }
 
       const patternEngine = new RecurringVisitPatternEngine(db.getPool());
@@ -934,26 +1475,7 @@ export function createVisitRouter(db: Database): Router {
       }
 
       // Permissions check: only roles or permissions allowed to schedule may edit
-      const schedulingRoles = [
-        'SUPER_ADMIN',
-        'ORG_ADMIN',
-        'BRANCH_ADMIN',
-        'COORDINATOR',
-        'SCHEDULER',
-        'SUPERVISOR',
-        'ADMINISTRATOR',
-      ];
-      const hasSchedulingRole = (context.roles ?? []).some((role) => schedulingRoles.includes(role));
-      const hasSchedulingPermission = (context.permissions ?? []).some(
-        (perm) =>
-          perm === '*:*' ||
-          perm === 'schedules:*' ||
-          perm === 'visits:*' ||
-          perm === 'schedules:update' ||
-          perm === 'visits:update'
-      );
-
-      if (!hasSchedulingRole && !hasSchedulingPermission) {
+      if (!hasSchedulingAccess(context, 'update')) {
         res.status(403).json({
           success: false,
           error: 'Access denied: Scheduling permission required to edit visits',

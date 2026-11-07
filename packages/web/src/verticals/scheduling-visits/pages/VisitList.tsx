@@ -17,6 +17,7 @@ import {
   Zap,
   Plus,
   ChevronDown,
+  Repeat,
 } from 'lucide-react';
 import { LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
 import { Button } from '@/components/ui/button.js';
@@ -359,6 +360,15 @@ export const VisitList: React.FC = () => {
             )}
           </div>
 
+          <Link to="/scheduling/patterns">
+            <Button
+              variant="outline"
+              size="sm"
+            >
+              <Repeat className="h-4 w-4 mr-2 text-gray-600" />
+              Recurring Patterns
+            </Button>
+          </Link>
           <Link to="/scheduling/builder">
             <Button
               variant="outline"
