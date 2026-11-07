@@ -38,6 +38,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { faker } from '@faker-js/faker';
 import { Database, DatabaseConfig } from '../src/db/connection.js';
 import { Pool, PoolClient } from 'pg';
+import { assertSeedAllowed } from '../src/service/seed-guard.js';
 import { PasswordUtils } from '../src/utils/password-utils.js';
 
 dotenvConfig({ path: '.env', quiet: true });
@@ -917,6 +918,8 @@ function generateVisit(
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function seedDatabase() {
+  // Fail closed before any connection is opened (see src/service/seed-guard.ts).
+  assertSeedAllowed();
   console.log('🎭 Seeding demo data (all states, all roles, comprehensive)...\n');
 
   const env = process.env.NODE_ENV || 'development';
