@@ -10,6 +10,7 @@ import { JWTUtils, TokenPayload } from '../utils/jwt-utils';
 import { Database } from '../db/connection';
 import { AuditService } from '../audit/audit-service';
 import { UserContext } from '../types/base';
+import { PermissionService } from '../permissions/permission-service';
 
 /**
  * Extend Express Request type to include authenticated user
@@ -238,8 +239,17 @@ export class AuthMiddleware {
         return;
       }
 
-      const hasPermission = permissions.some(permission =>
-        req.user!.permissions.includes(permission)
+      const effectiveContext: UserContext = req.userContext ?? {
+        userId: req.user.userId,
+        organizationId: req.user.organizationId,
+        roles: req.user.roles,
+        permissions: req.user.permissions,
+        branchIds: req.user.branchIds ?? [],
+      };
+
+      const permService = new PermissionService();
+      const hasPermission = permissions.some((permission) =>
+        permService.hasPermission(effectiveContext, permission)
       );
 
       if (!hasPermission) {

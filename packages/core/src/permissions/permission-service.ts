@@ -269,7 +269,12 @@ export class PermissionService {
    */
   hasPermission(context: UserContext, permission: string): boolean {
     // Check explicit permissions
-    if (context.permissions.includes(permission)) {
+    if (context.permissions.includes(permission) || context.permissions.includes('*:*')) {
+      return true;
+    }
+
+    const [resource] = permission.split(':');
+    if (context.permissions.includes(`${resource}:*`)) {
       return true;
     }
 
