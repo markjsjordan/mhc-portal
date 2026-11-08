@@ -12,3 +12,5 @@ export * from './FilterDateRangeSection';
 
 export * from './OnlineStatus';
 export * from './UpdatePrompt';
+export * from './WriteGate';
+

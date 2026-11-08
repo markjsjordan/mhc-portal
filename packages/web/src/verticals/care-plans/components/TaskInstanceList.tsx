@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select.js';
-import { usePermissions } from '@/core/hooks';
+import { usePermissions, useSectionAccess } from '@/core/hooks';
 import { useTasks } from '../hooks';
 import { TaskCard } from './TaskCard.js';
 import type { TaskInstanceSearchFilters, TaskStatus, TaskCategory, TaskInstance } from '../types';
@@ -258,6 +258,7 @@ export const TaskInstanceList: React.FC<TaskInstanceListProps> = ({
   onTaskClick 
 }) => {
   const { can } = usePermissions();
+  const { canWrite, readOnly } = useSectionAccess('tasks');
   const [filters, setFilters] = useState<TaskInstanceSearchFilters>({
     carePlanId,
     clientId,
@@ -341,7 +342,7 @@ export const TaskInstanceList: React.FC<TaskInstanceListProps> = ({
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Tasks</h2>
+          <div className="flex items-center gap-2"><h2 className="text-xl font-semibold text-gray-900">Tasks</h2>{readOnly && <Badge variant="secondary">Read-only</Badge>}</div>
           <p className="text-muted-foreground mt-1">
             {data?.total ?? 0} total tasks
           </p>
@@ -426,7 +427,7 @@ export const TaskInstanceList: React.FC<TaskInstanceListProps> = ({
             <div key={task.id} onClick={() => onTaskClick?.(task)}>
               <TaskCard
                 task={task}
-                showCompleteButton={can('tasks:write') && task.status === 'SCHEDULED'}
+                showCompleteButton={can('tasks:write') && canWrite && task.status === 'SCHEDULED'}
                 onCompleted={() => { void refetch(); }}
               />
             </div>

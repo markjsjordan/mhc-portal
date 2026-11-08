@@ -1,3 +1,5 @@
+import type { Section } from './sections';
+
 export type Role =
   | 'SUPER_ADMIN'
   | 'ORG_ADMIN'
@@ -25,6 +27,7 @@ export interface User {
   roles: Role[];
   permissions: string[];
   branchIds?: string[];
+  sections?: Record<Section, { read: boolean; write: boolean }>;
 }
 
 export interface AuthState {

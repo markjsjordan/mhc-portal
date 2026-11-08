@@ -7,6 +7,11 @@ import * as clientHooks from '../../hooks/useClients.js';
 
 vi.mock('@/core/hooks', () => ({
   usePermissions: () => ({ can: () => true }),
+  useSectionAccess: () => ({
+    canRead: true,
+    canWrite: true,
+    readOnly: false,
+  }),
   useDemoData: () => ({
     hasDemoData: true,
     isSeeding: false,

@@ -15,7 +15,7 @@ import {
   TableCell,
   TableFooter,
 } from '@/components/ui/table.js';
-import { usePermissions } from '@/core/hooks';
+import { usePermissions, useSectionAccess } from '@/core/hooks';
 import { 
   useInvoice, 
   useInvoicePayments, 
@@ -29,6 +29,7 @@ export const InvoiceDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { can } = usePermissions();
+  const { canWrite, readOnly } = useSectionAccess('billing');
 
   const goTo = (path: string) => {
     Promise.resolve(navigate(path)).catch((err: unknown) => {
@@ -71,9 +72,9 @@ export const InvoiceDetail: React.FC = () => {
             Back
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <div className="flex items-center gap-2"><h1 className="text-2xl font-bold text-gray-900">
               Invoice {invoice.invoiceNumber}
-            </h1>
+            </h1>{readOnly && <Badge variant="secondary">Read-only</Badge>}</div>
             <Badge variant="outline" className="mt-2">
               {invoice.status.replace(/_/g, ' ')}
             </Badge>
@@ -89,7 +90,7 @@ export const InvoiceDetail: React.FC = () => {
             <Download className="h-4 w-4 mr-2" />
             Download PDF
           </Button>
-          {can('billing:write') && invoice.status === 'DRAFT' && (
+          {can('billing:write') && canWrite && invoice.status === 'DRAFT' && (
             <>
               <Button
                 variant="outline"
@@ -107,7 +108,7 @@ export const InvoiceDetail: React.FC = () => {
               </Button>
             </>
           )}
-          {can('billing:write') && invoice.status !== 'VOIDED' && invoice.status !== 'PAID' && (
+          {can('billing:write') && canWrite && invoice.status !== 'VOIDED' && invoice.status !== 'PAID' && (
             <Button
               variant="outline"
               onClick={() => {

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/core/utils';
 import { useAuth, usePermissions } from '@/core/hooks';
+import type { Section } from '@/core/types';
 import { Button } from '@/components/ui/button.js';
 
 export interface SidebarProps {
@@ -31,6 +32,7 @@ interface NavItem {
   path: string;
   icon: React.ReactNode;
   permission?: string;
+  section?: Section;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -55,84 +57,97 @@ const navItems: NavItem[] = [
     path: '/clients',
     icon: <Users className="h-5 w-5" />,
     permission: 'clients:read',
+    section: 'clients',
   },
   {
     label: 'Caregivers',
     path: '/caregivers',
     icon: <Users className="h-5 w-5" />,
     permission: 'caregivers:read',
+    section: 'caregivers',
   },
   {
     label: 'Visits',
     path: '/scheduling',
     icon: <Calendar className="h-5 w-5" />,
     permission: 'visits:read',
+    section: 'visits',
   },
   {
     label: 'Calendar',
     path: '/scheduling/calendar',
     icon: <Calendar className="h-5 w-5" />,
     permission: 'visits:read',
+    section: 'scheduling',
   },
   {
     label: 'Care Plans',
     path: '/care-plans',
     icon: <ClipboardList className="h-5 w-5" />,
     permission: 'care_plans:read',
+    section: 'care-plans',
   },
   {
     label: 'Tasks',
     path: '/tasks',
     icon: <CheckSquare className="h-5 w-5" />,
     permission: 'tasks:read',
+    section: 'tasks',
   },
   {
     label: 'Time Tracking',
     path: '/time-tracking',
     icon: <FileText className="h-5 w-5" />,
     permission: 'evv:read',
+    section: 'visits',
   },
   {
     label: 'Billing',
     path: '/billing',
     icon: <DollarSign className="h-5 w-5" />,
     permission: 'billing:read',
+    section: 'billing',
   },
   {
     label: 'Messages',
     path: '/messages',
     icon: <MessageCircle className="h-5 w-5" />,
     permission: 'messages:view',
+    section: 'messages',
   },
   {
     label: 'Incidents',
     path: '/incidents',
     icon: <AlertTriangle className="h-5 w-5" />,
     permission: 'incidents:read',
+    section: 'incidents',
   },
   {
     label: 'Quality Assurance',
     path: '/quality-assurance',
     icon: <ClipboardCheck className="h-5 w-5" />,
     permission: 'audits:view',
+    section: 'compliance',
   },
   {
     label: 'Compliance',
     path: '/compliance',
     icon: <Shield className="h-5 w-5" />,
     permission: 'compliance:read',
+    section: 'compliance',
   },
   {
     label: 'Admin',
     path: '/admin',
     icon: <Settings className="h-5 w-5" />,
     permission: 'admin:access',
+    section: 'admin-settings',
   },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isDesktopOpen = true }) => {
   const { logout, user } = useAuth();
-  const { can } = usePermissions();
+  const { can, canSection } = usePermissions();
 
   const handleNavClick = () => {
     // Only auto-close on navigation for mobile viewports (< 1024px)
@@ -145,6 +160,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isDesktopOpen
   const filteredNavItems = navItems.filter((item) => {
     // Hide items specified in HIDDEN_NAV_LABELS
     if (HIDDEN_NAV_LABELS.includes(item.label)) {
+      return false;
+    }
+
+    // Section-based access control: if item has a section, check READ access
+    if (item.section && !canSection(item.section, 'READ')) {
       return false;
     }
 

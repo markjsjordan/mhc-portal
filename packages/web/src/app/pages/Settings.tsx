@@ -11,6 +11,7 @@ import { NativeSelect } from '@/components/ui/select.js';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs.js';
 import { FormField } from '@/components/forms/FormField';
 import { useApiClient } from '@/core/hooks';
+import { SectionAccessEditor } from './settings/SectionAccessEditor';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { User, Lock, Bell, Users, UserPlus, Mail, Clock, CheckCircle, XCircle, Trash2, Copy, Pencil } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -722,6 +723,7 @@ function EditMemberModal({
                 </Button>
               </div>
             </form>
+            <SectionAccessEditor userId={member.id} />
           </div>
         </div>
       </div>

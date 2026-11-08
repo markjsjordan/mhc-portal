@@ -29,6 +29,11 @@ vi.mock('@/core/hooks', () => ({
   usePermissions: () => ({
     can: () => true,
   }),
+  useSectionAccess: () => ({
+    canRead: true,
+    canWrite: true,
+    readOnly: false,
+  }),
 }));
 
 vi.mock('react-router-dom', () => ({

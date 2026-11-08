@@ -22,7 +22,9 @@ import {
 import { useVisit, EditVisitModal, VisitClockControl } from '../../verticals/scheduling-visits';
 import { useClient } from '../../verticals/client-demographics';
 import { useCaregiver } from '../../verticals/caregivers';
+import { Badge } from '@/components/ui/badge.js';
 import { usePermissions } from '@/core/hooks';
+import { useSectionAccess } from '@/core/hooks/permissions';
 import { getVisitTypeConfig } from './visitTypeConfig';
 import type { Visit } from '../../verticals/scheduling-visits/types';
 import { useEVVRecord } from '../../verticals/time-tracking-evv/hooks/useEVVRecords';
@@ -105,8 +107,11 @@ export const VisitDetailPage: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const { can, hasAnyRole } = usePermissions();
+
+  const { canWrite, readOnly } = useSectionAccess('visits');
   const canEditVisit =
-    can('schedules:update') ||
+    canWrite &&
+    (can('schedules:update') ||
     can('schedules:*') ||
     can('visits:*') ||
     can('visits:update') ||
@@ -118,7 +123,7 @@ export const VisitDetailPage: React.FC = () => {
       'COORDINATOR',
       'SCHEDULER',
       'SUPERVISOR',
-    ]);
+    ]));
 
   const visit: Visit | null = modifiedVisit ?? apiVisit ?? fallbackVisit;
   const { data: client } = useClient(visit?.clientId);
@@ -489,7 +494,7 @@ export const VisitDetailPage: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-2xl font-bold text-gray-900">{visitConfig.label}</h1>
+                <div className="flex items-center gap-2"><h1 className="text-2xl font-bold text-gray-900">{visitConfig.label}</h1>{readOnly && <Badge variant="secondary">Read-only</Badge>}</div>
                 <span className="text-sm font-mono font-medium text-gray-600 bg-white/80 px-2 py-0.5 rounded border border-gray-200">
                   {visit.visitNumber || visit.id}
                 </span>

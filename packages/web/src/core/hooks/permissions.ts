@@ -1,5 +1,6 @@
 import { useAuth } from './auth';
 import type { Role } from '../types/auth';
+import type { Section } from '../types/sections';
 
 export interface UsePermissionsReturn {
   can: (permission: string) => boolean;
@@ -7,6 +8,13 @@ export interface UsePermissionsReturn {
   canAll: (permissions: string[]) => boolean;
   hasRole: (role: string) => boolean;
   hasAnyRole: (roles: string[]) => boolean;
+  canSection: (section: Section, access: 'READ' | 'WRITE') => boolean;
+}
+
+export interface UseSectionAccessReturn {
+  canRead: boolean;
+  canWrite: boolean;
+  readOnly: boolean;
 }
 
 /**
@@ -60,11 +68,39 @@ export const usePermissions = (): UsePermissionsReturn => {
     return roles.some((role) => user.roles.includes(role as Role));
   };
 
+  const canSection = (section: Section, access: 'READ' | 'WRITE'): boolean => {
+    // If sections is undefined (showcase or demo mode, or shadow default), allow everything
+    if (!user?.sections) {
+      return true;
+    }
+    const entries: Partial<Record<Section, { read: boolean; write: boolean }>> = user.sections;
+    const sec = entries[section];
+    if (!sec) {
+      return false;
+    }
+    if (access === 'READ') {
+      return sec.read;
+    }
+    return sec.write;
+  };
+
   return {
     can,
     canAny,
     canAll,
     hasRole,
     hasAnyRole,
+    canSection,
+  };
+};
+
+export const useSectionAccess = (section: Section): UseSectionAccessReturn => {
+  const { canSection } = usePermissions();
+  const canRead = canSection(section, 'READ');
+  const canWrite = canSection(section, 'WRITE');
+  return {
+    canRead,
+    canWrite,
+    readOnly: canRead && !canWrite,
   };
 };
