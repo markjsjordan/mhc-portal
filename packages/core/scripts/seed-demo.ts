@@ -1303,8 +1303,9 @@ async function seedDatabase() {
             hire_date, employment_type, employment_status, pay_rate,
             credentials, specializations, languages,
             max_travel_distance, role, availability, preferred_contact_method, status,
+            user_id, portal_access_status, portal_activated_at,
             created_by, updated_by, is_demo_data
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, true)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, true)
           `,
           [
             caregiverUserId, // Use THE SAME ID as user record
@@ -1349,6 +1350,9 @@ async function seedDatabase() {
             JSON.stringify({ monday: true, tuesday: true, wednesday: true, thursday: true, friday: true }),
             'SMS',
             'ACTIVE',
+            caregiverUserId, // user_id link
+            'ACTIVE', // portal_access_status
+            new Date(), // portal_activated_at
             systemUserId,
             systemUserId,
           ]
@@ -1412,8 +1416,9 @@ async function seedDatabase() {
             hire_date, employment_type, employment_status, pay_rate,
             credentials, specializations, languages,
             max_travel_distance, role, availability, preferred_contact_method, status,
+            user_id, portal_access_status, portal_activated_at,
             created_by, updated_by, is_demo_data
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, true)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, true)
           `,
           [
             caregiverUserId, // Use THE SAME ID as user record
@@ -1458,6 +1463,9 @@ async function seedDatabase() {
             }), // availability
             'PHONE', // preferred_contact_method
             'ACTIVE', // status
+            caregiverUserId, // user_id link
+            'ACTIVE', // portal_access_status
+            new Date(), // portal_activated_at
             caregiver.createdBy,
             caregiver.createdBy,
           ]
@@ -1712,8 +1720,9 @@ async function seedDatabase() {
             relationship, is_primary_contact,
             preferred_contact_method, portal_access_level,
             status, invitation_status, receive_notifications,
+            user_id, portal_access_status, portal_activated_at,
             access_granted_by, created_by, updated_by, is_demo_data
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, true)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, true)
           `,
           [
             familyId,
@@ -1731,6 +1740,9 @@ async function seedDatabase() {
             'ACTIVE',
             'ACCEPTED',
             true,
+            null, // user_id (no user account for generic family members)
+            'NONE', // portal_access_status (no portal access)
+            null, // portal_activated_at
             systemUserId,
             systemUserId,
             systemUserId,
@@ -2099,8 +2111,9 @@ async function seedDatabase() {
             relationship, is_primary_contact,
             preferred_contact_method, portal_access_level,
             status, invitation_status, receive_notifications,
+            user_id, portal_access_status, portal_activated_at,
             access_granted_by, created_by, updated_by, is_demo_data
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, true)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, true)
           `,
           [
             familyMemberId,
@@ -2118,6 +2131,9 @@ async function seedDatabase() {
             'ACTIVE',
             'ACCEPTED',
             true,
+            gertrudeFamilyUserId, // user_id link
+            'ACTIVE', // portal_access_status
+            new Date(), // portal_activated_at
             systemUserId,
             systemUserId,
             systemUserId,
@@ -2256,8 +2272,9 @@ async function seedDatabase() {
           preferred_contact_method, portal_access_level,
           status, invitation_status, receive_notifications,
           notification_preferences,
+          user_id, portal_access_status, portal_activated_at,
           access_granted_by, created_by, updated_by, is_demo_data
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, true)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, true)
         ON CONFLICT (id) DO UPDATE SET
           client_id = EXCLUDED.client_id,
           updated_at = NOW()
@@ -2285,6 +2302,9 @@ async function seedDatabase() {
             progressUpdates: true,
             billingNotifications: false,
           }),
+          emilyUserId, // user_id link
+          'ACTIVE', // portal_access_status
+          new Date(), // portal_activated_at
           systemUserId,
           systemUserId,
           systemUserId,
@@ -2692,9 +2712,16 @@ async function seedDatabase() {
       console.log(`✅ Creating task instances for caregivers...`);
 
       // Get the TX caregiver ID to assign some tasks to them
-      const txCaregiverResult = await client.query(
-        'SELECT id FROM caregivers WHERE email = $1',
+      // Look up by user_id instead of email (matching the identity migration)
+      const txCaregiverUserResult = await client.query(
+        'SELECT id FROM users WHERE email = $1',
         ['caregiver@tx.folkcare.example']
+      );
+      const txCaregiverUserId = txCaregiverUserResult.rows.length > 0 ? txCaregiverUserResult.rows[0].id : null;
+      
+      const txCaregiverResult = await client.query(
+        'SELECT id FROM caregivers WHERE user_id = $1',
+        [txCaregiverUserId]
       );
       const txCaregiverId = txCaregiverResult.rows.length > 0 ? txCaregiverResult.rows[0].id : null;
 
