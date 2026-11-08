@@ -12,6 +12,17 @@ export { CaregiverRepository } from './repository/caregiver-repository.js';
 
 // Services
 export { CaregiverService } from './service/caregiver-service.js';
+export {
+  CaregiverAvailabilityService,
+  SystemClock,
+  type Clock,
+  type BookedVisitConflict,
+  type ResolvedAvailability,
+  type SaveAvailabilityInput,
+  AvailabilityCutoffError,
+  AvailabilityConflictError,
+  VersionMismatchError,
+} from './service/caregiver-availability-service.js';
 export { CaregiverImportService } from './service/caregiver-import-service.js';
 export type { CaregiverImportRow } from './service/caregiver-import-service.js';
 

@@ -21,11 +21,14 @@ import {
   SeedNotAllowedError,
   AuditService,
   UserContext,
+  PermissionService,
   getPermissionService,
   getCacheService,
   CacheKeys,
   SECTIONS,
   SectionAccessService,
+  PortalAccessService,
+  PermissionError,
 } from '@folkcare/core';
 
 export function createOrganizationRouter(db: Database): Router {
@@ -506,7 +509,7 @@ export function createOrganizationRouter(db: Database): Router {
         );
 
         if (newLocationRequired !== undefined && newLocationRequired !== oldLocationRequired) {
-          void auditService.logEvent(userContext, {
+          await auditService.logEvent(userContext, {
             eventType: 'CONFIGURATION',
             resource: 'organization',
             resourceId: id,
@@ -712,9 +715,43 @@ export function createOrganizationRouter(db: Database): Router {
         }
 
         const users = await organizationService.getOrganizationUsers(organizationId);
+
+        // Batch query active caregiver links and active family client counts
+        const userIds = users.map((u) => u.id);
+        const caregiverMap = new Map<string, string>();
+        const familyCountMap = new Map<string, number>();
+
+        if (userIds.length > 0) {
+          const cgRes = await db.query<{ id: string; user_id: string }>(
+            `SELECT id, user_id FROM caregivers
+             WHERE user_id = ANY($1) AND portal_access_status = 'ACTIVE' AND deleted_at IS NULL`,
+            [userIds]
+          );
+          for (const row of cgRes.rows) {
+            caregiverMap.set(row.user_id, row.id);
+          }
+
+          const fmRes = await db.query<{ user_id: string; client_count: string | number }>(
+            `SELECT user_id, COUNT(DISTINCT client_id) as client_count
+             FROM family_members
+             WHERE user_id = ANY($1) AND portal_access_status = 'ACTIVE'
+             GROUP BY user_id`,
+            [userIds]
+          );
+          for (const row of fmRes.rows) {
+            familyCountMap.set(row.user_id, Number(row.client_count));
+          }
+        }
+
+        const enrichedUsers = users.map((u) => ({
+          ...u,
+          linkedCaregiverId: caregiverMap.get(u.id) ?? null,
+          linkedFamilyClientCount: familyCountMap.get(u.id) ?? 0,
+        }));
+
         res.json({
           success: true,
-          data: users,
+          data: enrichedUsers,
         });
       } catch (error) {
         console.error('Get organization users error:', error);
@@ -1257,7 +1294,20 @@ export function createOrganizationRouter(db: Database): Router {
     try {
       const request: AcceptInviteRequest = req.body;
 
+      // Check if token has target_type CAREGIVER or FAMILY
+      const tokenRes = await db.query<{ target_type: string | null; target_id: string | null; status: string }>(
+        `SELECT target_type, target_id, status FROM invite_tokens WHERE token = $1`,
+        [request.token]
+      );
+      const inviteTokenRow = tokenRes.rows[0];
+
       const userId = await organizationService.acceptInvitation(request);
+
+      if (inviteTokenRow?.target_type === 'CAREGIVER' || inviteTokenRow?.target_type === 'FAMILY') {
+        const permissionService = new PermissionService();
+        const portalAccessService = new PortalAccessService(db, permissionService, auditService);
+        await portalAccessService.acceptPortalInvite(request.token, userId);
+      }
 
       res.status(201).json({
         success: true,
@@ -1285,6 +1335,24 @@ export function createOrganizationRouter(db: Database): Router {
         return;
       }
 
+      if (error instanceof ConflictError) {
+        res.status(409).json({
+          success: false,
+          error: error.message,
+          code: error.code,
+        });
+        return;
+      }
+
+      if (error instanceof PermissionError) {
+        res.status(403).json({
+          success: false,
+          error: error.message,
+          code: error.code,
+        });
+        return;
+      }
+
       console.error('Accept invitation error:', error);
       res.status(500).json({
         success: false,
@@ -1292,6 +1360,83 @@ export function createOrganizationRouter(db: Database): Router {
       });
     }
   });
+
+  /**
+   * POST /api/portal-invitations/accept
+   * Accept a portal invitation for an already-authenticated user
+   */
+  router.post('/portal-invitations/accept',
+    authMiddleware.requireAuth,
+    async (req: Request, res: Response): Promise<void> => {
+      try {
+        const bodySchema = z.object({
+          token: z.string().min(1, 'Invitation token is required'),
+        });
+        const parseResult = bodySchema.safeParse(req.body);
+        if (!parseResult.success) {
+          res.status(400).json({
+            success: false,
+            error: parseResult.error.issues[0]?.message ?? 'Invalid invitation token',
+          });
+          return;
+        }
+
+        const permissionService = new PermissionService();
+        const portalAccessService = new PortalAccessService(db, permissionService, auditService);
+
+        await portalAccessService.acceptPortalInvite(parseResult.data.token, req.user!.userId);
+
+        res.json({
+          success: true,
+          data: {
+            message: 'Portal invitation accepted successfully',
+          },
+        });
+      } catch (error) {
+        if (error instanceof ValidationError) {
+          res.status(400).json({
+            success: false,
+            error: error.message,
+            code: error.code,
+          });
+          return;
+        }
+
+        if (error instanceof NotFoundError) {
+          res.status(404).json({
+            success: false,
+            error: error.message,
+            code: error.code,
+          });
+          return;
+        }
+
+        if (error instanceof ConflictError) {
+          res.status(409).json({
+            success: false,
+            error: error.message,
+            code: error.code,
+          });
+          return;
+        }
+
+        if (error instanceof PermissionError) {
+          res.status(403).json({
+            success: false,
+            error: error.message,
+            code: error.code,
+          });
+          return;
+        }
+
+        console.error('Accept portal invitation error:', error);
+        res.status(500).json({
+          success: false,
+          error: 'Failed to accept portal invitation',
+        });
+      }
+    }
+  );
 
   /**
    * DELETE /api/invitations/:token

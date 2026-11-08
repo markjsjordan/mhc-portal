@@ -378,6 +378,8 @@ describe('EVVRepository', () => {
         id: 'evv-123',
         visitId: 'visit-123',
         organizationId: 'org-123',
+        clientName: 'John Doe',
+        caregiverName: 'Jane Smith',
         recordStatus: 'PENDING',
         verificationLevel: 'FULL',
         complianceFlags: ['COMPLIANT' as any],
@@ -678,6 +680,8 @@ describe('EVVRepository', () => {
       const result = await repository.searchEVVRecords(filters, pagination);
 
       expect(result.items).toHaveLength(2);
+      expect(result.items[0]?.clientName).toBe('John Doe');
+      expect(result.items[0]?.caregiverName).toBe('Jane Smith');
       expect(result.total).toBe(2);
       expect(result.page).toBe(1);
       expect(result.limit).toBe(10);

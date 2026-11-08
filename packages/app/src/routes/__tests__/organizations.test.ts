@@ -302,7 +302,10 @@ describe('Organization Routes', () => {
       // POST /organizations/:id/seed-demo
       // DELETE /organizations/:id/demo-data
       // GET /organizations/:id/demo-data/status
-      expect(routes.length).toBe(20);
+      // POST /portal-invitations/accept
+      // GET /organizations/:id/users/:userId/section-access
+      // PUT /organizations/:id/users/:userId/section-access
+      expect(routes.length).toBe(21);
     });
   });
 

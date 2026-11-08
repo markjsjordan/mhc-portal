@@ -40,6 +40,15 @@ export const EVVRecordDetail: React.FC = () => {
     );
   }
 
+  const formattedServiceDate = record.serviceDate
+    ? new Date(record.serviceDate).toLocaleDateString()
+    : undefined;
+
+  const visitTitleParts = [record.clientName, formattedServiceDate].filter(Boolean);
+  const visitLabel = visitTitleParts.length > 0
+    ? visitTitleParts.join(' · ')
+    : 'Visit';
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -61,8 +70,13 @@ export const EVVRecordDetail: React.FC = () => {
         <CardContent className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-1">Visit ID</h3>
-              <p className="text-lg font-semibold">{record.visitId}</p>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Visit</h3>
+              <p className="text-lg font-semibold">{visitLabel}</p>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">Caregiver</h3>
+              <p className="text-lg font-semibold">{record.caregiverName ?? 'Unassigned name'}</p>
             </div>
 
             <div>

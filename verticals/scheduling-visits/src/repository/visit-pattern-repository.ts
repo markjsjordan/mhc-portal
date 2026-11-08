@@ -14,8 +14,10 @@ import {
 import type {
   VisitPattern,
   CreateVisitPatternInput,
+  PatternListItem,
 } from '../types/visit-pattern.js';
 import type { Visit, DayOfWeek, Frequency } from '../types/schedule.js';
+import { buildRecurrenceSummary } from '../utils/recurrence-summary.js';
 
 export class VisitPatternRepository {
   constructor(private pool: Pool) {}
@@ -122,6 +124,173 @@ export class VisitPatternRepository {
   }
 
   /**
+   * List patterns with joined client/caregiver names, recurrence summary, and visit counts
+   */
+  async listPatternsWithDetails(filters: {
+    organizationId: UUID;
+    branchIds?: UUID[];
+    clientId?: UUID;
+    caregiverId?: UUID;
+    unassigned?: boolean;
+    status?: string | string[];
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ patterns: PatternListItem[]; total: number }> {
+    const conditions: string[] = ['vp.organization_id = $1', 'vp.deleted_at IS NULL'];
+    const values: unknown[] = [filters.organizationId];
+
+    if (filters.branchIds && filters.branchIds.length > 0) {
+      values.push(filters.branchIds);
+      conditions.push(`(vp.branch_id IS NULL OR vp.branch_id = ANY($${values.length}))`);
+    }
+
+    if (filters.clientId) {
+      values.push(filters.clientId);
+      conditions.push(`vp.client_id = $${values.length}`);
+    }
+
+    if (filters.caregiverId) {
+      values.push(filters.caregiverId);
+      conditions.push(`vp.caregiver_id = $${values.length}`);
+    }
+
+    if (filters.unassigned) {
+      conditions.push('vp.caregiver_id IS NULL');
+    }
+
+    if (filters.status) {
+      const statuses = Array.isArray(filters.status)
+        ? filters.status
+        : filters.status.split(',').map((s) => s.trim()).filter(Boolean);
+      if (statuses.length > 0) {
+        values.push(statuses);
+        conditions.push(`vp.status = ANY($${values.length})`);
+      }
+    } else {
+      // Default: ACTIVE, PAUSED
+      conditions.push(`vp.status IN ('ACTIVE', 'PAUSED')`);
+    }
+
+    if (filters.search) {
+      values.push(`%${filters.search.trim()}%`);
+      conditions.push(`(c.first_name || ' ' || c.last_name ILIKE $${values.length})`);
+    }
+
+    const whereClause = conditions.join(' AND ');
+
+    // Total count query
+    const countQuery = `
+      SELECT COUNT(*)::int AS total
+      FROM visit_patterns vp
+      LEFT JOIN clients c ON vp.client_id = c.id
+      WHERE ${whereClause}
+    `;
+    const countResult = await this.pool.query(countQuery, values);
+    const total = countResult.rows[0]?.total ?? 0;
+
+    // Main query
+    const limit = Math.min(Math.max(Number(filters.limit ?? 50), 1), 200);
+    const offset = Math.max(Number(filters.offset ?? 0), 0);
+
+    const dataValues = [...values, limit, offset];
+    const limitPlaceholder = `$${dataValues.length - 1}`;
+    const offsetPlaceholder = `$${dataValues.length}`;
+
+    const query = `
+      SELECT
+        vp.*,
+        c.first_name AS client_first_name,
+        c.last_name AS client_last_name,
+        cg.first_name AS caregiver_first_name,
+        cg.last_name AS caregiver_last_name,
+        vs.next_visit_date,
+        COALESCE(vs.future_visit_count, 0) AS future_visit_count
+      FROM visit_patterns vp
+      LEFT JOIN clients c ON vp.client_id = c.id
+      LEFT JOIN caregivers cg ON vp.caregiver_id = cg.id
+      LEFT JOIN (
+        SELECT
+          pattern_id,
+          MIN(scheduled_date)::text AS next_visit_date,
+          COUNT(*)::int AS future_visit_count
+        FROM visits
+        WHERE scheduled_date >= CURRENT_DATE
+          AND deleted_at IS NULL
+          AND status != 'CANCELLED'
+        GROUP BY pattern_id
+      ) vs ON vs.pattern_id = vp.id
+      WHERE ${whereClause}
+      ORDER BY
+        vp.status ASC,
+        c.last_name ASC,
+        c.first_name ASC,
+        vp.created_at DESC
+      LIMIT ${limitPlaceholder} OFFSET ${offsetPlaceholder}
+    `;
+
+    const result = await this.pool.query(query, dataValues);
+
+    const patterns: PatternListItem[] = result.rows.map((row) => {
+      const dayOfWeek = (
+        typeof row.day_of_week === 'string'
+          ? JSON.parse(row.day_of_week)
+          : row.day_of_week
+      ) as DayOfWeek[];
+
+      const clientName = [row.client_first_name, row.client_last_name]
+        .filter(Boolean)
+        .join(' ') || 'Unknown Client';
+
+      const caregiverName = row.caregiver_id
+        ? [row.caregiver_first_name, row.caregiver_last_name].filter(Boolean).join(' ') || 'Unknown Caregiver'
+        : null;
+
+      const recurrenceSummary = buildRecurrenceSummary({
+        frequency: row.frequency,
+        dayOfWeek,
+        startTime: row.start_time,
+        duration: Number(row.duration),
+      });
+
+      const startDate = row.start_date instanceof Date
+        ? row.start_date.toISOString().slice(0, 10)
+        : String(row.start_date).slice(0, 10);
+
+      const endDate = row.end_date
+        ? (row.end_date instanceof Date ? row.end_date.toISOString().slice(0, 10) : String(row.end_date).slice(0, 10))
+        : null;
+
+      const updatedAt = row.updated_at instanceof Date
+        ? row.updated_at.toISOString()
+        : new Date(row.updated_at).toISOString();
+
+      return {
+        id: row.id,
+        clientId: row.client_id,
+        clientName,
+        caregiverId: row.caregiver_id ?? null,
+        caregiverName,
+        serviceTypeId: row.service_type_id,
+        serviceTypeName: row.service_type_name ?? 'Personal Care',
+        frequency: row.frequency,
+        dayOfWeek,
+        startTime: row.start_time,
+        duration: Number(row.duration),
+        recurrenceSummary,
+        startDate,
+        endDate,
+        status: row.status,
+        nextVisitDate: row.next_visit_date ?? null,
+        futureVisitCount: Number(row.future_visit_count ?? 0),
+        updatedAt,
+      };
+    });
+
+    return { patterns, total };
+  }
+
+  /**
    * Update pattern record
    */
   async updatePattern(
@@ -160,6 +329,30 @@ export class VisitPatternRepository {
     if (updates.endDate !== undefined) {
       values.push(updates.endDate);
       setClauses.push(`end_date = $${values.length}`);
+    }
+    if (updates.pausedAt !== undefined) {
+      values.push(updates.pausedAt);
+      setClauses.push(`paused_at = $${values.length}`);
+    }
+    if (updates.pausedBy !== undefined) {
+      values.push(updates.pausedBy);
+      setClauses.push(`paused_by = $${values.length}`);
+    }
+    if (updates.pauseReason !== undefined) {
+      values.push(updates.pauseReason);
+      setClauses.push(`pause_reason = $${values.length}`);
+    }
+    if (updates.endedAt !== undefined) {
+      values.push(updates.endedAt);
+      setClauses.push(`ended_at = $${values.length}`);
+    }
+    if (updates.endedBy !== undefined) {
+      values.push(updates.endedBy);
+      setClauses.push(`ended_by = $${values.length}`);
+    }
+    if (updates.endReason !== undefined) {
+      values.push(updates.endReason);
+      setClauses.push(`end_reason = $${values.length}`);
     }
 
     const query = `
@@ -364,6 +557,12 @@ export class VisitPatternRepository {
       clientInstructions: row.client_instructions ?? undefined,
       caregiverInstructions: row.caregiver_instructions ?? undefined,
       skipHolidays: row.skip_holidays !== false,
+      pausedAt: row.paused_at ? new Date(row.paused_at) : undefined,
+      pausedBy: row.paused_by ?? undefined,
+      pauseReason: row.pause_reason ?? undefined,
+      endedAt: row.ended_at ? new Date(row.ended_at) : undefined,
+      endedBy: row.ended_by ?? undefined,
+      endReason: row.end_reason ?? undefined,
       createdAt: new Date(row.created_at),
       createdBy: row.created_by,
       updatedAt: new Date(row.updated_at),

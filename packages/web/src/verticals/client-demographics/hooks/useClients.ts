@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useApiClient } from '@/core/hooks';
 import { createClientApiService } from '../services/client-api';
@@ -17,6 +17,7 @@ export const useClients = (filters?: ClientSearchFilters & SearchParams) => {
   return useQuery({
     queryKey: ['clients', filters],
     queryFn: () => clientApi.getClients(filters),
+    placeholderData: keepPreviousData,
   });
 };
 
@@ -86,6 +87,7 @@ export const useClientsDashboard = (filters?: ClientSearchFilters & SearchParams
   return useQuery({
     queryKey: ['clients', 'dashboard', filters],
     queryFn: () => clientApi.getClientsDashboard(filters),
+    placeholderData: keepPreviousData,
   });
 };
 
@@ -95,5 +97,48 @@ export const useBranches = () => {
   return useQuery({
     queryKey: ['branches'],
     queryFn: () => clientApi.getBranches(),
+  });
+};
+
+export const useFamilyPortalAccess = (clientId: string | undefined) => {
+  const clientApi = useClientApi();
+
+  return useQuery({
+    queryKey: ['family-portal-access', clientId],
+    queryFn: () => clientApi.getFamilyPortalAccess(clientId!),
+    enabled: !!clientId,
+  });
+};
+
+export const useInviteFamilyPortal = (clientId: string | undefined) => {
+  const clientApi = useClientApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (familyMemberId: string) => clientApi.inviteFamilyPortal(familyMemberId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['family-portal-access', clientId] });
+      toast.success('Invitation sent successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to send invitation');
+    },
+  });
+};
+
+export const useRevokeFamilyPortal = (clientId: string | undefined) => {
+  const clientApi = useClientApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ familyMemberId, reason }: { familyMemberId: string; reason: string }) =>
+      clientApi.revokeFamilyPortal(familyMemberId, reason),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['family-portal-access', clientId] });
+      toast.success('Portal access revoked');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to revoke portal access');
+    },
   });
 };

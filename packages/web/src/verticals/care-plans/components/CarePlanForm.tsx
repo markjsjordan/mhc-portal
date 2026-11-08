@@ -602,6 +602,10 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
 
   const renderReview = () => {
     const watchedValues = getValues();
+    const selectedClient = clients.find((c) => c.id === watchedValues.clientId);
+    const clientDisplayName = selectedClient
+      ? `${selectedClient.firstName} ${selectedClient.lastName}`.trim()
+      : 'Not selected';
     
     return (
       <div className="space-y-6">
@@ -622,12 +626,8 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
                 <dd className="mt-1 text-sm">{watchedValues.planType.replace(/_/g, ' ')}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-muted-foreground">Client ID</dt>
-                <dd className="mt-1 text-sm">{watchedValues.clientId}</dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-muted-foreground">Organization ID</dt>
-                <dd className="mt-1 text-sm">{watchedValues.organizationId}</dd>
+                <dt className="text-sm font-medium text-muted-foreground">Client</dt>
+                <dd className="mt-1 text-sm">{clientDisplayName}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">Effective Date</dt>

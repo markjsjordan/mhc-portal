@@ -20,6 +20,10 @@ import {
   ImportPreviewRow,
   ImportPreviewResult,
   CommitImportResult,
+  PortalAccessService,
+  PermissionService,
+  AuditService,
+  CaregiverEmploymentStatus,
 } from '@folkcare/core';
 import {
   Caregiver,
@@ -95,11 +99,36 @@ export class CaregiverImportService implements ImportService<CaregiverImportRow,
   private repository: CaregiverRepository;
   private validator: CaregiverValidator;
   private database: Database;
+  private portalAccessHook: {
+    handleCaregiverStatusChange(
+      caregiverId: string,
+      previousStatus: CaregiverEmploymentStatus,
+      newStatus: CaregiverEmploymentStatus,
+      context: UserContext
+    ): Promise<void>;
+  };
 
-  constructor(database: Database) {
+  constructor(
+    database: Database,
+    portalAccessHook?: {
+      handleCaregiverStatusChange(
+        caregiverId: string,
+        previousStatus: CaregiverEmploymentStatus,
+        newStatus: CaregiverEmploymentStatus,
+        context: UserContext
+      ): Promise<void>;
+    }
+  ) {
     this.database = database;
     this.repository = new CaregiverRepository(database);
     this.validator = new CaregiverValidator();
+    this.portalAccessHook =
+      portalAccessHook ??
+      new PortalAccessService(
+        database,
+        new PermissionService(),
+        new AuditService(database)
+      );
   }
 
   /**
@@ -400,6 +429,21 @@ export class CaregiverImportService implements ImportService<CaregiverImportRow,
     return errors;
   }
 
+  private async handleImportStatusChange(
+    existing: Caregiver,
+    newStatus: EmploymentStatus | undefined,
+    context: UserContext
+  ): Promise<void> {
+    if (newStatus && newStatus !== existing.employmentStatus) {
+      await this.portalAccessHook.handleCaregiverStatusChange(
+        existing.id,
+        existing.employmentStatus as CaregiverEmploymentStatus,
+        newStatus as CaregiverEmploymentStatus,
+        context
+      );
+    }
+  }
+
   /**
    * Import caregivers from parsed records
    */
@@ -508,6 +552,11 @@ export class CaregiverImportService implements ImportService<CaregiverImportRow,
               // Update existing caregiver
               const updateInput = this.mapRowToUpdateInput(record);
               await this.repository.update(existingCaregiver.id, updateInput, context);
+              await this.handleImportStatusChange(
+                existingCaregiver,
+                updateInput.employmentStatus,
+                context
+              );
               importedIds.push(existingCaregiver.id);
               updated++;
             } else {

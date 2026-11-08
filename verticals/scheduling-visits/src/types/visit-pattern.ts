@@ -26,6 +26,33 @@ export interface VisitPattern extends Entity, SoftDeletable {
   clientInstructions?: string;
   caregiverInstructions?: string;
   skipHolidays?: boolean;
+  pausedAt?: Date;
+  pausedBy?: UUID;
+  pauseReason?: string;
+  endedAt?: Date;
+  endedBy?: UUID;
+  endReason?: string;
+}
+
+export interface PatternListItem {
+  id: UUID;
+  clientId: UUID;
+  clientName: string;
+  caregiverId: UUID | null;
+  caregiverName: string | null;
+  serviceTypeId: UUID;
+  serviceTypeName: string;
+  frequency: Frequency;
+  dayOfWeek: DayOfWeek[];
+  startTime: string;
+  duration: number;
+  recurrenceSummary: string;
+  startDate: string;
+  endDate: string | null;
+  status: VisitPatternStatus;
+  nextVisitDate: string | null;
+  futureVisitCount: number;
+  updatedAt: string;
 }
 
 export interface CaregiverTimeOffException {
