@@ -212,15 +212,7 @@ export class EVVRepository {
    * Get EVV record by ID
    */
   async getEVVRecordById(id: UUID): Promise<EVVRecord | null> {
-    const query = `
-      SELECT evv_records.*,
-        COALESCE(c.first_name || ' ' || c.last_name, evv_records.client_name) AS client_name,
-        COALESCE(cg.first_name || ' ' || cg.last_name, evv_records.caregiver_name) AS caregiver_name
-      FROM evv_records
-      LEFT JOIN clients c ON c.id = evv_records.client_id
-      LEFT JOIN caregivers cg ON cg.id = evv_records.caregiver_id
-      WHERE evv_records.id = $1
-    `;
+    const query = 'SELECT * FROM evv_records WHERE id = $1';
     const result = await this.database.query(query, [id]);
     return result.rows[0] ? this.mapEVVRecord(result.rows[0] as unknown as EVVRecordRow) : null;
   }
@@ -229,15 +221,7 @@ export class EVVRepository {
    * Get EVV record by visit ID
    */
   async getEVVRecordByVisitId(visitId: UUID): Promise<EVVRecord | null> {
-    const query = `
-      SELECT evv_records.*,
-        COALESCE(c.first_name || ' ' || c.last_name, evv_records.client_name) AS client_name,
-        COALESCE(cg.first_name || ' ' || cg.last_name, evv_records.caregiver_name) AS caregiver_name
-      FROM evv_records
-      LEFT JOIN clients c ON c.id = evv_records.client_id
-      LEFT JOIN caregivers cg ON cg.id = evv_records.caregiver_id
-      WHERE evv_records.visit_id = $1
-    `;
+    const query = 'SELECT * FROM evv_records WHERE visit_id = $1';
     const result = await this.database.query(query, [visitId]);
     return result.rows[0] ? this.mapEVVRecord(result.rows[0] as unknown as EVVRecordRow) : null;
   }
@@ -307,79 +291,79 @@ export class EVVRepository {
     let paramIndex = 1;
 
     if (filters.organizationId) {
-      conditions.push(`evv_records.organization_id = $${paramIndex}`);
+      conditions.push(`organization_id = $${paramIndex}`);
       values.push(filters.organizationId);
       paramIndex++;
     }
 
     if (filters.branchId) {
-      conditions.push(`evv_records.branch_id = $${paramIndex}`);
+      conditions.push(`branch_id = $${paramIndex}`);
       values.push(filters.branchId);
       paramIndex++;
     }
 
     if (filters.clientId) {
-      conditions.push(`evv_records.client_id = $${paramIndex}`);
+      conditions.push(`client_id = $${paramIndex}`);
       values.push(filters.clientId);
       paramIndex++;
     }
 
     if (filters.caregiverId) {
-      conditions.push(`evv_records.caregiver_id = $${paramIndex}`);
+      conditions.push(`caregiver_id = $${paramIndex}`);
       values.push(filters.caregiverId);
       paramIndex++;
     }
 
     if (filters.visitId) {
-      conditions.push(`evv_records.visit_id = $${paramIndex}`);
+      conditions.push(`visit_id = $${paramIndex}`);
       values.push(filters.visitId);
       paramIndex++;
     }
 
     if (filters.startDate) {
-      conditions.push(`evv_records.service_date >= $${paramIndex}`);
+      conditions.push(`service_date >= $${paramIndex}`);
       values.push(filters.startDate);
       paramIndex++;
     }
 
     if (filters.endDate) {
-      conditions.push(`evv_records.service_date <= $${paramIndex}`);
+      conditions.push(`service_date <= $${paramIndex}`);
       values.push(filters.endDate);
       paramIndex++;
     }
 
     if (filters.status && filters.status.length > 0) {
-      conditions.push(`evv_records.record_status = ANY($${paramIndex})`);
+      conditions.push(`record_status = ANY($${paramIndex})`);
       values.push(filters.status);
       paramIndex++;
     }
 
     if (filters.verificationLevel && filters.verificationLevel.length > 0) {
-      conditions.push(`evv_records.verification_level = ANY($${paramIndex})`);
+      conditions.push(`verification_level = ANY($${paramIndex})`);
       values.push(filters.verificationLevel);
       paramIndex++;
     }
 
     if (filters.hasComplianceFlags) {
-      conditions.push(`jsonb_array_length(evv_records.compliance_flags) > 0`);
+      conditions.push(`jsonb_array_length(compliance_flags) > 0`);
     }
 
     if (filters.complianceFlags && filters.complianceFlags.length > 0) {
-      conditions.push(`evv_records.compliance_flags ?| $${paramIndex}`);
+      conditions.push(`compliance_flags ?| $${paramIndex}`);
       values.push(filters.complianceFlags);
       paramIndex++;
     }
 
     if (filters.submittedToPayor !== undefined) {
       if (filters.submittedToPayor) {
-        conditions.push(`evv_records.submitted_to_payor IS NOT NULL`);
+        conditions.push(`submitted_to_payor IS NOT NULL`);
       } else {
-        conditions.push(`evv_records.submitted_to_payor IS NULL`);
+        conditions.push(`submitted_to_payor IS NULL`);
       }
     }
 
     if (filters.payorApprovalStatus && filters.payorApprovalStatus.length > 0) {
-      conditions.push(`evv_records.payor_approval_status = ANY($${paramIndex})`);
+      conditions.push(`payor_approval_status = ANY($${paramIndex})`);
       values.push(filters.payorApprovalStatus);
       paramIndex++;
     }
@@ -418,14 +402,9 @@ export class EVVRepository {
 
     // Use parameterized query with completely safe ORDER BY clause
     const dataQuery = `
-      SELECT evv_records.*,
-        COALESCE(c.first_name || ' ' || c.last_name, evv_records.client_name) AS client_name,
-        COALESCE(cg.first_name || ' ' || cg.last_name, evv_records.caregiver_name) AS caregiver_name
-      FROM evv_records
-      LEFT JOIN clients c ON c.id = evv_records.client_id
-      LEFT JOIN caregivers cg ON cg.id = evv_records.caregiver_id
+      SELECT * FROM evv_records
       ${whereClause}
-      ORDER BY evv_records.${finalOrderClause}
+      ORDER BY ${finalOrderClause}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
 

@@ -386,11 +386,7 @@ describe('EVVRepository', () => {
       }));
 
       expect(mockDatabase.query).toHaveBeenCalledWith(
-        expect.stringContaining('LEFT JOIN clients c ON c.id = evv_records.client_id'),
-        ['evv-123']
-      );
-      expect(mockDatabase.query).toHaveBeenCalledWith(
-        expect.stringContaining('LEFT JOIN caregivers cg ON cg.id = evv_records.caregiver_id'),
+        'SELECT * FROM evv_records WHERE id = $1',
         ['evv-123']
       );
     });
@@ -463,7 +459,7 @@ describe('EVVRepository', () => {
       expect(result?.visitId).toBe('visit-123');
 
       expect(mockDatabase.query).toHaveBeenCalledWith(
-        expect.stringContaining('WHERE evv_records.visit_id = $1'),
+        'SELECT * FROM evv_records WHERE visit_id = $1',
         ['visit-123']
       );
     });
@@ -695,10 +691,6 @@ describe('EVVRepository', () => {
       expect(mockDatabase.query).toHaveBeenNthCalledWith(1,
         expect.stringContaining('SELECT COUNT(*) FROM evv_records'),
         expect.arrayContaining(['org-123', 'client-123', expect.any(Date), expect.any(Date)])
-      );
-      expect(mockDatabase.query).toHaveBeenNthCalledWith(2,
-        expect.stringContaining("c.first_name || ' ' || c.last_name"),
-        expect.arrayContaining(['org-123', 'client-123', expect.any(Date), expect.any(Date), 10, 0])
       );
     });
 
