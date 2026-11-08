@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, AlertTriangle, Calendar, FileText } from 'lucide-react';
+import { Plus, AlertTriangle, Calendar, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button.js';
 import { Card, CardContent } from '@/components/ui/card.js';
 import { Badge } from '@/components/ui/badge.js';
@@ -44,9 +44,9 @@ export const ClientDashboard: React.FC = () => {
   const [filters, setFilters] = useState<ClientSearchFilters>({});
   const [page, setPage] = useState(1);
   const [expandedClientId, setExpandedClientId] = useState<string | null>(null);
-  const { data, isLoading, error, refetch } = useClientsDashboard({ ...filters, page });
+  const { data, isPending, isFetching, error, refetch } = useClientsDashboard({ ...filters, page });
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="flex justify-center items-center py-12">
         <LoadingSpinner size="lg" />
@@ -64,7 +64,7 @@ export const ClientDashboard: React.FC = () => {
     );
   }
 
-  const clients = (data?.items ?? []) as DashboardClient[];
+  const clients = data.items as DashboardClient[];
 
   const toggleExpand = (clientId: string) => {
     setExpandedClientId(expandedClientId === clientId ? null : clientId);
@@ -74,9 +74,15 @@ export const ClientDashboard: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <div className="flex items-center gap-2"><h1 className="text-2xl font-bold text-gray-900">Client Dashboard</h1>{readOnly && <Badge variant="secondary">Read-only</Badge>}</div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">Client Dashboard</h1>
+            {readOnly && <Badge variant="secondary">Read-only</Badge>}
+            {isFetching && (
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-label="Loading" />
+            )}
+          </div>
           <p className="text-gray-600 mt-1">
-            {data?.total ?? 0} total clients
+            {data.total} total clients
           </p>
         </div>
         {can('clients:write') && canWrite && (
@@ -223,7 +229,7 @@ export const ClientDashboard: React.FC = () => {
       )}
 
       {/* Pagination */}
-      {data && data.total > data.items.length && (
+      {data.total > data.items.length && (
         <div className="flex justify-center gap-2">
           {page > 1 && (
             <Button

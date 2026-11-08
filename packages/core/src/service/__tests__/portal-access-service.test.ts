@@ -2,7 +2,7 @@
  * PortalAccessService Unit Tests
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { PoolClient } from 'pg';
 import { PortalAccessService } from '../portal-access-service.js';
 import { Database } from '../../db/connection.js';
@@ -19,7 +19,17 @@ describe('PortalAccessService', () => {
   let mockClient: PoolClient;
   let adminContext: UserContext;
 
+  // Fixed clock: fixtures use absolute invite expiry dates (2026-11-08T12:00:00Z).
+  // Without this the suite starts failing once the wall clock passes that date.
+  const FIXED_NOW = new Date('2026-11-07T12:00:00Z');
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(FIXED_NOW);
     mockClientQuery = vi.fn().mockResolvedValue({ rows: [], rowCount: 1 });
     mockClient = {
       query: mockClientQuery,

@@ -14,7 +14,7 @@ export const CarePlanList: React.FC = () => {
   const { canWrite, readOnly } = useSectionAccess('care-plans');
   const [filters, setFilters] = useState<CarePlanSearchFilters>({});
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const { data, isLoading, error, refetch } = useCarePlans(filters);
+  const { data, isLoading, isFetching, error, refetch } = useCarePlans(filters);
 
   const carePlans = data?.items ?? [];
   const totalCarePlans = data?.total ?? 0;
@@ -121,7 +121,13 @@ export const CarePlanList: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <div className="flex items-center gap-2"><h1 className="text-2xl font-bold text-gray-900">Care Plans</h1>{readOnly && <Badge variant="secondary">Read-only</Badge>}</div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">Care Plans</h1>
+            {readOnly && <Badge variant="secondary">Read-only</Badge>}
+            {isFetching ? (
+              <LoadingSpinner size="sm" className="text-muted-foreground" />
+            ) : null}
+          </div>
           <p className="text-gray-600 mt-1">
             {getSubtitleText()}
           </p>

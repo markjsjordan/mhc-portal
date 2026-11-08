@@ -19,8 +19,18 @@ export * from './types/visit-pattern.js';
 
 // Recurring Visit Pattern Engine & Repository
 export { VisitPatternRepository } from './repository/visit-pattern-repository.js';
-export { RecurringVisitPatternEngine } from './service/pattern-generator-service.js';
+export { RecurringVisitPatternEngine, isPatternEligibleForGeneration } from './service/pattern-generator-service.js';
 export type { GenerateVisitsOptions } from './service/pattern-generator-service.js';
+export { PatternAuthorizationGuard } from './service/pattern-authorization-guard.js';
+export type {
+  AuthorizableService,
+  IServiceAuthorizationReader,
+  IClientFundingReader,
+  IPatternHoursSummaryReader,
+  AuthorizationGuardInput,
+  AuthorizationValidationResult,
+} from './service/pattern-authorization-guard.js';
+export { buildRecurrenceSummary } from './utils/recurrence-summary.js';
 
 // Service
 export { ScheduleService } from './service/schedule-service.js';

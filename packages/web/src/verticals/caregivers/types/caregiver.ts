@@ -138,3 +138,37 @@ export interface PaginatedCaregivers {
   limit: number;
   totalPages: number;
 }
+
+export type PortalAccessStatus = 'NONE' | 'INVITED' | 'ACTIVE' | 'SUSPENDED' | 'REVOKED';
+
+export interface PortalAccessSummary {
+  status: PortalAccessStatus;
+  invitedAt: string | null;      // ISO
+  activatedAt: string | null;
+  revokedAt: string | null;
+  revokedReason: string | null;  // only for callers with the update permission; otherwise null
+  inviteExpiresAt: string | null; // the latest PENDING invite_tokens.expires_at
+  lastLoginAt: string | null;    // users.last_login_at of the linked user
+  linked: boolean;               // user_id IS NOT NULL
+}
+
+export interface TimeSlot {
+  startTime: string; // HH:MM
+  endTime: string;   // HH:MM
+}
+
+export interface DayAvailability {
+  available: boolean;
+  timeSlots?: TimeSlot[];
+  notes?: string;
+}
+
+export interface WeeklyAvailability {
+  monday: DayAvailability;
+  tuesday: DayAvailability;
+  wednesday: DayAvailability;
+  thursday: DayAvailability;
+  friday: DayAvailability;
+  saturday: DayAvailability;
+  sunday: DayAvailability;
+}

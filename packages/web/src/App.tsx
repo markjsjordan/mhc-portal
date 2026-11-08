@@ -41,6 +41,7 @@ const BrandingSettings = React.lazy(() => import('./app/pages/BrandingSettings')
 const ComplianceDashboard = React.lazy(() => import('./app/pages/ComplianceDashboard').then((m) => ({ default: m.ComplianceDashboard })));
 const NurseDashboard = React.lazy(() => import('./app/pages/NurseDashboard').then((m) => ({ default: m.NurseDashboard })));
 const CaregiverDashboard = React.lazy(() => import('./app/pages/CaregiverDashboard').then((m) => ({ default: m.CaregiverDashboard })));
+const MySchedulePage = React.lazy(() => import('./verticals/caregivers/pages/MySchedulePage.js').then((m) => ({ default: m.MySchedulePage })));
 
 // Lazy loaded heavy rarely-visited pages
 const Settings = React.lazy(() => import('./app/pages/Settings').then((m) => ({ default: m.Settings })));
@@ -95,6 +96,7 @@ const MatchAnalyticsDashboard = React.lazy(() => import('./verticals/shift-match
 const VisitList = React.lazy(() => import('./verticals/scheduling-visits/pages/VisitList').then((m) => ({ default: m.VisitList })));
 const CalendarView = React.lazy(() => import('./verticals/scheduling-visits/pages/CalendarView').then((m) => ({ default: m.CalendarView })));
 const ScheduleBuilderPage = React.lazy(() => import('./pages/scheduling/ScheduleBuilderPage'));
+const RecurringPatternsPage = React.lazy(() => import('./pages/scheduling/RecurringPatternsPage'));
 const VisitDetailPage = React.lazy(() => import('./pages/scheduling/VisitDetailPage').then((m) => ({ default: m.VisitDetailPage })));
 
 
@@ -402,6 +404,16 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/scheduling/patterns"
+        element={
+          <ProtectedRoute>
+            <AppShell>
+              <RecurringPatternsPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/scheduling/visits/:id"
         element={
           <ProtectedRoute>
@@ -568,6 +580,16 @@ function AppRoutes() {
           <ProtectedRoute requiredRoles={['CAREGIVER']}>
             <AppShell>
               <CaregiverDashboard />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/caregiver/schedule"
+        element={
+          <ProtectedRoute requiredRoles={['CAREGIVER']}>
+            <AppShell>
+              <MySchedulePage />
             </AppShell>
           </ProtectedRoute>
         }
