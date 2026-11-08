@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -82,7 +82,15 @@ vi.mock('@/verticals/client-demographics/hooks/useClients', () => ({
 describe('ScheduleBuilderPage week view and day-cell wiring (wdvf3acuka)', () => {
   let queryClient: QueryClient;
 
+  // Fixed clock: the week view opens on the current week and the fixture visit is
+  // dated Tue 2026-11-03. Without this the suite fails once that week has passed.
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-04T12:00:00Z'));
     vi.clearAllMocks();
     mockUseIsMobile.mockReturnValue(false);
     queryClient = new QueryClient({
