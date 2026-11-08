@@ -1,7 +1,26 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Calendar, momentLocalizer, View, SlotInfo, EventProps } from 'react-big-calendar';
+import { Calendar, dateFnsLocalizer, View, SlotInfo, EventProps } from 'react-big-calendar';
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
-import moment from 'moment';
+import { 
+  format, 
+  parse, 
+  startOfWeek as dateFnsStartOfWeek, 
+  getDay,
+  addDays,
+  addWeeks,
+  addMonths,
+  subDays,
+  subWeeks,
+  subMonths,
+  startOfMonth,
+  endOfMonth,
+  endOfWeek as dateFnsEndOfWeek,
+  isSameDay,
+  isWithinInterval,
+  differenceInMinutes,
+  parseISO,
+} from 'date-fns';
+import { enUS } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -143,10 +162,18 @@ const getCalendarNavUnit = (view: View): 'month' | 'day' | 'week' => {
   return 'week';
 };
 
+const navigateDate = (date: Date, amount: number, unit: 'month' | 'day' | 'week'): Date => {
+  if (unit === 'month') return amount > 0 ? addMonths(date, amount) : subMonths(date, -amount);
+  if (unit === 'day') return amount > 0 ? addDays(date, amount) : subDays(date, -amount);
+  return amount > 0 ? addWeeks(date, amount) : subWeeks(date, -amount);
+};
+
 const getCalendarPeriodTitle = (view: View, currentDate: Date): string => {
-  if (view === 'month') return moment(currentDate).format('MMMM YYYY');
-  if (view === 'day') return moment(currentDate).format('dddd, MMMM D, YYYY');
-  return `${moment(currentDate).startOf('week').format('MMM D')} – ${moment(currentDate).endOf('week').format('MMM D, YYYY')}`;
+  if (view === 'month') return format(currentDate, 'MMMM yyyy');
+  if (view === 'day') return format(currentDate, 'EEEE, MMMM d, yyyy');
+  const weekStart = dateFnsStartOfWeek(currentDate, { weekStartsOn: 0 });
+  const weekEnd = dateFnsEndOfWeek(currentDate, { weekStartsOn: 0 });
+  return `${format(weekStart, 'MMM d')} – ${format(weekEnd, 'MMM d, yyyy')}`;
 };
 
 const getStripButtonVariant = (isSelected: boolean, isToday: boolean): 'default' | 'secondary' | 'outline' => {
@@ -285,9 +312,9 @@ const CustomEvent: React.FC<CustomEventProps> = ({ event, densityMode }) => {
       ? `${event.resource.clientFirstName} ${event.resource.clientLastName}`
       : 'Unknown Client';
 
-  const startTime = moment(event.start).format('h:mm A');
-  const endTime = moment(event.end).format('h:mm A');
-  const duration = moment(event.end).diff(moment(event.start), 'minutes');
+  const startTime = format(event.start, 'h:mm a');
+  const endTime = format(event.end, 'h:mm a');
+  const duration = differenceInMinutes(event.end, event.start);
   const durationText =
     duration >= 60 ? `${Math.floor(duration / 60)}h ${duration % 60}m` : `${duration}m`;
 
@@ -349,9 +376,10 @@ const CustomEvent: React.FC<CustomEventProps> = ({ event, densityMode }) => {
 };
 
 const buildWeekStripDays = (currentDate: Date, daysWithVisits: Set<string>) => {
-  const startOfWeek = moment(currentDate).startOf('week');
+  const startOfWeek = dateFnsStartOfWeek(currentDate, { weekStartsOn: 0 });
+  const today = new Date();
   const days: Array<{
-    date: moment.Moment;
+    date: Date;
     key: string;
     dayName: string;
     dayNum: string;
@@ -361,17 +389,17 @@ const buildWeekStripDays = (currentDate: Date, daysWithVisits: Set<string>) => {
   }> = [];
 
   for (let i = 0; i < 7; i++) {
-    const day = moment(startOfWeek).add(i, 'days');
-    const dateKey = day.format('YYYY-MM-DD');
-    const isSelected = day.isSame(currentDate, 'day');
-    const isToday = day.isSame(moment(), 'day');
+    const day = addDays(startOfWeek, i);
+    const dateKey = format(day, 'yyyy-MM-dd');
+    const isSelected = isSameDay(day, currentDate);
+    const isToday = isSameDay(day, today);
     const hasVisits = daysWithVisits.has(dateKey);
 
     days.push({
       date: day,
       key: dateKey,
-      dayName: day.format('ddd'),
-      dayNum: day.format('D'),
+      dayName: format(day, 'EEE'),
+      dayNum: format(day, 'd'),
       isSelected,
       isToday,
       hasVisits,
@@ -417,9 +445,10 @@ const buildAllCaregiversList = (
   for (const ca of caregiverAvailability) {
     const name = `${ca.first_name} ${ca.last_name}`.trim();
     const hours = ca.visits.reduce((acc, v) => {
-      const start = moment(v.scheduled_start_time, 'HH:mm');
-      const end = moment(v.scheduled_end_time, 'HH:mm');
-      return acc + Math.max(0, end.diff(start, 'hours', true));
+      const referenceDate = new Date(2000, 0, 1);
+      const start = parse(v.scheduled_start_time, 'HH:mm', referenceDate);
+      const end = parse(v.scheduled_end_time, 'HH:mm', referenceDate);
+      return acc + Math.max(0, differenceInMinutes(end, start) / 60);
     }, 0);
 
     map.set(ca.caregiver_id, {
@@ -466,12 +495,12 @@ const buildDistinctClients = (visits: Visit[]) => {
 };
 
 const computeWeeklyVisits = (visits: Visit[], currentDate: Date) => {
-  const weekStart = moment(currentDate).startOf('week');
-  const weekEnd = moment(currentDate).endOf('week');
+  const weekStart = dateFnsStartOfWeek(currentDate, { weekStartsOn: 0 });
+  const weekEnd = dateFnsEndOfWeek(currentDate, { weekStartsOn: 0 });
 
   return visits.filter((visit: Visit) => {
-    const visitDate = moment(visit.scheduledDate);
-    return visitDate.isSameOrAfter(weekStart) && visitDate.isSameOrBefore(weekEnd);
+    const visitDate = typeof visit.scheduledDate === 'string' ? parseISO(visit.scheduledDate) : visit.scheduledDate;
+    return isWithinInterval(visitDate, { start: weekStart, end: weekEnd });
   }).length;
 };
 
@@ -506,7 +535,16 @@ const getEventStyle = (event: CalendarEvent) => ({
 });
 
 // Setup the localizer for react-big-calendar
-const localizer = momentLocalizer(moment);
+const locales = {
+  'en-US': enUS,
+};
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek: (date: Date) => dateFnsStartOfWeek(date, { weekStartsOn: 0 }),
+  getDay,
+  locales,
+});
 const DragAndDropCalendar = withDragAndDrop<CalendarEvent>(Calendar);
 
 const useCaregiverAssignment = (
@@ -970,9 +1008,16 @@ export const CalendarView: React.FC = () => {
 
   // Calculate date range for calendar based on current view
   const { startDate, endDate } = useMemo(() => {
-    const start = moment(currentDate).startOf(view === 'month' ? 'month' : 'week').toDate();
-    const end = moment(currentDate).endOf(view === 'month' ? 'month' : 'week').toDate();
-    return { startDate: start, endDate: end };
+    if (view === 'month') {
+      return {
+        startDate: startOfMonth(currentDate),
+        endDate: endOfMonth(currentDate),
+      };
+    }
+    return {
+      startDate: dateFnsStartOfWeek(currentDate, { weekStartsOn: 0 }),
+      endDate: dateFnsEndOfWeek(currentDate, { weekStartsOn: 0 }),
+    };
   }, [currentDate, view]);
 
   // Fetch visits for calendar
@@ -1032,7 +1077,8 @@ export const CalendarView: React.FC = () => {
   const daysWithVisits = useMemo(() => {
     const days = new Set<string>();
     for (const visit of visits) {
-      const dateKey = moment(visit.scheduledDate).format('YYYY-MM-DD');
+      const visitDate = typeof visit.scheduledDate === 'string' ? parseISO(visit.scheduledDate) : visit.scheduledDate;
+      const dateKey = format(visitDate, 'yyyy-MM-dd');
       days.add(dateKey);
     }
     return days;
@@ -1262,7 +1308,7 @@ export const CalendarView: React.FC = () => {
                 size="icon"
                 onClick={() => {
                   const unit = getCalendarNavUnit(view);
-                  setCurrentDate(moment(currentDate).subtract(1, unit).toDate());
+                  setCurrentDate(navigateDate(currentDate, -1, unit));
                 }}
                 className="min-h-[44px] min-w-[44px]"
                 aria-label="Previous period"
@@ -1285,7 +1331,7 @@ export const CalendarView: React.FC = () => {
                 size="icon"
                 onClick={() => {
                   const unit = getCalendarNavUnit(view);
-                  setCurrentDate(moment(currentDate).add(1, unit).toDate());
+                  setCurrentDate(navigateDate(currentDate, 1, unit));
                 }}
                 className="min-h-[44px] min-w-[44px]"
                 aria-label="Next period"
@@ -1403,11 +1449,11 @@ export const CalendarView: React.FC = () => {
                 variant={getStripButtonVariant(dayItem.isSelected, dayItem.isToday)}
                 size="sm"
                 onClick={() => {
-                  setCurrentDate(dayItem.date.toDate());
+                  setCurrentDate(dayItem.date);
                   setView('day');
                 }}
                 className="min-h-[44px] py-1 px-1 h-auto flex flex-col items-center justify-center rounded-lg"
-                aria-label={`Select date ${dayItem.date.format('MMM D')}`}
+                aria-label={`Select date ${format(dayItem.date, 'MMM d')}`}
               >
                 <span className="text-[10px] uppercase tracking-wider opacity-80">
                   {dayItem.dayName}
@@ -1713,13 +1759,13 @@ export const CalendarView: React.FC = () => {
           void refetch();
         }}
         preSelectedDate={
-          createVisitSlotInfo ? moment(createVisitSlotInfo.start).format('YYYY-MM-DD') : undefined
+          createVisitSlotInfo ? format(createVisitSlotInfo.start, 'yyyy-MM-dd') : undefined
         }
         preSelectedStartTime={
-          createVisitSlotInfo ? moment(createVisitSlotInfo.start).format('HH:mm') : undefined
+          createVisitSlotInfo ? format(createVisitSlotInfo.start, 'HH:mm') : undefined
         }
         preSelectedEndTime={
-          createVisitSlotInfo ? moment(createVisitSlotInfo.end).format('HH:mm') : undefined
+          createVisitSlotInfo ? format(createVisitSlotInfo.end, 'HH:mm') : undefined
         }
       />
     </div>

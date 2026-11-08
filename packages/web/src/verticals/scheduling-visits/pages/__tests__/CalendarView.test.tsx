@@ -212,7 +212,7 @@ vi.mock('react-big-calendar', () => {
         ))}
       </div>
     ),
-    momentLocalizer: () => ({}),
+    dateFnsLocalizer: () => ({}),
   };
 });
 

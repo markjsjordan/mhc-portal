@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { useQueryClient } from '@tanstack/react-query';
 import { X, ChevronLeft, ChevronRight, Clock, MapPin, Phone, User, AlertCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button.js';
@@ -20,10 +20,12 @@ export interface VisitDetailsPanelProps {
   positionLabel?: string;
 }
 
-const formatDate = (value: Date | string): string =>
-  format(typeof value === 'string' ? new Date(value) : value, 'EEEE, MMM d, yyyy');
+// parseISO reads date-only strings ("2026-11-03") as local dates, matching the
+// previous moment() behaviour; new Date() would read them as UTC midnight.
+const toDate = (value: Date | string): Date => (typeof value === 'string' ? parseISO(value) : value);
+const formatDate = (value: Date | string): string => format(toDate(value), 'EEEE, MMM d, yyyy');
 const formatTimestamp = (value: Date | string | undefined): string =>
-  value ? format(typeof value === 'string' ? new Date(value) : value, 'h:mm a') : '—';
+  value === undefined || value === '' ? '—' : format(toDate(value), 'h:mm a');
 
 /**
  * Lazy-loaded visit detail drawer for the Scheduling Calendar.
