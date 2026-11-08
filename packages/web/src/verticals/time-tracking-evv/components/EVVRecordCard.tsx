@@ -20,6 +20,40 @@ export const EVVRecordCard: React.FC<EVVRecordCardProps> = ({ record, compact = 
 
   const statusColor = statusColors[record.recordStatus] || 'bg-gray-100 text-gray-800';
 
+  const formattedServiceDate = record.serviceDate
+    ? new Date(record.serviceDate).toLocaleDateString()
+    : undefined;
+
+  const visitTitleParts = [record.clientName, formattedServiceDate].filter(Boolean);
+  const visitLabel = visitTitleParts.length > 0
+    ? `Visit: ${visitTitleParts.join(' · ')}`
+    : 'Visit';
+
+  const renderVerificationBadge = () => {
+    if (record.clockInVerification?.locationCaptured === false) {
+      return (
+        <>
+          <MapPin className="h-4 w-4 text-gray-400" />
+          <span>Location not captured</span>
+        </>
+      );
+    }
+    if (record.verificationLevel === 'FULL' && record.clockInVerification?.latitude != null) {
+      return (
+        <>
+          <MapPin className="h-4 w-4" />
+          <span>GPS Verified</span>
+        </>
+      );
+    }
+    return (
+      <>
+        <CheckCircle className="h-4 w-4" />
+        <span>{record.verificationLevel}</span>
+      </>
+    );
+  };
+
   return (
     <Link
       to={`/time-tracking/${record.id}`}
@@ -31,13 +65,13 @@ export const EVVRecordCard: React.FC<EVVRecordCardProps> = ({ record, compact = 
             {/* @ts-ignore */}
             <Clock className="h-5 w-5 text-gray-400" />
             <span className="font-semibold text-gray-900">
-              Visit ID: {record.visitId.slice(0, 8)}
+              {visitLabel}
             </span>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             {/* @ts-ignore */}
             <User className="h-4 w-4" />
-            <span>Caregiver: {record.caregiverId.slice(0, 8)}</span>
+            <span>Caregiver: {record.caregiverName ?? 'Unassigned name'}</span>
           </div>
         </div>
         <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor}`}>
@@ -66,24 +100,7 @@ export const EVVRecordCard: React.FC<EVVRecordCardProps> = ({ record, compact = 
 
       <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm text-gray-500">
-          {record.clockInVerification?.locationCaptured === false ? (
-            <>
-              <MapPin className="h-4 w-4 text-gray-400" />
-              <span>Location not captured</span>
-            </>
-          ) : record.verificationLevel === 'FULL' && record.clockInVerification?.latitude != null ? (
-            <>
-              {/* @ts-ignore */}
-              <MapPin className="h-4 w-4" />
-              <span>GPS Verified</span>
-            </>
-          ) : (
-            <>
-              {/* @ts-ignore */}
-              <CheckCircle className="h-4 w-4" />
-              <span>{record.verificationLevel}</span>
-            </>
-          )}
+          {renderVerificationBadge()}
         </div>
         <span className="text-xs text-gray-400">
           {formatDistanceToNow(new Date(record.createdAt), { addSuffix: true })}

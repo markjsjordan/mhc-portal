@@ -92,4 +92,37 @@ describe('CarePlanForm Dropdown Selectors', () => {
     await user.click(branchOption);
     expect(branchSelect).toHaveTextContent(/North Branch/i);
   });
+
+  test('review step renders client name without UUIDs and omits Organization ID row', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <CarePlanForm
+        initialData={{
+          clientId: 'client-1',
+          name: 'Personal Care Plan',
+          planType: 'INITIAL',
+          organizationId: '11111111-2222-3333-4444-555555555555',
+          effectiveDate: '2027-01-01',
+          goals: [],
+        }}
+        onSubmit={vi.fn()}
+      />
+    );
+
+    // Navigate to step 4 (Review): 0 -> 1 -> 2 -> 3
+    await user.click(screen.getByRole('button', { name: /Next/i }));
+    await user.click(screen.getByRole('button', { name: /Next/i }));
+    await user.click(screen.getByRole('button', { name: /Next/i }));
+
+    expect(screen.getByText('Review Care Plan')).toBeInTheDocument();
+    expect(screen.getByText('Client')).toBeInTheDocument();
+    expect(screen.getByText('Margaret Thompson')).toBeInTheDocument();
+
+    expect(screen.queryByText('Client ID')).not.toBeInTheDocument();
+    expect(screen.queryByText('Organization ID')).not.toBeInTheDocument();
+
+    const textContent = container.textContent ?? '';
+    expect(textContent).not.toMatch(/[0-9a-f]{8}-?[0-9a-f]{4}/i);
+    expect(textContent).not.toContain('11111111');
+  });
 });
