@@ -179,18 +179,15 @@ export class PermissionService {
       new Set(['clients:read', 'reports:read'])
     );
 
+    // Nurse roles are read-only except clinical documentation (notes:create, incidents:create) and care-team messaging (messages:send), per wdvf3acujt.
     // Nurse - clinical care access
     this.rolePermissions.set(
       'NURSE',
       new Set([
         'clients:read',
-        'clients:update',
         'care-plans:read',
-        'care-plans:update',
         'visits:read',
-        'visits:update',
         'tasks:read',
-        'tasks:update',
         'notes:create',
         'notes:read',
         'incidents:read',
@@ -205,13 +202,9 @@ export class PermissionService {
       'NURSE_RN',
       new Set([
         'clients:read',
-        'clients:update',
         'care-plans:read',
-        'care-plans:update',
         'visits:read',
-        'visits:update',
         'tasks:read',
-        'tasks:update',
         'notes:create',
         'notes:read',
         'incidents:read',
@@ -226,13 +219,9 @@ export class PermissionService {
       'NURSE_LPN',
       new Set([
         'clients:read',
-        'clients:update',
         'care-plans:read',
-        'care-plans:update',
         'visits:read',
-        'visits:update',
         'tasks:read',
-        'tasks:update',
         'notes:create',
         'notes:read',
         'incidents:read',
@@ -247,13 +236,9 @@ export class PermissionService {
       'CLINICAL',
       new Set([
         'clients:read',
-        'clients:update',
         'care-plans:read',
-        'care-plans:update',
         'visits:read',
-        'visits:update',
         'tasks:read',
-        'tasks:update',
         'notes:create',
         'notes:read',
         'incidents:read',
