@@ -320,48 +320,39 @@ export class CaregiverRepository extends Repository<Caregiver> {
   }
 
   /**
-   * Find caregiver by user ID and organization ID
+   * Find caregiver by user ID (linked portal user)
    *
    * @param userId - Auth user ID linked to caregiver profile
-   * @param organizationId - Tenant organization ID
+   * @param organizationId - Optional tenant organization ID
    * @returns Caregiver profile if found, null otherwise
    */
-  async findByUserId(userId: string, organizationId: string): Promise<Caregiver | null> {
+  async findByUserId(userId: string, organizationId?: string): Promise<Caregiver | null> {
+    if (organizationId !== undefined && organizationId !== '') {
+      const query = `
+        SELECT * FROM ${this.tableName}
+        WHERE user_id = $1
+          AND organization_id = $2
+          AND portal_access_status = 'ACTIVE'
+          AND deleted_at IS NULL
+      `;
+
+      const result = await this.database.query(query, [userId, organizationId]);
+
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      return this.mapRowToEntity(result.rows[0]!);
+    }
+
     const query = `
       SELECT * FROM ${this.tableName}
       WHERE user_id = $1
-        AND organization_id = $2
+        AND portal_access_status = 'ACTIVE'
         AND deleted_at IS NULL
     `;
 
-    const result = await this.database.query(query, [userId, organizationId]);
-
-    if (result.rows.length === 0) {
-      return null;
-    }
-
-    return this.mapRowToEntity(result.rows[0]!);
-  }
-
-  /**
-   * Find caregiver by email and organization ID
-   *
-   * @param email - Email address to search for (case-insensitive)
-   * @param organizationId - Tenant organization ID
-   * @returns Caregiver profile if found, null otherwise
-   */
-  async findByEmailAndOrganization(
-    email: string,
-    organizationId: string
-  ): Promise<Caregiver | null> {
-    const query = `
-      SELECT * FROM ${this.tableName}
-      WHERE LOWER(email) = LOWER($1)
-        AND organization_id = $2
-        AND deleted_at IS NULL
-    `;
-
-    const result = await this.database.query(query, [email, organizationId]);
+    const result = await this.database.query(query, [userId]);
 
     if (result.rows.length === 0) {
       return null;
@@ -372,10 +363,6 @@ export class CaregiverRepository extends Repository<Caregiver> {
 
   /**
    * Find caregiver by email
-   * 
-   * Used to link authenticated users to their caregiver profile.
-   * This is a temporary solution. Once user_id field is added to caregivers table,
-   * this method should be refactored to use direct user_id lookup for better performance.
    * 
    * @param email - Email address to search for (case-insensitive)
    * @returns Caregiver profile if found, null otherwise
@@ -396,12 +383,6 @@ export class CaregiverRepository extends Repository<Caregiver> {
     return this.mapRowToEntity(result.rows[0]!);
   }
 
-  /**
-   * Find caregiver by user ID (linked portal user)
-   *
-   * @param userId - User account ID
-   * @returns Caregiver profile if found, null otherwise
-   */
   /**
    * Find caregiver by employee number
    */

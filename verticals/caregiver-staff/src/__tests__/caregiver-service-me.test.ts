@@ -96,18 +96,7 @@ describe('CaregiverService - getCurrentCaregiverProfile', () => {
     version: 1,
     deleted_at: null,
     deleted_by: null,
-  };
-
-  const mockUserRow = {
-    id: 'user-123',
-    organization_id: 'org-123',
-    first_name: 'John',
-    last_name: 'Doe',
-    email: 'john.doe@example.com',
-    username: 'johndoe',
-    roles: ['CAREGIVER'],
-    branch_ids: ['branch-123'],
-    status: 'ACTIVE',
+    portal_access_status: 'ACTIVE',
   };
 
   beforeEach(() => {
@@ -123,12 +112,24 @@ describe('CaregiverService - getCurrentCaregiverProfile', () => {
     };
   });
 
-  it('prefers findByUserId and does not query users table when user_id matches', async () => {
+  it('returns caregiver profile via active user_id link and does not query users or email', async () => {
     vi.mocked(mockDatabase.query).mockImplementation((sql: string) => {
-      if (sql.includes('FROM caregivers') && sql.includes('user_id = $1')) {
-        return Promise.resolve({ rows: [mockCaregiverRow] } as any);
+      if (sql.includes('FROM caregivers') && sql.includes('user_id = $1') && sql.includes("portal_access_status = 'ACTIVE'")) {
+        return Promise.resolve({
+          rows: [mockCaregiverRow],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        });
       }
-      return Promise.resolve({ rows: [] } as any);
+      return Promise.resolve({
+        rows: [],
+        command: 'SELECT',
+        rowCount: 0,
+        oid: 0,
+        fields: [],
+      });
     });
 
     const result = await service.getCurrentCaregiverProfile(mockContext);
@@ -137,98 +138,99 @@ describe('CaregiverService - getCurrentCaregiverProfile', () => {
     expect(result.id).toBe('caregiver-123');
     expect(result.userId).toBe('user-123');
     expect(result.email).toBe('john.doe@example.com');
-    // Ensure user lookup in users table was not called
-    const calls = vi.mocked(mockDatabase.query).mock.calls;
-    const userQueryCall = calls.find((c: any[]) => typeof c[0] === 'string' && c[0].includes('FROM users'));
-    expect(userQueryCall).toBeUndefined();
-  });
-
-  it('falls back to email lookup when user_id has no match', async () => {
-    const caregiverWithoutUserId = { ...mockCaregiverRow, user_id: null };
-
-    vi.mocked(mockDatabase.query).mockImplementation((sql: string) => {
-      if (sql.includes('FROM caregivers') && sql.includes('user_id = $1')) {
-        // No match by user_id
-        return Promise.resolve({ rows: [] } as any);
-      }
-      if (sql.includes('FROM users') && sql.includes('WHERE id = $1')) {
-        // User found
-        return Promise.resolve({ rows: [mockUserRow] } as any);
-      }
-      if (sql.includes('FROM caregivers') && sql.includes('LOWER(email) = LOWER($1)')) {
-        // Caregiver found by email
-        return Promise.resolve({ rows: [caregiverWithoutUserId] } as any);
-      }
-      return Promise.resolve({ rows: [] } as any);
-    });
-
-    const result = await service.getCurrentCaregiverProfile(mockContext);
-
-    expect(result).toBeDefined();
-    expect(result.id).toBe('caregiver-123');
-    expect(result.email).toBe('john.doe@example.com');
     expect(result.credentials).toHaveLength(1);
     expect(result.languages).toContain('Spanish');
 
-    // Both findByUserId, getUserById, and findByEmail should have been called
     const calls = vi.mocked(mockDatabase.query).mock.calls;
-    const caregiverByUserIdCall = calls.find((c: any[]) => typeof c[0] === 'string' && c[0].includes('user_id = $1'));
-    const userQueryCall = calls.find((c: any[]) => typeof c[0] === 'string' && c[0].includes('FROM users'));
-    const caregiverByEmailCall = calls.find((c: any[]) => typeof c[0] === 'string' && c[0].includes('LOWER(email) = LOWER($1)'));
-
-    expect(caregiverByUserIdCall).toBeDefined();
-    expect(userQueryCall).toBeDefined();
-    expect(caregiverByEmailCall).toBeDefined();
+    const userQueryCall = calls.find((c: unknown[]) => typeof c[0] === 'string' && c[0].includes('FROM users'));
+    const caregiverByEmailCall = calls.find((c: unknown[]) => typeof c[0] === 'string' && c[0].includes('LOWER(email)'));
+    expect(userQueryCall).toBeUndefined();
+    expect(caregiverByEmailCall).toBeUndefined();
   });
 
-  it('throws NotFoundError if user does not exist during fallback', async () => {
-    vi.mocked(mockDatabase.query).mockImplementation(() => {
-      // Both user_id search and user lookup return nothing
-      return Promise.resolve({ rows: [] } as any);
+  it('resolves caregiver profile via context.caregiverId when ACTIVE', async () => {
+    vi.mocked(mockDatabase.query).mockImplementation((sql: string) => {
+      if (sql.includes('FROM caregivers') && sql.includes('WHERE id = $1')) {
+        return Promise.resolve({
+          rows: [mockCaregiverRow],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        });
+      }
+      return Promise.resolve({
+        rows: [],
+        command: 'SELECT',
+        rowCount: 0,
+        oid: 0,
+        fields: [],
+      });
     });
 
-    await expect(service.getCurrentCaregiverProfile(mockContext)).rejects.toThrow(
-      'User not found: user-123'
-    );
+    const result = await service.getCurrentCaregiverProfile({
+      ...mockContext,
+      caregiverId: 'caregiver-123',
+    });
+
+    expect(result.id).toBe('caregiver-123');
   });
 
-  it('throws NotFoundError if caregiver profile does not exist during fallback', async () => {
-    vi.mocked(mockDatabase.query).mockImplementation((sql: string) => {
-      if (sql.includes('FROM users') && sql.includes('WHERE id = $1')) {
-        return Promise.resolve({ rows: [mockUserRow] } as any);
-      }
-      // No caregiver by user_id or email
-      return Promise.resolve({ rows: [] } as any);
+  it('throws NotFoundError when caregiver has no ACTIVE user_id link (never falls back to email)', async () => {
+    vi.mocked(mockDatabase.query).mockImplementation(() => {
+      return Promise.resolve({
+        rows: [],
+        command: 'SELECT',
+        rowCount: 0,
+        oid: 0,
+        fields: [],
+      });
     });
 
     await expect(service.getCurrentCaregiverProfile(mockContext)).rejects.toThrow(
       'Caregiver profile not found for user: user-123'
     );
+
+    const calls = vi.mocked(mockDatabase.query).mock.calls;
+    const caregiverByEmailCall = calls.find((c: unknown[]) => typeof c[0] === 'string' && c[0].includes('LOWER(email)'));
+    const userQueryCall = calls.find((c: unknown[]) => typeof c[0] === 'string' && c[0].includes('FROM users'));
+    expect(caregiverByEmailCall).toBeUndefined();
+    expect(userQueryCall).toBeUndefined();
   });
 
-  it('does NOT return a caregiver with the same email in another organization', async () => {
+  it('does NOT return a caregiver in another organization', async () => {
     const otherOrgCaregiver = {
       ...mockCaregiverRow,
       id: 'caregiver-other-org',
       organization_id: 'org-other',
-      user_id: null,
     };
 
     vi.mocked(mockDatabase.query).mockImplementation((sql: string, params?: unknown[]) => {
       if (sql.includes('FROM caregivers') && sql.includes('user_id = $1')) {
-        return Promise.resolve({ rows: [] } as any);
-      }
-      if (sql.includes('FROM users') && sql.includes('WHERE id = $1')) {
-        return Promise.resolve({ rows: [mockUserRow] } as any);
-      }
-      if (sql.includes('FROM caregivers') && sql.includes('organization_id = $2')) {
-        // params[1] is context.organizationId ('org-123'). Other org has different id.
         if (params?.[1] === 'org-other') {
-          return Promise.resolve({ rows: [otherOrgCaregiver] } as any);
+          return Promise.resolve({
+            rows: [otherOrgCaregiver],
+            command: 'SELECT',
+            rowCount: 1,
+            oid: 0,
+            fields: [],
+          });
         }
-        return Promise.resolve({ rows: [] } as any);
+        return Promise.resolve({
+          rows: [],
+          command: 'SELECT',
+          rowCount: 0,
+          oid: 0,
+          fields: [],
+        });
       }
-      return Promise.resolve({ rows: [] } as any);
+      return Promise.resolve({
+        rows: [],
+        command: 'SELECT',
+        rowCount: 0,
+        oid: 0,
+        fields: [],
+      });
     });
 
     await expect(service.getCurrentCaregiverProfile(mockContext)).rejects.toThrow(

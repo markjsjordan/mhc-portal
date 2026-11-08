@@ -10,7 +10,10 @@ import {
   NotFoundError,
   PermissionError,
   ConflictError,
-  UserRepository,
+  PortalAccessService,
+  PermissionService,
+  AuditService,
+  CaregiverEmploymentStatus,
 } from '@folkcare/core';
 import { CaregiverRepository } from '../repository/caregiver-repository';
 import {
@@ -21,6 +24,7 @@ import {
   CaregiverEligibility,
   EligibilityReason,
   ComplianceStatus,
+  EmploymentStatus,
 } from '../types/caregiver';
 import { CaregiverValidator } from '../validation/caregiver-validator';
 
@@ -55,15 +59,30 @@ interface StateScreening {
   updatedAt: Date;
 }
 
+export interface CaregiverStatusHook {
+  handleCaregiverStatusChange(
+    caregiverId: string,
+    previousStatus: CaregiverEmploymentStatus,
+    newStatus: CaregiverEmploymentStatus,
+    context: UserContext
+  ): Promise<void>;
+}
+
 export class CaregiverService {
   private repository: CaregiverRepository;
-  private userRepository: UserRepository;
   private validator: CaregiverValidator;
+  private portalAccessHook: CaregiverStatusHook;
 
-  constructor(database: Database) {
+  constructor(database: Database, portalAccessHook?: CaregiverStatusHook) {
     this.repository = new CaregiverRepository(database);
-    this.userRepository = new UserRepository(database);
     this.validator = new CaregiverValidator();
+    this.portalAccessHook =
+      portalAccessHook ??
+      new PortalAccessService(
+        database,
+        new PermissionService(),
+        new AuditService(database)
+      );
   }
 
   /**
@@ -138,7 +157,7 @@ export class CaregiverService {
    */
   async updateCaregiver(
     id: string,
-    input: UpdateCaregiverInput,
+    input: UpdateCaregiverInput & { employmentStatus?: EmploymentStatus },
     context: UserContext
   ): Promise<Caregiver> {
     // Validate permissions
@@ -169,7 +188,21 @@ export class CaregiverService {
       updates.complianceStatus = complianceStatus;
     }
 
-    return this.repository.update(id, updates, context);
+    const updated = await this.repository.update(id, updates, context);
+
+    if (
+      input.employmentStatus &&
+      input.employmentStatus !== existing.employmentStatus
+    ) {
+      await this.portalAccessHook.handleCaregiverStatusChange(
+        id,
+        existing.employmentStatus as CaregiverEmploymentStatus,
+        input.employmentStatus as CaregiverEmploymentStatus,
+        context
+      );
+    }
+
+    return updated;
   }
 
   /**
@@ -218,36 +251,31 @@ export class CaregiverService {
   /**
    * Get authenticated caregiver's profile
    * 
-   * Links user authentication record to caregiver profile.
-   * Prefers direct lookup via user_id scoped to the organization;
-   * falls back to email lookup when no user_id match is found.
+   * Resolves caregiver profile by context.caregiverId or active user_id link.
+   * Never resolves by email fallback.
    * 
    * @param context - User context containing userId and permissions
    * @returns Caregiver profile for the authenticated user
-   * @throws NotFoundError if user or caregiver profile not found
+   * @throws NotFoundError if caregiver profile not found
    */
   async getCurrentCaregiverProfile(context: UserContext): Promise<Caregiver> {
-    // Prefer direct user_id lookup scoped to organization
     let caregiver: Caregiver | null = null;
-    if (context.organizationId) {
-      caregiver = await this.repository.findByUserId(context.userId, context.organizationId);
+
+    if (context.caregiverId) {
+      const candidate = await this.repository.findById(context.caregiverId);
+      if (
+        candidate?.portalAccessStatus === 'ACTIVE' &&
+        (!context.organizationId || candidate.organizationId === context.organizationId)
+      ) {
+        caregiver = candidate;
+      }
     }
 
     if (!caregiver) {
-      // Fallback: get user email from user repository and lookup by email scoped to organization
-      const user = await this.userRepository.getUserById(context.userId);
-      if (!user) {
-        throw new NotFoundError(`User not found: ${context.userId}`);
-      }
-
-      if (context.organizationId) {
-        caregiver = await this.repository.findByEmailAndOrganization(
-          user.email,
-          context.organizationId
-        );
-      } else {
-        caregiver = await this.repository.findByEmail(user.email);
-      }
+      caregiver = await this.repository.findByUserId(
+        context.userId,
+        context.organizationId
+      );
     }
 
     if (!caregiver) {
