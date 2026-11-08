@@ -30,6 +30,7 @@ export { CarePlanValidator } from './validation/care-plan-validator';
 export { CarePlanRepository } from './repository/care-plan-repository';
 export { CarePlanVersionRepository } from './repository/care-plan-version-repository.js';
 export { TemplateFamilyRepository } from './repository/template-family-repository.js';
+export { ServiceAuthorizationRepository } from './repository/service-authorization-repository.js';
 
 // Service
 export { CarePlanService } from './service/care-plan-service';

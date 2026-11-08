@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
@@ -514,7 +514,6 @@ export default function ScheduleBuilderPage() {
               </Select>
             </>
           )}
-
           {/* Week Navigation Controls */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <Button
@@ -546,6 +545,16 @@ export default function ScheduleBuilderPage() {
               <ChevronRight size={16} aria-hidden="true" />
             </Button>
           </div>
+
+          <Link to="/scheduling/patterns">
+            <Button
+              variant="outline"
+              className="schedule-builder-action-btn"
+              style={isMobile ? styles.patternButtonMobile : styles.patternButton}
+            >
+              Manage patterns
+            </Button>
+          </Link>
           <Button
             className="schedule-builder-action-btn"
             style={isMobile ? styles.patternButtonMobile : styles.patternButton}
@@ -1250,6 +1259,7 @@ function CreateRecurringPatternModal({
   onClose,
   onSuccess,
 }: Readonly<CreateRecurringPatternModalProps>) {
+  const queryClient = useQueryClient();
   const visitApi = useVisitApi();
   const [clientId, setClientId] = useState<string>(clients[0]?.id ?? '');
   const [customClientName, setCustomClientName] = useState<string>('');
@@ -1304,6 +1314,7 @@ function CreateRecurringPatternModal({
         horizonDays: 90,
       });
 
+      void queryClient.invalidateQueries({ queryKey: ['visit-patterns'] });
       onSuccess(res.generatedVisitsCount);
     } catch (err: unknown) {
       console.error('Error creating pattern:', err);

@@ -10,6 +10,17 @@
 
 ## Executive Summary
 
+> [!NOTE] Implementation Architecture Update (wdvf3acuk9)
+> The implemented system uses the `visit_patterns` data model (scoped by `organization_id`) and base API path `/api/visits/patterns`.
+> Endpoints include:
+> - `GET /api/visits/patterns` — Active pattern listing with recurrence summary, next visit date, future visit count, and client/caregiver joins.
+> - `POST /api/visits/patterns` — Pattern creation with concrete visit expansion and authorization limit enforcement.
+> - `GET /api/visits/patterns/:id` — Pattern detail and generated visits.
+> - `PUT /api/visits/patterns/:id` — Update pattern instances (ALL_FUTURE / THIS_VISIT) with authorization limit enforcement.
+> - `POST /api/visits/patterns/:id/pause` — Pause pattern without affecting already-generated visits.
+> - `POST /api/visits/patterns/:id/resume` — Resume paused pattern with authorization and expiration re-validation.
+> - `POST /api/visits/patterns/:id/end` — End pattern stopping future generation while retaining scheduled visits and history.
+
 FC-SCHED-002 extends the visit scheduling system to handle **recurring visit patterns**, **intelligent conflict detection**, and **bulk operations** on schedules. This enables schedulers to:
 
 1. **Define recurring service patterns** (daily/weekly/monthly patterns with rules)

@@ -18,6 +18,7 @@ import {
   type UserContext,
   ValidationError,
   NotFoundError,
+  ConflictError,
 } from '@folkcare/core';
 import type {
   VisitPattern,
@@ -39,6 +40,27 @@ export interface GenerateVisitsOptions {
   caregiverTimeOffExceptions?: CaregiverTimeOffException[];
   clientHospitalHolds?: ClientHospitalHoldException[];
   defaultAddress?: VisitAddress;
+}
+
+/**
+ * Check if pattern is eligible for concrete visit generation
+ */
+export function isPatternEligibleForGeneration(
+  pattern: VisitPattern,
+  today: string | Date = new Date()
+): boolean {
+  if (pattern.status !== 'ACTIVE') {
+    return false;
+  }
+  if (!pattern.endDate) {
+    return true;
+  }
+  const todayStr = typeof today === 'string' ? today.slice(0, 10) : today.toISOString().slice(0, 10);
+  const endStr = pattern.endDate instanceof Date
+    ? pattern.endDate.toISOString().slice(0, 10)
+    : String(pattern.endDate).slice(0, 10);
+
+  return endStr >= todayStr;
 }
 
 export class RecurringVisitPatternEngine {
@@ -83,8 +105,156 @@ export class RecurringVisitPatternEngine {
   }
 
   /**
-   * Get pattern details along with its concrete generated visits
+   * Pause an active pattern
    */
+  async pausePattern(
+    id: UUID,
+    organizationId: UUID,
+    reason: string | undefined,
+    context: UserContext
+  ): Promise<VisitPattern> {
+    const pattern = await this.repository.getPatternById(id, organizationId);
+    if (!pattern) {
+      throw new NotFoundError('Visit pattern not found or access denied', { id });
+    }
+
+    if (pattern.status === 'PAUSED') {
+      // Idempotent: return 200 with no change
+      return pattern;
+    }
+
+    if (pattern.status === 'CANCELLED') {
+      throw new ConflictError('Cannot pause a cancelled pattern', {
+        code: 'INVALID_PATTERN_STATE',
+        status: pattern.status,
+      });
+    }
+
+    const updated = await this.repository.updatePattern(
+      id,
+      organizationId,
+      {
+        status: 'PAUSED',
+        pausedAt: new Date(),
+        pausedBy: context.userId,
+        pauseReason: reason ?? undefined,
+      },
+      context
+    );
+
+    return updated;
+  }
+
+  /**
+   * Resume a paused pattern
+   */
+  async resumePattern(
+    id: UUID,
+    organizationId: UUID,
+    context: UserContext,
+    today: Date | string = new Date()
+  ): Promise<VisitPattern> {
+    const pattern = await this.repository.getPatternById(id, organizationId);
+    if (!pattern) {
+      throw new NotFoundError('Visit pattern not found or access denied', { id });
+    }
+
+    if (pattern.status !== 'PAUSED') {
+      throw new ConflictError('Pattern can only be resumed from PAUSED state', {
+        code: 'INVALID_PATTERN_STATE',
+        status: pattern.status,
+      });
+    }
+
+    const todayStr = typeof today === 'string' ? today.slice(0, 10) : today.toISOString().slice(0, 10);
+    if (pattern.endDate) {
+      const endStr = pattern.endDate instanceof Date
+        ? pattern.endDate.toISOString().slice(0, 10)
+        : String(pattern.endDate).slice(0, 10);
+      if (endStr < todayStr) {
+        throw new ConflictError('Cannot resume expired pattern whose end date is in the past', {
+          code: 'PATTERN_EXPIRED',
+          endDate: endStr,
+        });
+      }
+    }
+
+    const updated = await this.repository.updatePattern(
+      id,
+      organizationId,
+      {
+        status: 'ACTIVE',
+      },
+      context
+    );
+
+    return updated;
+  }
+
+  /**
+   * End an active or paused pattern
+   */
+  async endPattern(
+    id: UUID,
+    organizationId: UUID,
+    reason: string,
+    effectiveDate: string | undefined,
+    context: UserContext,
+    today: Date | string = new Date()
+  ): Promise<{ pattern: VisitPattern; retainedFutureVisits: number }> {
+    const pattern = await this.repository.getPatternById(id, organizationId);
+    if (!pattern) {
+      throw new NotFoundError('Visit pattern not found or access denied', { id });
+    }
+
+    if (pattern.status === 'CANCELLED') {
+      throw new ConflictError('Pattern is already ended', {
+        code: 'INVALID_PATTERN_STATE',
+        status: pattern.status,
+      });
+    }
+
+    const effDate = effectiveDate || (typeof today === 'string' ? today.slice(0, 10) : today.toISOString().slice(0, 10));
+
+    let finalEndDate: string | Date = effDate;
+    if (pattern.endDate) {
+      const existingEndStr = pattern.endDate instanceof Date
+        ? pattern.endDate.toISOString().slice(0, 10)
+        : String(pattern.endDate).slice(0, 10);
+      if (existingEndStr < effDate) {
+        finalEndDate = pattern.endDate;
+      }
+    }
+
+    const updated = await this.repository.updatePattern(
+      id,
+      organizationId,
+      {
+        status: 'CANCELLED',
+        endDate: new Date(finalEndDate),
+        endedAt: new Date(),
+        endedBy: context.userId,
+        endReason: reason,
+      },
+      context
+    );
+
+    // Count retained future visits (visits on or after today, not deleted and not cancelled)
+    const todayStr = typeof today === 'string' ? today.slice(0, 10) : today.toISOString().slice(0, 10);
+    const countQuery = `
+      SELECT COUNT(*)::int AS count
+      FROM visits
+      WHERE pattern_id = $1
+        AND organization_id = $2
+        AND scheduled_date >= $3
+        AND deleted_at IS NULL
+        AND status != 'CANCELLED'
+    `;
+    const countRes = await this.pool.query(countQuery, [id, organizationId, todayStr]);
+    const retainedFutureVisits = countRes.rows[0]?.count ?? 0;
+
+    return { pattern: updated, retainedFutureVisits };
+  }
   async getPatternWithVisits(
     patternId: UUID,
     organizationId: UUID
@@ -191,6 +361,11 @@ export class RecurringVisitPatternEngine {
     options: GenerateVisitsOptions,
     context: UserContext
   ): Promise<{ visits: Visit[]; exceptions: PatternGenerationException[] }> {
+    const today = options.referenceDate ?? new Date();
+    if (!isPatternEligibleForGeneration(pattern, today)) {
+      return { visits: [], exceptions: [] };
+    }
+
     const horizonDays = options.horizonDays ?? 60;
     const baseDate = options.referenceDate ?? new Date(pattern.startDate);
 
