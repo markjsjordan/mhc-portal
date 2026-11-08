@@ -9,6 +9,7 @@ vi.mock('@/core/hooks', async (importOriginal) => {
     ...actual,
     usePermissions: () => ({
       can: () => true,
+      canSection: () => true,
     }),
     useDemoData: () => ({
       hasDemoData: true,

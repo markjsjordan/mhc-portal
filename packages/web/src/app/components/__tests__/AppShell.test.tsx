@@ -22,6 +22,7 @@ vi.mock('@/core/hooks', () => ({
     canAll: vi.fn(() => true),
     hasRole: vi.fn(() => true),
     hasAnyRole: vi.fn(() => true),
+    canSection: vi.fn(() => true),
   }),
   useIdleLogout: vi.fn(),
 }));

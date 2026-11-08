@@ -164,7 +164,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isDesktopOpen
     }
 
     // Section-based access control: if item has a section, check READ access
-    if (item.section && canSection && !canSection(item.section, 'READ')) {
+    if (item.section && !canSection(item.section, 'READ')) {
       return false;
     }
 

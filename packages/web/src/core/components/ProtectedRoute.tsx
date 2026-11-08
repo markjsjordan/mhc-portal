@@ -75,7 +75,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Check section access (READ access required to view route)
-  if (section && canSection && !canSection(section, 'READ')) {
+  if (section && !canSection(section, 'READ')) {
     const redirect = fallbackPath ?? getDashboardRoute(user.roles);
     return <Navigate to={redirect} replace />;
   }
