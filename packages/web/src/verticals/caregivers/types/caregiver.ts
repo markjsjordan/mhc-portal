@@ -152,3 +152,23 @@ export interface PortalAccessSummary {
   linked: boolean;               // user_id IS NOT NULL
 }
 
+export interface TimeSlot {
+  startTime: string; // HH:MM
+  endTime: string;   // HH:MM
+}
+
+export interface DayAvailability {
+  available: boolean;
+  timeSlots?: TimeSlot[];
+  notes?: string;
+}
+
+export interface WeeklyAvailability {
+  monday: DayAvailability;
+  tuesday: DayAvailability;
+  wednesday: DayAvailability;
+  thursday: DayAvailability;
+  friday: DayAvailability;
+  saturday: DayAvailability;
+  sunday: DayAvailability;
+}

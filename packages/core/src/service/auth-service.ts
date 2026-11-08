@@ -22,6 +22,7 @@ import { JWTUtils, TokenPayload, TokenPair } from '../utils/jwt-utils';
 import { getCacheService } from './cache.service';
 import { CacheKeys, CacheTTL } from '../constants/cache-keys';
 import { PermissionService } from '../permissions/permission-service';
+import { resolvePortalLinks, deriveRoles } from './portal-link-resolver';
 
 /**
  * Google OAuth profile data
@@ -175,8 +176,12 @@ export class AuthService {
       });
     }
 
+    // Resolve portal links and derive dynamic roles
+    const links = await resolvePortalLinks(this.db, user.id);
+    const effectiveRoles = deriveRoles(user.roles, links);
+
     // Merge explicit and role-based permissions
-    const mergedPermissions = this.mergePermissions(user.permissions, user.roles);
+    const mergedPermissions = this.mergePermissions(user.permissions, effectiveRoles);
 
     // Generate tokens
     const tokenPayload: TokenPayload = {
@@ -184,9 +189,12 @@ export class AuthService {
       email: user.email,
       organizationId: user.organization_id,
       branchIds: user.branch_ids,
-      roles: user.roles,
+      roles: effectiveRoles,
       permissions: mergedPermissions,
-      tokenVersion: user.token_version
+      tokenVersion: user.token_version,
+      ...(links.caregiverId !== undefined && links.caregiverId !== '' ? { caregiverId: links.caregiverId } : {}),
+      familyMemberIds: links.familyMemberIds,
+      familyClientIds: links.familyClientIds
     };
 
     const tokens = JWTUtils.generateTokenPair(tokenPayload);
@@ -202,7 +210,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: `${user.first_name} ${user.last_name}`,
-        roles: user.roles,
+        roles: effectiveRoles,
         permissions: mergedPermissions,
         organizationId: user.organization_id
       },
@@ -284,8 +292,12 @@ export class AuthService {
       await this.updatePasswordHash(user.id, newHash);
     }
 
+    // Resolve portal links and derive dynamic roles
+    const links = await resolvePortalLinks(this.db, user.id);
+    const effectiveRoles = deriveRoles(user.roles, links);
+
     // Merge explicit and role-based permissions
-    const mergedPermissions = this.mergePermissions(user.permissions, user.roles);
+    const mergedPermissions = this.mergePermissions(user.permissions, effectiveRoles);
 
     // Generate tokens
     const tokenPayload: TokenPayload = {
@@ -293,9 +305,12 @@ export class AuthService {
       email: user.email,
       organizationId: user.organization_id,
       branchIds: user.branch_ids,
-      roles: user.roles,
+      roles: effectiveRoles,
       permissions: mergedPermissions,
-      tokenVersion: user.token_version
+      tokenVersion: user.token_version,
+      ...(links.caregiverId !== undefined && links.caregiverId !== '' ? { caregiverId: links.caregiverId } : {}),
+      familyMemberIds: links.familyMemberIds,
+      familyClientIds: links.familyClientIds
     };
 
     const tokens = JWTUtils.generateTokenPair(tokenPayload);
@@ -319,7 +334,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: `${user.first_name} ${user.last_name}`,
-        roles: user.roles,
+        roles: effectiveRoles,
         permissions: mergedPermissions,
         organizationId: user.organization_id
       },
@@ -355,17 +370,24 @@ export class AuthService {
       );
     }
 
+    // Resolve portal links and derive dynamic roles
+    const links = await resolvePortalLinks(this.db, user.id);
+    const effectiveRoles = deriveRoles(user.roles, links);
+
     // HIPAA-009: Include role-derived permissions on refresh token rotation
-    const mergedPermissions = this.mergePermissions(user.permissions, user.roles);
+    const mergedPermissions = this.mergePermissions(user.permissions, effectiveRoles);
 
     const payload: TokenPayload = {
       userId: user.id,
       email: user.email,
       organizationId: user.organization_id,
       branchIds: user.branch_ids,
-      roles: user.roles,
+      roles: effectiveRoles,
       permissions: mergedPermissions,
-      tokenVersion: user.token_version
+      tokenVersion: user.token_version,
+      ...(links.caregiverId !== undefined && links.caregiverId !== '' ? { caregiverId: links.caregiverId } : {}),
+      familyMemberIds: links.familyMemberIds,
+      familyClientIds: links.familyClientIds
     };
 
     // Generate new token pair (rotation)

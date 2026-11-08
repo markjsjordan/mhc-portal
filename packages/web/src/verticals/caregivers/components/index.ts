@@ -8,3 +8,6 @@ export { EditCaregiverModal, type EditCaregiverModalProps } from './EditCaregive
 export { DeleteCaregiverConfirmation, type DeleteCaregiverConfirmationProps } from './DeleteCaregiverConfirmation.js';
 export { DuplicateCaregiverModal, type DuplicateCaregiverModalProps } from './DuplicateCaregiverModal.js';
 export { PortalAccessCard, type PortalAccessCardProps } from './PortalAccessCard.js';
+export { WeekPicker, type WeekPickerProps } from './WeekPicker.js';
+export { DayAvailabilityEditor, type DayAvailabilityEditorProps } from './DayAvailabilityEditor.js';
+export { ConflictBanner, type ConflictBannerProps } from './ConflictBanner.js';

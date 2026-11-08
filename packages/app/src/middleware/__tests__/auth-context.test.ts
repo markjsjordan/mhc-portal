@@ -243,4 +243,31 @@ describe('requireAuth', () => {
     });
     expect(nextMock).not.toHaveBeenCalled();
   });
+
+  it('should copy caregiverId, familyMemberIds and familyClientIds from req.user into req.userContext', () => {
+    mockRequest.user = {
+      userId: 'user-123',
+      email: 'caregiver@example.com',
+      organizationId: '550e8400-e29b-41d4-a716-446655440000',
+      branchIds: [],
+      roles: ['CAREGIVER'],
+      permissions: [],
+      tokenVersion: 1,
+      caregiverId: 'cg-456',
+      familyMemberIds: ['fm-1'],
+      familyClientIds: ['client-1'],
+    };
+
+    authContextMiddleware(
+      mockRequest as Request,
+      mockResponse as Response,
+      nextMock
+    );
+
+    expect(nextMock).toHaveBeenCalled();
+    expect(mockRequest.userContext).toBeDefined();
+    expect(mockRequest.userContext?.caregiverId).toBe('cg-456');
+    expect(mockRequest.userContext?.familyMemberIds).toEqual(['fm-1']);
+    expect(mockRequest.userContext?.familyClientIds).toEqual(['client-1']);
+  });
 });

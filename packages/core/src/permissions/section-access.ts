@@ -64,6 +64,7 @@ export const RESOURCE_TO_SECTION: ReadonlyMap<string, Section> = new Map<string,
   training: 'training-payroll',
   certifications: 'training-payroll',
   payroll: 'training-payroll',
+  availability: 'scheduling',
 }) as [string, Section][]);
 
 const READ_ACTIONS = new Set(['read', 'view']);

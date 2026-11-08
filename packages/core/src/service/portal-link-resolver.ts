@@ -1,0 +1,88 @@
+/**
+ * Portal Link Resolver
+ *
+ * Resolves active caregiver and family portal links for a given user.
+ * Derives dynamic CAREGIVER and FAMILY roles from ACTIVE links.
+ */
+
+import { Database } from '../db/connection.js';
+import { UUID } from '../types/base.js';
+
+export interface ResolvedPortalLinks {
+  caregiverId?: UUID;
+  familyMemberIds: UUID[];
+  familyClientIds: UUID[];
+}
+
+/**
+ * Resolves active portal links for a user from database.
+ * - caregiverId: caregivers.user_id = $1 AND portal_access_status = 'ACTIVE' AND deleted_at IS NULL
+ * - family: family_members.user_id = $1 AND portal_access_status = 'ACTIVE', joined to clients whose status is NOT IN ('DISCHARGED', 'DECEASED')
+ */
+export async function resolvePortalLinks(
+  db: Database,
+  userId: UUID
+): Promise<ResolvedPortalLinks> {
+  const [caregiverRes, familyRes] = await Promise.all([
+    db.query<{ id: string }>(
+      `SELECT id
+       FROM caregivers
+       WHERE user_id = $1
+         AND portal_access_status = 'ACTIVE'
+         AND deleted_at IS NULL
+       LIMIT 1`,
+      [userId]
+    ),
+    db.query<{ id: string; client_id: string }>(
+      `SELECT fm.id, fm.client_id
+       FROM family_members fm
+       JOIN clients c ON c.id = fm.client_id
+       WHERE fm.user_id = $1
+         AND fm.portal_access_status = 'ACTIVE'
+         AND (c.status IS NULL OR c.status NOT IN ('DISCHARGED', 'DECEASED'))`,
+      [userId]
+    ),
+  ]);
+
+  const caregiverId = caregiverRes.rows[0]?.id;
+  const familyMemberIds: UUID[] = familyRes.rows.map((r) => r.id);
+  const familyClientIds: UUID[] = Array.from(
+    new Set(familyRes.rows.map((r) => r.client_id).filter((cid) => Boolean(cid)))
+  );
+
+  const links: ResolvedPortalLinks = {
+    familyMemberIds,
+    familyClientIds,
+  };
+
+  if (caregiverId !== undefined && caregiverId !== '') {
+    links.caregiverId = caregiverId;
+  }
+
+  return links;
+}
+
+/**
+ * Derives effective roles from staff roles and resolved portal links:
+ * - Drops 'CAREGIVER' and 'FAMILY' from users.roles
+ * - Adds 'CAREGIVER' if caregiverId is set
+ * - Adds 'FAMILY' if familyMemberIds is non-empty
+ */
+export function deriveRoles(
+  staffRoles: string[] = [],
+  links: ResolvedPortalLinks
+): string[] {
+  const filteredRoles = staffRoles.filter(
+    (role) => role !== 'CAREGIVER' && role !== 'FAMILY'
+  );
+
+  if (links.caregiverId !== undefined && links.caregiverId !== '' && !filteredRoles.includes('CAREGIVER')) {
+    filteredRoles.push('CAREGIVER');
+  }
+
+  if (links.familyMemberIds.length > 0 && !filteredRoles.includes('FAMILY')) {
+    filteredRoles.push('FAMILY');
+  }
+
+  return filteredRoles;
+}

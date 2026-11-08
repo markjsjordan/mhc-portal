@@ -94,6 +94,11 @@ export interface CreateOrganizationRequest {
 export type InviteTokenStatus = 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED';
 
 /**
+ * Invitation target type (STAFF, CAREGIVER, or FAMILY)
+ */
+export type InviteTargetType = 'STAFF' | 'CAREGIVER' | 'FAMILY';
+
+/**
  * Invitation token for team member registration
  */
 export interface InviteToken extends Entity {
@@ -108,6 +113,8 @@ export interface InviteToken extends Entity {
   status: InviteTokenStatus;
   acceptedUserId: UUID | null;
   acceptedAt: Date | null;
+  targetType?: InviteTargetType | null;
+  targetId?: UUID | null;
 }
 
 /**
@@ -120,6 +127,8 @@ export interface CreateInviteRequest {
   roles: Role[];
   branchIds?: UUID[];
   expiresInDays?: number; // Default 7 days
+  targetType?: InviteTargetType;
+  targetId?: UUID;
 }
 
 /**

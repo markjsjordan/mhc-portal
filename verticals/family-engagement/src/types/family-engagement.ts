@@ -67,6 +67,12 @@ export interface FamilyMember extends Entity {
   preferredContactMethod: 'EMAIL' | 'PHONE' | 'SMS' | 'PORTAL';
 
   userId?: UUID; // User account linked to family member
+  portalAccessStatus?: 'NONE' | 'INVITED' | 'ACTIVE' | 'SUSPENDED' | 'REVOKED';
+  portalInvitedAt?: Timestamp | null;
+  portalActivatedAt?: Timestamp | null;
+  portalRevokedAt?: Timestamp | null;
+  portalRevokedBy?: UUID | null;
+  portalRevokedReason?: string | null;
 
   // Portal access
   portalAccessLevel: PortalAccessLevel;

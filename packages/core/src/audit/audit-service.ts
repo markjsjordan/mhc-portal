@@ -28,7 +28,12 @@ export type AuditEventType =
   | 'DATA_MODIFICATION'
   | 'CONFIGURATION'
   | 'SECURITY'
-  | 'COMPLIANCE';
+  | 'COMPLIANCE'
+  | 'PORTAL_INVITATION_SENT'
+  | 'PORTAL_INVITATION_ACCEPTED'
+  | 'PORTAL_ACCESS_REVOKED'
+  | 'PORTAL_ACCESS_SUSPENDED'
+  | 'PORTAL_ACCESS_RESTORED';
 
 /**
  * Type for creating audit events (omits server-generated fields)

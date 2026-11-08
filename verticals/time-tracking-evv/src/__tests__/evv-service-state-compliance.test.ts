@@ -83,6 +83,7 @@ describe('EVVService - State Compliance Integration', () => {
 
     userContext = {
       userId: 'caregiver-123' as UUID,
+      caregiverId: 'caregiver-123' as UUID,
       organizationId: 'org-123' as UUID,
       branchIds: ['branch-123' as UUID],
       roles: ['CAREGIVER' as any],

@@ -347,6 +347,8 @@ describe('PermissionService', () => {
         expect(permissionService.hasPermission(context, 'care-plans:read')).toBe(true);
         expect(permissionService.hasPermission(context, 'tasks:update')).toBe(true);
         expect(permissionService.hasPermission(context, 'notes:create')).toBe(true);
+        expect(permissionService.hasPermission(context, 'availability:read-own')).toBe(true);
+        expect(permissionService.hasPermission(context, 'availability:update-own')).toBe(true);
       });
 
       it('should not have administrative access', () => {
@@ -385,19 +387,21 @@ describe('PermissionService', () => {
       const nurseRoles: Role[] = ['NURSE', 'NURSE_RN', 'NURSE_LPN', 'CLINICAL'];
       const expectedNursePermissions = [
         'clients:read',
-        'clients:update',
         'care-plans:read',
-        'care-plans:update',
         'visits:read',
-        'visits:update',
         'tasks:read',
-        'tasks:update',
         'notes:create',
         'notes:read',
         'incidents:read',
         'incidents:create',
         'messages:view',
         'messages:send',
+      ];
+      const forbiddenNurseUpdatePermissions = [
+        'clients:update',
+        'care-plans:update',
+        'visits:update',
+        'tasks:update',
       ];
 
       it.each(nurseRoles)('should grant clinical permissions for %s', (role) => {
@@ -413,6 +417,29 @@ describe('PermissionService', () => {
         const rolePerms = permissionService.getPermissionsForRoles([role]);
         expect(rolePerms).toEqual(expect.arrayContaining(expectedNursePermissions));
         expect(rolePerms).toHaveLength(expectedNursePermissions.length);
+      });
+
+      it.each(nurseRoles)('should assert read grants, clinical documentation/messaging exceptions, and lack update grants for %s', (role) => {
+        const context = createMockUserContext({
+          roles: [role],
+          permissions: [],
+        });
+
+        // Read permissions
+        expect(permissionService.hasPermission(context, 'clients:read')).toBe(true);
+        expect(permissionService.hasPermission(context, 'care-plans:read')).toBe(true);
+        expect(permissionService.hasPermission(context, 'visits:read')).toBe(true);
+        expect(permissionService.hasPermission(context, 'tasks:read')).toBe(true);
+
+        // Exceptions kept
+        expect(permissionService.hasPermission(context, 'notes:create')).toBe(true);
+        expect(permissionService.hasPermission(context, 'incidents:create')).toBe(true);
+        expect(permissionService.hasPermission(context, 'messages:send')).toBe(true);
+
+        // Lacks update permissions
+        forbiddenNurseUpdatePermissions.forEach((perm) => {
+          expect(permissionService.hasPermission(context, perm)).toBe(false);
+        });
       });
 
       it.each(nurseRoles)('should not grant administrative or billing permissions for %s', (role) => {
@@ -475,13 +502,11 @@ describe('PermissionService', () => {
       expect(permissionService.hasPermission(familyContext, 'family-portal:view')).toBe(true);
     });
 
-    it('should resolve clients:update for administrative and clinical roles (wildcards included)', () => {
+    it('should resolve clients:update for administrative roles (wildcards included)', () => {
       const rolesWithClientsUpdate: Role[] = [
         'ORG_ADMIN',
         'BRANCH_ADMIN',
         'COORDINATOR',
-        'NURSE',
-        'CLINICAL',
       ];
 
       for (const role of rolesWithClientsUpdate) {

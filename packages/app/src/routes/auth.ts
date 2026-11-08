@@ -16,6 +16,8 @@ import {
   AuditService,
   JWTUtils,
   TokenPayload,
+  resolvePortalLinks,
+  deriveRoles,
   Database, 
   ValidationError, 
   AuthenticationError,
@@ -643,8 +645,12 @@ export function createAuthRouter(db: Database): Router {
           });
         }
 
+        // Resolve portal links and derive dynamic roles
+        const links = await resolvePortalLinks(db, targetUser.id);
+        const derivedTargetRoles = deriveRoles(targetUser.roles ?? [], links);
+
         // Must be a CAREGIVER
-        if (!targetUser.roles.includes('CAREGIVER')) {
+        if (!derivedTargetRoles.includes('CAREGIVER')) {
           return res.status(403).json({
             success: false,
             error: 'Impersonation is restricted to caregivers',
@@ -692,7 +698,7 @@ export function createAuthRouter(db: Database): Router {
         const sessionId = randomUUID();
         const mergedPermissions = authService.getMergedPermissions(
           targetUser.permissions ?? [],
-          targetUser.roles ?? []
+          derivedTargetRoles
         );
 
         const caregiverPayload: TokenPayload = {
@@ -700,9 +706,12 @@ export function createAuthRouter(db: Database): Router {
           email: targetUser.email,
           organizationId: targetUser.organization_id,
           branchIds: targetUser.branch_ids ?? [],
-          roles: targetUser.roles ?? [],
+          roles: derivedTargetRoles,
           permissions: mergedPermissions,
           tokenVersion: targetUser.token_version,
+          ...(links.caregiverId !== undefined && links.caregiverId !== '' ? { caregiverId: links.caregiverId } : {}),
+          familyMemberIds: links.familyMemberIds,
+          familyClientIds: links.familyClientIds,
           impersonation: {
             adminUserId: admin.userId,
             adminEmail: admin.email,

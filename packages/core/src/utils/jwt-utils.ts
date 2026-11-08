@@ -23,6 +23,9 @@ export interface TokenPayload {
   roles: string[];
   permissions: string[];
   tokenVersion: number; // For token invalidation
+  caregiverId?: UUID;
+  familyMemberIds?: UUID[];
+  familyClientIds?: UUID[];
   impersonation?: {
     adminUserId: UUID;
     adminEmail: string;
@@ -152,6 +155,22 @@ export class JWTUtils {
     };
   }
 
+  private static sanitizeTokenPayload(payload: JwtPayload, userId: string, email: string, orgId: string): TokenPayload {
+    return {
+      userId: userId as UUID,
+      email: email as string,
+      organizationId: orgId as UUID,
+      branchIds: Array.isArray(payload.branchIds) ? (payload.branchIds as UUID[]) : [],
+      roles: Array.isArray(payload.roles) ? (payload.roles as string[]) : [],
+      permissions: Array.isArray(payload.permissions) ? (payload.permissions as string[]) : [],
+      tokenVersion: typeof payload.tokenVersion === 'number' ? payload.tokenVersion : 1,
+      caregiverId: typeof payload.caregiverId === 'string' && payload.caregiverId !== '' ? (payload.caregiverId as UUID) : undefined,
+      familyMemberIds: Array.isArray(payload.familyMemberIds) ? (payload.familyMemberIds as UUID[]) : undefined,
+      familyClientIds: Array.isArray(payload.familyClientIds) ? (payload.familyClientIds as UUID[]) : undefined,
+      impersonation: (payload.impersonation as TokenPayload['impersonation']) ?? undefined
+    };
+  }
+
   /**
    * Verify and decode access token
    * 
@@ -184,16 +203,7 @@ export class JWTUtils {
         throw new Error('Token missing required fields');
       }
 
-      return {
-        userId: userId as UUID,
-        email: email as string,
-        organizationId: orgId as UUID,
-        branchIds: Array.isArray(payload.branchIds) ? (payload.branchIds as UUID[]) : [],
-        roles: Array.isArray(payload.roles) ? (payload.roles as string[]) : [],
-        permissions: Array.isArray(payload.permissions) ? (payload.permissions as string[]) : [],
-        tokenVersion: typeof payload.tokenVersion === 'number' ? payload.tokenVersion : 1,
-        impersonation: (payload.impersonation as TokenPayload['impersonation']) ?? undefined
-      };
+      return this.sanitizeTokenPayload(payload, userId as string, email as string, orgId as string);
     } catch (error) {
       if (error instanceof Error) {
         if (error.name === 'TokenExpiredError') {

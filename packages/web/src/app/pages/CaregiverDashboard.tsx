@@ -636,6 +636,10 @@ export const CaregiverDashboard: React.FC = () => {
     Promise.resolve(navigate('/scheduling')).catch(() => {});
   }, [navigate]);
 
+  const handleNavigateToMyWeeklySchedule = useCallback(() => {
+    Promise.resolve(navigate('/caregiver/schedule')).catch(() => {});
+  }, [navigate]);
+
   const handleNavigateToTimeTracking = useCallback(() => {
     Promise.resolve(navigate('/time-tracking')).catch(() => {});
   }, [navigate]);
@@ -933,6 +937,14 @@ export const CaregiverDashboard: React.FC = () => {
             >
               <Calendar className="h-5 w-5 mr-2" />
               View Schedule
+            </Button>
+            <Button
+              variant="outline"
+              className="justify-start"
+              onClick={handleNavigateToMyWeeklySchedule}
+            >
+              <Calendar className="h-5 w-5 mr-2" />
+              My Schedule
             </Button>
             <Button
               variant="outline"

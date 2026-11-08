@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { ClientFilters } from '../ClientFilters.js';
 import type { ClientSearchFilters } from '../types';
@@ -163,6 +163,44 @@ describe('ClientFilters', () => {
     fireEvent.click(clearButton);
 
     expect(searchInput).toHaveValue('');
+  });
+
+  it('keeps search input mounted with its value and focus when typing past debounce', () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <ClientFilters
+          filters={defaultFilters}
+          onFiltersChange={mockOnFiltersChange}
+        />
+      );
+
+      const searchInput = screen.getByPlaceholderText(
+        'Search by name or client number...'
+      );
+      searchInput.focus();
+      expect(document.activeElement).toBe(searchInput);
+
+      fireEvent.change(searchInput, { target: { value: 'Alice' } });
+      expect(searchInput).toHaveValue('Alice');
+
+      // Advance timers past 300ms debounce
+      act(() => {
+        vi.advanceTimersByTime(350);
+      });
+
+      // Verify callback triggered
+      expect(mockOnFiltersChange).toHaveBeenCalledWith(
+        expect.objectContaining({ query: 'Alice' })
+      );
+
+      // Verify input remains mounted, retains its value, and keeps focus
+      expect(searchInput).toBeInTheDocument();
+      expect(searchInput).toHaveValue('Alice');
+      expect(document.activeElement).toBe(searchInput);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('handles date range filters', async () => {
