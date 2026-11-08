@@ -36,7 +36,7 @@ describe('FamilyEngagementService family security', () => {
       getMessagesInThread: vi.fn().mockResolvedValue([]),
     };
     familyMemberRepo = {
-      findById: vi.fn().mockResolvedValue({ id: 'fam-1', userId: 'user-fam-1' }),
+      findById: vi.fn().mockResolvedValue({ id: 'fam-1', userId: 'user-fam-1', portalAccessStatus: 'ACTIVE' }),
     };
 
     service = new FamilyEngagementService(
@@ -51,14 +51,42 @@ describe('FamilyEngagementService family security', () => {
     );
   });
 
-  it('allows family user to view their own threads when userId matches familyMemberId', async () => {
-    const res = await service.getThreadsForFamilyMember('fam-1', familyCtx('fam-1'));
+  it('allows family user to view their own threads when familyMemberIds includes id', async () => {
+    const ctx = {
+      ...familyCtx('user-fam-1'),
+      familyMemberIds: ['fam-1'],
+    };
+    const res = await service.getThreadsForFamilyMember('fam-1', ctx);
     expect(res).toBeDefined();
   });
 
-  it('allows family user to view their own threads when linked via family member record userId', async () => {
+  it('allows family user to view their own threads when linked via family member record userId and ACTIVE', async () => {
     const res = await service.getThreadsForFamilyMember('fam-1', familyCtx('user-fam-1'));
     expect(res).toBeDefined();
+  });
+
+  it('denies family user when family member has NULL user_id', async () => {
+    familyMemberRepo.findById.mockResolvedValueOnce({
+      id: 'fam-null-user',
+      userId: null,
+      portalAccessStatus: 'ACTIVE',
+    });
+
+    await expect(
+      service.getThreadsForFamilyMember('fam-null-user', familyCtx('some-user'))
+    ).rejects.toThrow('permissions');
+  });
+
+  it('denies family user when family member portalAccessStatus is REVOKED', async () => {
+    familyMemberRepo.findById.mockResolvedValueOnce({
+      id: 'fam-revoked',
+      userId: 'user-fam-1',
+      portalAccessStatus: 'REVOKED',
+    });
+
+    await expect(
+      service.getThreadsForFamilyMember('fam-revoked', familyCtx('user-fam-1'))
+    ).rejects.toThrow('permissions');
   });
 
   it('rejects family user attempting to view threads of another family member', async () => {

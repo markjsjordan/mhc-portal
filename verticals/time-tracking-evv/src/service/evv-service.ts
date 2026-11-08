@@ -86,8 +86,11 @@ export class EVVService {
 
     // Verify caregiver matches user context (or supervisor override)
     const isSupervisorOverride = this.isSupervisor(userContext);
-    if (input.caregiverId !== userContext.userId && !isSupervisorOverride) {
-      throw new PermissionError('Cannot clock in for another caregiver');
+    if (!isSupervisorOverride) {
+      const resolvedCaregiverId = await this.resolveCaregiverIdForUser(userContext);
+      if (!resolvedCaregiverId || input.caregiverId !== resolvedCaregiverId) {
+        throw new PermissionError('Cannot clock in for another caregiver');
+      }
     }
 
     // Validate caregiver can clock in for this visit
@@ -510,8 +513,11 @@ export class EVVService {
     }
 
     // Verify caregiver matches user context
-    if (input.caregiverId !== userContext.userId && !this.isSupervisor(userContext)) {
-      throw new PermissionError('Cannot clock out for another caregiver');
+    if (!this.isSupervisor(userContext)) {
+      const resolvedCaregiverId = await this.resolveCaregiverIdForUser(userContext);
+      if (!resolvedCaregiverId || input.caregiverId !== resolvedCaregiverId) {
+        throw new PermissionError('Cannot clock out for another caregiver');
+      }
     }
 
     // Get existing EVV record
@@ -1041,6 +1047,23 @@ export class EVVService {
       userContext.roles.includes('BRANCH_ADMIN') ||
       userContext.roles.includes('COORDINATOR')
     );
+  }
+
+  /**
+   * Helper: Resolve caregiver ID for a user from context or database
+   */
+  private async resolveCaregiverIdForUser(userContext: UserContext): Promise<string | null> {
+    if (userContext.caregiverId) {
+      return userContext.caregiverId;
+    }
+    const result = await this.database.query(
+      `SELECT id FROM caregivers WHERE user_id = $1 AND portal_access_status = 'ACTIVE' AND deleted_at IS NULL`,
+      [userContext.userId]
+    );
+    if (result.rows.length === 0) {
+      return null;
+    }
+    return (result.rows[0] as { id: string }).id;
   }
 
   /**
