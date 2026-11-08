@@ -148,6 +148,7 @@ function mapVerification(raw: unknown): EVVLocationVerificationData | undefined 
   if (!v) return undefined;
   const override = v.manualOverride as Row | undefined;
   return {
+    locationCaptured: v.locationCaptured !== false,
     latitude: v.latitude,
     longitude: v.longitude,
     accuracyMeters: v.accuracy,

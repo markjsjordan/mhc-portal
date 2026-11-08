@@ -9,7 +9,7 @@ import { Tour } from '../types';
 export const caregiverTour: Tour = {
   id: 'caregiver-mobile',
   name: 'Caregiver Mobile Experience',
-  description: 'Complete visit workflow with GPS check-in, task completion, and offline mode',
+  description: 'Complete visit workflow with visit check-in/out, task completion, and offline mode',
   role: 'caregiver',
   estimatedTime: 12,
   steps: [
@@ -18,7 +18,7 @@ export const caregiverTour: Tour = {
       target: 'body',
       title: 'Welcome to the Mobile App!',
       content:
-        'As a caregiver, you\'ll use this mobile app in the field to manage your visits, check in/out with GPS verification, complete care tasks, and document your work - even when offline!',
+        'As a caregiver, you\'ll use this mobile app in the field to manage your visits, complete visit check-in/out, complete care tasks, and document your work - even when offline!',
       placement: 'bottom',
       highlightElement: false,
     },

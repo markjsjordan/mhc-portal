@@ -46,12 +46,12 @@ export const personas: Persona[] = [
     name: 'Emily Rodriguez',
     title: 'Caregiver',
     description: 'Complete visits with tasks and EVV check in/out',
-    missionTitle: "Complete 4 visits with tasks and check in/out with GPS verification",
+    missionTitle: "Complete 4 visits with tasks and visit check-in/out",
     missionDescription: "Experience the mobile app workflow for caregivers in the field",
     estimatedTime: 12,
     features: [
       'Mobile visit workflow',
-      'GPS check in/out',
+      'Visit check-in/out',
       'Task completion with photos',
       'Visit notes & documentation',
       'Offline mode support'

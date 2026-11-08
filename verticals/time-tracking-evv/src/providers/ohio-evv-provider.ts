@@ -38,6 +38,11 @@ export class OhioEVVProvider implements IOhioEVVProvider {
       throw new Error('OH EVV configuration not found for organization');
     }
 
+    if (!evvRecord.clockInVerification || !('latitude' in evvRecord.clockInVerification)) {
+      throw new Error('OH EVV submission requires captured coordinates');
+    }
+    const clockInLoc = evvRecord.clockInVerification;
+
     // Determine service category (home health vs waiver)
     const serviceCategory = this.determineServiceCategory(evvRecord.serviceTypeCode);
 
@@ -51,9 +56,9 @@ export class OhioEVVProvider implements IOhioEVVProvider {
       serviceStartTime: evvRecord.clockInTime,
       serviceEndTime: evvRecord.clockOutTime,
       serviceLocation: {
-        latitude: evvRecord.clockInVerification.latitude,
-        longitude: evvRecord.clockInVerification.longitude,
-        accuracy: evvRecord.clockInVerification.accuracy
+        latitude: clockInLoc.latitude,
+        longitude: clockInLoc.longitude,
+        accuracy: clockInLoc.accuracy
       },
 
       // Ohio-specific fields
@@ -138,6 +143,10 @@ export class OhioEVVProvider implements IOhioEVVProvider {
    */
   validateGeofence(location: LocationVerification, serviceAddress: ServiceAddress): boolean {
     const OHIO_GEOFENCE_RADIUS_METERS = 1609; // 1 mile
+
+    if (!location || !('latitude' in location)) {
+      return false;
+    }
 
     if (!serviceAddress.latitude || !serviceAddress.longitude) {
       return false;

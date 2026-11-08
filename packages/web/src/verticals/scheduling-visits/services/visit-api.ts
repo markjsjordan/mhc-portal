@@ -318,10 +318,10 @@ export const createVisitApiService = (apiClient: ApiClient): VisitApiService => 
       const response = await apiClient.get<{
         success: boolean;
         data: PatternListItem[];
-        count: number;
-        total: number;
-        limit: number;
-        offset: number;
+        count?: number;
+        total?: number;
+        limit?: number;
+        offset?: number;
       }>(url);
 
       return {
@@ -350,7 +350,7 @@ export const createVisitApiService = (apiClient: ApiClient): VisitApiService => 
     },
 
     async endPattern(id: string, payload: { reason: string; effectiveDate?: string }): Promise<EndPatternResult> {
-      const response = await apiClient.post<{ success: boolean; data: PatternListItem; retainedFutureVisits: number }>(
+      const response = await apiClient.post<{ success: boolean; data: PatternListItem; retainedFutureVisits?: number }>(
         `/api/visits/patterns/${id}/end`,
         payload
       );

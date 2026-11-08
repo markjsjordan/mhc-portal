@@ -193,7 +193,10 @@ export const VisitDetailPage: React.FC = () => {
   }, [evvRecord, evvData, visit]);
 
   const evvMethodDisplay = useMemo(() => {
-    const clockIn = evvRecord?.clockInVerification as { method?: string } | undefined;
+    const clockIn = evvRecord?.clockInVerification as { method?: string; locationCaptured?: boolean } | undefined;
+    if (clockIn?.locationCaptured === false) {
+      return 'Location not captured';
+    }
     const evvRecordAny = evvRecord as { verificationMethod?: string } | undefined;
     const method =
       clockIn?.method ??
@@ -209,6 +212,13 @@ export const VisitDetailPage: React.FC = () => {
   }, [evvRecord, evvData, visit]);
 
   const geofenceDisplay = useMemo(() => {
+    if (evvRecord?.clockInVerification?.locationCaptured === false) {
+      return {
+        text: 'Location not captured',
+        isCompliant: true,
+      };
+    }
+
     const distance =
       evvRecord?.clockInVerification?.distanceFromAddress ??
       evvData?.distanceMeters;

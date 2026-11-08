@@ -68,7 +68,7 @@ export class EVVBillingGateService {
   /**
    * Validate a single visit against 21st Century Cures Act and geofence standards.
    */
-  validateVisitEVV(visit: EVVVisitVerificationInput): EVVVisitValidationResult {
+  validateVisitEVV(visit: EVVVisitVerificationInput, payerType?: PayerType): EVVVisitValidationResult {
     const missingElements: string[] = [];
     const errors: string[] = [];
     const warnings: string[] = [];
@@ -170,27 +170,33 @@ export class EVVBillingGateService {
       serviceTimePresent;
 
     // --- Geofence and Location Verification ---
+    const isMedicaidFamily = payerType === 'MEDICAID' || payerType === 'MANAGED_CARE';
+    const locationNotCaptured =
+      visit.clockInVerification?.locationCaptured === false ||
+      visit.clockOutVerification?.locationCaptured === false;
+
+    if (locationNotCaptured && isMedicaidFamily) {
+      errors.push('LOCATION_NOT_CAPTURED: cannot be submitted to the aggregator');
+    }
+
     // Clock-in location validation:
-    // Either GPS confirmed within geofence OR approved manual override
-    const clockInGeofenceDirect =
-      visit.clockInWithinGeofence === true ||
-      visit.clockInVerification?.isWithinGeofence === true;
+    // If location is not captured (policy off) and not Medicaid-blocked, skip GPS check
+    const clockInPassed =
+      (visit.clockInVerification?.locationCaptured === false)
+        ? true
+        : (visit.clockInWithinGeofence === true ||
+           visit.clockInVerification?.isWithinGeofence === true ||
+           isApprovedOverride(
+             visit.clockInVerification?.manualOverride,
+             visit.isClockInOverrideApproved,
+             visit.clockInOverrideReason
+           ));
 
-    // An override counts only when a supervisor approved it AND a reason is recorded.
-    // A reason alone (e.g. caregiver-entered) is not an approval.
-    const clockInOverrideValid = isApprovedOverride(
-      visit.clockInVerification?.manualOverride,
-      visit.isClockInOverrideApproved,
-      visit.clockInOverrideReason
-    );
-
-    const clockInPassed = clockInGeofenceDirect || clockInOverrideValid;
     if (!clockInPassed) {
       errors.push('Clock-in GPS verification missing or outside geofence without approved manual override.');
     }
 
     // Clock-out location validation:
-    // Clock-out must exist, and either GPS confirmed within geofence OR approved manual override
     const clockOutGeofenceDirect =
       visit.clockOutWithinGeofence === true ||
       visit.clockOutVerification?.isWithinGeofence === true;
@@ -201,15 +207,24 @@ export class EVVBillingGateService {
       visit.clockOutOverrideReason
     );
 
-    const clockOutPassed = clockOutValid && (clockOutGeofenceDirect || clockOutOverrideValid);
+    const clockOutPassed =
+      (visit.clockOutVerification?.locationCaptured === false)
+        ? clockOutValid
+        : (clockOutValid && (clockOutGeofenceDirect || clockOutOverrideValid));
+
     if (!clockOutPassed && clockOutValid) {
       errors.push('Clock-out GPS verification missing or outside geofence without approved manual override.');
     }
 
+    const clockInOverrideValid = isApprovedOverride(
+      visit.clockInVerification?.manualOverride,
+      visit.isClockInOverrideApproved,
+      visit.clockInOverrideReason
+    );
     const geofenceVerified = clockInPassed && clockOutPassed;
     const hasApprovedManualOverride = clockInOverrideValid || clockOutOverrideValid;
 
-    const isValid = sixElementsComplete && geofenceVerified;
+    const isValid = sixElementsComplete && geofenceVerified && (!locationNotCaptured || !isMedicaidFamily);
 
     return {
       visitId: visit.visitId,
@@ -239,9 +254,9 @@ export class EVVBillingGateService {
    */
   validateAttachedVisitsForBilling(
     visits: EVVVisitVerificationInput[],
-    _payerType?: PayerType
+    payerType?: PayerType
   ): EVVBatchValidationResult {
-    const results = visits.map((v) => this.validateVisitEVV(v));
+    const results = visits.map((v) => this.validateVisitEVV(v, payerType));
     const verifiedCount = results.filter((r) => r.isValid).length;
     const blockedCount = results.filter((r) => !r.isValid).length;
 
@@ -272,7 +287,7 @@ export class EVVBillingGateService {
     const failures: { visitId: string; clientName: string; errors: string[]; missingElements: string[] }[] = [];
 
     for (const visit of visits) {
-      const validation = this.validateVisitEVV(visit);
+      const validation = this.validateVisitEVV(visit, invoiceOrClaim.payerType);
       if (!validation.isValid) {
         failures.push({
           visitId: visit.visitId,

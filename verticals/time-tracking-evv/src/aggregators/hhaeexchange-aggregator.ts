@@ -236,7 +236,7 @@ export class HHAeXchangeAggregator implements IAggregator {
       });
     }
 
-    if (!evvRecord.clockInVerification?.latitude || !evvRecord.clockInVerification?.longitude) {
+    if (!evvRecord.clockInVerification || !('latitude' in evvRecord.clockInVerification) || !evvRecord.clockInVerification.latitude || !evvRecord.clockInVerification.longitude) {
       errors.push({
         field: 'clockInVerification',
         code: 'MISSING_LOCATION',
@@ -248,7 +248,7 @@ export class HHAeXchangeAggregator implements IAggregator {
     // Texas-specific validation
     if (config.state === 'TX') {
       // Texas requires GPS accuracy ≤100m
-      if (evvRecord.clockInVerification && evvRecord.clockInVerification.accuracy > 100) {
+      if (evvRecord.clockInVerification && 'accuracy' in evvRecord.clockInVerification && evvRecord.clockInVerification.accuracy > 100) {
         errors.push({
           field: 'clockInVerification.accuracy',
           code: 'GPS_ACCURACY_EXCEEDED',
@@ -268,7 +268,7 @@ export class HHAeXchangeAggregator implements IAggregator {
       });
     }
 
-    if (evvRecord.clockInVerification && evvRecord.clockInVerification.accuracy > config.geofenceRadiusMeters) {
+    if (evvRecord.clockInVerification && 'accuracy' in evvRecord.clockInVerification && evvRecord.clockInVerification.accuracy > config.geofenceRadiusMeters) {
       warnings.push({
         field: 'clockInVerification.accuracy',
         code: 'LOW_GPS_ACCURACY',
@@ -288,6 +288,12 @@ export class HHAeXchangeAggregator implements IAggregator {
    * Format EVV record into HHAeXchange API payload
    */
   private formatPayload(evvRecord: EVVRecord, config: StateEVVConfig): HHAeXchangePayload {
+    // Location verification
+    if (!('latitude' in evvRecord.clockInVerification)) {
+      throw new Error('Cannot format HHAeXchange payload without captured clock-in coordinates');
+    }
+    const clockInLoc = evvRecord.clockInVerification;
+
     const payload: HHAeXchangePayload = {
       // Visit identification
       visitId: evvRecord.visitId,
@@ -313,18 +319,21 @@ export class HHAeXchangeAggregator implements IAggregator {
       totalMinutes: evvRecord.totalDuration,
 
       // Location verification
-      clockInLatitude: evvRecord.clockInVerification.latitude,
-      clockInLongitude: evvRecord.clockInVerification.longitude,
-      clockInAccuracy: evvRecord.clockInVerification.accuracy,
+      clockInLatitude: clockInLoc.latitude,
+      clockInLongitude: clockInLoc.longitude,
+      clockInAccuracy: clockInLoc.accuracy,
 
       // Verification details
-      clockMethod: this.mapVerificationMethod(evvRecord.clockInVerification.method),
+      clockMethod: this.mapVerificationMethod(clockInLoc.method),
       verificationStatus: this.mapVerificationStatus(evvRecord),
       verificationLevel: evvRecord.verificationLevel,
     };
 
     // Add clock-out location if available
     if (evvRecord.clockOutVerification) {
+      if (!('latitude' in evvRecord.clockOutVerification)) {
+        throw new Error('Cannot format HHAeXchange payload without captured clock-out coordinates');
+      }
       payload.clockOutLatitude = evvRecord.clockOutVerification.latitude;
       payload.clockOutLongitude = evvRecord.clockOutVerification.longitude;
       payload.clockOutAccuracy = evvRecord.clockOutVerification.accuracy;

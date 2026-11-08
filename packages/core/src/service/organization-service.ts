@@ -283,6 +283,34 @@ export class OrganizationService implements IOrganizationService {
 
       const newUser = await this.userRepo.createUser(userRequest);
 
+      // Link caregiver profile if invitation includes CAREGIVER role
+      const hasCaregiverRole = invite.roles.some((role) => String(role).toUpperCase() === 'CAREGIVER');
+      if (hasCaregiverRole) {
+        const findCaregiversQuery = `
+          SELECT id FROM caregivers
+          WHERE organization_id = $1
+            AND LOWER(email) = LOWER($2)
+            AND user_id IS NULL
+            AND deleted_at IS NULL
+        `;
+        const result = await this.db.query(findCaregiversQuery, [
+          inviteDetails.organizationId,
+          inviteDetails.email,
+        ]);
+
+        if (result.rows.length === 1) {
+          const caregiverId = result.rows[0]!.id as string;
+          await this.db.query(
+            `UPDATE caregivers SET user_id = $1, updated_at = NOW() WHERE id = $2`,
+            [newUser.id, caregiverId]
+          );
+        } else if (result.rows.length > 1) {
+          console.warn(
+            `[OrganizationService] Multiple unlinked caregiver rows (${result.rows.length}) found for email ${inviteDetails.email} in org ${inviteDetails.organizationId}; leaving user_id unlinked.`
+          );
+        }
+      }
+
       // Mark invitation as accepted
       await this.userRepo.acceptInviteToken(request.token, newUser.id);
 

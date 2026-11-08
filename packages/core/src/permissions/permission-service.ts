@@ -115,6 +115,9 @@ export class PermissionService {
         // Caregivers only see threads explicitly assigned to them (enforced in service)
         'messages:view',
         'messages:send',
+        // Self-managed availability
+        'availability:read-own',
+        'availability:update-own',
       ])
     );
 
@@ -127,7 +130,6 @@ export class PermissionService {
         'notes:read',
         'visits:read',
         'family-portal:view',
-        'family-portal:invite',
         'activity-feed:view',
         'notifications:view',
         'notifications:send',

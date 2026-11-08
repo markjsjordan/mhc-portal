@@ -347,6 +347,8 @@ describe('PermissionService', () => {
         expect(permissionService.hasPermission(context, 'care-plans:read')).toBe(true);
         expect(permissionService.hasPermission(context, 'tasks:update')).toBe(true);
         expect(permissionService.hasPermission(context, 'notes:create')).toBe(true);
+        expect(permissionService.hasPermission(context, 'availability:read-own')).toBe(true);
+        expect(permissionService.hasPermission(context, 'availability:update-own')).toBe(true);
       });
 
       it('should not have administrative access', () => {
@@ -463,6 +465,37 @@ describe('PermissionService', () => {
       expect(permissionService.hasPermission(context, '')).toBe(false);
       expect(permissionService.hasPermission(context, 'invalid')).toBe(false);
       expect(permissionService.hasPermission(context, 'clients')).toBe(false); // Missing action
+    });
+
+    it('should not grant family-portal:invite to FAMILY role', () => {
+      const familyContext = createMockUserContext({
+        roles: ['FAMILY'],
+        permissions: [],
+      });
+
+      expect(permissionService.hasPermission(familyContext, 'family-portal:invite')).toBe(false);
+      expect(permissionService.hasPermission(familyContext, 'family-portal:view')).toBe(true);
+    });
+
+    it('should resolve clients:update for administrative and clinical roles (wildcards included)', () => {
+      const rolesWithClientsUpdate: Role[] = [
+        'ORG_ADMIN',
+        'BRANCH_ADMIN',
+        'COORDINATOR',
+        'NURSE',
+        'CLINICAL',
+      ];
+
+      for (const role of rolesWithClientsUpdate) {
+        const context = createMockUserContext({
+          roles: [role],
+          permissions: [],
+        });
+        expect(
+          permissionService.hasPermission(context, 'clients:update'),
+          `Role ${role} should have clients:update`
+        ).toBe(true);
+      }
     });
   });
 });

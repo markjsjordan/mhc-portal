@@ -133,18 +133,21 @@ export class TexasEVVComplianceService {
     evvRecord: EVVRecord,
     scheduledStartTime: Date,
     scheduledEndTime: Date,
-    expectedLocation: LocationCoordinates
+    expectedLocation: LocationCoordinates,
+    options?: { skipGeofence?: boolean }
   ): TexasComplianceResult {
     // 1. Validate geofence (location compliance)
+    const isCaptured = evvRecord.clockInVerification?.locationCaptured !== false;
     const actualLocation: LocationCoordinates = {
-      latitude: evvRecord.clockInVerification.latitude,
-      longitude: evvRecord.clockInVerification.longitude,
-      accuracy: evvRecord.clockInVerification.accuracy,
+      latitude: isCaptured && 'latitude' in evvRecord.clockInVerification ? evvRecord.clockInVerification.latitude : 0,
+      longitude: isCaptured && 'longitude' in evvRecord.clockInVerification ? evvRecord.clockInVerification.longitude : 0,
+      accuracy: isCaptured && 'accuracy' in evvRecord.clockInVerification ? evvRecord.clockInVerification.accuracy : 0,
     };
 
     const geofenceValidation = this.geofenceValidator.validate(
       actualLocation,
-      expectedLocation
+      expectedLocation,
+      { skipGeofence: options?.skipGeofence ?? !isCaptured }
     );
 
     // 2. Validate six required elements

@@ -7,6 +7,7 @@
 import { Router, type Request, type Response } from 'express';
 import { Database, AuthMiddleware } from '@folkcare/core';
 import { mobileLimiter } from '../middleware/rate-limit.js';
+import { loadOrgLocationPolicy } from '@folkcare/time-tracking-evv';
 
 export function createMobileRouter(db: Database): Router {
   const router = Router();
@@ -107,11 +108,18 @@ export function createMobileRouter(db: Database): Router {
       }
       
       const userId = req.user.userId;
+      const orgId = req.user.organizationId;
       const { id } = req.params;
       const { location, deviceInfo } = req.body;
 
-      if (location === undefined || location === null || deviceInfo === undefined || deviceInfo === null) {
-        res.status(400).json({ success: false, error: 'Location and device info required' });
+      if (deviceInfo === undefined || deviceInfo === null) {
+        res.status(400).json({ success: false, error: 'Device info required' });
+        return;
+      }
+
+      const policy = orgId ? await loadOrgLocationPolicy(db, orgId) : { locationRequired: false };
+      if (policy.locationRequired && (location === undefined || location === null)) {
+        res.status(400).json({ success: false, error: 'Location required' });
         return;
       }
 
@@ -182,11 +190,18 @@ export function createMobileRouter(db: Database): Router {
       }
       
       const userId = req.user.userId;
+      const orgId = req.user.organizationId;
       const { id } = req.params;
       const { location, deviceInfo, notes } = req.body;
 
-      if (location === undefined || location === null || deviceInfo === undefined || deviceInfo === null) {
-        res.status(400).json({ success: false, error: 'Location and device info required' });
+      if (deviceInfo === undefined || deviceInfo === null) {
+        res.status(400).json({ success: false, error: 'Device info required' });
+        return;
+      }
+
+      const policy = orgId ? await loadOrgLocationPolicy(db, orgId) : { locationRequired: false };
+      if (policy.locationRequired && (location === undefined || location === null)) {
+        res.status(400).json({ success: false, error: 'Location required' });
         return;
       }
 

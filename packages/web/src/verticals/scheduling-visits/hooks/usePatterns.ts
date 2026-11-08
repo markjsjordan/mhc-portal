@@ -34,8 +34,9 @@ export function usePatternMutations() {
       toast.success('Pattern paused successfully');
       invalidate();
     },
-    onError: (error: any) => {
-      const msg = error.response?.data?.error || error.message || 'Failed to pause pattern';
+    onError: (error: unknown) => {
+      const apiErr = error as { response?: { data?: { error?: string; message?: string } }; message?: string };
+      const msg = apiErr.response?.data?.error ?? apiErr.response?.data?.message ?? apiErr.message ?? 'Failed to pause pattern';
       toast.error(msg);
     },
   });
@@ -48,13 +49,14 @@ export function usePatternMutations() {
       toast.success('Pattern resumed successfully');
       invalidate();
     },
-    onError: (error: any) => {
-      const resp = error.response?.data;
+    onError: (error: unknown) => {
+      const apiErr = error as { response?: { data?: { code?: string; error?: string; message?: string; details?: unknown } }; message?: string };
+      const resp = apiErr.response?.data;
       if (resp?.code === 'AUTHORIZATION_LIMIT_EXCEEDED') {
         const details = resp.details ? ` (${JSON.stringify(resp.details)})` : '';
-        toast.error(`Authorization limit exceeded: ${resp.error}${details}`);
+        toast.error(`Authorization limit exceeded: ${resp.error ?? 'Limit exceeded'}${details}`);
       } else {
-        const msg = resp?.error || error.message || 'Failed to resume pattern';
+        const msg = resp?.error ?? resp?.message ?? apiErr.message ?? 'Failed to resume pattern';
         toast.error(msg);
       }
     },
@@ -68,8 +70,9 @@ export function usePatternMutations() {
       toast.success(`Pattern ended. ${data.retainedFutureVisits} scheduled visit(s) retained.`);
       invalidate();
     },
-    onError: (error: any) => {
-      const msg = error.response?.data?.error || error.message || 'Failed to end pattern';
+    onError: (error: unknown) => {
+      const apiErr = error as { response?: { data?: { error?: string; message?: string } }; message?: string };
+      const msg = apiErr.response?.data?.error ?? apiErr.response?.data?.message ?? apiErr.message ?? 'Failed to end pattern';
       toast.error(msg);
     },
   });

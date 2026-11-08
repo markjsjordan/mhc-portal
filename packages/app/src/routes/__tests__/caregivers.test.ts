@@ -82,6 +82,8 @@ vi.mock('@folkcare/core', async () => {
           };
           next();
         },
+        requireRole: () => (_req: any, _res: any, next: any) => next(),
+        requirePermission: () => (_req: any, _res: any, next: any) => next(),
       };
     }),
   };

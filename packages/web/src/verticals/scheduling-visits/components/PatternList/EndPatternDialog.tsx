@@ -45,18 +45,19 @@ export const EndPatternDialog: React.FC<EndPatternDialogProps> = ({
     }
     setError(null);
     try {
-      await onConfirm(pattern.id, reason.trim(), effectiveDate || undefined);
+      await onConfirm(pattern.id, reason.trim(), effectiveDate !== '' ? effectiveDate : undefined);
       setReason('');
       onClose();
-    } catch (err: any) {
-      setError(err?.response?.data?.error || err.message || 'Failed to end pattern');
+    } catch (err: unknown) {
+      const apiErr = err as { response?: { data?: { error?: string; message?: string } }; message?: string };
+      setError(apiErr.response?.data?.error ?? apiErr.response?.data?.message ?? apiErr.message ?? 'Failed to end pattern');
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[480px]">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => { void handleSubmit(e); }}>
           <DialogHeader>
             <DialogTitle>End Recurring Pattern</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground pt-1">

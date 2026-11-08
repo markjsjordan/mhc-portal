@@ -45,6 +45,12 @@ export const HIDDEN_NAV_LABELS: readonly string[] = [
 const navItems: NavItem[] = [
   { label: 'Dashboard', path: '/', icon: <Home className="h-5 w-5" /> },
   {
+    label: 'My Schedule',
+    path: '/caregiver/schedule',
+    icon: <Calendar className="h-5 w-5" />,
+    permission: 'availability:read-own',
+  },
+  {
     label: 'Clients',
     path: '/clients',
     icon: <Users className="h-5 w-5" />,
@@ -163,6 +169,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isDesktopOpen
     if (item.path === '/messages') {
       const messagingRoles = ['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN', 'COORDINATOR', 'CAREGIVER', 'NURSE', 'NURSE_RN', 'NURSE_LPN', 'CLINICAL'];
       return can('messages:view') || !!user?.roles.some((role) => messagingRoles.includes(role));
+    }
+
+    // My Schedule: visible to CAREGIVER role or users with availability:read-own
+    if (item.path === '/caregiver/schedule') {
+      const caregiverRoles = ['CAREGIVER'];
+      return can('availability:read-own') || !!user?.roles.some((role) => caregiverRoles.includes(role));
     }
 
     // Check permission if specified

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button.js';
 import { usePermissions } from '@/core/hooks/permissions.js';
 import { useIsMobile } from '@/core/hooks/index.js';
 import { useCaregivers } from '@/verticals/caregivers/hooks/useCaregivers.js';
+import type { CaregiverListItem } from '@/verticals/caregivers/types/caregiver.js';
 import { usePatterns, usePatternMutations } from '@/verticals/scheduling-visits/hooks/usePatterns.js';
 import { PatternFilters } from '@/verticals/scheduling-visits/components/PatternList/PatternFilters.js';
 import { PatternTable } from '@/verticals/scheduling-visits/components/PatternList/PatternTable.js';
@@ -42,10 +43,15 @@ export default function RecurringPatternsPage() {
   // Fetch caregivers for dropdown
   const { data: caregiversData } = useCaregivers({}, 1, 100);
   const caregiverOptions = useMemo(() => {
-    return (caregiversData?.items ?? []).map((cg: any) => ({
-      id: cg.id,
-      name: `${cg.first_name || cg.firstName || ''} ${cg.last_name || cg.lastName || ''}`.trim() || 'Caregiver',
-    }));
+    return (caregiversData?.items ?? []).map((cg: CaregiverListItem) => {
+      const first = cg.firstName;
+      const last = cg.lastName;
+      const fullName = `${first} ${last}`.trim();
+      return {
+        id: cg.id,
+        name: fullName !== '' ? fullName : 'Caregiver',
+      };
+    });
   }, [caregiversData]);
 
   // Query parameters

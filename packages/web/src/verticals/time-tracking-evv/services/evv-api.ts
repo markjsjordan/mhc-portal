@@ -7,11 +7,13 @@ import type {
   ClockOutRequest,
   ClockInResponse,
   ClockOutResponse,
+  LocationPolicy,
 } from '../types';
 
 export interface EVVApiService {
   getEVVRecords(filters?: EVVSearchFilters): Promise<EVVListResponse>;
   getEVVRecordById(id: string): Promise<EVVRecord>;
+  getLocationPolicy(): Promise<LocationPolicy>;
   clockIn(data: ClockInRequest): Promise<ClockInResponse>;
   clockOut(data: ClockOutRequest): Promise<ClockOutResponse>;
 }
@@ -34,6 +36,10 @@ export const createEVVApiService = (apiClient: ApiClient): EVVApiService => {
 
     getEVVRecordById: async (id: string) => {
       return apiClient.get<EVVRecord>(`/api/evv/${id}`);
+    },
+
+    getLocationPolicy: async () => {
+      return apiClient.get<LocationPolicy>('/api/evv/location-policy');
     },
 
     // Matches the real backend route/shape: POST /api/evv/clock-in with the

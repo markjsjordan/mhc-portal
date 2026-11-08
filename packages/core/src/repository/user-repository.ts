@@ -2,6 +2,7 @@ import { UUID, Role } from '../types/base';
 import { 
   InviteToken, 
   InviteTokenStatus, 
+  InviteTargetType,
   CreateInviteRequest,
   InviteDetails 
 } from '../types/organization';
@@ -257,12 +258,14 @@ export class UserRepository implements IUserRepository {
     const query = `
       INSERT INTO invite_tokens (
         token, organization_id, email, first_name, last_name,
-        roles, branch_ids, expires_at, status, created_by, updated_by
+        roles, branch_ids, expires_at, status, created_by, updated_by,
+        target_type, target_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'PENDING', $9, $9)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'PENDING', $9, $9, $10, $11)
       RETURNING 
         id, token, organization_id, email, first_name, last_name,
         roles, branch_ids, expires_at, status, accepted_user_id, accepted_at,
+        target_type, target_id,
         created_at, created_by, updated_at, updated_by
     `;
 
@@ -279,6 +282,8 @@ export class UserRepository implements IUserRepository {
       status: InviteTokenStatus;
       accepted_user_id: string | null;
       accepted_at: Date | null;
+      target_type: InviteTargetType | null;
+      target_id: string | null;
       created_at: Date;
       created_by: string;
       updated_at: Date;
@@ -293,6 +298,8 @@ export class UserRepository implements IUserRepository {
       request.branchIds ?? [],
       expiresAt,
       createdBy,
+      request.targetType ?? null,
+      request.targetId ?? null,
     ]);
 
     const row = result.rows[0];
@@ -313,6 +320,8 @@ export class UserRepository implements IUserRepository {
       status: row.status,
       acceptedUserId: row.accepted_user_id,
       acceptedAt: row.accepted_at,
+      targetType: row.target_type ?? undefined,
+      targetId: row.target_id ?? undefined,
       createdAt: row.created_at,
       createdBy: row.created_by,
       updatedAt: row.updated_at,
@@ -326,6 +335,7 @@ export class UserRepository implements IUserRepository {
       SELECT 
         id, token, organization_id, email, first_name, last_name,
         roles, branch_ids, expires_at, status, accepted_user_id, accepted_at,
+        target_type, target_id,
         created_at, created_by, updated_at, updated_by
       FROM invite_tokens
       WHERE token = $1
@@ -344,6 +354,8 @@ export class UserRepository implements IUserRepository {
       status: InviteTokenStatus;
       accepted_user_id: string | null;
       accepted_at: Date | null;
+      target_type: InviteTargetType | null;
+      target_id: string | null;
       created_at: Date;
       created_by: string;
       updated_at: Date;
@@ -368,6 +380,8 @@ export class UserRepository implements IUserRepository {
       status: row.status,
       acceptedUserId: row.accepted_user_id,
       acceptedAt: row.accepted_at,
+      targetType: row.target_type ?? undefined,
+      targetId: row.target_id ?? undefined,
       createdAt: row.created_at,
       createdBy: row.created_by,
       updatedAt: row.updated_at,
@@ -452,6 +466,7 @@ export class UserRepository implements IUserRepository {
       SELECT 
         id, token, organization_id, email, first_name, last_name,
         roles, branch_ids, expires_at, status, accepted_user_id, accepted_at,
+        target_type, target_id,
         created_at, created_by, updated_at, updated_by
       FROM invite_tokens
       WHERE organization_id = $1
@@ -471,6 +486,8 @@ export class UserRepository implements IUserRepository {
       status: InviteTokenStatus;
       accepted_user_id: string | null;
       accepted_at: Date | null;
+      target_type: InviteTargetType | null;
+      target_id: string | null;
       created_at: Date;
       created_by: string;
       updated_at: Date;
@@ -490,6 +507,8 @@ export class UserRepository implements IUserRepository {
       status: row.status,
       acceptedUserId: row.accepted_user_id,
       acceptedAt: row.accepted_at,
+      targetType: row.target_type ?? undefined,
+      targetId: row.target_id ?? undefined,
       createdAt: row.created_at,
       createdBy: row.created_by,
       updatedAt: row.updated_at,

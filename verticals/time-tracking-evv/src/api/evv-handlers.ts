@@ -115,11 +115,17 @@ export class EVVHandlers {
             issues: result.verification.issues,
           },
           clockInTime: result.evvRecord.clockInTime,
-          location: {
-            isWithinGeofence: result.evvRecord.clockInVerification.isWithinGeofence,
-            distanceFromAddress: result.evvRecord.clockInVerification.distanceFromAddress,
-            accuracy: result.evvRecord.clockInVerification.accuracy,
-          },
+          location: result.evvRecord.clockInVerification.locationCaptured
+            ? {
+                locationCaptured: true,
+                isWithinGeofence: result.evvRecord.clockInVerification.isWithinGeofence,
+                distanceFromAddress: result.evvRecord.clockInVerification.distanceFromAddress,
+                accuracy: result.evvRecord.clockInVerification.accuracy,
+              }
+            : {
+                locationCaptured: false,
+                reason: result.evvRecord.clockInVerification.reason,
+              },
         },
       };
     } catch (error: unknown) {
@@ -204,11 +210,19 @@ export class EVVHandlers {
           billableHours: result.evvRecord.totalDuration 
             ? (result.evvRecord.totalDuration / 60).toFixed(2) 
             : null,
-          location: {
-            isWithinGeofence: result.evvRecord.clockOutVerification?.isWithinGeofence,
-            distanceFromAddress: result.evvRecord.clockOutVerification?.distanceFromAddress,
-            accuracy: result.evvRecord.clockOutVerification?.accuracy,
-          },
+          location: result.evvRecord.clockOutVerification?.locationCaptured
+            ? {
+                locationCaptured: true,
+                isWithinGeofence: result.evvRecord.clockOutVerification.isWithinGeofence,
+                distanceFromAddress: result.evvRecord.clockOutVerification.distanceFromAddress,
+                accuracy: result.evvRecord.clockOutVerification.accuracy,
+              }
+            : result.evvRecord.clockOutVerification
+            ? {
+                locationCaptured: false,
+                reason: result.evvRecord.clockOutVerification.reason,
+              }
+            : undefined,
         },
       };
     } catch (error: unknown) {
@@ -316,13 +330,19 @@ export class EVVHandlers {
             entryTimestamp: entry.entryTimestamp,
             status: entry.status,
             verificationPassed: entry.verificationPassed,
-            location: {
-              latitude: entry.location.latitude,
-              longitude: entry.location.longitude,
-              accuracy: entry.location.accuracy,
-              isWithinGeofence: entry.location.isWithinGeofence,
-              distanceFromAddress: entry.location.distanceFromAddress,
-            },
+            location: entry.location.locationCaptured
+              ? {
+                  locationCaptured: true,
+                  latitude: entry.location.latitude,
+                  longitude: entry.location.longitude,
+                  accuracy: entry.location.accuracy,
+                  isWithinGeofence: entry.location.isWithinGeofence,
+                  distanceFromAddress: entry.location.distanceFromAddress,
+                }
+              : {
+                  locationCaptured: false,
+                  reason: entry.location.reason,
+                },
             deviceInfo: {
               deviceId: entry.deviceInfo.deviceId,
               deviceModel: entry.deviceInfo.deviceModel,

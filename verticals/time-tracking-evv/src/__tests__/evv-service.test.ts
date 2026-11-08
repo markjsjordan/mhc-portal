@@ -82,6 +82,7 @@ describe('EVVService', () => {
 
     userContext = {
       userId: 'caregiver-123' as UUID,
+      caregiverId: 'caregiver-123' as UUID,
       organizationId: 'org-123' as UUID,
       branchIds: ['branch-123' as UUID],
       roles: ['CAREGIVER' as any],
@@ -89,6 +90,7 @@ describe('EVVService', () => {
     };
 
     vi.clearAllMocks();
+    mockDatabase.query.mockResolvedValue({ rows: [{ id: 'caregiver-123' }] } as any);
   });
 
   afterEach(() => {
@@ -206,7 +208,10 @@ describe('EVVService', () => {
       expect(result.timeEntry).toBeDefined();
       expect(result.verification.passed).toBe(true);
 
-      expect(mockValidator.validateClockIn).toHaveBeenCalledWith(validClockInInput);
+      expect(mockValidator.validateClockIn).toHaveBeenCalledWith(
+        validClockInInput,
+        expect.objectContaining({ locationRequired: expect.any(Boolean) })
+      );
       expect(mockVisitProvider.canClockIn).toHaveBeenCalledWith('visit-123', 'caregiver-123', {
         supervisorOverride: false,
       });
@@ -261,6 +266,140 @@ describe('EVVService', () => {
 
       await expect(service.clockIn(otherCaregiverInput, userContext))
         .rejects.toThrow(PermissionError);
+    });
+
+    it('should allow supervisor to clock in for another caregiver', async () => {
+      mockValidator.validateClockIn.mockReturnValue(undefined);
+      mockVisitProvider.canClockIn.mockResolvedValue(true);
+      mockVisitProvider.getVisitForEVV.mockResolvedValue({
+        visitId: 'visit-123' as UUID,
+        organizationId: 'org-123' as UUID,
+        branchId: 'branch-123' as UUID,
+        clientId: 'client-123' as UUID,
+        caregiverId: 'other-caregiver-456' as UUID,
+        clientName: 'John Doe',
+        serviceTypeId: 'service-123' as UUID,
+        serviceTypeCode: 'T1019',
+        serviceTypeName: 'Personal Care',
+        serviceDate: new Date(),
+        scheduledStartTime: '09:00',
+        scheduledEndTime: '11:00',
+        scheduledDuration: 120,
+        serviceAddress: {
+          line1: '123 Main St',
+          city: 'Austin',
+          state: 'TX',
+          postalCode: '78701',
+          country: 'USA',
+          latitude: 40.7128,
+          longitude: -74.006,
+          addressVerified: true,
+        },
+      });
+      mockClientProvider.getClientForEVV.mockResolvedValue({
+        id: 'client-123',
+        name: 'John Doe',
+        medicaidId: 'MED123',
+      });
+      mockCaregiverProvider.getCaregiverForEVV.mockResolvedValue({
+        id: 'other-caregiver-456',
+        name: 'Other Caregiver',
+        employeeId: 'EMP456',
+      });
+      mockCaregiverProvider.canProvideService.mockResolvedValue({
+        authorized: true,
+      });
+
+      const supervisorContext = {
+        ...userContext,
+        userId: 'supervisor-1' as UUID,
+        roles: ['COORDINATOR' as any],
+        caregiverId: undefined,
+      };
+
+      const otherCaregiverInput = {
+        ...validClockInInput,
+        caregiverId: 'other-caregiver-456' as UUID,
+      };
+
+      const result = await service.clockIn(otherCaregiverInput, supervisorContext);
+      expect(result).toBeDefined();
+    });
+
+    it('should deny non-supervisor when no ACTIVE caregiver link exists', async () => {
+      mockValidator.validateClockIn.mockReturnValue(undefined);
+      mockDatabase.query.mockImplementation(async (sql: string) => {
+        if (sql.includes('FROM caregivers WHERE user_id')) {
+          return { rows: [] };
+        }
+        return { rows: [{ id: 'caregiver-123' }] };
+      });
+
+      const noLinkContext = {
+        ...userContext,
+        userId: 'user-without-caregiver' as UUID,
+        caregiverId: undefined,
+      };
+
+      await expect(service.clockIn(validClockInInput, noLinkContext))
+        .rejects.toThrow(PermissionError);
+    });
+
+    it('should resolve caregiver ID from database when not present on context', async () => {
+      mockValidator.validateClockIn.mockReturnValue(undefined);
+      mockVisitProvider.canClockIn.mockResolvedValue(true);
+      mockVisitProvider.getVisitForEVV.mockResolvedValue({
+        visitId: 'visit-123' as UUID,
+        organizationId: 'org-123' as UUID,
+        branchId: 'branch-123' as UUID,
+        clientId: 'client-123' as UUID,
+        caregiverId: 'caregiver-123' as UUID,
+        clientName: 'John Doe',
+        serviceTypeId: 'service-123' as UUID,
+        serviceTypeCode: 'T1019',
+        serviceTypeName: 'Personal Care',
+        serviceDate: new Date(),
+        scheduledStartTime: '09:00',
+        scheduledEndTime: '11:00',
+        scheduledDuration: 120,
+        serviceAddress: {
+          line1: '123 Main St',
+          city: 'Austin',
+          state: 'TX',
+          postalCode: '78701',
+          country: 'USA',
+          latitude: 40.7128,
+          longitude: -74.006,
+          addressVerified: true,
+        },
+      });
+      mockClientProvider.getClientForEVV.mockResolvedValue({
+        id: 'client-123',
+        name: 'John Doe',
+        medicaidId: 'MED123',
+      });
+      mockCaregiverProvider.getCaregiverForEVV.mockResolvedValue({
+        id: 'caregiver-123',
+        name: 'Jane Smith',
+        employeeId: 'EMP123',
+      });
+      mockCaregiverProvider.canProvideService.mockResolvedValue({
+        authorized: true,
+      });
+
+      mockDatabase.query.mockResolvedValueOnce({ rows: [{ id: 'caregiver-123' }] } as any);
+
+      const fallbackContext = {
+        ...userContext,
+        caregiverId: undefined,
+      };
+
+      const result = await service.clockIn(validClockInInput, fallbackContext);
+      expect(result).toBeDefined();
+      expect(mockDatabase.query).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT id FROM caregivers WHERE user_id = $1 AND portal_access_status = 'ACTIVE' AND deleted_at IS NULL"),
+        ['caregiver-123']
+      );
     });
 
     it('should throw ValidationError when visit does not allow clock in', async () => {
@@ -385,6 +524,50 @@ describe('EVVService', () => {
       expect(result.verification.passed).toBe(false);
       expect(result.verification.complianceFlags).toContain('GEOFENCE_VIOLATION');
       expect(result.verification.requiresSupervisorReview).toBe(true);
+    });
+
+    it('should clock in with policy off, storing UncapturedLocation and VERIFIED status with LOCATION_NOT_CAPTURED', async () => {
+      // Mock db returns locationRequired: false
+      (mockDatabase.query as any).mockResolvedValueOnce({
+        rows: [{ settings: { evv: { locationRequired: false } } }],
+      });
+
+      mockValidator.performVerification.mockReturnValue({
+        passed: true,
+        verificationLevel: 'PARTIAL',
+        complianceFlags: ['LOCATION_NOT_CAPTURED'],
+        issues: [],
+        requiresSupervisorReview: false,
+      });
+
+      const clockInWithoutLocation: ClockInInput = {
+        visitId: 'visit-123' as UUID,
+        caregiverId: 'caregiver-123' as UUID,
+        deviceInfo: {
+          deviceId: 'device-123',
+          deviceModel: 'iPhone 14',
+          deviceOS: 'iOS',
+          osVersion: '16.0',
+          appVersion: '1.0.0',
+        },
+      };
+
+      const result = await service.clockIn(clockInWithoutLocation, userContext);
+      expect(result.evvRecord).toBeDefined();
+      expect(mockRepository.createTimeEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'VERIFIED',
+        })
+      );
+      expect(mockRepository.createEVVRecord).toHaveBeenCalledWith(
+        expect.objectContaining({
+          clockInVerification: expect.objectContaining({
+            locationCaptured: false,
+            reason: 'ORG_LOCATION_NOT_REQUIRED',
+          }),
+          complianceFlags: expect.arrayContaining(['LOCATION_NOT_CAPTURED']),
+        })
+      );
     });
   });
 
@@ -608,6 +791,72 @@ describe('EVVService', () => {
       expect(result.evvRecord.clientAttestation?.attestedByName).toBe('John Doe');
       expect(result.evvRecord.clientAttestation?.signatureHash).toBeDefined();
     });
+
+    it('should clock out with policy off without throwing Geofence not found and store UncapturedLocation', async () => {
+      // Mock db returns locationRequired: false
+      (mockDatabase.query as any).mockResolvedValueOnce({
+        rows: [{ settings: { evv: { locationRequired: false } } }],
+      });
+
+      const clockOutWithoutLocation: ClockOutInput = {
+        visitId: 'visit-123' as UUID,
+        evvRecordId: 'evv-123' as UUID,
+        caregiverId: 'caregiver-123' as UUID,
+        deviceInfo: {
+          deviceId: 'device-123',
+          deviceModel: 'iPhone 14',
+          deviceOS: 'iOS',
+          osVersion: '16.0',
+          appVersion: '1.0.0',
+        },
+      };
+
+      mockValidator.validateClockOut.mockReturnValue(undefined);
+      mockRepository.getEVVRecordById.mockResolvedValue(existingEVVRecord);
+      // geofence lookup returns null - should NOT throw 'Geofence not found'
+      mockRepository.getGeofenceByAddress.mockResolvedValue(null);
+
+      mockRepository.createTimeEntry.mockResolvedValue({
+        id: 'time-entry-clockout',
+        entryType: 'CLOCK_OUT',
+        status: 'VERIFIED',
+        verificationPassed: true,
+      });
+
+      mockRepository.updateEVVRecord.mockResolvedValue({
+        ...existingEVVRecord,
+        clockOutTime: new Date(),
+        totalDuration: 120,
+        recordStatus: 'COMPLETE',
+      });
+
+      mockValidator.performVerification.mockReturnValue({
+        passed: true,
+        verificationLevel: 'PARTIAL',
+        complianceFlags: ['LOCATION_NOT_CAPTURED'],
+        issues: [],
+        requiresSupervisorReview: false,
+      });
+
+      const result = await service.clockOut(clockOutWithoutLocation, userContext);
+      expect(result.evvRecord).toBeDefined();
+      expect(mockRepository.createTimeEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'VERIFIED',
+        })
+      );
+      expect(mockRepository.updateEVVRecord).toHaveBeenNthCalledWith(
+        1,
+        'evv-123',
+        expect.objectContaining({
+          clockOutVerification: expect.objectContaining({
+            locationCaptured: false,
+            reason: 'ORG_LOCATION_NOT_REQUIRED',
+          }),
+        }),
+        'caregiver-123'
+      );
+    });
   });
 
   describe('applyManualOverride', () => {
@@ -809,6 +1058,7 @@ describe('EVVService', () => {
       clockOutTime: new Date('2025-11-04T12:00:00Z'),
       totalDuration: 120,
       clockInVerification: {
+        locationCaptured: true,
         latitude: 39.9612,
         longitude: -82.9988,
         accuracy: 10,
@@ -827,6 +1077,7 @@ describe('EVVService', () => {
         mockLocationDetected: false,
       },
       clockOutVerification: {
+        locationCaptured: true,
         latitude: 39.9612,
         longitude: -82.9988,
         accuracy: 10,

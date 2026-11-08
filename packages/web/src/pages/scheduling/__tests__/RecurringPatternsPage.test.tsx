@@ -154,7 +154,7 @@ describe('RecurringPatternsPage', () => {
   it('allows clicking Resume for paused pattern', async () => {
     renderPage();
 
-    const resumeBtn = screen.getByRole('button', { name: /Resume/i });
+    const resumeBtn = screen.getByRole('button', { name: /resume/i });
     expect(resumeBtn).toBeInTheDocument();
     fireEvent.click(resumeBtn);
 

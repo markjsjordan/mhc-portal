@@ -61,7 +61,7 @@ export const PauseResumeButton: React.FC<PauseResumeButtonProps> = ({
         type="button"
         variant="outline"
         size="sm"
-        onClick={handleResumeClick}
+        onClick={() => { void handleResumeClick(); }}
         disabled={disabled || isSubmitting}
         className="text-emerald-700 border-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-950/40 gap-1.5"
       >
@@ -88,7 +88,7 @@ export const PauseResumeButton: React.FC<PauseResumeButtonProps> = ({
       {showPauseModal && (
         <Dialog open={showPauseModal} onOpenChange={(open) => !open && setShowPauseModal(false)}>
           <DialogContent className="sm:max-w-[420px]">
-            <form onSubmit={handlePauseSubmit}>
+            <form onSubmit={(e) => { void handlePauseSubmit(e); }}>
               <DialogHeader>
                 <DialogTitle>Pause Recurring Pattern</DialogTitle>
                 <DialogDescription className="text-sm text-muted-foreground">

@@ -83,6 +83,7 @@ describe('EVVService - State Compliance Integration', () => {
 
     userContext = {
       userId: 'caregiver-123' as UUID,
+      caregiverId: 'caregiver-123' as UUID,
       organizationId: 'org-123' as UUID,
       branchIds: ['branch-123' as UUID],
       roles: ['CAREGIVER' as any],
@@ -118,6 +119,9 @@ describe('EVVService - State Compliance Integration', () => {
     });
 
     const setupMocks = (state: string, serviceAddressLat: number, serviceAddressLon: number, geofenceRadius: number) => {
+      (mockDatabase.query as any).mockResolvedValue({
+        rows: [{ settings: { evv: { locationRequired: true } } }],
+      });
       mockValidator.validateClockIn.mockReturnValue(undefined);
       mockVisitProvider.canClockIn.mockResolvedValue(true);
       mockVisitProvider.getVisitForEVV.mockResolvedValue({

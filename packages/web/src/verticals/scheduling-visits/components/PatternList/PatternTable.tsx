@@ -68,9 +68,7 @@ export const PatternTable: React.FC<PatternTableProps> = ({
             <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/50 text-muted-foreground">
               <div>
                 <span className="font-medium text-foreground block">Caregiver</span>
-                {p.caregiverName ? (
-                  p.caregiverName
-                ) : (
+                {p.caregiverName ?? (
                   <Badge variant="outline" className="text-amber-700 bg-amber-50 border-amber-200 mt-0.5 text-[10px] px-1.5 py-0">
                     Unassigned
                   </Badge>
@@ -78,7 +76,7 @@ export const PatternTable: React.FC<PatternTableProps> = ({
               </div>
               <div>
                 <span className="font-medium text-foreground block">Next Visit</span>
-                {p.nextVisitDate || '—'}
+                {p.nextVisitDate ?? '—'}
               </div>
               <div className="col-span-2">
                 <span className="font-medium text-foreground block">Recurrence</span>
@@ -86,7 +84,7 @@ export const PatternTable: React.FC<PatternTableProps> = ({
               </div>
               <div>
                 <span className="font-medium text-foreground block">Active Window</span>
-                <span>{p.startDate} to {p.endDate || 'Ongoing'}</span>
+                <span>{p.startDate} to {p.endDate ?? 'Ongoing'}</span>
               </div>
               <div>
                 <span className="font-medium text-foreground block">Scheduled</span>
@@ -158,7 +156,7 @@ export const PatternTable: React.FC<PatternTableProps> = ({
                 {p.startDate}
               </td>
               <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                {p.endDate || <span className="text-muted-foreground/60">Ongoing</span>}
+                {p.endDate ?? <span className="text-muted-foreground/60">Ongoing</span>}
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
                 <PatternStatusBadge status={p.status} />

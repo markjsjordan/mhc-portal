@@ -119,7 +119,9 @@ export type ComplianceFlag =
   | 'MISSING_SIGNATURE' // Required signature missing
   | 'LATE_SUBMISSION' // Submitted after deadline
   | 'MANUAL_OVERRIDE' // Manual supervisor override
-  | 'AMENDED'; // Record has been amended
+  | 'AMENDED' // Record has been amended
+  | 'LOCATION_NOT_CAPTURED' // Org location policy off: no coordinates captured
+  | 'AGGREGATOR_INELIGIBLE_NO_LOCATION'; // Ineligible for Medicaid aggregator submission due to missing location
 
 export type PayorApprovalStatus =
   | 'PENDING'
@@ -151,11 +153,16 @@ export interface ServiceAddress {
 }
 
 /**
- * Location Verification - GPS proof of presence
+ * Location Verification - GPS proof of presence or uncaptured placeholder
  * 
- * Captures device location with accuracy and integrity checks.
+ * Discriminated union between CapturedLocation (locationCaptured: true)
+ * and UncapturedLocation (locationCaptured: false).
  */
-export interface LocationVerification {
+export type LocationVerification = CapturedLocation | UncapturedLocation;
+
+export interface CapturedLocation {
+  locationCaptured: true;
+
   // Core location data
   latitude: number;
   longitude: number;
@@ -202,6 +209,21 @@ export interface LocationVerification {
   verificationPassed: boolean;
   verificationFailureReasons?: string[];
   manualOverride?: ManualOverride;
+}
+
+export interface UncapturedLocation {
+  locationCaptured: false;
+  reason: 'ORG_LOCATION_NOT_REQUIRED';
+  timestamp: Timestamp;
+  timestampSource: 'DEVICE' | 'NETWORK' | 'GPS';
+  deviceId: string;
+  method: VerificationMethod;
+  deviceModel?: string;
+  deviceOS?: string;
+  appVersion?: string;
+  ipAddress?: string;
+  verificationPassed?: boolean;
+  verificationFailureReasons?: string[];
 }
 
 export type VerificationMethod =
@@ -493,7 +515,7 @@ export interface ReportPeriod {
 export interface ClockInInput {
   visitId: UUID;
   caregiverId: UUID;
-  location: LocationVerificationInput;
+  location?: LocationVerificationInput;
   deviceInfo: DeviceInfo;
   clientPresent?: boolean;
   notes?: string;
@@ -503,7 +525,7 @@ export interface ClockOutInput {
   visitId: UUID;
   evvRecordId: UUID;
   caregiverId: UUID;
-  location: LocationVerificationInput;
+  location?: LocationVerificationInput;
   deviceInfo: DeviceInfo;
   completionNotes?: string;
   tasksCompleted?: number;

@@ -41,6 +41,7 @@ const BrandingSettings = React.lazy(() => import('./app/pages/BrandingSettings')
 const ComplianceDashboard = React.lazy(() => import('./app/pages/ComplianceDashboard').then((m) => ({ default: m.ComplianceDashboard })));
 const NurseDashboard = React.lazy(() => import('./app/pages/NurseDashboard').then((m) => ({ default: m.NurseDashboard })));
 const CaregiverDashboard = React.lazy(() => import('./app/pages/CaregiverDashboard').then((m) => ({ default: m.CaregiverDashboard })));
+const MySchedulePage = React.lazy(() => import('./verticals/caregivers/pages/MySchedulePage.js').then((m) => ({ default: m.MySchedulePage })));
 
 // Lazy loaded heavy rarely-visited pages
 const Settings = React.lazy(() => import('./app/pages/Settings').then((m) => ({ default: m.Settings })));
@@ -579,6 +580,16 @@ function AppRoutes() {
           <ProtectedRoute requiredRoles={['CAREGIVER']}>
             <AppShell>
               <CaregiverDashboard />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/caregiver/schedule"
+        element={
+          <ProtectedRoute requiredRoles={['CAREGIVER']}>
+            <AppShell>
+              <MySchedulePage />
             </AppShell>
           </ProtectedRoute>
         }

@@ -7,3 +7,6 @@ export { CaregiverActionButtons, type CaregiverActionButtonsProps } from './Care
 export { EditCaregiverModal, type EditCaregiverModalProps } from './EditCaregiverModal.js';
 export { DeleteCaregiverConfirmation, type DeleteCaregiverConfirmationProps } from './DeleteCaregiverConfirmation.js';
 export { DuplicateCaregiverModal, type DuplicateCaregiverModalProps } from './DuplicateCaregiverModal.js';
+export { WeekPicker, type WeekPickerProps } from './WeekPicker.js';
+export { DayAvailabilityEditor, type DayAvailabilityEditorProps } from './DayAvailabilityEditor.js';
+export { ConflictBanner, type ConflictBannerProps } from './ConflictBanner.js';

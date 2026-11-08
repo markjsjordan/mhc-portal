@@ -9,6 +9,7 @@ import { Database } from '../db/connection.js';
 import type { UUID } from '../types/base.js';
 import { NotFoundError } from '../errors/app-errors.js';
 import { spawn } from 'node:child_process';
+import { evaluateSeedGuard, SeedNotAllowedError } from './seed-guard.js';
 
 export interface DemoDataStats {
   clients: number;
@@ -32,6 +33,18 @@ export class DemoDataService {
    * All marked with is_demo_data: true
    */
   async seedDemoData(organizationId: UUID): Promise<DemoDataStats> {
+    // Runtime backdoor guard: this is reachable by ORG_ADMINs over HTTP, so refuse
+    // before touching the database or spawning the seed script.
+    const guard = evaluateSeedGuard({
+      databaseUrl: process.env['DATABASE_URL'],
+      nodeEnv: process.env['NODE_ENV'],
+      environment: process.env['ENVIRONMENT'],
+      allowDemoSeed: process.env['ALLOW_DEMO_SEED'],
+    });
+    if (!guard.allowed) {
+      throw new SeedNotAllowedError(guard.reason);
+    }
+
     // Verify organization exists
     const orgCheck = await this.db.query(
       'SELECT id FROM organizations WHERE id = $1 AND deleted_at IS NULL',
@@ -65,6 +78,8 @@ export class DemoDataService {
           env: {
             NODE_ENV: process.env.NODE_ENV ?? 'development',
             DATABASE_URL: process.env.DATABASE_URL ?? '',
+            ENVIRONMENT: process.env.ENVIRONMENT ?? '',
+            ALLOW_DEMO_SEED: process.env.ALLOW_DEMO_SEED ?? '',
             ORG_ID: organizationId,
             PATH: process.env.PATH ?? '/usr/local/bin:/usr/bin:/bin',
           },

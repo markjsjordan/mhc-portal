@@ -1133,6 +1133,7 @@ export interface ClaimSearchFilters {
  * 21st Century Cures Act EVV Data Elements and Geofence Verification Types
  */
 export interface EVVLocationVerificationData {
+  locationCaptured?: boolean;
   latitude?: number;
   longitude?: number;
   accuracyMeters?: number;

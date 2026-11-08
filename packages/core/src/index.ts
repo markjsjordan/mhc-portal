@@ -37,6 +37,8 @@ export * from './service/reference-data.service';
 export * from './service/geocoding.service';
 export * from './service/email-service';
 export * from './service/stripe.service';
+export * from './service/portal-access-service';
+export * from './service/portal-link-resolver';
 export * from './constants/cache-keys';
 export * from './constants/us-states';
 export * from './middleware/auth-middleware';
@@ -117,6 +119,7 @@ export * from './import/index';
 export * from './compliance/autopilot/index';
 // Demo Data Service
 export { DemoDataService, type DemoDataStats } from './service/demo-data-service.js';
+export { SeedNotAllowedError, evaluateSeedGuard, assertSeedAllowed } from './service/seed-guard.js';
 // AI Provider Abstraction Layer
 export * from './ai/index.js';
 // FHIR R4 Export

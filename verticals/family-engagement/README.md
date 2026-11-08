@@ -444,7 +444,7 @@ Required permissions for family engagement operations:
 
 | Operation | Permission | Roles |
 |-----------|------------|-------|
-| Invite family member | `family-portal:invite` | ADMIN, COORDINATOR |
+| Invite family member | `clients:update` | ORG_ADMIN, BRANCH_ADMIN, COORDINATOR, NURSE*, CLINICAL (not FAMILY) |
 | View family profiles | `family-portal:view` | ADMIN, COORDINATOR, CAREGIVER |
 | Manage portal access | `family-portal:manage` | ADMIN, COORDINATOR |
 | Send notifications | `notifications:send` | ADMIN, COORDINATOR, CAREGIVER |

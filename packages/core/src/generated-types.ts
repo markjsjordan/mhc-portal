@@ -1062,6 +1062,13 @@ export interface Caregivers {
   timezone?: string;
   /** Flag indicating this is demo/seed data */
   isDemoData?: boolean;
+  userId?: string;
+  portalAccessStatus?: string;
+  portalInvitedAt?: Date | string;
+  portalActivatedAt?: Date | string;
+  portalRevokedAt?: Date | string;
+  portalRevokedBy?: string;
+  portalRevokedReason?: string;
 }
 
 /**
@@ -2338,6 +2345,13 @@ export interface FamilyMembers {
   version?: number;
   /** Flag indicating this is demo/seed data */
   isDemoData?: boolean;
+  userId?: string;
+  portalAccessStatus?: string;
+  portalInvitedAt?: Date | string;
+  portalActivatedAt?: Date | string;
+  portalRevokedAt?: Date | string;
+  portalRevokedBy?: string;
+  portalRevokedReason?: string;
 }
 
 /**
@@ -2615,6 +2629,8 @@ export interface InviteTokens {
   status?: string;
   acceptedUserId?: string;
   acceptedAt?: Date | string;
+  targetType?: string;
+  targetId?: string;
   /** Timestamp when record was created */
   createdAt?: Date | string;
   createdBy: string;

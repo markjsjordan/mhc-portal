@@ -22,6 +22,7 @@ import {
   AggregatorHandlers,
   AggregatorSubmissionRepository,
   AggregatorConfigRepository,
+  loadOrgLocationPolicy,
 } from '@folkcare/time-tracking-evv';
 import { createVisitProvider } from '@folkcare/scheduling-visits';
 
@@ -110,6 +111,24 @@ export function createEVVRouter(db: Database): Router {
         page: pagination.page,
         limit: pagination.limit,
       });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  /**
+   * GET /api/evv/location-policy
+   * Retrieve location policy for caller's organization
+   */
+  router.get('/location-policy', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user?.organizationId;
+      if (orgId === undefined || orgId === '') {
+        res.status(400).json({ error: 'Organization ID required' });
+        return;
+      }
+      const policy = await loadOrgLocationPolicy(db, orgId);
+      res.json(policy);
     } catch (error) {
       next(error);
     }

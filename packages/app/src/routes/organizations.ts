@@ -5,6 +5,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import {
   OrganizationService,
   SignupService,
@@ -17,8 +18,12 @@ import {
   NotFoundError,
   AuthMiddleware,
   DemoDataService,
+  SeedNotAllowedError,
   AuditService,
   UserContext,
+  getPermissionService,
+  getCacheService,
+  CacheKeys,
 } from '@folkcare/core';
 
 export function createOrganizationRouter(db: Database): Router {
@@ -433,11 +438,93 @@ export function createOrganizationRouter(db: Database): Router {
           return;
         }
 
+        // Validate settings if provided
+        const updateOrgSchema = z.object({
+          name: z.string().optional(),
+          legalName: z.string().nullable().optional(),
+          taxId: z.string().nullable().optional(),
+          licenseNumber: z.string().nullable().optional(),
+          phone: z.string().nullable().optional(),
+          email: z.string().email().optional(),
+          website: z.string().nullable().optional(),
+          primaryAddress: z.any().optional(),
+          billingAddress: z.any().nullable().optional(),
+          settings: z.object({
+            timezone: z.string().optional(),
+            dateFormat: z.string().optional(),
+            currency: z.string().optional(),
+            features: z.array(z.string()).optional(),
+            evv: z.object({
+              locationRequired: z.boolean().optional(),
+            }).passthrough().optional(),
+          }).passthrough().optional(),
+        }).passthrough();
+
+        const parseResult = updateOrgSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          res.status(400).json({
+            success: false,
+            error: 'Validation error: ' + parseResult.error.message,
+          });
+          return;
+        }
+
+        const userContext: UserContext = {
+          userId,
+          organizationId: id,
+          roles: req.user?.roles ?? [],
+          permissions: req.user?.permissions ?? [],
+          branchIds: req.user?.branchIds ?? [],
+        };
+
+        const existingOrg = await organizationService.getOrganizationById(id);
+        const existingSettings = existingOrg.settings as Record<string, unknown> | undefined;
+        const existingEvv = existingSettings?.['evv'] as Record<string, unknown> | undefined;
+        const oldLocationRequired = existingEvv?.['locationRequired'];
+        const newLocationRequired = req.body.settings?.evv?.locationRequired;
+
+        // If toggling evv.locationRequired, gate on admin:state-config permission
+        if (newLocationRequired !== undefined) {
+          const permissionService = getPermissionService();
+          const hasStateConfigPerm = permissionService.hasPermission(userContext, 'admin:state-config');
+          if (!hasStateConfigPerm) {
+            res.status(403).json({
+              success: false,
+              error: 'Forbidden: admin:state-config permission required to modify evv.locationRequired',
+            });
+            return;
+          }
+        }
+
         const organization = await organizationService.updateOrganization(
           id,
           req.body,
           userId
         );
+
+        if (newLocationRequired !== undefined && newLocationRequired !== oldLocationRequired) {
+          await auditService.logEvent(userContext, {
+            eventType: 'CONFIGURATION',
+            resource: 'organization',
+            resourceId: id,
+            action: 'UPDATE_ORGANIZATION_EVV_LOCATION_POLICY',
+            result: 'SUCCESS',
+            metadata: {
+              organizationId: id,
+              oldValue: oldLocationRequired,
+              newValue: newLocationRequired,
+              timestamp: new Date().toISOString(),
+            },
+          });
+
+          // Invalidate cache
+          try {
+            const cache = getCacheService();
+            await cache.del(CacheKeys.evvLocationPolicy(id));
+          } catch (cacheErr) {
+            console.error('Failed to invalidate evv location policy cache:', cacheErr);
+          }
+        }
 
         res.json({
           success: true,
@@ -1186,6 +1273,14 @@ export function createOrganizationRouter(db: Database): Router {
           data: stats,
         });
       } catch (error) {
+        if (error instanceof SeedNotAllowedError) {
+          res.status(403).json({
+            success: false,
+            error: error.message,
+            code: 'SEED_NOT_ALLOWED',
+          });
+          return;
+        }
         if (error instanceof NotFoundError) {
           res.status(404).json({
             success: false,
