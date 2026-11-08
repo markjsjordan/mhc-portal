@@ -14,6 +14,9 @@ import {
   AuthService, 
   AuthMiddleware, 
   AuditService,
+  SectionAccessService,
+  getPermissionService,
+  type SectionPermissionMap,
   JWTUtils,
   TokenPayload,
   resolvePortalLinks,
@@ -53,6 +56,34 @@ export function createAuthRouter(db: Database): Router {
   const router = Router();
   const authService = new AuthService(db);
   const authMiddleware = new AuthMiddleware(db);
+  const sectionAccessService = new SectionAccessService(
+    db,
+    new AuditService(db),
+    getPermissionService()
+  );
+
+  const resolveEffectiveSections = async (user: {
+    id?: string;
+    userId?: string;
+    organizationId?: string;
+    roles?: string[];
+    permissions?: string[];
+    branchIds?: string[];
+  }): Promise<SectionPermissionMap> => {
+    const ctx = {
+      userId: user.userId ?? user.id ?? '',
+      organizationId: user.organizationId ?? '',
+      roles: Array.isArray(user.roles) ? user.roles : [],
+      permissions: Array.isArray(user.permissions) ? user.permissions : [],
+      branchIds: Array.isArray(user.branchIds) ? user.branchIds : [],
+    };
+    try {
+      const { effective } = await sectionAccessService.getEffective(ctx);
+      return effective;
+    } catch {
+      return sectionAccessService.getRoleDefaults(ctx);
+    }
+  };
 
   /**
    * @openapi
@@ -140,6 +171,7 @@ export function createAuthRouter(db: Database): Router {
         idToken,
         organizationId as string
       );
+      const sections = await resolveEffectiveSections(result.user);
 
       // Set HttpOnly refresh token cookie
       setRefreshTokenCookie(res, result.tokens.refreshToken);
@@ -147,7 +179,10 @@ export function createAuthRouter(db: Database): Router {
       return res.json({
         success: true,
         data: {
-          user: result.user,
+          user: {
+            ...result.user,
+            sections,
+          },
           tokens: {
             accessToken: result.tokens.accessToken,
             // refreshToken omitted from response - sent via HttpOnly cookie
@@ -285,6 +320,7 @@ export function createAuthRouter(db: Database): Router {
         ipAddress,
         userAgent
       );
+      const sections = await resolveEffectiveSections(result.user);
 
       // Set HttpOnly refresh token cookie
       setRefreshTokenCookie(res, result.tokens.refreshToken);
@@ -292,7 +328,10 @@ export function createAuthRouter(db: Database): Router {
       return res.json({
         success: true,
         data: {
-          user: result.user,
+          user: {
+            ...result.user,
+            sections,
+          },
           tokens: {
             accessToken: result.tokens.accessToken,
             // refreshToken omitted from response - sent via HttpOnly cookie
@@ -578,6 +617,8 @@ export function createAuthRouter(db: Database): Router {
         defaultBranchId = row?.default_branch_id ?? null;
       }
 
+      const sections = await resolveEffectiveSections(req.user);
+
       return res.json({
         success: true,
         data: {
@@ -586,7 +627,8 @@ export function createAuthRouter(db: Database): Router {
           organizationId: req.user.organizationId,
           defaultBranchId,
           roles: req.user.roles,
-          permissions: req.user.permissions
+          permissions: req.user.permissions,
+          sections,
         }
       });
     } catch (error) {

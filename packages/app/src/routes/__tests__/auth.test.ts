@@ -110,7 +110,8 @@ describe('Authentication Routes', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.data.user).toEqual(mockUser);
+      expect(response.body.data.user).toMatchObject(mockUser);
+      expect(response.body.data.user.sections).toBeDefined();
       expect(response.body.data.tokens.accessToken).toBe(mockTokens.accessToken);
       expect(response.body.data.tokens.refreshToken).toBeUndefined();
       expect(mockAuthService.authenticateWithGoogle).toHaveBeenCalledWith(
@@ -242,7 +243,8 @@ describe('Authentication Routes', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.data.user).toEqual(mockUser);
+      expect(response.body.data.user).toMatchObject(mockUser);
+      expect(response.body.data.user.sections).toBeDefined();
       expect(response.body.data.tokens.accessToken).toBe(mockTokens.accessToken);
       expect(response.body.data.tokens.refreshToken).toBeUndefined();
 
@@ -533,7 +535,7 @@ describe('Authentication Routes', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toEqual({
+      expect(response.body.data).toMatchObject({
         id: '123e4567-e89b-12d3-a456-426614174000',
         email: 'user@example.com',
         organizationId: '223e4567-e89b-12d3-a456-426614174000',
@@ -541,6 +543,34 @@ describe('Authentication Routes', () => {
         roles: ['caregiver'],
         permissions: ['visits:view'],
       });
+      expect(response.body.data.sections).toBeDefined();
+      expect(response.body.data.sections.visits).toEqual({ read: true, write: false });
+    });
+
+    it('should return effective sections combining role defaults and database overrides in /me', async () => {
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [{ default_branch_id: 'branch-1' }],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({
+          rows: [{ section: 'visits', access: 'NONE' }],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        });
+
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', 'Bearer valid-token');
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.defaultBranchId).toBe('branch-1');
+      expect(response.body.data.sections.visits).toEqual({ read: false, write: false });
     });
 
     it('should return 401 when user is not authenticated', async () => {

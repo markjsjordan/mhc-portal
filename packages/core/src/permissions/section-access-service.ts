@@ -122,27 +122,33 @@ export class SectionAccessService {
       ? await this.getOverrides(ctx.organizationId ?? '', ctx.userId)
       : new Map<Section, SectionAccessOverride>();
 
-    const effective = { ...roleDefaults };
-    const overridesRecord: SectionAccessOverrides = {};
+    const defaultsMap = new Map<string, SectionPermission>(Object.entries(roleDefaults));
+    const effectiveEntries: Array<[Section, SectionPermission]> = [];
+    const overrideEntries: Array<[string, SectionAccessOverride]> = [];
 
     for (const section of SECTIONS) {
       const override = overridesMap.get(section);
       if (override !== undefined) {
-        overridesRecord[section] = override;
+        overrideEntries.push([section, override]);
       }
       if (override === 'NONE') {
-        effective[section] = { read: false, write: false };
+        effectiveEntries.push([section, { read: false, write: false }]);
       } else if (override === 'READ') {
-        effective[section] = { read: true, write: false };
+        effectiveEntries.push([section, { read: true, write: false }]);
       } else if (override === 'WRITE') {
-        effective[section] = { read: true, write: true };
+        effectiveEntries.push([section, { read: true, write: true }]);
+      } else {
+        effectiveEntries.push([
+          section,
+          defaultsMap.get(section) ?? { read: false, write: false },
+        ]);
       }
     }
 
     return {
       roleDefaults,
-      overrides: overridesRecord,
-      effective,
+      overrides: Object.fromEntries(overrideEntries),
+      effective: Object.fromEntries(effectiveEntries) as Record<Section, SectionPermission>,
     };
   }
 

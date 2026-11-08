@@ -14,7 +14,9 @@
 /* eslint-disable sonarjs/redundant-type-aliases */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { Database } from '@folkcare/core';
+import express from 'express';
+import request from 'supertest';
+import { AuditService, type Database } from '@folkcare/core';
 import type { Router } from 'express';
 
 // Type for Express Router stack layer (Express internals aren't fully typed)
@@ -56,16 +58,32 @@ vi.mock('@folkcare/core', async () => {
     AuthMiddleware: vi.fn().mockImplementation(function () {
       return {
         requireAuth: (_req: any, _res: any, next: any) => {
-          _req.user = {
+          _req.user ??= {
             userId: '123e4567-e89b-12d3-a456-426614174000',
             email: 'admin@example.com',
             organizationId: '223e4567-e89b-12d3-a456-426614174000',
-            roles: ['admin'],
+            roles: ['ORG_ADMIN', 'admin'],
             permissions: ['organizations:read', 'organizations:write'],
           };
           next();
         },
-        requireSameOrganization: () => (_req: any, _res: any, next: any) => {
+        requireSameOrganization: () => (_req: any, res: any, next: any) => {
+          const targetOrg = _req.params?.id;
+          const userOrg = _req.user?.organizationId;
+          const userRoles: string[] = _req.user?.roles ?? [];
+          if (
+            targetOrg &&
+            userOrg &&
+            targetOrg !== userOrg &&
+            !userRoles.includes('SUPER_ADMIN')
+          ) {
+            res.status(403).json({
+              success: false,
+              error: 'Cross-organization access denied',
+              code: 'CROSS_ORG_ACCESS_DENIED',
+            });
+            return;
+          }
           next();
         },
         requireRole: mockOrgRequireRole,
@@ -284,7 +302,7 @@ describe('Organization Routes', () => {
       // POST /organizations/:id/seed-demo
       // DELETE /organizations/:id/demo-data
       // GET /organizations/:id/demo-data/status
-      expect(routes.length).toBe(18);
+      expect(routes.length).toBe(20);
     });
   });
 
@@ -420,6 +438,198 @@ describe('Organization Routes', () => {
         (layer: RouterLayer) => layer.route?.path === '/organizations/:id' && layer.route.methods.put === true
       );
       expect(putRoute).toBeDefined();
+    });
+  });
+
+  describe('Section Access Endpoints (/organizations/:id/users/:userId/section-access)', () => {
+    const adminId = '123e4567-e89b-12d3-a456-426614174000';
+    const orgId = '223e4567-e89b-12d3-a456-426614174000';
+    const targetUserId = '333e4567-e89b-12d3-a456-426614174000';
+
+    function buildOrgTestApp(roleOverride?: string[], orgOverride?: string): express.Express {
+      const app = express();
+      app.use(express.json());
+      if (roleOverride !== undefined || orgOverride !== undefined) {
+        app.use((req, _res, next) => {
+          req.user = {
+            userId: adminId,
+            email: 'caller@example.com',
+            organizationId: orgOverride ?? orgId,
+            branchIds: [],
+            roles: roleOverride ?? ['ORG_ADMIN'],
+            permissions: [],
+            tokenVersion: 1,
+          };
+          next();
+        });
+      }
+      app.use('/api', router);
+      return app;
+    }
+
+    it('rejects COORDINATOR and BRANCH_ADMIN with 403 on GET and PUT', async () => {
+      for (const role of ['COORDINATOR', 'BRANCH_ADMIN']) {
+        const app = buildOrgTestApp([role]);
+
+        const getRes = await request(app).get(
+          `/api/organizations/${orgId}/users/${targetUserId}/section-access`
+        );
+        expect(getRes.status).toBe(403);
+
+        const putRes = await request(app)
+          .put(`/api/organizations/${orgId}/users/${targetUserId}/section-access`)
+          .send({ overrides: [{ section: 'clients', access: 'READ' }] });
+        expect(putRes.status).toBe(403);
+      }
+    });
+
+    it('rejects cross-org requests with 403', async () => {
+      const otherOrgId = '999e4567-e89b-12d3-a456-426614174000';
+      const app = buildOrgTestApp(['ORG_ADMIN'], orgId);
+
+      const getRes = await request(app).get(
+        `/api/organizations/${otherOrgId}/users/${targetUserId}/section-access`
+      );
+      expect(getRes.status).toBe(403);
+
+      const putRes = await request(app)
+        .put(`/api/organizations/${otherOrgId}/users/${targetUserId}/section-access`)
+        .send({ overrides: [{ section: 'clients', access: 'READ' }] });
+      expect(putRes.status).toBe(403);
+    });
+
+    it('rejects self-edit with 403', async () => {
+      const app = buildOrgTestApp(['ORG_ADMIN'], orgId);
+
+      const putRes = await request(app)
+        .put(`/api/organizations/${orgId}/users/${adminId}/section-access`)
+        .send({ overrides: [{ section: 'clients', access: 'READ' }] });
+
+      expect(putRes.status).toBe(403);
+      expect(putRes.body.code).toBe('SELF_SECTION_ACCESS_EDIT');
+    });
+
+    it('GET returns roleDefaults, overrides and effective for a user in the org', async () => {
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: targetUserId,
+              roles: ['COORDINATOR'],
+              permissions: ['clients:read', 'clients:write'],
+              branch_ids: [],
+            },
+          ],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({
+          rows: [{ section: 'clients', access: 'READ' }],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        });
+
+      const app = buildOrgTestApp(['ORG_ADMIN'], orgId);
+      const res = await request(app).get(
+        `/api/organizations/${orgId}/users/${targetUserId}/section-access`
+      );
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.roleDefaults.clients).toEqual({ read: true, write: true });
+      expect(res.body.data.overrides).toEqual({ clients: 'READ' });
+      expect(res.body.data.effective.clients).toEqual({ read: true, write: false });
+    });
+
+    it('PUT writes an audit event attributed to the admin and returns updated effective access', async () => {
+      const auditSpy = vi.spyOn(AuditService.prototype, 'logEvent').mockResolvedValue();
+      mockDb.transaction = vi.fn(async (cb) => {
+        const mockClient = {
+          query: vi.fn().mockResolvedValue({ rows: [], rowCount: 1 }),
+        };
+        return cb(mockClient as never);
+      });
+
+      vi.mocked(mockDb.query)
+        // 1. loadSectionAccessTarget
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: targetUserId,
+              roles: ['COORDINATOR'],
+              permissions: ['clients:read', 'clients:write'],
+              branch_ids: [],
+            },
+          ],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        // 2. SectionAccessService.setOverride target user check
+        .mockResolvedValueOnce({
+          rows: [{ id: targetUserId, organization_id: orgId, deleted_at: null }],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        // 3. SectionAccessService.setOverride existing override check
+        .mockResolvedValueOnce({
+          rows: [],
+          command: 'SELECT',
+          rowCount: 0,
+          oid: 0,
+          fields: [],
+        })
+        // 4. getEffective -> getOverrides after update
+        .mockResolvedValueOnce({
+          rows: [{ section: 'clients', access: 'NONE' }],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        });
+
+      const app = buildOrgTestApp(['ORG_ADMIN'], orgId);
+      const res = await request(app)
+        .put(`/api/organizations/${orgId}/users/${targetUserId}/section-access`)
+        .send({ overrides: [{ section: 'clients', access: 'NONE' }] });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.effective.clients).toEqual({ read: false, write: false });
+      expect(auditSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: adminId,
+          organizationId: orgId,
+        }),
+        expect.objectContaining({
+          eventType: 'AUTHORIZATION',
+          resource: 'user_section_access',
+          resourceId: targetUserId,
+          action: 'SECTION_ACCESS_SET',
+          metadata: {
+            section: 'clients',
+            previous: null,
+            next: 'NONE',
+          },
+        })
+      );
+    });
+
+    it('returns 400 when given an invalid section name', async () => {
+      const app = buildOrgTestApp(['ORG_ADMIN'], orgId);
+      const res = await request(app)
+        .put(`/api/organizations/${orgId}/users/${targetUserId}/section-access`)
+        .send({ overrides: [{ section: 'not-a-valid-section', access: 'READ' }] });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('VALIDATION_ERROR');
     });
   });
 });

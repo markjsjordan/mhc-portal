@@ -24,6 +24,8 @@ import {
   getPermissionService,
   getCacheService,
   CacheKeys,
+  SECTIONS,
+  SectionAccessService,
 } from '@folkcare/core';
 
 export function createOrganizationRouter(db: Database): Router {
@@ -33,6 +35,7 @@ export function createOrganizationRouter(db: Database): Router {
   const authMiddleware = new AuthMiddleware(db);
   const demoDataService = new DemoDataService(db);
   const auditService = new AuditService(db);
+  const sectionAccessService = new SectionAccessService(db, auditService, getPermissionService());
 
   /**
    * @openapi
@@ -870,6 +873,168 @@ export function createOrganizationRouter(db: Database): Router {
           success: false,
           error: error instanceof Error ? error.message : 'Failed to deactivate team member',
         });
+      }
+    }
+  );
+
+  /**
+   * Resolve the target user's context (roles/permissions) inside the caller's organization.
+   * Returns null when the user does not exist, is deleted, or belongs to another org.
+   */
+  const loadSectionAccessTarget = async (
+    organizationId: string,
+    userId: string
+  ): Promise<UserContext | null> => {
+    const result = await db.query<{
+      id: string;
+      roles: string[] | null;
+      permissions: string[] | null;
+      branch_ids: string[] | null;
+    }>(
+      'SELECT id, roles, permissions, branch_ids FROM users WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL',
+      [userId, organizationId]
+    );
+    const row = result.rows[0];
+    if (row === undefined) {
+      return null;
+    }
+    return {
+      userId: row.id,
+      organizationId,
+      roles: row.roles ?? [],
+      permissions: row.permissions ?? [],
+      branchIds: row.branch_ids ?? [],
+    };
+  };
+
+  const sectionAccessActorContext = (req: Request): UserContext | undefined => {
+    if (req.userContext !== undefined) {
+      return req.userContext;
+    }
+    if (req.user === undefined) {
+      return undefined;
+    }
+    return {
+      userId: req.user.userId,
+      organizationId: req.user.organizationId,
+      roles: req.user.roles,
+      permissions: req.user.permissions,
+      branchIds: Array.isArray(req.user.branchIds) ? req.user.branchIds : [],
+    };
+  };
+
+  const sectionAccessUpdateSchema = z.object({
+    overrides: z
+      .array(
+        z.object({
+          section: z.enum(SECTIONS),
+          access: z.enum(['READ', 'WRITE', 'NONE']).nullable(),
+        })
+      )
+      .min(1)
+      .max(SECTIONS.length),
+  });
+
+  /**
+   * GET /api/organizations/:id/users/:userId/section-access
+   * Role defaults, per-user overrides and effective section access (SUPER_ADMIN / ORG_ADMIN only)
+   */
+  router.get('/organizations/:id/users/:userId/section-access',
+    authMiddleware.requireAuth,
+    authMiddleware.requireSameOrganization('id'),
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN']),
+    async (req: Request, res: Response): Promise<void> => {
+      try {
+        const organizationId = req.params['id'];
+        const userId = req.params['userId'];
+        if (organizationId === undefined || userId === undefined) {
+          res.status(400).json({ success: false, error: 'Organization ID and User ID are required' });
+          return;
+        }
+        const target = await loadSectionAccessTarget(organizationId, userId);
+        if (target === null) {
+          res.status(404).json({ success: false, error: 'User not found' });
+          return;
+        }
+        const data = await sectionAccessService.getEffective(target);
+        res.json({ success: true, data });
+      } catch (error) {
+        console.error('Get section access error:', error);
+        res.status(500).json({ success: false, error: 'Failed to load section access' });
+      }
+    }
+  );
+
+  /**
+   * PUT /api/organizations/:id/users/:userId/section-access
+   * Set (READ|WRITE|NONE) or clear (null) section overrides. Overrides only restrict (SUPER_ADMIN / ORG_ADMIN only)
+   */
+  router.put('/organizations/:id/users/:userId/section-access',
+    authMiddleware.requireAuth,
+    authMiddleware.requireSameOrganization('id'),
+    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN']),
+    async (req: Request, res: Response): Promise<void> => {
+      try {
+        const organizationId = req.params['id'];
+        const userId = req.params['userId'];
+        const actor = sectionAccessActorContext(req);
+        if (organizationId === undefined || userId === undefined || actor === undefined) {
+          res.status(400).json({ success: false, error: 'Organization ID and User ID are required' });
+          return;
+        }
+
+        if (actor.userId === userId) {
+          res.status(403).json({
+            success: false,
+            error: 'Administrators cannot change their own section access',
+            code: 'SELF_SECTION_ACCESS_EDIT',
+          });
+          return;
+        }
+
+        const parsed = sectionAccessUpdateSchema.safeParse(req.body);
+        if (!parsed.success) {
+          res.status(400).json({
+            success: false,
+            error: 'Invalid section access payload',
+            code: 'VALIDATION_ERROR',
+            details: parsed.error.issues,
+          });
+          return;
+        }
+
+        const target = await loadSectionAccessTarget(organizationId, userId);
+        if (target === null) {
+          res.status(404).json({ success: false, error: 'User not found' });
+          return;
+        }
+        if (target.roles.includes('SUPER_ADMIN') && !actor.roles.includes('SUPER_ADMIN')) {
+          res.status(403).json({
+            success: false,
+            error: 'Only a SUPER_ADMIN can change a SUPER_ADMIN\'s section access',
+            code: 'INSUFFICIENT_PERMISSIONS',
+          });
+          return;
+        }
+
+        const actorWithOrg: UserContext = { ...actor, organizationId };
+        for (const { section, access } of parsed.data.overrides) {
+          await sectionAccessService.setOverride(actorWithOrg, userId, section, access);
+        }
+
+        const data = await sectionAccessService.getEffective(target);
+        res.json({ success: true, data });
+      } catch (error) {
+        if (error instanceof ValidationError) {
+          res.status(400).json({ success: false, error: error.message, code: error.code });
+          return;
+        }
+        if (error instanceof NotFoundError) {
+          res.status(404).json({ success: false, error: error.message });
+          return;
+        }
+        console.error('Update section access error:', error);
+        res.status(500).json({ success: false, error: 'Failed to update section access' });
       }
     }
   );
