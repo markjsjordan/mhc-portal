@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import moment from 'moment';
+import { format, parseISO } from 'date-fns';
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -128,7 +128,7 @@ export const CalendarVisitActionModal: React.FC<CalendarVisitActionModalProps> =
           <div className="flex items-center gap-2.5 text-gray-700">
             <CalendarIcon className="h-4 w-4 text-blue-600 flex-shrink-0" />
             <span>
-              {moment(visit.scheduledDate).format('dddd, MMMM D, YYYY')}
+              {format(typeof visit.scheduledDate === 'string' ? parseISO(visit.scheduledDate) : visit.scheduledDate, 'EEEE, MMMM d, yyyy')}
             </span>
           </div>
           <div className="flex items-center gap-2.5 text-gray-700">

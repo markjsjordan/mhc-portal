@@ -1,5 +1,5 @@
 import React from 'react';
-import moment from 'moment';
+import { format, isSameDay, parseISO } from 'date-fns';
 import type { Visit } from '../../types';
 
 export interface MobileAgendaViewProps {
@@ -22,8 +22,8 @@ export const MobileAgendaView: React.FC<MobileAgendaViewProps> = ({
   // Sort visits for the current day chronologically
   const dayVisits = visits
     .filter((visit) => {
-      const vDate = moment(visit.scheduledDate);
-      return vDate.isSame(moment(currentDate), 'day');
+      const vDate = typeof visit.scheduledDate === 'string' ? parseISO(visit.scheduledDate) : visit.scheduledDate;
+      return isSameDay(vDate, currentDate);
     })
     .sort((a, b) => {
       return (a.scheduledStartTime || '').localeCompare(b.scheduledStartTime || '');
@@ -33,7 +33,7 @@ export const MobileAgendaView: React.FC<MobileAgendaViewProps> = ({
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-8 text-center my-4">
         <p className="text-gray-500 text-sm">
-          No visits scheduled for {moment(currentDate).format('dddd, MMMM D, YYYY')}.
+          No visits scheduled for {format(currentDate, 'EEEE, MMMM d, yyyy')}.
         </p>
       </div>
     );
