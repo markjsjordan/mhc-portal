@@ -284,7 +284,8 @@ describe('Organization Routes', () => {
       // POST /organizations/:id/seed-demo
       // DELETE /organizations/:id/demo-data
       // GET /organizations/:id/demo-data/status
-      expect(routes.length).toBe(18);
+      // POST /portal-invitations/accept
+      expect(routes.length).toBe(19);
     });
   });
 

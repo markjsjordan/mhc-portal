@@ -23,6 +23,7 @@ import { createUsersRouter } from './users';
 import { createOrganizationRouter } from './organizations';
 import { createOnboardingRouter } from './onboarding';
 import { createCaregiverRouter } from './caregivers';
+import { createPortalAccessRouter } from './portal-access';
 import { createDemoRouter } from './demo';
 import { createAnalyticsRouter } from './analytics';
 import { 
@@ -336,6 +337,11 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
   const caregiverRouter = createCaregiverRouter(db);
   app.use('/api/caregivers', generalApiLimiter, caregiverRouter);
   console.log('  ✓ Caregiver & Staff Management routes registered (with rate limiting)');
+
+  // Portal Access routes (Family Members and Clients)
+  const portalAccessRouter = createPortalAccessRouter(db);
+  app.use('/api', generalApiLimiter, portalAccessRouter);
+  console.log('  ✓ Portal Access routes registered (with rate limiting)');
 
   // Training Recommendations routes (AI-powered)
   const trainingRecommendationRouter = createTrainingRecommendationRoutes(db);
