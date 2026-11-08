@@ -378,13 +378,19 @@ describe('EVVRepository', () => {
         id: 'evv-123',
         visitId: 'visit-123',
         organizationId: 'org-123',
+        clientName: 'John Doe',
+        caregiverName: 'Jane Smith',
         recordStatus: 'PENDING',
         verificationLevel: 'FULL',
         complianceFlags: ['COMPLIANT' as any],
       }));
 
       expect(mockDatabase.query).toHaveBeenCalledWith(
-        'SELECT * FROM evv_records WHERE id = $1',
+        expect.stringContaining('LEFT JOIN clients c ON c.id = evv_records.client_id'),
+        ['evv-123']
+      );
+      expect(mockDatabase.query).toHaveBeenCalledWith(
+        expect.stringContaining('LEFT JOIN caregivers cg ON cg.id = evv_records.caregiver_id'),
         ['evv-123']
       );
     });
@@ -457,7 +463,7 @@ describe('EVVRepository', () => {
       expect(result?.visitId).toBe('visit-123');
 
       expect(mockDatabase.query).toHaveBeenCalledWith(
-        'SELECT * FROM evv_records WHERE visit_id = $1',
+        expect.stringContaining('WHERE evv_records.visit_id = $1'),
         ['visit-123']
       );
     });
@@ -678,6 +684,8 @@ describe('EVVRepository', () => {
       const result = await repository.searchEVVRecords(filters, pagination);
 
       expect(result.items).toHaveLength(2);
+      expect(result.items[0]?.clientName).toBe('John Doe');
+      expect(result.items[0]?.caregiverName).toBe('Jane Smith');
       expect(result.total).toBe(2);
       expect(result.page).toBe(1);
       expect(result.limit).toBe(10);
@@ -687,6 +695,10 @@ describe('EVVRepository', () => {
       expect(mockDatabase.query).toHaveBeenNthCalledWith(1,
         expect.stringContaining('SELECT COUNT(*) FROM evv_records'),
         expect.arrayContaining(['org-123', 'client-123', expect.any(Date), expect.any(Date)])
+      );
+      expect(mockDatabase.query).toHaveBeenNthCalledWith(2,
+        expect.stringContaining("c.first_name || ' ' || c.last_name"),
+        expect.arrayContaining(['org-123', 'client-123', expect.any(Date), expect.any(Date), 10, 0])
       );
     });
 
