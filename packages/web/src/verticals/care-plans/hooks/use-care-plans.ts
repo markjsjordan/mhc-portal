@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useApiClient } from '@/core/hooks';
 import { createCarePlanApiService } from '../services/care-plan-api-service';
@@ -24,6 +24,7 @@ export const useCarePlans = (filters?: CarePlanSearchFilters & SearchParams) => 
   return useQuery({
     queryKey: ['care-plans', filters],
     queryFn: () => carePlanApi.getCarePlans(filters),
+    placeholderData: keepPreviousData,
   });
 };
 
