@@ -9,28 +9,30 @@ import { useAuth, refreshAuthSession } from './core/hooks';
 import { ProtectedRoute, FamilyProtectedRoute, PublicRoute, LoadingSpinner, UpdatePrompt, OnlineStatus } from './core/components';
 import { AppShell } from './app/components';
 import { initAuthStorage } from './core/utils/auth-storage';
-import { AcceptInvite } from './app/pages/AcceptInvite';
-import { Dashboard } from './app/pages/Dashboard';
-import { DashboardSelector } from './app/pages/DashboardSelector';
-import { Login } from './app/pages/Login';
-import { Logout } from './app/pages/Logout';
-import { Onboarding } from './app/pages/Onboarding';
-import { NotFound } from './app/pages/NotFound';
 import { DemoModeBar } from './demo';
 import { FamilyPortalLayout } from './app/layouts/FamilyPortalLayout';
-import {
-  FamilyDashboard,
-  FamilySettings,
-  ActivityPage,
-  MessagesPage,
-  StaffMessagesPage,
-  CaregiverMessagesPage,
-  NotificationsPage,
-  SchedulePage,
-  CarePlanPage,
-  HealthUpdatesPage
-} from './verticals/family-engagement/pages';
 import { GlobalSearch, useGlobalSearch } from './components/search/index.js';
+
+// Lazy loaded app pages
+const AcceptInvite = React.lazy(() => import('./app/pages/AcceptInvite').then((m) => ({ default: m.AcceptInvite })));
+const Dashboard = React.lazy(() => import('./app/pages/Dashboard').then((m) => ({ default: m.Dashboard })));
+const DashboardSelector = React.lazy(() => import('./app/pages/DashboardSelector').then((m) => ({ default: m.DashboardSelector })));
+const Login = React.lazy(() => import('./app/pages/Login').then((m) => ({ default: m.Login })));
+const Logout = React.lazy(() => import('./app/pages/Logout').then((m) => ({ default: m.Logout })));
+const Onboarding = React.lazy(() => import('./app/pages/Onboarding').then((m) => ({ default: m.Onboarding })));
+const NotFound = React.lazy(() => import('./app/pages/NotFound').then((m) => ({ default: m.NotFound })));
+
+// Lazy loaded family engagement pages
+const FamilyDashboard = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.FamilyDashboard })));
+const FamilySettings = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.FamilySettings })));
+const ActivityPage = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.ActivityPage })));
+const MessagesPage = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.MessagesPage })));
+const StaffMessagesPage = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.StaffMessagesPage })));
+const CaregiverMessagesPage = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.CaregiverMessagesPage })));
+const NotificationsPage = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.NotificationsPage })));
+const SchedulePage = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.SchedulePage })));
+const CarePlanPage = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.CarePlanPage })));
+const HealthUpdatesPage = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.HealthUpdatesPage })));
 
 // Lazy loaded dashboards
 const AdministratorDashboard = React.lazy(() => import('./app/pages/AdministratorDashboard').then((m) => ({ default: m.AdministratorDashboard })));

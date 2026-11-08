@@ -216,8 +216,40 @@ export default defineConfig({
         /sentry_cpu_profiler.*\.node$/,
       ],
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+        manualChunks: (id) => {
+          // Extract core React libraries
+          if (id.includes('node_modules/react') || 
+              id.includes('node_modules/react-dom') || 
+              id.includes('node_modules/react-router-dom') ||
+              id.includes('node_modules/scheduler')) {
+            return 'react-vendor';
+          }
+          
+          // Extract React Query separately
+          if (id.includes('node_modules/@tanstack/react-query') ||
+              id.includes('node_modules/@tanstack/query-core')) {
+            return 'react-query';
+          }
+          
+          // Extract date libraries (moment is large)
+          if (id.includes('node_modules/moment') ||
+              id.includes('node_modules/date-fns')) {
+            return 'moment';
+          }
+          
+          // Extract zod separately
+          if (id.includes('node_modules/zod')) {
+            return 'zod';
+          }
+          
+          // Extract UI component libraries
+          if (id.includes('node_modules/@radix-ui') ||
+              id.includes('node_modules/@floating-ui')) {
+            return 'ui-vendor';
+          }
+          
+          // Return undefined for default chunking
+          return undefined;
         },
       },
     },
