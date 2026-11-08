@@ -244,7 +244,7 @@ export class AuthMiddleware {
         organizationId: req.user.organizationId,
         roles: req.user.roles,
         permissions: req.user.permissions,
-        branchIds: req.user.branchIds ?? [],
+        branchIds: req.user.branchIds,
       };
 
       const permService = new PermissionService();
