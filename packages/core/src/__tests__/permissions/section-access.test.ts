@@ -58,4 +58,32 @@ describe('section access parity', () => {
     const { unmapped } = legacyToSectionMap(['mystery:read']);
     expect(unmapped).toEqual(['mystery:read']);
   });
+
+  it('maps unmapped areas to their designated sections (D4)', () => {
+    const { map, unmapped } = legacyToSectionMap([
+      'medications:read',
+      'medications:write',
+      'evv:read',
+      'time-tracking:create',
+      'qa-audits:review',
+      'export:generate',
+    ]);
+    expect(unmapped).toEqual([]);
+    expect(section(map, 'clients')).toEqual({ read: true, write: true });
+    expect(section(map, 'visits')).toEqual({ read: true, write: true });
+    expect(section(map, 'compliance')).toEqual({ read: false, write: true });
+    expect(section(map, 'reports')).toEqual({ read: false, write: true });
+  });
+
+  it('composes legacy permissions across context explicit perms and role perms', () => {
+    const explicitPerms = ['tasks:read'];
+    const rolePerms = service.getPermissionsForRoles(['READ_ONLY']); // clients:read, reports:read
+    const combined = [...explicitPerms, ...rolePerms];
+    const { map } = legacyToSectionMap(combined);
+
+    expect(section(map, 'tasks')).toEqual({ read: true, write: false });
+    expect(section(map, 'clients')).toEqual({ read: true, write: false });
+    expect(section(map, 'reports')).toEqual({ read: true, write: false });
+    expect(section(map, 'billing')).toEqual({ read: false, write: false });
+  });
 });

@@ -64,6 +64,11 @@ export const RESOURCE_TO_SECTION: ReadonlyMap<string, Section> = new Map<string,
   training: 'training-payroll',
   certifications: 'training-payroll',
   payroll: 'training-payroll',
+  medications: 'clients',
+  evv: 'visits',
+  'time-tracking': 'visits',
+  'qa-audits': 'compliance',
+  export: 'reports',
   availability: 'scheduling',
 }) as [string, Section][]);
 

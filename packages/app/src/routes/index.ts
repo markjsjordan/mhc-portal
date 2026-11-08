@@ -18,6 +18,7 @@ import { createAIRoutes } from '@folkcare/ai-services';
 import { createHealthRouter } from './health';
 import { createMetricsRouter } from './metrics';
 import { createAuthRouter } from './auth';
+import { sectionAccessMiddleware } from '../middleware/section-access.js';
 import webhooksRouter from './webhooks.js';
 import { createUsersRouter } from './users';
 import { createOrganizationRouter } from './organizations';
@@ -266,6 +267,10 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
   if (authMiddlewareForAudit.auditImpersonatedActions) {
     app.use('/api', (req, res, next) => authMiddlewareForAudit.auditImpersonatedActions(req, res, next));
   }
+
+  // Section-based READ/WRITE access control (wdvf3abzp9). Must precede all /api routers.
+  // Mode is controlled by SECTION_ACCESS_ENFORCEMENT (off|shadow|enforce, default shadow).
+  app.use('/api', sectionAccessMiddleware(db));
 
   // Authentication routes with rate limiting
   const authRouter = createAuthRouter(db);
