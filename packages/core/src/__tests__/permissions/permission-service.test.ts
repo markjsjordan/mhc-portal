@@ -347,6 +347,8 @@ describe('PermissionService', () => {
         expect(permissionService.hasPermission(context, 'care-plans:read')).toBe(true);
         expect(permissionService.hasPermission(context, 'tasks:update')).toBe(true);
         expect(permissionService.hasPermission(context, 'notes:create')).toBe(true);
+        expect(permissionService.hasPermission(context, 'availability:read-own')).toBe(true);
+        expect(permissionService.hasPermission(context, 'availability:update-own')).toBe(true);
       });
 
       it('should not have administrative access', () => {

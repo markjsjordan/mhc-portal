@@ -203,6 +203,9 @@ export class ShowcaseApiProvider implements ApiProvider {
     if (url.includes('/api/auth/logout')) {
       return this.logout();
     }
+    if (url.includes('/api/caregivers/me/availability')) {
+      return this.handleCaregiverAvailabilityEndpoint(method, url, data);
+    }
     if (url.includes('/api/clients')) {
       return this.handleClientsEndpoint(method, url, data);
     }
@@ -676,6 +679,67 @@ export class ShowcaseApiProvider implements ApiProvider {
       (this.data.payroll as unknown[]).push(newPayrun);
       this.saveData();
       return newPayrun;
+    }
+
+    return { success: true };
+  }
+
+  private handleCaregiverAvailabilityEndpoint(method: string, url: string, data?: unknown): unknown {
+    const urlObj = new URL(url, 'http://localhost');
+    const weekStart = urlObj.searchParams.get('weekStart') ?? new Date().toISOString().split('T')[0]!;
+
+    const defaultSchedule = {
+      monday: { available: true, timeSlots: [{ startTime: '09:00', endTime: '17:00' }] },
+      tuesday: { available: true, timeSlots: [{ startTime: '09:00', endTime: '17:00' }] },
+      wednesday: { available: true, timeSlots: [{ startTime: '09:00', endTime: '17:00' }] },
+      thursday: { available: true, timeSlots: [{ startTime: '09:00', endTime: '17:00' }] },
+      friday: { available: true, timeSlots: [{ startTime: '09:00', endTime: '17:00' }] },
+      saturday: { available: false, timeSlots: [] },
+      sunday: { available: false, timeSlots: [] },
+    };
+
+    if (method === 'GET') {
+      const stored = localStorage.getItem(`showcase-availability-${weekStart}`);
+      let schedule = defaultSchedule;
+      let version = 1;
+      let source = 'TEMPLATE';
+
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          schedule = parsed.schedule ?? defaultSchedule;
+          version = parsed.version ?? 1;
+          source = 'OVERRIDE';
+        } catch {
+          // ignore parsing error
+        }
+      }
+
+      return {
+        schedule,
+        editable: true,
+        cutoffAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        conflicts: [],
+        version,
+        source,
+      };
+    }
+
+    if (method === 'PUT') {
+      const payload = (data as Record<string, unknown> | undefined) ?? {};
+      const newVersion = typeof payload['expectedVersion'] === 'number' ? (payload['expectedVersion'] as number) + 1 : 2;
+      const record = {
+        schedule: payload['schedule'] ?? defaultSchedule,
+        version: newVersion,
+      };
+      const targetWeek = typeof payload['weekStart'] === 'string' ? payload['weekStart'] : weekStart;
+      localStorage.setItem(`showcase-availability-${targetWeek}`, JSON.stringify(record));
+
+      return {
+        success: true,
+        version: newVersion,
+        schedule: record.schedule,
+      };
     }
 
     return { success: true };
