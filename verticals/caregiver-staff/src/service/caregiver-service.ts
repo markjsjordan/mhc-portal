@@ -251,17 +251,33 @@ export class CaregiverService {
   /**
    * Get authenticated caregiver's profile
    * 
-   * Links user authentication record to caregiver profile via email.
-   * This is a temporary solution using email lookup. Future enhancement:
-   * add user_id field to caregivers table for direct linkage and better performance.
+   * Resolves caregiver profile by context.caregiverId or active user_id link.
+   * Never resolves by email fallback.
    * 
    * @param context - User context containing userId and permissions
    * @returns Caregiver profile for the authenticated user
-   * @throws NotFoundError if user or caregiver profile not found
+   * @throws NotFoundError if caregiver profile not found
    */
   async getCurrentCaregiverProfile(context: UserContext): Promise<Caregiver> {
-    // Find caregiver by linked user_id
-    const caregiver = await this.repository.findByUserId(context.userId);
+    let caregiver: Caregiver | null = null;
+
+    if (context.caregiverId) {
+      const candidate = await this.repository.findById(context.caregiverId);
+      if (
+        candidate?.portalAccessStatus === 'ACTIVE' &&
+        (!context.organizationId || candidate.organizationId === context.organizationId)
+      ) {
+        caregiver = candidate;
+      }
+    }
+
+    if (!caregiver) {
+      caregiver = await this.repository.findByUserId(
+        context.userId,
+        context.organizationId
+      );
+    }
+
     if (!caregiver) {
       throw new NotFoundError(`Caregiver profile not found for user: ${context.userId}`);
     }

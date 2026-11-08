@@ -2,13 +2,23 @@ import { useState, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useIsMobile } from '@/core/hooks';
+import { useTimezone } from '@/core/hooks/useTimezone.js';
 import { useCaregivers } from '@/verticals/caregivers/hooks/useCaregivers';
 import { useCalendarVisits, useVisitApi, useCaregiverAvailability } from '@/verticals/scheduling-visits/hooks/useVisits';
 import type { Visit as ApiVisit } from '@/verticals/scheduling-visits/types';
 import { useClients } from '@/verticals/client-demographics/hooks/useClients';
 import { calculateSupervisoryCadence } from '@/verticals/scheduling-visits/utils/supervisory-cadence';
 import { SupervisionAlertBanner } from '@/verticals/scheduling-visits/components/SupervisionAlertBanner';
+import {
+  getWeekRange,
+  computeCaregiverWeekLoad,
+  getTodayDateString,
+  addDaysToDateString,
+  DEFAULT_WEEK_START,
+} from '@/verticals/scheduling-visits/utils/week-load.js';
+import { CaregiverWeekGrid } from '@/verticals/scheduling-visits/components/calendar/CaregiverWeekGrid.js';
 import { Button } from '@/components/ui/button.js';
 import { Input } from '@/components/ui/input.js';
 import { Label } from '@/components/ui/label.js';
@@ -108,21 +118,13 @@ function toDisplayVisit(v: ApiVisit, caregiverNameById: Map<string, string>): Vi
   };
 }
 
-function getNextWeekDates(): string[] {
-  const dates: string[] = [];
-  const today = new Date();
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
-    const dateStr = date.toISOString().split('T')[0];
-    if (dateStr) dates.push(dateStr);
-  }
-  return dates;
-}
-
 export default function ScheduleBuilderPage() {
   const isMobile = useIsMobile();
-  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]!);
+  const { timezone } = useTimezone();
+  const todayStr = useMemo(() => getTodayDateString(timezone), [timezone]);
+  const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  const [weekAnchor, setWeekAnchor] = useState<string>(todayStr);
+  const [focusCaregiverId, setFocusCaregiverId] = useState<string | null>(null);
   const [draggedVisit, setDraggedVisit] = useState<Visit | null>(null);
   const [viewMode, setViewMode] = useState<'week' | 'day'>('day');
   const [showPatternModal, setShowPatternModal] = useState(false);
@@ -149,7 +151,10 @@ export default function ScheduleBuilderPage() {
   const queryClient = useQueryClient();
   const visitApi = useVisitApi();
 
-  const weekDates = useMemo(() => getNextWeekDates(), []);
+  const weekDates = useMemo(
+    () => getWeekRange(weekAnchor, DEFAULT_WEEK_START),
+    [weekAnchor]
+  );
 
   const { data: clientsResult } = useClients({ page: 1, pageSize: 100 });
   const clients = useMemo(() => clientsResult?.items ?? [], [clientsResult]);
@@ -195,6 +200,30 @@ export default function ScheduleBuilderPage() {
     () => apiVisits.map(v => toDisplayVisit(v, caregiverNameById)),
     [apiVisits, caregiverNameById]
   );
+
+  const caregiverWeekRows = useMemo(() => {
+    return computeCaregiverWeekLoad(apiVisits, caregivers, weekDates);
+  }, [apiVisits, caregivers, weekDates]);
+
+  const handleSelectDayFromWeek = useCallback((caregiverId: string, date: string) => {
+    setSelectedDate(date);
+    setWeekAnchor(date);
+    setFocusCaregiverId(caregiverId);
+    setViewMode('day');
+  }, []);
+
+  const handleWeekPrev = useCallback(() => {
+    setWeekAnchor(prev => addDaysToDateString(prev, -7));
+  }, []);
+
+  const handleWeekNext = useCallback(() => {
+    setWeekAnchor(prev => addDaysToDateString(prev, 7));
+  }, []);
+
+  const handleWeekToday = useCallback(() => {
+    setWeekAnchor(todayStr);
+    setSelectedDate(todayStr);
+  }, [todayStr]);
 
   const unassignedVisits = useMemo(
     () => visits.filter(v => v.status === 'unassigned' && v.date === selectedDate),
@@ -415,7 +444,10 @@ export default function ScheduleBuilderPage() {
               <Label htmlFor="schedule-builder-date-select-mobile" className="sr-only">
                 Select Date
               </Label>
-              <Select value={selectedDate} onValueChange={setSelectedDate}>
+              <Select value={selectedDate} onValueChange={(val) => {
+                setSelectedDate(val);
+                setWeekAnchor(val);
+              }}>
                 <SelectTrigger
                   id="schedule-builder-date-select-mobile"
                   className="schedule-builder-date-select"
@@ -457,7 +489,10 @@ export default function ScheduleBuilderPage() {
               <Label htmlFor="schedule-builder-date-select-desktop" className="sr-only">
                 Select Date
               </Label>
-              <Select value={selectedDate} onValueChange={setSelectedDate}>
+              <Select value={selectedDate} onValueChange={(val) => {
+                setSelectedDate(val);
+                setWeekAnchor(val);
+              }}>
                 <SelectTrigger
                   id="schedule-builder-date-select-desktop"
                   className="schedule-builder-date-select"
@@ -479,6 +514,38 @@ export default function ScheduleBuilderPage() {
               </Select>
             </>
           )}
+
+          {/* Week Navigation Controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleWeekPrev}
+              aria-label="Previous week"
+              title="Previous week"
+              style={{ padding: '0 8px', height: '36px' }}
+            >
+              <ChevronLeft size={16} aria-hidden="true" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleWeekToday}
+              style={{ height: '36px', fontSize: '13px' }}
+            >
+              Today
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleWeekNext}
+              aria-label="Next week"
+              title="Next week"
+              style={{ padding: '0 8px', height: '36px' }}
+            >
+              <ChevronRight size={16} aria-hidden="true" />
+            </Button>
+          </div>
           <Button
             className="schedule-builder-action-btn"
             style={isMobile ? styles.patternButtonMobile : styles.patternButton}
@@ -570,107 +637,155 @@ export default function ScheduleBuilderPage() {
           </div>
         </div>
 
-        {/* Calendar grid */}
+        {/* Calendar grid or Week view */}
         <div style={styles.calendarContainer}>
-          <div style={styles.calendarGrid}>
-            {/* Header row - caregivers */}
-            <div style={styles.timeColumn}>
-              <div style={styles.cornerCell}></div>
-              {TIME_SLOTS.map(slot => (
-                <div key={slot.time} style={styles.timeCell}>
-                  {slot.time}
-                </div>
-              ))}
+          {focusCaregiverId && viewMode === 'day' && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '8px 12px',
+                marginBottom: '12px',
+                backgroundColor: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                borderRadius: '6px',
+                fontSize: '13px',
+                color: '#1e40af',
+              }}
+            >
+              <span>
+                Focusing on: <strong>{caregiverNameById.get(focusCaregiverId) ?? 'Selected Caregiver'}</strong>
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setFocusCaregiverId(null)}
+                style={{ height: '28px', padding: '0 8px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                <X size={14} aria-hidden="true" />
+                <span>Show all caregivers</span>
+              </Button>
             </div>
+          )}
 
-            {caregivers.map(caregiver => {
-              const isAvailable = getCaregiverAvailability(caregiver.id);
-              return (
-                <div key={caregiver.id} style={styles.caregiverColumn}>
+          {viewMode === 'week' ? (
+            <CaregiverWeekGrid
+              weekDays={weekDates}
+              rows={caregiverWeekRows}
+              onSelectDay={handleSelectDayFromWeek}
+            />
+          ) : (
+            <div style={styles.calendarGrid}>
+              {/* Header row - caregivers */}
+              <div style={styles.timeColumn}>
+                <div style={styles.cornerCell}></div>
+                {TIME_SLOTS.map(slot => (
+                  <div key={slot.time} style={styles.timeCell}>
+                    {slot.time}
+                  </div>
+                ))}
+              </div>
+
+              {caregivers
+                .filter(cg => !focusCaregiverId || cg.id === focusCaregiverId)
+                .map(caregiver => {
+                const isAvailable = getCaregiverAvailability(caregiver.id);
+                const isFocused = focusCaregiverId === caregiver.id;
+                return (
                   <div
+                    key={caregiver.id}
                     style={{
-                      ...styles.caregiverHeader,
-                      borderLeft: `4px solid ${caregiver.color}`,
-                      opacity: isAvailable ? 1 : 0.5,
+                      ...styles.caregiverColumn,
+                      backgroundColor: isFocused ? '#faf5ff' : undefined,
                     }}
                   >
-                    <strong>{caregiver.name}</strong>
-                    {!isAvailable && (
-                      <span style={styles.unavailableBadge}>Unavailable</span>
-                    )}
-                    <div style={styles.skillBadges}>
-                      {caregiver.skills.map(skill => (
-                        <span key={skill} style={styles.skillBadge}>
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {TIME_SLOTS.map(slot => {
-                    const visitsAtTime = getVisitsForCaregiverAtTime(
-                      caregiver.id,
-                      slot.hour
-                    );
-                    const isOccupied = visitsAtTime.length > 0;
-                    const visit = visitsAtTime[0];
-
-                    return (
-                      <div
-                        key={slot.time}
-                        style={{
-                          ...styles.timeSlotCell,
-                          backgroundColor: getSlotBgColor(isOccupied, isAvailable, caregiver.color),
-                          cursor: isAvailable && !isOccupied ? 'pointer' : 'default',
-                        }}
-                        onDragOver={isAvailable && !isOccupied ? handleDragOver : undefined}
-                        onDrop={
-                          isAvailable && !isOccupied
-                            ? () => { void handleDrop(caregiver.id); }
-                            : undefined
-                        }
-                        onClick={
-                          isAvailable && !isOccupied
-                            ? () => handleTimeSlotClick(caregiver.id, slot.hour)
-                            : undefined
-                        }
-                      >
-                        {isOccupied && visit && slot.hour === parseInt(visit.startTime.split(':')[0] ?? '0') && (
-                          <div
-                            style={{
-                              ...styles.visitBlock,
-                              backgroundColor: caregiver.color,
-                              height: `${visit.duration * 60}px`,
-                            }}
-                          >
-                            <div style={styles.visitBlockHeader}>
-                              <strong>{visit.patternId ? '🔁 ' : ''}{visit.clientName}</strong>
-                              <Button
-                                variant="ghost"
-                                size="icon-xs"
-                                onClick={() => handleUnassign(visit.id)}
-                                title="Unassign"
-                                aria-label="Unassign visit"
-                                className="h-5 w-5 p-0 text-white/80 hover:text-white hover:bg-white/20"
-                              >
-                                ✕
-                              </Button>
-                            </div>
-                            <div style={styles.visitBlockTime}>
-                              {visit.startTime} - {visit.endTime}
-                            </div>
-                            {visit.status === 'confirmed' && (
-                              <div style={styles.confirmedBadge}>✓ Confirmed</div>
-                            )}
-                          </div>
-                        )}
+                    <div
+                      style={{
+                        ...styles.caregiverHeader,
+                        borderLeft: `4px solid ${caregiver.color}`,
+                        opacity: isAvailable ? 1 : 0.5,
+                        backgroundColor: isFocused ? '#f3e8ff' : undefined,
+                      }}
+                    >
+                      <strong>{caregiver.name}</strong>
+                      {!isAvailable && (
+                        <span style={styles.unavailableBadge}>Unavailable</span>
+                      )}
+                      <div style={styles.skillBadges}>
+                        {caregiver.skills.map(skill => (
+                          <span key={skill} style={styles.skillBadge}>
+                            {skill}
+                          </span>
+                        ))}
                       </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </div>
+                    </div>
+
+                    {TIME_SLOTS.map(slot => {
+                      const visitsAtTime = getVisitsForCaregiverAtTime(
+                        caregiver.id,
+                        slot.hour
+                      );
+                      const isOccupied = visitsAtTime.length > 0;
+                      const visit = visitsAtTime[0];
+
+                      return (
+                        <div
+                          key={slot.time}
+                          style={{
+                            ...styles.timeSlotCell,
+                            backgroundColor: getSlotBgColor(isOccupied, isAvailable, caregiver.color),
+                            cursor: isAvailable && !isOccupied ? 'pointer' : 'default',
+                          }}
+                          onDragOver={isAvailable && !isOccupied ? handleDragOver : undefined}
+                          onDrop={
+                            isAvailable && !isOccupied
+                              ? () => { void handleDrop(caregiver.id); }
+                              : undefined
+                          }
+                          onClick={
+                            isAvailable && !isOccupied
+                              ? () => handleTimeSlotClick(caregiver.id, slot.hour)
+                              : undefined
+                          }
+                        >
+                          {isOccupied && visit && slot.hour === parseInt(visit.startTime.split(':')[0] ?? '0') && (
+                            <div
+                              style={{
+                                ...styles.visitBlock,
+                                backgroundColor: caregiver.color,
+                                height: `${visit.duration * 60}px`,
+                              }}
+                            >
+                              <div style={styles.visitBlockHeader}>
+                                <strong>{visit.patternId ? '🔁 ' : ''}{visit.clientName}</strong>
+                                <Button
+                                  variant="ghost"
+                                  size="icon-xs"
+                                  onClick={() => handleUnassign(visit.id)}
+                                  title="Unassign"
+                                  aria-label="Unassign visit"
+                                  className="h-5 w-5 p-0 text-white/80 hover:text-white hover:bg-white/20"
+                                >
+                                  ✕
+                                </Button>
+                              </div>
+                              <div style={styles.visitBlockTime}>
+                                {visit.startTime} - {visit.endTime}
+                              </div>
+                              {visit.status === 'confirmed' && (
+                                <div style={styles.confirmedBadge}>✓ Confirmed</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

@@ -506,7 +506,7 @@ export function createOrganizationRouter(db: Database): Router {
         );
 
         if (newLocationRequired !== undefined && newLocationRequired !== oldLocationRequired) {
-          void auditService.logEvent(userContext, {
+          await auditService.logEvent(userContext, {
             eventType: 'CONFIGURATION',
             resource: 'organization',
             resourceId: id,

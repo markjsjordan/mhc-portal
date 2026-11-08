@@ -4,6 +4,7 @@ import express from 'express';
 import { createImportRoutes } from '../import-routes.js';
 import { createComplianceRouter } from '../compliance.js';
 import { createOnboardingRouter } from '../onboarding.js';
+import { createCaregiverRouter } from '../caregivers.js';
 
 // Setup mock database
 const mockDb = {
@@ -36,6 +37,22 @@ vi.mock('@folkcare/core', async () => {
             code: 'INSUFFICIENT_PERMISSIONS',
             requiredRoles: roles,
             userRoles,
+          });
+          return;
+        }
+        next();
+      };
+
+      requirePermission = (permissions: string[]) => (req: any, res: any, next: any) => {
+        const userPermissions = req.user?.permissions ?? [];
+        const hasPermission = permissions.some((p) => userPermissions.includes(p));
+        if (!hasPermission) {
+          res.status(403).json({
+            success: false,
+            error: 'Insufficient permissions',
+            code: 'INSUFFICIENT_PERMISSIONS',
+            requiredPermissions: permissions,
+            userPermissions,
           });
           return;
         }
@@ -113,5 +130,33 @@ describe('Route Permissions RBAC Enforcement', () => {
 
     expect(res.status).toBe(403);
     expect(res.body.code).toBe('INSUFFICIENT_PERMISSIONS');
+  });
+
+  it('should return 403 Forbidden on caregiver availability routes for unauthorized roles', async () => {
+    const app = express();
+    app.use(express.json());
+    // Attach user with COORDINATOR role (not allowed to access caregiver availability self-service)
+    app.use((req: any, _res, next) => {
+      req.user = {
+        userId: '11111111-1111-1111-1111-111111111111',
+        organizationId: '22222222-2222-2222-2222-222222222222',
+        roles: ['COORDINATOR'],
+        permissions: ['schedules:read'],
+      };
+      next();
+    });
+    app.use('/api/caregivers', createCaregiverRouter(mockDb));
+
+    const getRes = await request(app).get('/api/caregivers/me/availability?weekStart=2026-11-02');
+    expect(getRes.status).toBe(403);
+    expect(getRes.body.code).toBe('INSUFFICIENT_PERMISSIONS');
+
+    const putRes = await request(app).put('/api/caregivers/me/availability').send({
+      weekStart: '2026-11-02',
+      schedule: {},
+      expectedVersion: 1,
+    });
+    expect(putRes.status).toBe(403);
+    expect(putRes.body.code).toBe('INSUFFICIENT_PERMISSIONS');
   });
 });

@@ -82,12 +82,16 @@ export class CaregiverRepository extends Repository<Caregiver> {
       deletedBy: row['deleted_by'] as string | null,
     };
 
-    // Handle optional properties properly for exactOptionalPropertyTypes
+
+    const timezone = row['timezone'];
+    if (typeof timezone === 'string') entity.timezone = timezone;
+
     const middleName = row['middle_name'] as string | undefined;
     if (middleName !== undefined) entity.middleName = middleName;
 
     const preferredName = row['preferred_name'] as string | undefined;
     if (preferredName !== undefined) entity.preferredName = preferredName;
+
 
     const ssn = row['ssn'] as string | undefined;
     if (ssn !== undefined) entity.ssn = ssn;
@@ -251,6 +255,7 @@ export class CaregiverRepository extends Repository<Caregiver> {
     if (entity.organizationId !== undefined) row['organization_id'] = entity.organizationId;
     if (entity.branchIds !== undefined) row['branch_ids'] = entity.branchIds;
     if (entity.primaryBranchId !== undefined) row['primary_branch_id'] = entity.primaryBranchId;
+    if (entity.userId !== undefined) row['user_id'] = entity.userId;
     if (entity.employeeNumber !== undefined) row['employee_number'] = entity.employeeNumber;
     if (entity.firstName !== undefined) row['first_name'] = entity.firstName;
     if (entity.middleName !== undefined) row['middle_name'] = entity.middleName;
@@ -315,11 +320,49 @@ export class CaregiverRepository extends Repository<Caregiver> {
   }
 
   /**
+   * Find caregiver by user ID (linked portal user)
+   *
+   * @param userId - Auth user ID linked to caregiver profile
+   * @param organizationId - Optional tenant organization ID
+   * @returns Caregiver profile if found, null otherwise
+   */
+  async findByUserId(userId: string, organizationId?: string): Promise<Caregiver | null> {
+    if (organizationId !== undefined && organizationId !== '') {
+      const query = `
+        SELECT * FROM ${this.tableName}
+        WHERE user_id = $1
+          AND organization_id = $2
+          AND portal_access_status = 'ACTIVE'
+          AND deleted_at IS NULL
+      `;
+
+      const result = await this.database.query(query, [userId, organizationId]);
+
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      return this.mapRowToEntity(result.rows[0]!);
+    }
+
+    const query = `
+      SELECT * FROM ${this.tableName}
+      WHERE user_id = $1
+        AND portal_access_status = 'ACTIVE'
+        AND deleted_at IS NULL
+    `;
+
+    const result = await this.database.query(query, [userId]);
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    return this.mapRowToEntity(result.rows[0]!);
+  }
+
+  /**
    * Find caregiver by email
-   * 
-   * Used to link authenticated users to their caregiver profile.
-   * This is a temporary solution. Once user_id field is added to caregivers table,
-   * this method should be refactored to use direct user_id lookup for better performance.
    * 
    * @param email - Email address to search for (case-insensitive)
    * @returns Caregiver profile if found, null otherwise
@@ -332,28 +375,6 @@ export class CaregiverRepository extends Repository<Caregiver> {
     `;
 
     const result = await this.database.query(query, [email]);
-
-    if (result.rows.length === 0) {
-      return null;
-    }
-
-    return this.mapRowToEntity(result.rows[0]!);
-  }
-
-  /**
-   * Find caregiver by user ID (linked portal user)
-   *
-   * @param userId - User account ID
-   * @returns Caregiver profile if found, null otherwise
-   */
-  async findByUserId(userId: string): Promise<Caregiver | null> {
-    const query = `
-      SELECT * FROM ${this.tableName}
-      WHERE user_id = $1
-        AND deleted_at IS NULL
-    `;
-
-    const result = await this.database.query(query, [userId]);
 
     if (result.rows.length === 0) {
       return null;

@@ -138,3 +138,25 @@ export interface PaginatedCaregivers {
   limit: number;
   totalPages: number;
 }
+
+export interface TimeSlot {
+  startTime: string; // HH:MM
+  endTime: string;   // HH:MM
+}
+
+export interface DayAvailability {
+  available: boolean;
+  timeSlots?: TimeSlot[];
+  notes?: string;
+}
+
+export interface WeeklyAvailability {
+  monday: DayAvailability;
+  tuesday: DayAvailability;
+  wednesday: DayAvailability;
+  thursday: DayAvailability;
+  friday: DayAvailability;
+  saturday: DayAvailability;
+  sunday: DayAvailability;
+}
+
