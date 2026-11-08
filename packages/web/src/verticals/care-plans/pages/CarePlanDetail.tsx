@@ -15,7 +15,9 @@ import {
 import { LoadingSpinner, ErrorMessage, StatusBadge } from '@/core/components';
 import { Button } from '@/components/ui/button.js';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
+import { Badge } from '@/components/ui/badge.js';
 import { usePermissions } from '@/core/hooks';
+import { useSectionAccess } from '@/core/hooks/permissions';
 import { formatDate } from '@/core/utils';
 import { useCarePlan, useActivateCarePlan, useUpdateCarePlan, useDeleteCarePlan } from '../hooks';
 import { useClient } from '@/verticals/client-demographics/hooks';
@@ -37,6 +39,7 @@ export const CarePlanDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { can } = usePermissions();
+  const { canWrite, readOnly } = useSectionAccess('care-plans');
   const { data: carePlan, isLoading, error, refetch } = useCarePlan(id);
   const { data: client } = useClient(carePlan?.clientId);
   const activateCarePlan = useActivateCarePlan();
@@ -45,8 +48,8 @@ export const CarePlanDetail: React.FC = () => {
   const [now] = useState(() => Date.now());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const canManageCarePlans = can('care-plans:delete') || can('care-plans:*') || can('care_plans:write');
-  const canEditCarePlans = can('care-plans:update') || can('care-plans:*') || can('care_plans:write');
+  const canManageCarePlans = canWrite && (can('care-plans:delete') || can('care-plans:*') || can('care_plans:write'));
+  const canEditCarePlans = canWrite && (can('care-plans:update') || can('care-plans:*') || can('care_plans:write'));
 
   const isDeleteDisabled = carePlan?.status === 'ACTIVE' || carePlan?.status === 'COMPLETED';
   const deleteDisabledReason = getDeleteDisabledReason(carePlan?.status);
@@ -128,7 +131,7 @@ export const CarePlanDetail: React.FC = () => {
 
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">{carePlan.name}</h1>
+          <div className="flex items-center gap-2"><h1 className="text-3xl font-bold text-gray-900">{carePlan.name}</h1>{readOnly && <Badge variant="secondary">Read-only</Badge>}</div>
           <p className="text-gray-600 mt-1">{carePlan.planNumber}</p>
           <p className="text-sm text-gray-500 mt-1">
             {carePlan.planType.replace(/_/g, ' ')}

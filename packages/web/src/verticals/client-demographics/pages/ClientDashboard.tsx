@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button.js';
 import { Card, CardContent } from '@/components/ui/card.js';
 import { Badge } from '@/components/ui/badge.js';
 import { LoadingSpinner, EmptyState, ErrorMessage, StatusBadge } from '@/core/components';
-import { usePermissions } from '@/core/hooks';
+import { usePermissions, useSectionAccess } from '@/core/hooks';
 import { ClientSearch } from '../components';
 import { useClientsDashboard } from '../hooks';
 import type { ClientSearchFilters } from '../types';
@@ -40,6 +40,7 @@ interface DashboardClient {
 
 export const ClientDashboard: React.FC = () => {
   const { can } = usePermissions();
+  const { canWrite, readOnly } = useSectionAccess('clients');
   const [filters, setFilters] = useState<ClientSearchFilters>({});
   const [page, setPage] = useState(1);
   const [expandedClientId, setExpandedClientId] = useState<string | null>(null);
@@ -73,12 +74,12 @@ export const ClientDashboard: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Client Dashboard</h1>
+          <div className="flex items-center gap-2"><h1 className="text-2xl font-bold text-gray-900">Client Dashboard</h1>{readOnly && <Badge variant="secondary">Read-only</Badge>}</div>
           <p className="text-gray-600 mt-1">
             {data?.total ?? 0} total clients
           </p>
         </div>
-        {can('clients:write') && (
+        {can('clients:write') && canWrite && (
           <Link to="/clients/new/intake">
             <Button>
               <Plus className="h-4 w-4 mr-1.5" />
@@ -95,7 +96,7 @@ export const ClientDashboard: React.FC = () => {
           title="No clients found"
           description="Adjust your filters or create a new client."
           action={
-            can('clients:write') ? (
+            can('clients:write') && canWrite ? (
               <Link to="/clients/new/intake">
                 <Button>
                   <Plus className="h-4 w-4 mr-1.5" />

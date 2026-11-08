@@ -119,7 +119,13 @@ export async function refreshAuthSession(baseUrl: string = import.meta.env.VITE_
 
     const data = await response.json();
     const token = data.data?.accessToken ?? data.accessToken;
-    const user = data.data?.user ?? data.user ?? store.user;
+    const rawUser = data.data?.user ?? data.user ?? store.user;
+    const user = rawUser
+      ? {
+          ...rawUser,
+          sections: rawUser.sections ?? store.user?.sections,
+        }
+      : null;
 
     if (token && user) {
       store.setAuth(user, token);

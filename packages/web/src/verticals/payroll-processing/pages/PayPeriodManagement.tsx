@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { usePermissions } from '@/core/hooks';
+import { usePermissions, useSectionAccess } from '@/core/hooks';
 import { usePayPeriods, useCreatePayRun, useLockPayPeriod, useUnlockPayPeriod } from '../hooks';
 import { CreatePayPeriodModal } from '../components';
 import { formatDate, formatCurrency } from '../utils';
@@ -15,6 +15,7 @@ import type { PayrollSearchFilters, PayPeriod } from '../types';
 
 export const PayPeriodManagement: React.FC = () => {
   const { can } = usePermissions();
+  const { canWrite, readOnly } = useSectionAccess('training-payroll');
   const [filters, setFilters] = useState<PayrollSearchFilters>({});
   const [isCreatePeriodOpen, setIsCreatePeriodOpen] = useState(false);
 
@@ -75,12 +76,12 @@ export const PayPeriodManagement: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Pay Period Management</h1>
+          <div className="flex items-center gap-2"><h1 className="text-2xl font-bold text-gray-900">Pay Period Management</h1>{readOnly && <Badge variant="secondary">Read-only</Badge>}</div>
           <p className="text-gray-600 mt-1">
             {payPeriodData?.total ?? 0} pay periods
           </p>
         </div>
-        {can('payroll:write') && (
+        {can('payroll:write') && canWrite && (
           <Button onClick={() => setIsCreatePeriodOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Create Pay Period
@@ -184,7 +185,7 @@ export const PayPeriodManagement: React.FC = () => {
           title="No pay periods found"
           description="Create your first pay period to get started with payroll processing."
           action={
-            can('payroll:write') ? (
+            can('payroll:write') && canWrite ? (
               <Button onClick={() => setIsCreatePeriodOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Pay Period
@@ -230,7 +231,7 @@ export const PayPeriodManagement: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  {can('payroll:write') && (
+                  {can('payroll:write') && canWrite && (
                     <div className="flex gap-2 ml-4">
                       {period.status === 'OPEN' && (
                         <Button

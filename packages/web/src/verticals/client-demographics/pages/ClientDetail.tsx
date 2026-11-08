@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button.js';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
 import { Badge } from '@/components/ui/badge.js';
 import { LoadingSpinner, ErrorMessage, StatusBadge, DemoBadge } from '@/core/components';
-import { usePermissions } from '@/core/hooks';
+import { usePermissions, useSectionAccess } from '@/core/hooks';
 import { formatDate, formatPhone } from '@/core/utils';
 import { useClient, useDeleteClient } from '../hooks';
 
@@ -13,6 +13,7 @@ export const ClientDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { can } = usePermissions();
+  const { canWrite, readOnly } = useSectionAccess('clients');
   const { data: client, isLoading, error, refetch } = useClient(id);
   const deleteClient = useDeleteClient();
 
@@ -72,8 +73,9 @@ export const ClientDetail: React.FC = () => {
         </div>
         <div className="flex gap-2 items-start">
           {client.isDemoData && <DemoBadge size="md" />}
+          {readOnly && <Badge variant="secondary">Read-only</Badge>}
           <StatusBadge status={client.status} />
-          {can('clients:write') && (
+          {can('clients:write') && canWrite && (
             <>
               <Link to={`/clients/${client.id}/edit`}>
                 <Button variant="outline">

@@ -8,6 +8,7 @@ import { useAuth, usePermissions } from '../hooks';
 import { getDashboardRoute } from '../utils/role-routing';
 import { LoadingSpinner } from './feedback/LoadingSpinner';
 import type { Role } from '../types/auth';
+import type { Section } from '../types/sections';
 
 export interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -28,6 +29,10 @@ export interface ProtectedRouteProps {
    */
   requiredRoles?: Role[];
   /**
+   * Section for section-based access control
+   */
+  section?: Section;
+  /**
    * Redirect path if permission check fails
    */
   fallbackPath?: string;
@@ -43,10 +48,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   permissions,
   requiredRole,
   requiredRoles,
+  section,
   fallbackPath,
 }) => {
   const { isAuthenticated, user, isInitializing } = useAuth();
-  const { can, canAll, hasRole, hasAnyRole } = usePermissions();
+  const { can, canAll, hasRole, hasAnyRole, canSection } = usePermissions();
   const location = useLocation();
 
   if (isInitializing) {
@@ -64,6 +70,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check single permission
   if (permission && !can(permission)) {
+    const redirect = fallbackPath ?? getDashboardRoute(user.roles);
+    return <Navigate to={redirect} replace />;
+  }
+
+  // Check section access (READ access required to view route)
+  if (section && canSection && !canSection(section, 'READ')) {
     const redirect = fallbackPath ?? getDashboardRoute(user.roles);
     return <Navigate to={redirect} replace />;
   }

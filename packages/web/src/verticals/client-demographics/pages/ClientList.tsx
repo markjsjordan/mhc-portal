@@ -2,12 +2,13 @@ import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Grid, List, Users, Sparkles, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button.js';
+import { Badge } from '@/components/ui/badge.js';
 import {
   LoadingSpinner, 
   ErrorMessage, 
   EmptyState
 } from '@/core/components';
-import { usePermissions, useDemoData } from '@/core/hooks';
+import { usePermissions, useDemoData, useSectionAccess } from '@/core/hooks';
 import { useClients } from '../hooks';
 import { ClientCard, ClientFilters } from '../components';
 import type { ClientSearchFilters } from '../types';
@@ -15,6 +16,7 @@ import type { ClientSearchFilters } from '../types';
 export const ClientList: React.FC = () => {
   const navigate = useNavigate();
   const { can } = usePermissions();
+  const { canWrite, readOnly } = useSectionAccess('clients');
   const [filters, setFilters] = useState<ClientSearchFilters>({});
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { data, isLoading, error, refetch } = useClients(filters);
@@ -74,7 +76,10 @@ export const ClientList: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
+            {readOnly && <Badge variant="secondary">Read-only</Badge>}
+          </div>
           <p className="text-gray-600 mt-1">
             {getSubtitleText()}
           </p>
@@ -102,7 +107,7 @@ export const ClientList: React.FC = () => {
               <List className="h-4 w-4" />
             </Button>
           </div>
-          {can('clients:write') && (
+          {can('clients:write') && canWrite && (
             <Link to="/clients/new/intake">
               <Button>
                 <Plus className="h-4 w-4 mr-1.5" />
@@ -139,7 +144,7 @@ export const ClientList: React.FC = () => {
                 {isSeeding ? 'Loading...' : 'Load Sample Data'}
               </Button>
             ) : (
-              can('clients:write') && (
+              can('clients:write') && canWrite && (
                 <Button
                   variant="default"
                   size="lg"
@@ -154,7 +159,7 @@ export const ClientList: React.FC = () => {
             )
           }
           secondaryAction={
-            !hasDemoData && can('clients:write') ? (
+            !hasDemoData && can('clients:write') && canWrite ? (
               <Button
                 variant="outline"
                 size="lg"

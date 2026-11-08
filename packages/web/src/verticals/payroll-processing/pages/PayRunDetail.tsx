@@ -14,7 +14,7 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table.js';
-import { usePermissions } from '@/core/hooks';
+import { usePermissions, useSectionAccess } from '@/core/hooks';
 import { 
   usePayRun, 
   usePayStubs, 
@@ -28,6 +28,7 @@ export const PayRunDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { can } = usePermissions();
+  const { canWrite, readOnly } = useSectionAccess('training-payroll');
 
   const { data: payRun, isLoading, error } = usePayRun(id);
   const { data: payStubsData } = usePayStubs({ payRunId: id });
@@ -67,9 +68,9 @@ export const PayRunDetail: React.FC = () => {
             Back
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <div className="flex items-center gap-2"><h1 className="text-2xl font-bold text-gray-900">
               Pay Run {payRun.runNumber}
-            </h1>
+            </h1>{readOnly && <Badge variant="secondary">Read-only</Badge>}</div>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="outline" className={statusColor}>
                 {payRun.status.replace(/_/g, ' ')}
@@ -85,7 +86,7 @@ export const PayRunDetail: React.FC = () => {
         </div>
 
         <div className="flex gap-2">
-          {can('payroll:write') && payRun.status === 'DRAFT' && (
+          {can('payroll:write') && canWrite && payRun.status === 'DRAFT' && (
             <Button
               onClick={() => calculatePayRun.mutate(payRun.id)}
               disabled={calculatePayRun.isPending}
@@ -94,7 +95,7 @@ export const PayRunDetail: React.FC = () => {
               Calculate
             </Button>
           )}
-          {can('payroll:approve') && payRun.status === 'PENDING_APPROVAL' && (
+          {can('payroll:approve') && canWrite && payRun.status === 'PENDING_APPROVAL' && (
             <Button
               onClick={() => approvePayRun.mutate({ id: payRun.id })}
               disabled={approvePayRun.isPending}
@@ -103,7 +104,7 @@ export const PayRunDetail: React.FC = () => {
               Approve
             </Button>
           )}
-          {can('payroll:process') && payRun.status === 'APPROVED' && (
+          {can('payroll:process') && canWrite && payRun.status === 'APPROVED' && (
             <Button
               onClick={() => {
                 if (window.confirm('Are you sure you want to process this pay run? This will generate payments.')) {

@@ -14,7 +14,7 @@ import { LoadingSpinner, ErrorMessage } from '@/core/components';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { usePermissions } from '@/core/hooks';
+import { usePermissions, useSectionAccess } from '@/core/hooks';
 import {
   useClaimsQueue,
   useGenerateInvoicesForVerifiedVisits,
@@ -36,6 +36,7 @@ import type {
 
 export const BillingDashboard: React.FC = () => {
   const { can } = usePermissions();
+  const { canWrite, readOnly } = useSectionAccess('billing');
   const billingApi = useBillingApi();
 
   // Navigation tab: 'claims' or 'invoices'
@@ -201,7 +202,7 @@ export const BillingDashboard: React.FC = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-bold text-gray-900">Billing & Claims Dashboard</h1>
+            <div className="flex items-center gap-2"><h1 className="text-2xl font-bold text-gray-900">Billing & Claims Dashboard</h1>{readOnly && <Badge variant="secondary">Read-only</Badge>}</div>
             <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200 flex items-center gap-1 font-bold">
               <FileCheck2 className="h-3.5 w-3.5 text-blue-600" />
               EVV Gate Active
@@ -226,7 +227,7 @@ export const BillingDashboard: React.FC = () => {
             Refresh
           </Button>
 
-          {can('billing:write') && (
+          {can('billing:write') && canWrite && (
             <Link to="/billing/new">
               <Button size="sm">
                 <Plus className="h-4 w-4 mr-1.5" />

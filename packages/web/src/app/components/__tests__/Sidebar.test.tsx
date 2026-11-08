@@ -3,6 +3,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { Sidebar, HIDDEN_NAV_LABELS } from '../Sidebar';
 
+const sectionState = vi.hoisted(() => ({ hidden: new Set<string>() }));
+
 const mockUser = {
   id: 'usr_123',
   name: 'Jane Admin',
@@ -22,12 +24,30 @@ vi.mock('@/core/hooks', () => ({
     canAll: vi.fn(() => true),
     hasRole: vi.fn(() => true),
     hasAnyRole: vi.fn(() => true),
+    canSection: (section: string) => !sectionState.hidden.has(section),
   }),
 }));
 
 describe('Sidebar component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sectionState.hidden.clear();
+  });
+
+  it('hides a nav item whose section access is NONE', () => {
+    const renderSidebar = () =>
+      render(
+        <MemoryRouter>
+          <Sidebar isOpen={true} onClose={vi.fn()} isDesktopOpen={true} />
+        </MemoryRouter>
+      );
+    const first = renderSidebar();
+    expect(screen.getByText('Clients')).toBeInTheDocument();
+    first.unmount();
+
+    sectionState.hidden.add('clients');
+    renderSidebar();
+    expect(screen.queryByText('Clients')).not.toBeInTheDocument();
   });
 
   it('renders close button accessible on desktop and mobile (no lg:hidden)', () => {

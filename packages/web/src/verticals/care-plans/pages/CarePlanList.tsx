@@ -3,13 +3,15 @@ import { Link } from 'react-router-dom';
 import { Plus, Grid, List, FileText, Search } from 'lucide-react';
 import { LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
 import { Button } from '@/components/ui/button.js';
-import { usePermissions } from '@/core/hooks';
+import { Badge } from '@/components/ui/badge.js';
+import { usePermissions, useSectionAccess } from '@/core/hooks';
 import { useCarePlans } from '../hooks';
 import { CarePlanCard, CarePlanFilters } from '../components';
 import type { CarePlanSearchFilters } from '../types';
 
 export const CarePlanList: React.FC = () => {
   const { can } = usePermissions();
+  const { canWrite, readOnly } = useSectionAccess('care-plans');
   const [filters, setFilters] = useState<CarePlanSearchFilters>({});
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { data, isLoading, error, refetch } = useCarePlans(filters);
@@ -64,7 +66,7 @@ export const CarePlanList: React.FC = () => {
           title="No care plans found"
           description="Get started by creating your first care plan."
           action={
-            can('care_plans:write') ? (
+            can('care_plans:write') && canWrite ? (
               <Link to="/care-plans/new">
                 <Button variant="default">
                   <Plus className="h-4 w-4 mr-2" />
@@ -119,7 +121,7 @@ export const CarePlanList: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Care Plans</h1>
+          <div className="flex items-center gap-2"><h1 className="text-2xl font-bold text-gray-900">Care Plans</h1>{readOnly && <Badge variant="secondary">Read-only</Badge>}</div>
           <p className="text-gray-600 mt-1">
             {getSubtitleText()}
           </p>
@@ -145,7 +147,7 @@ export const CarePlanList: React.FC = () => {
               <List className="h-4 w-4" />
             </Button>
           </div>
-          {can('care_plans:write') && (
+          {can('care_plans:write') && canWrite && (
             <>
               <Link to="/care-plans/from-template">
                 <Button variant="outline">

@@ -13,7 +13,8 @@ import {
   EmptyState, 
   ErrorMessage
 } from '@/core/components/index.js';
-import { usePermissions, useDemoData } from '@/core/hooks/index.js';
+import { Badge } from '@/components/ui/badge.js';
+import { usePermissions, useSectionAccess, useDemoData } from '@/core/hooks/index.js';
 import { useCaregivers } from '../hooks/index.js';
 import { CaregiverCard, CaregiverFilters } from '../components/index.js';
 import type { CaregiverSearchFilters, CaregiverListItem } from '../types/index.js';
@@ -63,6 +64,7 @@ const matchesSearchQuery = (c: CaregiverListItem, debouncedSearch: string): bool
 export const CaregiverList: React.FC = () => {
   const navigate = useNavigate();
   const { can } = usePermissions();
+  const { canWrite, readOnly } = useSectionAccess('caregivers');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
   // Search state with 300ms debounce
@@ -180,7 +182,7 @@ export const CaregiverList: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Caregivers</h1>
+          <div className="flex items-center gap-2"><h1 className="text-2xl font-bold text-gray-900">Caregivers</h1>{readOnly && <Badge variant="secondary">Read-only</Badge>}</div>
           <p className="text-gray-600 mt-1">
             {(() => {
               if (totalCaregivers === 0) return 'No caregivers';
@@ -214,7 +216,7 @@ export const CaregiverList: React.FC = () => {
               <List className="h-4 w-4" />
             </Button>
           </div>
-          {can('caregivers:write') && (
+          {can('caregivers:write') && canWrite && (
             <Link to="/caregivers/new">
               <Button>
                 <Plus className="h-4 w-4 mr-1.5" />
@@ -422,7 +424,7 @@ export const CaregiverList: React.FC = () => {
                 {isSeeding ? 'Loading...' : 'Load Sample Data'}
               </Button>
             ) : (
-              can('caregivers:write') && (
+              can('caregivers:write') && canWrite && (
                 <Button
                   variant="default"
                   size="lg"
@@ -439,7 +441,7 @@ export const CaregiverList: React.FC = () => {
             )
           }
           secondaryAction={
-            !hasDemoData && can('caregivers:write') ? (
+            !hasDemoData && can('caregivers:write') && canWrite ? (
               <Button
                 variant="outline"
                 size="lg"
