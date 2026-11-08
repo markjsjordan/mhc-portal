@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import moment from 'moment';
+import { format } from 'date-fns';
 import { useQueryClient } from '@tanstack/react-query';
 import { X, ChevronLeft, ChevronRight, Clock, MapPin, Phone, User, AlertCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button.js';
@@ -20,9 +20,10 @@ export interface VisitDetailsPanelProps {
   positionLabel?: string;
 }
 
-const formatDate = (value: Date | string): string => moment(value).format('dddd, MMM D, YYYY');
+const formatDate = (value: Date | string): string =>
+  format(typeof value === 'string' ? new Date(value) : value, 'EEEE, MMM d, yyyy');
 const formatTimestamp = (value: Date | string | undefined): string =>
-  value ? moment(value).format('h:mm A') : '—';
+  value ? format(typeof value === 'string' ? new Date(value) : value, 'h:mm a') : '—';
 
 /**
  * Lazy-loaded visit detail drawer for the Scheduling Calendar.

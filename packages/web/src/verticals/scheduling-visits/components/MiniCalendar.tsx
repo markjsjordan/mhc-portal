@@ -1,6 +1,17 @@
 import React, { useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import moment from 'moment';
+import {
+  addDays,
+  addMonths,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameDay,
+  isSameMonth,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
+} from 'date-fns';
 import { Button } from '@/components/ui/button.js';
 
 export interface MiniCalendarProps {
@@ -16,46 +27,43 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
   onDateSelect,
   onMonthChange,
 }) => {
-  const currentMoment = moment(currentDate);
-
   const calendarDays = useMemo(() => {
-    const startOfMonth = currentMoment.clone().startOf('month');
-    const endOfMonth = currentMoment.clone().endOf('month');
-    const startDate = startOfMonth.clone().startOf('week');
-    const endDate = endOfMonth.clone().endOf('week');
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    const startDate = startOfWeek(monthStart, { weekStartsOn: 0 });
+    const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 });
 
     const days: Array<{
-      date: moment.Moment;
+      date: Date;
       isCurrentMonth: boolean;
       hasVisits: boolean;
       isToday: boolean;
       isSelected: boolean;
     }> = [];
-    const current = startDate.clone();
+    let current = startDate;
+    const today = new Date();
 
-    while (current.isSameOrBefore(endDate)) {
-      const dateKey = current.format('YYYY-MM-DD');
+    while (current <= endDate) {
+      const dateKey = format(current, 'yyyy-MM-dd');
       days.push({
-        date: current.clone(),
-        isCurrentMonth: current.month() === currentMoment.month(),
+        date: current,
+        isCurrentMonth: isSameMonth(current, currentDate),
         hasVisits: daysWithVisits.has(dateKey),
-        isToday: current.isSame(moment(), 'day'),
-        isSelected: current.isSame(currentMoment, 'day'),
+        isToday: isSameDay(current, today),
+        isSelected: isSameDay(current, currentDate),
       });
-      current.add(1, 'day');
+      current = addDays(current, 1);
     }
 
     return days;
-  }, [currentMoment, daysWithVisits]);
+  }, [currentDate, daysWithVisits]);
 
   const handlePrevMonth = () => {
-    const prev = currentMoment.clone().subtract(1, 'month');
-    onMonthChange(prev.toDate());
+    onMonthChange(subMonths(currentDate, 1));
   };
 
   const handleNextMonth = () => {
-    const next = currentMoment.clone().add(1, 'month');
-    onMonthChange(next.toDate());
+    onMonthChange(addMonths(currentDate, 1));
   };
 
   const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -74,7 +82,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
           <ChevronLeft className="h-4 w-4" />
         </Button>
         <h3 className="text-sm font-semibold text-foreground">
-          {currentMoment.format('MMMM YYYY')}
+          {format(currentDate, 'MMMM yyyy')}
         </h3>
         <Button
           type="button"
@@ -120,10 +128,10 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
                 className={`rounded-full text-xs font-normal ${
                   !day.isCurrentMonth ? 'text-muted-foreground/40' : ''
                 } ${day.isSelected || day.isToday ? 'font-semibold' : ''}`}
-                onClick={() => onDateSelect(day.date.toDate())}
+                onClick={() => onDateSelect(day.date)}
                 disabled={!day.isCurrentMonth}
               >
-                {day.date.format('D')}
+                {format(day.date, 'd')}
               </Button>
               {day.hasVisits && day.isCurrentMonth && (
                 <div className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full pointer-events-none" />
