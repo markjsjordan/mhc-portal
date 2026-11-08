@@ -347,4 +347,64 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
       expect(screen.queryByRole('heading', { name: 'Edit Team Member' })).not.toBeInTheDocument();
     });
   });
+
+  it('mounts SectionAccessEditor in the edit member modal for ORG_ADMIN and hides it for BRANCH_ADMIN (wdvf3abzp9)', async () => {
+    renderSettings();
+
+    const teamTab = await screen.findByRole('tab', { name: /Team/i });
+    fireEvent.click(teamTab);
+    await screen.findByText('Admin User');
+
+    fireEvent.click(screen.getByRole('button', { name: /Edit Admin User/i }));
+    expect(await screen.findByTestId('section-access-editor')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Close modal/i }));
+    queryClient.clear();
+
+    mockApiClient.get.mockImplementation(async (url: string) => {
+      if (url === '/api/users/profile') {
+        return {
+          success: true,
+          data: {
+            id: 'user-branch-1',
+            firstName: 'Branch',
+            lastName: 'Admin',
+            email: 'branch@folkcare.example',
+            organizationId: 'org-123',
+            roles: ['BRANCH_ADMIN'],
+          },
+        };
+      }
+      if (url === '/api/organizations/org-123/users') {
+        return {
+          success: true,
+          data: [
+            {
+              id: 'user-admin-1',
+              firstName: 'Admin',
+              lastName: 'User',
+              email: 'admin@folkcare.example',
+              roles: ['COORDINATOR'],
+              status: 'ACTIVE',
+              createdAt: '2026-01-01T00:00:00.000Z',
+            },
+          ],
+        };
+      }
+      return { success: true, data: [] };
+    });
+
+    const second = render(
+      <QueryClientProvider client={queryClient}>
+        <Settings />
+      </QueryClientProvider>
+    );
+    const tabs = await second.findAllByRole('tab', { name: /Team/i });
+    fireEvent.click(tabs[tabs.length - 1]);
+    const editBtns = await second.findAllByRole('button', { name: /Edit Admin User/i });
+    fireEvent.click(editBtns[editBtns.length - 1]);
+
+    await second.findAllByRole('heading', { name: 'Edit Team Member' });
+    expect(screen.queryByTestId('section-access-editor')).not.toBeInTheDocument();
+  });
 });
