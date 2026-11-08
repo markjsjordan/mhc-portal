@@ -3,7 +3,7 @@
  */
 
 import type { ApiClient } from '@/core/services/index.js';
-import type { Caregiver, CaregiverSearchFilters, PaginatedCaregivers } from '../types/index.js';
+import type { Caregiver, CaregiverSearchFilters, PaginatedCaregivers, PortalAccessSummary } from '../types/index.js';
 
 export interface CaregiverApiService {
   searchCaregivers(filters?: CaregiverSearchFilters, page?: number, limit?: number): Promise<PaginatedCaregivers>;
@@ -13,11 +13,14 @@ export interface CaregiverApiService {
   deleteCaregiver(id: string): Promise<void>;
   /**
    * Get the caregiver profile linked to the currently authenticated
-   * user (via GET /api/caregivers/me, which resolves users.email ->
-   * caregivers.email server-side). Throws (404) for users with no
-   * linked caregiver record — e.g. admins, coordinators.
+   * user (via GET /api/caregivers/me, which resolves by the linked user_id
+   * server-side). Throws (404) for users with no linked caregiver record —
+   * e.g. admins, coordinators.
    */
   getMyCaregiverProfile(): Promise<Caregiver>;
+  getPortalAccess(id: string): Promise<PortalAccessSummary>;
+  invitePortal(id: string): Promise<PortalAccessSummary>;
+  revokePortal(id: string, reason: string): Promise<PortalAccessSummary>;
 }
 
 export const createCaregiverApiService = (apiClient: ApiClient): CaregiverApiService => {
@@ -62,6 +65,37 @@ export const createCaregiverApiService = (apiClient: ApiClient): CaregiverApiSer
 
     async getMyCaregiverProfile(): Promise<Caregiver> {
       return apiClient.get<Caregiver>('/api/caregivers/me');
+    },
+
+    async getPortalAccess(id: string): Promise<PortalAccessSummary> {
+      const response = await apiClient.get<{ success?: boolean; data?: PortalAccessSummary } | PortalAccessSummary>(
+        `/api/caregivers/${id}/portal-access`
+      );
+      if ('data' in response && response.data) {
+        return response.data;
+      }
+      return response as PortalAccessSummary;
+    },
+
+    async invitePortal(id: string): Promise<PortalAccessSummary> {
+      const response = await apiClient.post<{ success?: boolean; data?: PortalAccessSummary } | PortalAccessSummary>(
+        `/api/caregivers/${id}/portal-invite`
+      );
+      if ('data' in response && response.data) {
+        return response.data;
+      }
+      return response as PortalAccessSummary;
+    },
+
+    async revokePortal(id: string, reason: string): Promise<PortalAccessSummary> {
+      const response = await apiClient.post<{ success?: boolean; data?: PortalAccessSummary } | PortalAccessSummary>(
+        `/api/caregivers/${id}/portal-revoke`,
+        { reason }
+      );
+      if ('data' in response && response.data) {
+        return response.data;
+      }
+      return response as PortalAccessSummary;
     },
   };
 };

@@ -13,6 +13,7 @@ import { FormField } from '@/components/forms/FormField';
 import { useApiClient } from '@/core/hooks';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { User, Lock, Bell, Users, UserPlus, Mail, Clock, CheckCircle, XCircle, Trash2, Copy, Pencil } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 type SettingsTab = 'profile' | 'account' | 'preferences' | 'team';
 
@@ -518,6 +519,8 @@ interface TeamMember {
   roles: string[];
   status: 'ACTIVE' | 'INACTIVE';
   createdAt: string;
+  linkedCaregiverId?: string | null;
+  linkedFamilyClientCount?: number;
 }
 
 interface Invitation {
@@ -772,6 +775,19 @@ const TeamMemberList: React.FC<{
                       {getRoleLabel(role)}
                     </span>
                   ))}
+                  {member.linkedCaregiverId && (
+                    <Link
+                      to={`/caregivers/${member.linkedCaregiverId}`}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200"
+                    >
+                      Caregiver profile
+                    </Link>
+                  )}
+                  {typeof member.linkedFamilyClientCount === 'number' && member.linkedFamilyClientCount > 0 && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      Family access ({member.linkedFamilyClientCount})
+                    </span>
+                  )}
                 </div>
                 <span
                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
