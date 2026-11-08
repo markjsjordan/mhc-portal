@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useApiClient } from '@/core/hooks';
 import { createClientApiService } from '../services/client-api';
@@ -17,6 +17,7 @@ export const useClients = (filters?: ClientSearchFilters & SearchParams) => {
   return useQuery({
     queryKey: ['clients', filters],
     queryFn: () => clientApi.getClients(filters),
+    placeholderData: keepPreviousData,
   });
 };
 
@@ -86,6 +87,7 @@ export const useClientsDashboard = (filters?: ClientSearchFilters & SearchParams
   return useQuery({
     queryKey: ['clients', 'dashboard', filters],
     queryFn: () => clientApi.getClientsDashboard(filters),
+    placeholderData: keepPreviousData,
   });
 };
 

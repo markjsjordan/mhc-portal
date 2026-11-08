@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Grid, List, Users, Sparkles, Search } from 'lucide-react';
+import { Plus, Grid, List, Users, Sparkles, Search, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button.js';
 import {
   LoadingSpinner, 
@@ -17,7 +17,7 @@ export const ClientList: React.FC = () => {
   const { can } = usePermissions();
   const [filters, setFilters] = useState<ClientSearchFilters>({});
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const { data, isLoading, error, refetch } = useClients(filters);
+  const { data, isPending, isFetching, error, refetch } = useClients(filters);
   const {
     hasDemoData,
     isSeeding,
@@ -51,7 +51,7 @@ export const ClientList: React.FC = () => {
     return `${totalClients} total clients`;
   };
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className="flex justify-center items-center py-12">
         <LoadingSpinner size="lg" />
@@ -74,7 +74,12 @@ export const ClientList: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
+            {isFetching && (
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-label="Loading" />
+            )}
+          </div>
           <p className="text-gray-600 mt-1">
             {getSubtitleText()}
           </p>
@@ -201,7 +206,7 @@ export const ClientList: React.FC = () => {
         </div>
       )}
 
-      {data && data.hasMore && (
+      {data.hasMore && (
         <div className="flex justify-center">
           <Button variant="outline">Load More</Button>
         </div>
