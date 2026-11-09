@@ -15,7 +15,7 @@ import { NaturalLanguageCarePlanService } from '../services/natural-language-car
 
 // Validation schema for care plan generation request
 const generateCarePlanSchema = z.object({
-  clientId: z.string().uuid(),
+  clientId: z.guid(),
   description: z.string().min(10).max(5000),
   clientContext: z
     .object({

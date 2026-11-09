@@ -30,8 +30,8 @@ export function createOnCallRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const schema = z.object({
-          caregiverId: z.string().uuid(),
-          branchId: z.string().uuid().optional(),
+          caregiverId: z.guid(),
+          branchId: z.guid().optional(),
           periodType: z.enum(periodTypes as [OnCallPeriodType, ...OnCallPeriodType[]]),
           startDateTime: z.string().refine((d) => !isNaN(Date.parse(d)), {
             message: 'Invalid start date format',
@@ -39,7 +39,7 @@ export function createOnCallRoutes(pool: Pool): Router {
           endDateTime: z.string().refine((d) => !isNaN(Date.parse(d)), {
             message: 'Invalid end date format',
           }),
-          backupCaregiverId: z.string().uuid().optional(),
+          backupCaregiverId: z.guid().optional(),
           notes: z.string().optional(),
         });
 
@@ -74,7 +74,7 @@ export function createOnCallRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const schema = z.object({
-          branchId: z.string().uuid().optional(),
+          branchId: z.guid().optional(),
         });
 
         const { branchId } = schema.parse(req.query);
@@ -103,7 +103,7 @@ export function createOnCallRoutes(pool: Pool): Router {
         const schema = z.object({
           startDate: z.string().refine((d) => !isNaN(Date.parse(d))),
           endDate: z.string().refine((d) => !isNaN(Date.parse(d))),
-          branchId: z.string().uuid().optional(),
+          branchId: z.guid().optional(),
         });
 
         const { startDate, endDate, branchId } = schema.parse(req.query);
@@ -137,7 +137,7 @@ export function createOnCallRoutes(pool: Pool): Router {
         const schema = z.object({
           startDate: z.string().refine((d) => !isNaN(Date.parse(d))),
           endDate: z.string().refine((d) => !isNaN(Date.parse(d))),
-          branchId: z.string().uuid().optional(),
+          branchId: z.guid().optional(),
         });
 
         const { startDate, endDate, branchId } = schema.parse(req.query);
@@ -166,7 +166,7 @@ export function createOnCallRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          shiftId: z.string().uuid(),
+          shiftId: z.guid(),
         });
         const bodySchema = z.object({
           reason: z.string().min(1),
@@ -197,7 +197,7 @@ export function createOnCallRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          shiftId: z.string().uuid(),
+          shiftId: z.guid(),
         });
         const bodySchema = z.object({
           reason: z.string().optional(),
@@ -225,7 +225,7 @@ export function createOnCallRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          rotationId: z.string().uuid(),
+          rotationId: z.guid(),
         });
         const bodySchema = z.object({
           startDate: z.string().refine((d) => !isNaN(Date.parse(d))),

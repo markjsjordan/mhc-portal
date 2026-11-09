@@ -124,7 +124,7 @@ export function createScenarioRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const schema = z.object({
-          scenarioId: z.string().uuid(),
+          scenarioId: z.guid(),
         });
 
         const { scenarioId } = schema.parse(req.params);
@@ -152,7 +152,7 @@ export function createScenarioRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const schema = z.object({
-          scenarioId: z.string().uuid(),
+          scenarioId: z.guid(),
         });
 
         const { scenarioId } = schema.parse(req.params);
@@ -179,12 +179,12 @@ export function createScenarioRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          scenarioId: z.string().uuid(),
+          scenarioId: z.guid(),
         });
         const bodySchema = z.object({
-          visitId: z.string().uuid(),
+          visitId: z.guid(),
           changeType: z.enum(changeTypes as [ScenarioChangeType, ...ScenarioChangeType[]]),
-          newCaregiverId: z.string().uuid().optional(),
+          newCaregiverId: z.guid().optional(),
           newDate: z.string().refine((d) => !isNaN(Date.parse(d))).optional(),
           newStartTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
           newEndTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
@@ -223,15 +223,15 @@ export function createScenarioRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          scenarioId: z.string().uuid(),
+          scenarioId: z.guid(),
         });
         const bodySchema = z.object({
-          clientId: z.string().uuid(),
-          caregiverId: z.string().uuid().optional(),
+          clientId: z.guid(),
+          caregiverId: z.guid().optional(),
           scheduledDate: z.string().refine((d) => !isNaN(Date.parse(d))),
           scheduledStartTime: z.string().regex(/^\d{2}:\d{2}$/),
           scheduledEndTime: z.string().regex(/^\d{2}:\d{2}$/),
-          serviceTypeId: z.string().uuid(),
+          serviceTypeId: z.guid(),
           serviceTypeName: z.string().min(1),
           reason: z.string().optional(),
         });
@@ -269,7 +269,7 @@ export function createScenarioRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const schema = z.object({
-          scenarioId: z.string().uuid(),
+          scenarioId: z.guid(),
         });
 
         const { scenarioId } = schema.parse(req.params);
@@ -292,7 +292,7 @@ export function createScenarioRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          scenarioId: z.string().uuid(),
+          scenarioId: z.guid(),
         });
         const bodySchema = z.object({
           status: z.enum(scenarioStatuses as [ScenarioStatus, ...ScenarioStatus[]]),
@@ -321,7 +321,7 @@ export function createScenarioRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const schema = z.object({
-          scenarioId: z.string().uuid(),
+          scenarioId: z.guid(),
         });
 
         const { scenarioId } = schema.parse(req.params);
@@ -345,7 +345,7 @@ export function createScenarioRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const schema = z.object({
-          scenarioId: z.string().uuid(),
+          scenarioId: z.guid(),
         });
 
         const { scenarioId } = schema.parse(req.params);

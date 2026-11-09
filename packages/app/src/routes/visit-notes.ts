@@ -13,8 +13,8 @@ import type { NoteContextRecord } from '@folkcare/ai-services';
 // Validation schema for autofill request
 const autofillRequestSchema = z.object({
   visitId: z.string().min(1, 'visitId is required'),
-  clientId: z.string().uuid().optional(),
-  caregiverId: z.string().uuid().optional(),
+  clientId: z.guid().optional(),
+  caregiverId: z.guid().optional(),
 });
 
 interface VisitRow {

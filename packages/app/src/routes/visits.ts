@@ -726,9 +726,9 @@ export function createVisitRouter(db: Database): Router {
       const context = getUserContext(req);
 
       const createSchema = z.object({
-        clientId: z.uuid('Invalid clientId format'),
-        caregiverId: z.uuid('Invalid caregiverId format').optional().nullable(),
-        serviceTypeId: z.uuid('Invalid serviceTypeId format'),
+        clientId: z.guid('Invalid clientId format'),
+        caregiverId: z.guid('Invalid caregiverId format').optional().nullable(),
+        serviceTypeId: z.guid('Invalid serviceTypeId format'),
         serviceTypeName: z.string().optional(),
         frequency: z.enum(['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'CUSTOM']).optional(),
         rrule: z.string().optional(),
@@ -851,8 +851,8 @@ export function createVisitRouter(db: Database): Router {
       const querySchema = z.object({
         status: z.string().optional(),
         includeEnded: z.string().optional(),
-        client_id: z.uuid('Invalid client_id UUID').optional(),
-        caregiver_id: z.uuid('Invalid caregiver_id UUID').optional(),
+        client_id: z.guid('Invalid client_id UUID').optional(),
+        caregiver_id: z.guid('Invalid caregiver_id UUID').optional(),
         unassigned: z.string().optional(),
         search: z.string().optional(),
         limit: z.coerce.number().min(1).max(200).optional(),

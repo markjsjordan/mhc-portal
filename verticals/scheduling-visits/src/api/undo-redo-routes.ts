@@ -57,7 +57,7 @@ export function createUndoRedoRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const bodySchema = z.object({
-          changeId: z.string().uuid().optional(),
+          changeId: z.guid().optional(),
         });
 
         const { changeId } = bodySchema.parse(req.body);
@@ -92,7 +92,7 @@ export function createUndoRedoRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const bodySchema = z.object({
-          changeId: z.string().uuid().optional(),
+          changeId: z.guid().optional(),
         });
 
         const { changeId } = bodySchema.parse(req.body);
@@ -128,7 +128,7 @@ export function createUndoRedoRoutes(pool: Pool): Router {
       try {
         const paramsSchema = z.object({
           entityType: z.enum(['VISIT', 'SERVICE_PATTERN']),
-          entityId: z.string().uuid(),
+          entityId: z.guid(),
         });
         const querySchema = z.object({
           limit: z.coerce.number().min(1).max(100).optional(),
@@ -209,15 +209,15 @@ export function createUndoRedoRoutes(pool: Pool): Router {
         const entityTypes = ['VISIT', 'SERVICE_PATTERN'] as const;
 
         const bodySchema = z.object({
-          branchId: z.string().uuid().optional(),
+          branchId: z.guid().optional(),
           changeType: z.enum(changeTypes),
           entityType: z.enum(entityTypes),
-          entityId: z.string().uuid().optional(),
-          entityIds: z.array(z.string().uuid()).optional(),
+          entityId: z.guid().optional(),
+          entityIds: z.array(z.guid()).optional(),
           beforeState: z.record(z.string(), z.unknown()).optional(),
           afterState: z.record(z.string(), z.unknown()).optional(),
           changeDetails: z.record(z.string(), z.unknown()).optional(),
-          sessionId: z.string().uuid().optional(),
+          sessionId: z.guid().optional(),
           description: z.string().optional(),
         });
 

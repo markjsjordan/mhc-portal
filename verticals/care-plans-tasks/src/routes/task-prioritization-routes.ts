@@ -17,10 +17,10 @@ import { Pool } from 'pg';
 
 // Validation schema
 const prioritizeTasksSchema = z.object({
-  caregiverId: z.string().uuid(),
-  clientId: z.string().uuid(),
+  caregiverId: z.guid(),
+  clientId: z.guid(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  visitId: z.string().uuid().optional(),
+  visitId: z.guid().optional(),
 });
 
 /**

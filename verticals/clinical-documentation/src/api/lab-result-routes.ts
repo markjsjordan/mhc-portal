@@ -57,7 +57,7 @@ export function createLabResultRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          typeId: z.string().uuid(),
+          typeId: z.guid(),
         });
 
         const { typeId } = paramsSchema.parse(req.params);
@@ -121,7 +121,7 @@ export function createLabResultRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          typeId: z.string().uuid(),
+          typeId: z.guid(),
         });
         const bodySchema = z.object({
           code: z.string().min(1).max(50).optional(),
@@ -157,7 +157,7 @@ export function createLabResultRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          typeId: z.string().uuid(),
+          typeId: z.guid(),
         });
 
         const { typeId } = paramsSchema.parse(req.params);
@@ -182,9 +182,9 @@ export function createLabResultRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const bodySchema = z.object({
-          branchId: z.string().uuid().optional(),
-          clientId: z.string().uuid(),
-          labTypeId: z.string().uuid().optional(),
+          branchId: z.guid().optional(),
+          clientId: z.guid(),
+          labTypeId: z.guid().optional(),
           labName: z.string().min(1).max(200),
           labCode: z.string().max(50).optional(),
           numericValue: z.number().optional(),
@@ -203,7 +203,7 @@ export function createLabResultRoutes(pool: Pool): Router {
           orderingPhysician: z.string().max(200).optional(),
           specimenType: z.string().optional(),
           enteredByName: z.string().min(1),
-          visitId: z.string().uuid().optional(),
+          visitId: z.guid().optional(),
           clinicalNotes: z.string().optional(),
         });
 
@@ -254,7 +254,7 @@ export function createLabResultRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          resultId: z.string().uuid(),
+          resultId: z.guid(),
         });
 
         const { resultId } = paramsSchema.parse(req.params);
@@ -282,7 +282,7 @@ export function createLabResultRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          clientId: z.string().uuid(),
+          clientId: z.guid(),
         });
         const querySchema = z.object({
           labName: z.string().optional(),
@@ -328,7 +328,7 @@ export function createLabResultRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          clientId: z.string().uuid(),
+          clientId: z.guid(),
           labName: z.string().min(1),
         });
         const querySchema = z.object({
@@ -360,7 +360,7 @@ export function createLabResultRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          resultId: z.string().uuid(),
+          resultId: z.guid(),
         });
         const bodySchema = z.object({
           numericValue: z.number().optional(),
@@ -408,7 +408,7 @@ export function createLabResultRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          resultId: z.string().uuid(),
+          resultId: z.guid(),
         });
         const bodySchema = z.object({
           verifiedByName: z.string().min(1),
@@ -440,7 +440,7 @@ export function createLabResultRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          resultId: z.string().uuid(),
+          resultId: z.guid(),
         });
         const bodySchema = z.object({
           notes: z.string().optional(),
@@ -505,7 +505,7 @@ export function createLabResultRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          resultId: z.string().uuid(),
+          resultId: z.guid(),
         });
 
         const { resultId } = paramsSchema.parse(req.params);
@@ -563,7 +563,7 @@ export function createLabResultRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          clientId: z.string().uuid(),
+          clientId: z.guid(),
         });
         const querySchema = z.object({
           clientName: z.string().optional(),

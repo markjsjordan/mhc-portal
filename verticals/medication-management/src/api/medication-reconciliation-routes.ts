@@ -48,9 +48,9 @@ export function createMedicationReconciliationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const bodySchema = z.object({
-          branchId: z.string().uuid().optional(),
-          clientId: z.string().uuid(),
-          visitId: z.string().uuid().optional(),
+          branchId: z.guid().optional(),
+          clientId: z.guid(),
+          visitId: z.guid().optional(),
           performedByName: z.string().min(1),
           performedByCredentials: z.string().optional(),
           informationSource: z.enum(informationSources),
@@ -91,7 +91,7 @@ export function createMedicationReconciliationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          clientId: z.string().uuid(),
+          clientId: z.guid(),
         });
 
         const { clientId } = paramsSchema.parse(req.params);
@@ -118,7 +118,7 @@ export function createMedicationReconciliationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          reconciliationId: z.string().uuid(),
+          reconciliationId: z.guid(),
         });
 
         const { reconciliationId } = paramsSchema.parse(req.params);
@@ -148,7 +148,7 @@ export function createMedicationReconciliationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          clientId: z.string().uuid(),
+          clientId: z.guid(),
         });
         const querySchema = z.object({
           limit: z.coerce.number().min(1).max(100).optional(),
@@ -184,10 +184,10 @@ export function createMedicationReconciliationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          reconciliationId: z.string().uuid(),
+          reconciliationId: z.guid(),
         });
         const bodySchema = z.object({
-          medicationId: z.string().uuid().optional(),
+          medicationId: z.guid().optional(),
           medicationName: z.string().min(1),
           dosage: z.string().optional(),
           frequency: z.string().optional(),
@@ -232,7 +232,7 @@ export function createMedicationReconciliationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          reconciliationId: z.string().uuid(),
+          reconciliationId: z.guid(),
         });
         const bodySchema = z.object({
           summaryNotes: z.string().optional(),
@@ -266,7 +266,7 @@ export function createMedicationReconciliationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          reconciliationId: z.string().uuid(),
+          reconciliationId: z.guid(),
         });
         const bodySchema = z.object({
           signedByName: z.string().min(1),
@@ -323,7 +323,7 @@ export function createMedicationReconciliationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          reconciliationId: z.string().uuid(),
+          reconciliationId: z.guid(),
         });
         const bodySchema = z.object({
           notes: z.string().optional(),
@@ -353,7 +353,7 @@ export function createMedicationReconciliationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          itemId: z.string().uuid(),
+          itemId: z.guid(),
         });
 
         const { itemId } = paramsSchema.parse(req.params);
@@ -411,7 +411,7 @@ export function createMedicationReconciliationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          reconciliationId: z.string().uuid(),
+          reconciliationId: z.guid(),
         });
 
         const { reconciliationId } = paramsSchema.parse(req.params);

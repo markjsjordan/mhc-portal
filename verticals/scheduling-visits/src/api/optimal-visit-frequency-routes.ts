@@ -14,14 +14,14 @@ import { OptimalVisitFrequencyService } from '../service/optimal-visit-frequency
 
 // Validation schema for single client recommendation
 const recommendFrequencySchema = z.object({
-  clientId: z.string().uuid(),
+  clientId: z.guid(),
   includeHistoricalAnalysis: z.boolean().optional().default(true),
   includeRiskFactors: z.boolean().optional().default(true),
 });
 
 // Validation schema for batch recommendation
 const batchRecommendFrequencySchema = z.object({
-  clientIds: z.array(z.string().uuid()).min(1).max(10),
+  clientIds: z.array(z.guid()).min(1).max(10),
   includeHistoricalAnalysis: z.boolean().optional().default(true),
   includeRiskFactors: z.boolean().optional().default(true),
 });

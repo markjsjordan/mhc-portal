@@ -148,15 +148,15 @@ export const createAuditSchema = z
     auditType: auditTypeSchema,
     priority: auditPrioritySchema,
     scope: auditScopeSchema,
-    scopeEntityId: z.string().uuid().optional(),
+    scopeEntityId: z.guid().optional(),
     scopeEntityName: z.string().max(200).optional(),
     scheduledStartDate: z.string().datetime(),
     scheduledEndDate: z.string().datetime(),
-    leadAuditorId: z.string().uuid(),
-    auditorIds: z.array(z.string().uuid()).optional(),
+    leadAuditorId: z.guid(),
+    auditorIds: z.array(z.guid()).optional(),
     standardsReference: z.string().max(500).optional(),
     auditCriteria: z.array(z.string()).optional(),
-    templateId: z.string().uuid().optional(),
+    templateId: z.guid().optional(),
   })
   .refine(
     (data) => {
@@ -218,7 +218,7 @@ export const updateAuditSchema = z
  * Create Audit Finding Input Schema
  */
 export const createAuditFindingSchema = z.object({
-  auditId: z.string().uuid(),
+  auditId: z.guid(),
   title: z.string().min(1).max(200),
   description: z.string().min(1).max(2000),
   category: findingCategorySchema,
@@ -229,7 +229,7 @@ export const createAuditFindingSchema = z.object({
   evidenceUrls: z.array(z.string().url()).optional(),
   locationDescription: z.string().max(500).optional(),
   affectedEntity: affectedEntitySchema.optional(),
-  affectedEntityId: z.string().uuid().optional(),
+  affectedEntityId: z.guid().optional(),
   affectedEntityName: z.string().max(200).optional(),
   potentialImpact: z.string().max(1000).optional(),
   requiredCorrectiveAction: z.string().min(1).max(2000),
@@ -242,15 +242,15 @@ export const createAuditFindingSchema = z.object({
  */
 export const createCorrectiveActionSchema = z
   .object({
-    findingId: z.string().uuid(),
-    auditId: z.string().uuid(),
+    findingId: z.guid(),
+    auditId: z.guid(),
     title: z.string().min(1).max(200),
     description: z.string().min(1).max(2000),
     actionType: correctiveActionTypeSchema,
     rootCause: z.string().max(1000).optional(),
     contributingFactors: z.array(z.string()).optional(),
     specificActions: z.array(z.string()).min(1),
-    responsiblePersonId: z.string().uuid(),
+    responsiblePersonId: z.guid(),
     targetCompletionDate: z.string().datetime(),
     resourcesRequired: z.string().max(1000).optional(),
     estimatedCost: z.number().min(0).optional(),

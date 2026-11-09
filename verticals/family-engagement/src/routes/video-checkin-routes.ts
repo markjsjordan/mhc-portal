@@ -77,38 +77,38 @@ const invitationResponseSchema = z.enum([
 
 // Schedule call schema
 const scheduleCallSchema = z.object({
-  clientId: z.string().uuid(),
-  visitId: z.string().uuid().optional(),
+  clientId: z.guid(),
+  visitId: z.guid().optional(),
   callType: callTypeSchema,
   title: z.string().max(255).optional(),
   scheduledStartTime: z.string().datetime(),
   durationMinutes: z.number().int().min(5).max(180),
   participants: z.array(z.object({
-    userId: z.string().uuid().optional(),
+    userId: z.guid().optional(),
     role: participantRoleSchema,
-    familyMemberId: z.string().uuid().optional(),
+    familyMemberId: z.guid().optional(),
     email: z.string().email()
   })),
   recordingEnabled: z.boolean().optional(),
   notes: z.string().max(5000).optional(),
-  organizationId: z.string().uuid(),
-  branchId: z.string().uuid()
+  organizationId: z.guid(),
+  branchId: z.guid()
 });
 
 // Start call schema (on-demand)
 const startCallSchema = z.object({
-  clientId: z.string().uuid(),
-  visitId: z.string().uuid().optional(),
+  clientId: z.guid(),
+  visitId: z.guid().optional(),
   title: z.string().max(255).optional(),
   participants: z.array(z.object({
-    userId: z.string().uuid().optional(),
+    userId: z.guid().optional(),
     role: participantRoleSchema,
-    familyMemberId: z.string().uuid().optional(),
+    familyMemberId: z.guid().optional(),
     email: z.string().email()
   })),
   recordingEnabled: z.boolean().optional(),
-  organizationId: z.string().uuid(),
-  branchId: z.string().uuid()
+  organizationId: z.guid(),
+  branchId: z.guid()
 });
 
 // Update call schema
@@ -144,20 +144,20 @@ const participantFeedbackSchema = z.object({
 
 // Call filters schema
 const callFiltersSchema = z.object({
-  clientId: z.string().uuid().optional(),
-  visitId: z.string().uuid().optional(),
+  clientId: z.guid().optional(),
+  visitId: z.guid().optional(),
   callType: z.union([callTypeSchema, z.array(callTypeSchema)]).optional(),
   status: z.union([callStatusSchema, z.array(callStatusSchema)]).optional(),
-  hostUserId: z.string().uuid().optional(),
+  hostUserId: z.guid().optional(),
   scheduledFrom: z.string().datetime().optional(),
   scheduledTo: z.string().datetime().optional(),
-  organizationId: z.string().uuid().optional(),
-  branchId: z.string().uuid().optional()
+  organizationId: z.guid().optional(),
+  branchId: z.guid().optional()
 });
 
 // Create recurring schedule schema
 const createRecurringScheduleSchema = z.object({
-  clientId: z.string().uuid(),
+  clientId: z.guid(),
   title: z.string().min(1).max(255),
   description: z.string().max(5000).optional(),
   recurrenceRule: z.string().max(500),
@@ -165,31 +165,31 @@ const createRecurringScheduleSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   defaultParticipants: z.array(z.object({
-    userId: z.string().uuid().optional(),
+    userId: z.guid().optional(),
     role: participantRoleSchema,
-    familyMemberId: z.string().uuid().optional(),
+    familyMemberId: z.guid().optional(),
     email: z.string().email()
   })),
   reminderMinutesBefore: z.array(z.number().int()).optional(),
   maxParticipants: z.number().int().min(2).max(20).optional(),
   recordingEnabled: z.boolean().optional(),
-  organizationId: z.string().uuid(),
-  branchId: z.string().uuid()
+  organizationId: z.guid(),
+  branchId: z.guid()
 });
 
 // Schedule filters schema
 const scheduleFiltersSchema = z.object({
-  clientId: z.string().uuid().optional(),
+  clientId: z.guid().optional(),
   isActive: z.boolean().optional(),
-  createdByUserId: z.string().uuid().optional(),
-  organizationId: z.string().uuid().optional(),
-  branchId: z.string().uuid().optional()
+  createdByUserId: z.guid().optional(),
+  organizationId: z.guid().optional(),
+  branchId: z.guid().optional()
 });
 
 // Send invitation schema
 const sendInvitationSchema = z.object({
-  recipientUserId: z.string().uuid().optional(),
-  recipientFamilyMemberId: z.string().uuid().optional(),
+  recipientUserId: z.guid().optional(),
+  recipientFamilyMemberId: z.guid().optional(),
   recipientEmail: z.string().email(),
   recipientPhone: z.string().max(50).optional(),
   recipientName: z.string().max(255),

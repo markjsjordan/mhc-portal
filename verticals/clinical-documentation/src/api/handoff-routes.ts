@@ -46,9 +46,9 @@ export function createHandoffRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const schema = z.object({
-          branchId: z.string().uuid(),
-          clientId: z.string().uuid(),
-          toCaregiverId: z.string().uuid(),
+          branchId: z.guid(),
+          clientId: z.guid(),
+          toCaregiverId: z.guid(),
           handoffType: z.enum(handoffTypes as [HandoffType, ...HandoffType[]]),
           urgency: z.enum(urgencyLevels as [HandoffUrgency, ...HandoffUrgency[]]),
           handoffReason: z.string().min(1),
@@ -60,8 +60,8 @@ export function createHandoffRoutes(pool: Pool): Router {
           pendingTasks: z.array(z.string()).optional(),
           medicationChanges: z.array(z.string()).optional(),
           upcomingAppointments: z.array(z.string()).optional(),
-          relatedVisitId: z.string().uuid().optional(),
-          relatedNoteIds: z.array(z.string().uuid()).optional(),
+          relatedVisitId: z.guid().optional(),
+          relatedNoteIds: z.array(z.guid()).optional(),
         });
 
         const data = schema.parse(req.body);
@@ -104,7 +104,7 @@ export function createHandoffRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const schema = z.object({
-          handoffId: z.string().uuid(),
+          handoffId: z.guid(),
         });
 
         const { handoffId } = schema.parse(req.params);
@@ -155,7 +155,7 @@ export function createHandoffRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          clientId: z.string().uuid(),
+          clientId: z.guid(),
         });
         const querySchema = z.object({
           startDate: z.string().refine((d) => !isNaN(Date.parse(d))).optional(),
@@ -191,7 +191,7 @@ export function createHandoffRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const schema = z.object({
-          handoffId: z.string().uuid(),
+          handoffId: z.guid(),
         });
 
         const { handoffId } = schema.parse(req.params);
@@ -214,7 +214,7 @@ export function createHandoffRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          handoffId: z.string().uuid(),
+          handoffId: z.guid(),
         });
         const bodySchema = z.object({
           acknowledgmentNotes: z.string().optional(),
@@ -248,7 +248,7 @@ export function createHandoffRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          handoffId: z.string().uuid(),
+          handoffId: z.guid(),
         });
         const bodySchema = z.object({
           declineReason: z.string().min(1),

@@ -122,7 +122,7 @@ const createResourceSchema = z.object({
   religionSpecific: z.string().max(100).optional(),
   isFeatured: z.boolean().optional(),
   sortOrder: z.number().int().optional(),
-  organizationId: z.string().uuid().optional()
+  organizationId: z.guid().optional()
 });
 
 const resourceFiltersSchema = z.object({
@@ -135,30 +135,30 @@ const resourceFiltersSchema = z.object({
   isFeatured: z.boolean().optional(),
   isNational: z.boolean().optional(),
   state: z.string().max(2).optional(),
-  organizationId: z.string().uuid().optional(),
+  organizationId: z.guid().optional(),
   searchQuery: z.string().max(200).optional()
 });
 
 // Support schemas
 const createSupportSchema = z.object({
-  clientId: z.string().uuid(),
-  familyMemberId: z.string().uuid(),
+  clientId: z.guid(),
+  familyMemberId: z.guid(),
   lossType: lossTypeSchema,
   dateOfLoss: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   anticipatedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  assignedCoordinatorId: z.string().uuid().optional(),
+  assignedCoordinatorId: z.guid().optional(),
   initialAssessmentNotes: z.string().max(5000).optional(),
   specialConsiderations: z.string().max(2000).optional(),
   preferredContactMethod: contactMethodSchema.optional(),
   contactFrequency: contactFrequencySchema.optional(),
-  organizationId: z.string().uuid(),
-  branchId: z.string().uuid()
+  organizationId: z.guid(),
+  branchId: z.guid()
 });
 
 const updateSupportSchema = z.object({
   status: supportStatusSchema.optional(),
   dateOfLoss: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  assignedCoordinatorId: z.string().uuid().optional(),
+  assignedCoordinatorId: z.guid().optional(),
   supportPlanNotes: z.string().max(5000).optional(),
   specialConsiderations: z.string().max(2000).optional(),
   preferredContactMethod: contactMethodSchema.optional(),
@@ -168,40 +168,40 @@ const updateSupportSchema = z.object({
 });
 
 const supportFiltersSchema = z.object({
-  clientId: z.string().uuid().optional(),
-  familyMemberId: z.string().uuid().optional(),
+  clientId: z.guid().optional(),
+  familyMemberId: z.guid().optional(),
   status: z.union([supportStatusSchema, z.array(supportStatusSchema)]).optional(),
   lossType: lossTypeSchema.optional(),
-  assignedCoordinatorId: z.string().uuid().optional(),
+  assignedCoordinatorId: z.guid().optional(),
   requiresFollowUp: z.boolean().optional(),
-  organizationId: z.string().uuid().optional(),
-  branchId: z.string().uuid().optional()
+  organizationId: z.guid().optional(),
+  branchId: z.guid().optional()
 });
 
 // Interaction schema
 const logInteractionSchema = z.object({
-  bereavementSupportId: z.string().uuid(),
-  clientId: z.string().uuid(),
+  bereavementSupportId: z.guid(),
+  clientId: z.guid(),
   interactionType: interactionTypeSchema,
   interactionDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   interactionTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   durationMinutes: z.number().int().positive().optional(),
-  familyMemberIds: z.array(z.string().uuid()).optional(),
+  familyMemberIds: z.array(z.guid()).optional(),
   summary: z.string().min(1).max(5000),
   emotionalState: z.string().max(100).optional(),
   concernsRaised: z.string().max(2000).optional(),
   nextSteps: z.string().max(2000).optional(),
-  resourcesShared: z.array(z.string().uuid()).optional(),
+  resourcesShared: z.array(z.guid()).optional(),
   referralsMade: z.array(z.string().max(500)).optional(),
   requiresFollowUp: z.boolean().optional(),
   followUpDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   followUpNotes: z.string().max(2000).optional(),
-  organizationId: z.string().uuid()
+  organizationId: z.guid()
 });
 
 // Memorial schemas
 const createMemorialSchema = z.object({
-  clientId: z.string().uuid(),
+  clientId: z.guid(),
   title: z.string().min(1).max(500),
   biography: z.string().max(50000).optional(),
   obituary: z.string().max(10000).optional(),
@@ -219,8 +219,8 @@ const createMemorialSchema = z.object({
   allowCandles: z.boolean().optional(),
   privacy: memorialPrivacySchema.optional(),
   accessCode: z.string().max(50).optional(),
-  familyMemberId: z.string().uuid(),
-  organizationId: z.string().uuid()
+  familyMemberId: z.guid(),
+  organizationId: z.guid()
 });
 
 const updateMemorialSchema = z.object({
@@ -248,7 +248,7 @@ const updateMemorialSchema = z.object({
 
 // Guestbook schema
 const addGuestbookEntrySchema = z.object({
-  memorialId: z.string().uuid(),
+  memorialId: z.guid(),
   authorName: z.string().min(1).max(255),
   authorEmail: z.string().email().max(255).optional(),
   authorRelationship: z.string().max(100).optional(),
@@ -258,13 +258,13 @@ const addGuestbookEntrySchema = z.object({
 
 // Support request schema
 const submitSupportRequestSchema = z.object({
-  bereavementSupportId: z.string().uuid().optional(),
-  clientId: z.string().uuid(),
-  familyMemberId: z.string().uuid(),
+  bereavementSupportId: z.guid().optional(),
+  clientId: z.guid(),
+  familyMemberId: z.guid(),
   requestType: supportRequestTypeSchema,
   description: z.string().min(1).max(5000),
   urgency: urgencySchema.optional(),
-  organizationId: z.string().uuid()
+  organizationId: z.guid()
 });
 
 // ============================================================================

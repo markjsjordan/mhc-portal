@@ -17,7 +17,7 @@ import type {
 
 // Validation schemas
 const summarizeNoteSchema = z.object({
-  noteId: z.string().uuid(),
+  noteId: z.guid(),
   noteType: z.enum([
     'PROGRESS_NOTE',
     'VISIT_NOTE',
@@ -35,7 +35,7 @@ const summarizeNoteSchema = z.object({
 const batchSummarizeSchema = z.object({
   notes: z.array(
     z.object({
-      noteId: z.string().uuid(),
+      noteId: z.guid(),
       noteType: z.enum([
         'PROGRESS_NOTE',
         'VISIT_NOTE',
@@ -53,7 +53,7 @@ const batchSummarizeSchema = z.object({
 });
 
 const dailySummarySchema = z.object({
-  clientId: z.string().uuid(),
+  clientId: z.guid(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   includeVisits: z.boolean().default(true),
   includeMedications: z.boolean().default(true),

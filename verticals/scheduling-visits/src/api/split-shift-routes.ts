@@ -25,9 +25,9 @@ export function createSplitShiftRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const schema = z.object({
-          branchId: z.string().uuid(),
-          clientId: z.string().uuid(),
-          caregiverId: z.string().uuid(),
+          branchId: z.guid(),
+          clientId: z.guid(),
+          caregiverId: z.guid(),
           date: z.string().refine((d) => !isNaN(Date.parse(d)), {
             message: 'Invalid date format',
           }),
@@ -36,12 +36,12 @@ export function createSplitShiftRoutes(pool: Pool): Router {
               z.object({
                 startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Time must be HH:mm format'),
                 endTime: z.string().regex(/^\d{2}:\d{2}$/, 'Time must be HH:mm format'),
-                taskIds: z.array(z.string().uuid()).optional(),
+                taskIds: z.array(z.guid()).optional(),
               })
             )
             .min(2, 'Split shift must have at least 2 parts')
             .max(3, 'Split shift cannot have more than 3 parts'),
-          serviceTypeId: z.string().uuid(),
+          serviceTypeId: z.guid(),
           serviceTypeName: z.string().min(1),
           notes: z.string().optional(),
         });
@@ -78,18 +78,18 @@ export function createSplitShiftRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const schema = z.object({
-          branchId: z.string().uuid(),
-          clientId: z.string().uuid(),
-          caregiverId: z.string().uuid(),
+          branchId: z.guid(),
+          clientId: z.guid(),
+          caregiverId: z.guid(),
           date: z.string().refine((d) => !isNaN(Date.parse(d))),
           parts: z.array(
             z.object({
               startTime: z.string().regex(/^\d{2}:\d{2}$/),
               endTime: z.string().regex(/^\d{2}:\d{2}$/),
-              taskIds: z.array(z.string().uuid()).optional(),
+              taskIds: z.array(z.guid()).optional(),
             })
           ),
-          serviceTypeId: z.string().uuid(),
+          serviceTypeId: z.guid(),
           serviceTypeName: z.string().min(1),
         });
 
@@ -124,7 +124,7 @@ export function createSplitShiftRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const schema = z.object({
-          groupId: z.string().uuid(),
+          groupId: z.guid(),
         });
 
         const { groupId } = schema.parse(req.params);
@@ -152,7 +152,7 @@ export function createSplitShiftRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          caregiverId: z.string().uuid(),
+          caregiverId: z.guid(),
         });
         const querySchema = z.object({
           date: z.string().refine((d) => !isNaN(Date.parse(d))),
@@ -255,7 +255,7 @@ export function createSplitShiftRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          groupId: z.string().uuid(),
+          groupId: z.guid(),
         });
         const bodySchema = z.object({
           reason: z.string().optional(),
@@ -283,7 +283,7 @@ export function createSplitShiftRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const schema = z.object({
-          visitId: z.string().uuid(),
+          visitId: z.guid(),
         });
 
         const { visitId } = schema.parse(req.params);

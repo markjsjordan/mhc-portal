@@ -125,7 +125,7 @@ export function createCareProtocolRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const querySchema = z.object({
-          categoryId: z.string().uuid().optional(),
+          categoryId: z.guid().optional(),
           protocolType: z.enum(protocolTypes).optional(),
           isMandatory: z.coerce.boolean().optional(),
           search: z.string().optional(),
@@ -164,7 +164,7 @@ export function createCareProtocolRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          protocolId: z.string().uuid(),
+          protocolId: z.guid(),
         });
 
         const { protocolId } = paramsSchema.parse(req.params);
@@ -259,7 +259,7 @@ export function createCareProtocolRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const bodySchema = z.object({
-          categoryId: z.string().uuid().optional(),
+          categoryId: z.guid().optional(),
           name: z.string().min(1).max(200),
           code: z.string().max(50).optional(),
           description: z.string().optional(),
@@ -342,7 +342,7 @@ export function createCareProtocolRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          protocolId: z.string().uuid(),
+          protocolId: z.guid(),
         });
         const bodySchema = z.object({
           name: z.string().min(1).max(200).optional(),
@@ -389,7 +389,7 @@ export function createCareProtocolRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          protocolId: z.string().uuid(),
+          protocolId: z.guid(),
         });
         const bodySchema = z.object({
           approvedByName: z.string().min(1).max(200),
@@ -421,7 +421,7 @@ export function createCareProtocolRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          protocolId: z.string().uuid(),
+          protocolId: z.guid(),
         });
 
         const { protocolId } = paramsSchema.parse(req.params);
@@ -444,7 +444,7 @@ export function createCareProtocolRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          protocolId: z.string().uuid(),
+          protocolId: z.guid(),
         });
 
         const { protocolId } = paramsSchema.parse(req.params);
@@ -469,9 +469,9 @@ export function createCareProtocolRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const bodySchema = z.object({
-          protocolId: z.string().uuid(),
-          clientId: z.string().uuid(),
-          visitId: z.string().uuid().optional(),
+          protocolId: z.guid(),
+          clientId: z.guid(),
+          visitId: z.guid().optional(),
           complianceStatus: z.enum(complianceStatuses),
           stepsCompleted: z.array(z.number().int()).optional(),
           complianceNotes: z.string().optional(),
@@ -522,10 +522,10 @@ export function createCareProtocolRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          clientId: z.string().uuid(),
+          clientId: z.guid(),
         });
         const querySchema = z.object({
-          protocolId: z.string().uuid().optional(),
+          protocolId: z.guid().optional(),
           startDate: z.string().refine((d) => !isNaN(Date.parse(d))).optional(),
           endDate: z.string().refine((d) => !isNaN(Date.parse(d))).optional(),
           limit: z.coerce.number().min(1).max(100).optional(),
@@ -557,7 +557,7 @@ export function createCareProtocolRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          visitId: z.string().uuid(),
+          visitId: z.guid(),
         });
 
         const { visitId } = paramsSchema.parse(req.params);
@@ -580,7 +580,7 @@ export function createCareProtocolRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          complianceId: z.string().uuid(),
+          complianceId: z.guid(),
         });
         const bodySchema = z.object({
           approvedByName: z.string().min(1).max(200),
@@ -633,7 +633,7 @@ export function createCareProtocolRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          protocolId: z.string().uuid(),
+          protocolId: z.guid(),
         });
 
         const { protocolId } = paramsSchema.parse(req.params);

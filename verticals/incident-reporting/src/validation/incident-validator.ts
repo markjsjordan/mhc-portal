@@ -12,7 +12,7 @@ export const incidentStatusSchema = z.enum(['REPORTED', 'UNDER_REVIEW', 'INVESTI
 export const injurySeveritySchema = z.enum(['NONE', 'MINOR', 'MODERATE', 'SEVERE', 'FATAL']);
 
 export const createIncidentSchema = z.object({
-  clientId: z.string().uuid(),
+  clientId: z.guid(),
   incidentType: incidentTypeSchema,
   severity: incidentSeveritySchema,
   occurredAt: z.string().datetime(),
@@ -20,8 +20,8 @@ export const createIncidentSchema = z.object({
   location: z.string().min(1).max(200),
   description: z.string().min(10),
   immediateAction: z.string().min(1),
-  witnessIds: z.array(z.string().uuid()).optional(),
-  involvedStaffIds: z.array(z.string().uuid()).optional(),
+  witnessIds: z.array(z.guid()).optional(),
+  involvedStaffIds: z.array(z.guid()).optional(),
   injurySeverity: injurySeveritySchema.optional(),
   injuryDescription: z.string().optional(),
   medicalAttentionRequired: z.boolean().optional(),
