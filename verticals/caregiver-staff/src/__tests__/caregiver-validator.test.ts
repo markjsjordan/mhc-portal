@@ -92,5 +92,30 @@ describe('CaregiverValidator', () => {
         message: 'Primary Branch ID must be included in the Branch IDs list',
       });
     });
+
+    it('accepts seeded non-RFC IDs (Main Office branch / base org) — regression for 400 on create', () => {
+      const validator = new CaregiverValidator();
+      const seededBranchId = '00000000-0000-0000-0000-000000000002';
+      const input = buildBaseInput({
+        organizationId: '00000000-0000-0000-0000-000000000001',
+        branchIds: [seededBranchId],
+        primaryBranchId: seededBranchId,
+      });
+
+      const result = validator.validateCreate(input);
+
+      expect(result.errors).toBeUndefined();
+      expect(result.success).toBe(true);
+    });
+
+    it('still rejects malformed IDs', () => {
+      const validator = new CaregiverValidator();
+      const input = buildBaseInput({
+        branchIds: ['not-a-uuid'],
+        primaryBranchId: 'not-a-uuid',
+      });
+
+      expect(validator.validateCreate(input).success).toBe(false);
+    });
   });
 });
