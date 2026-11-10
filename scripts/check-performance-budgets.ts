@@ -27,8 +27,8 @@ interface BundleStats {
 }
 
 const config: BudgetConfig = {
-  maxBundleSizeGzip: 800, // Total bundle limit across all lazy chunks: 800KB gzipped (raised from 700: shadcn/ui migration measured 785KB; owner-approved, follow-up to reduce via lazy loading)
-  maxChunkSizeGzip: 220, // Per-chunk limit: 220KB gzipped (raised from 200: index chunk measured 216KB after shadcn migration; follow-up to split via lazy loading)
+  maxBundleSizeGzip: 860, // Total bundle limit across all lazy chunks: 860KB gzipped (raised from 800: preview measured 839KB after shadcn/ui + 1.1.0 features; owner-approved 2026-11-09, follow-up to reduce via lazy loading)
+  maxChunkSizeGzip: 230, // Per-chunk limit: 230KB gzipped (raised from 220: index chunk measured 222KB on preview; owner-approved 2026-11-09, follow-up to split via lazy loading)
   distPath: path.join(process.cwd(), 'packages/web/dist'),
 };
 
