@@ -15,7 +15,6 @@ import { createOptimalVisitFrequencyRoutes } from '@folkcare/scheduling-visits';
 import { createTrainingRecommendationRoutes } from '@folkcare/caregiver-staff';
 import { createBurnoutRoutes } from '@folkcare/caregiver-burnout-prediction';
 import { createAIRoutes } from '@folkcare/ai-services';
-import { createHealthRouter } from './health';
 import { createMetricsRouter } from './metrics';
 import { createAuthRouter } from './auth';
 import { sectionAccessMiddleware } from '../middleware/section-access.js';
@@ -244,10 +243,8 @@ function createFamilyEngagementRouter(handlers: ReturnType<typeof createFamilyEn
 export async function setupRoutes(app: Express, db: Database): Promise<void> {
   console.log('Setting up API routes...');
 
-  // Health check route (no authentication required)
-  const healthRouter = createHealthRouter(db);
-  app.use('/health', healthRouter);
-  console.log('  ✓ Health check route registered');
+  // Health check route is registered in server.ts BEFORE hardening middleware
+  // to ensure it remains accessible even if environment validation fails
 
   // Webhooks route (no authentication required, external services)
   app.use('/webhooks', webhooksRouter);
