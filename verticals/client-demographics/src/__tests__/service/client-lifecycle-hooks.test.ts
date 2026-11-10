@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ClientService, ClientStatusHook } from '../../service/client-service.js';
 import { ClientImportService } from '../../service/client-import-service.js';
 import { ClientRepository } from '../../repository/client-repository.js';
@@ -114,6 +114,70 @@ describe('Client Lifecycle Hooks', () => {
 
       await service.updateClient('client-1', { status: 'ACTIVE' }, mockContext);
       expect(mockHook.handleClientStatusChange).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('ClientService.deleteClient access revocation', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    const deleteContext = {
+      userId: 'user-admin',
+      organizationId: 'org-123',
+      branchIds: ['branch-123'],
+      roles: ['ORG_ADMIN'],
+      permissions: ['clients:read', 'clients:delete'],
+    } as UserContext;
+    const existing: Partial<Client> = {
+      id: 'client-1',
+      organizationId: 'org-123',
+      status: 'ACTIVE',
+      firstName: 'Alice',
+      lastName: 'Smith',
+    };
+
+    it('revokes family portal access BEFORE the soft delete', async () => {
+      const service = new ClientService(mockRepo, undefined, mockHook);
+
+      vi.spyOn(service, 'getClientById').mockResolvedValue(existing as Client);
+      const deleteSpy = vi.spyOn(mockRepo, 'delete').mockResolvedValue(undefined);
+
+      await service.deleteClient('client-1', deleteContext);
+
+      expect(mockHook.handleClientStatusChange).toHaveBeenCalledWith(
+        'client-1',
+        'ACTIVE',
+        'DISCHARGED',
+        deleteContext
+      );
+      const revokeOrder = vi.mocked(mockHook.handleClientStatusChange).mock.invocationCallOrder[0];
+      const deleteOrder = deleteSpy.mock.invocationCallOrder[0];
+      expect(revokeOrder).toBeDefined();
+      expect(deleteOrder).toBeDefined();
+      expect(revokeOrder!).toBeLessThan(deleteOrder!);
+    });
+
+    it('does not soft delete when the revoke fails', async () => {
+      const service = new ClientService(mockRepo, undefined, mockHook);
+      vi.spyOn(service, 'getClientById').mockResolvedValue(existing as Client);
+      (mockHook.handleClientStatusChange as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('revoke failed')
+      );
+      const deleteSpy = vi.spyOn(mockRepo, 'delete').mockResolvedValue(undefined);
+
+      await expect(service.deleteClient('client-1', deleteContext)).rejects.toThrow('revoke failed');
+      expect(deleteSpy).not.toHaveBeenCalled();
+    });
+
+    it('still deletes when no portal access hook is configured', async () => {
+      const service = new ClientService(mockRepo);
+      vi.spyOn(service, 'getClientById').mockResolvedValue(existing as Client);
+      const deleteSpy = vi.spyOn(mockRepo, 'delete').mockResolvedValue(undefined);
+
+      await service.deleteClient('client-1', deleteContext);
+
+      expect(deleteSpy).toHaveBeenCalledTimes(1);
     });
   });
 

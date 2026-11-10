@@ -529,6 +529,16 @@ export class CaregiverService {
     }
     this.checkOrganizationalAccess(caregiver, context);
 
+    // Revoke portal access and deactivate the linked login BEFORE the soft delete:
+    // the revoke looks the caregiver up with `deleted_at IS NULL`, and a deleted
+    // caregiver must not keep a working login (HIPAA 164.312(a)(1)).
+    await this.portalAccessHook.handleCaregiverStatusChange(
+      id,
+      caregiver.employmentStatus as CaregiverEmploymentStatus,
+      'TERMINATED',
+      context
+    );
+
     // Check if caregiver has active assignments (would be in scheduling vertical)
     // For now, just perform the delete
     await this.repository.delete(id, context);
