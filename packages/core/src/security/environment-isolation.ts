@@ -37,6 +37,22 @@ export class EnvironmentIsolationService {
     return 'development';
   }
 
+  /**
+   * Exact-match allowlist of production database hostnames from
+   * PRODUCTION_DATABASE_HOSTS (comma-separated). Entries are trimmed and
+   * lowercased; empty entries are dropped. Parameters are explicitly typed
+   * because packages/mobile compiles this source directly via a tsconfig path
+   * mapping and reports implicit-any on untyped callbacks.
+   */
+  private static getProductionHosts(): Set<string> {
+    const raw: string = process.env['PRODUCTION_DATABASE_HOSTS'] ?? '';
+    const hosts: string[] = raw
+      .split(',')
+      .map((host: string): string => host.trim().toLowerCase())
+      .filter((host: string): boolean => host.length > 0);
+    return new Set<string>(hosts);
+  }
+
   private static getDatabaseHostname(databaseUrl: string): string {
     try {
       const hostname = new URL(databaseUrl).hostname.toLowerCase();
@@ -50,14 +66,7 @@ export class EnvironmentIsolationService {
     console.log(`🔒 HIPAA-001: Environment=${this.currentEnvironment}`);
 
     const databaseUrl = process.env['DATABASE_URL'] ?? '';
-    const productionHostsEnv = process.env['PRODUCTION_DATABASE_HOSTS'] ?? '';
-    
-    const productionHosts = new Set(
-      productionHostsEnv
-        .split(',')
-        .map(host => host.trim().toLowerCase())
-        .filter(host => host.length > 0)
-    );
+    const productionHosts = EnvironmentIsolationService.getProductionHosts();
 
     const currentHost = EnvironmentIsolationService.getDatabaseHostname(databaseUrl);
     const isProductionDb = productionHosts.has(currentHost);
@@ -123,14 +132,7 @@ export class EnvironmentIsolationService {
 
   private static isProductionDatabase(): boolean {
     const databaseUrl = process.env['DATABASE_URL'] ?? '';
-    const productionHostsEnv = process.env['PRODUCTION_DATABASE_HOSTS'] ?? '';
-
-    const productionHosts = new Set(
-      productionHostsEnv
-        .split(',')
-        .map(host => host.trim().toLowerCase())
-        .filter(host => host.length > 0)
-    );
+    const productionHosts = EnvironmentIsolationService.getProductionHosts();
 
     const currentHost = EnvironmentIsolationService.getDatabaseHostname(databaseUrl);
     return productionHosts.has(currentHost);
