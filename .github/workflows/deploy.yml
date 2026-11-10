@@ -406,20 +406,27 @@ jobs:
 
       - name: Post-Deployment Validation (Production)
         if: success()
+        env:
+          # Public production alias. Not the per-deployment URL: validate-deployment.sh runs
+          # its full (no-OAuth) checks for production, which assumes a publicly reachable URL.
+          # Override with the PRODUCTION_URL repository variable if the alias changes.
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL || 'https://mhc-family-portal.vercel.app' }}
         run: |
           echo "::group::Validating production deployment"
-          ./scripts/validate-deployment.sh "https://folk.care" production
+          ./scripts/validate-deployment.sh "$PRODUCTION_URL" production
           echo "::endgroup::"
 
       - name: Deployment Summary
         if: always()
+        env:
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL || 'https://mhc-family-portal.vercel.app' }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "✅ Production Deployment Complete"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
-          echo "URL: https://folk.care"
-          echo "Health Check: https://folk.care/health"
+          echo "URL: $PRODUCTION_URL"
+          echo "Health Check: $PRODUCTION_URL/health"
           echo ""
           echo "Database: Schema migrations applied (no demo data seeded in production)"
           echo "Validation Status: See post-deployment checks above"
