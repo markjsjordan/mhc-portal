@@ -60,11 +60,23 @@ interface IntakeData {
     postalCode: string;
   };
   phone: string;
+  // Saved primary phone's type/SMS flag (edit mode); written back unchanged on save.
+  phoneType?: 'MOBILE' | 'HOME' | 'WORK';
+  phoneCanReceiveSMS?: boolean;
   email: string;
   emergencyContacts: Array<{
     name: string;
     relationship: string;
     phone: string;
+    // Set only when editing a saved contact. The row editors mutate name/relationship/
+    // phone in place, so these ride along and are written back unchanged on save.
+    id?: string;
+    isPrimary?: boolean;
+    canMakeHealthcareDecisions?: boolean;
+    phoneType?: 'MOBILE' | 'HOME' | 'WORK';
+    canReceiveSMS?: boolean;
+    email?: string;
+    notes?: string;
   }>;
   physician: {
     name: string;
@@ -176,7 +188,14 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
   const { initialData, isEditMode = false, clientId, onSuccess } = props;
   const [currentStep, setCurrentStep] = useState(1);
   const [intakeData, setIntakeData] = useState<Partial<IntakeData>>(
-    initialData ?? {
+    (initialData && {
+      ...initialData,
+      // Edit mode with no saved contacts still offers one blank row, as create mode does.
+      emergencyContacts:
+        initialData.emergencyContacts && initialData.emergencyContacts.length > 0
+          ? initialData.emergencyContacts
+          : [{ name: '', relationship: '', phone: '' }],
+    }) ?? {
       emergencyContacts: [{ name: '', relationship: '', phone: '' }],
       medications: [],
       allergies: [],
@@ -368,18 +387,31 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       : undefined;
 
     const phoneInput = intakeData.phone?.trim()
-      ? { number: intakeData.phone.trim(), type: 'MOBILE' as const, canReceiveSMS: false }
+      ? {
+          number: intakeData.phone.trim(),
+          type: intakeData.phoneType ?? ('MOBILE' as const),
+          canReceiveSMS: intakeData.phoneCanReceiveSMS ?? false,
+        }
       : undefined;
 
     const emergencyContactsInput = (intakeData.emergencyContacts ?? [])
       .filter((c) => c.name.trim() && c.phone.trim())
       .map((c) => ({
-        id: crypto.randomUUID(),
+        // A saved contact keeps its id and flags; regenerating them on every edit
+        // would break references and reset healthcare-decision authority.
+        id: c.id ?? crypto.randomUUID(),
         name: c.name.trim(),
         relationship: c.relationship.trim() || 'Emergency Contact',
-        phone: { number: c.phone.trim(), type: 'MOBILE' as const, canReceiveSMS: false },
-        isPrimary: true,
-        canMakeHealthcareDecisions: false,
+        phone: {
+          number: c.phone.trim(),
+          type: c.phoneType ?? ('MOBILE' as const),
+          canReceiveSMS: c.canReceiveSMS ?? false,
+        },
+        // New contacts keep the existing default (primary); saved flags are preserved.
+        isPrimary: c.isPrimary ?? true,
+        canMakeHealthcareDecisions: c.canMakeHealthcareDecisions ?? false,
+        ...(c.email !== undefined && { email: c.email }),
+        ...(c.notes !== undefined && { notes: c.notes }),
       }));
 
     try {
