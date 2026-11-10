@@ -943,6 +943,18 @@ export class ClientImportService implements ImportService<ClientImportRow, Clien
           } else if (existingClient && options.updateExisting) {
             const updateInput = this.mapRowToUpdateInput(record);
             await txRepo.update(existingClient.id, updateInput, context);
+            // Trigger auto-revoke hook if status changed to DISCHARGED/DECEASED
+            if (
+              updateInput.status &&
+              updateInput.status !== existingClient.status
+            ) {
+              await this.portalAccessHook.handleClientStatusChange(
+                existingClient.id,
+                existingClient.status as CoreClientStatus,
+                updateInput.status as CoreClientStatus,
+                context
+              );
+            }
             importedIds.push(existingClient.id);
             updated++;
           } else {
