@@ -37,19 +37,44 @@ export class EnvironmentIsolationService {
     return 'development';
   }
 
+  private static getDatabaseHostname(databaseUrl: string): string {
+    try {
+      const hostname = new URL(databaseUrl).hostname.toLowerCase();
+      return hostname;
+    } catch {
+      return '';
+    }
+  }
+
   private validateEnvironment(): void {
     console.log(`🔒 HIPAA-001: Environment=${this.currentEnvironment}`);
 
     const databaseUrl = process.env['DATABASE_URL'] ?? '';
-    const isProductionDb =
-      databaseUrl.includes('production') || databaseUrl.includes('prod-');
+    const productionHostsEnv = process.env['PRODUCTION_DATABASE_HOSTS'] ?? '';
+    
+    const productionHosts = new Set(
+      productionHostsEnv
+        .split(',')
+        .map(host => host.trim().toLowerCase())
+        .filter(host => host.length > 0)
+    );
 
-    if (this.currentEnvironment === 'production' && !isProductionDb) {
-      throw new Error('HIPAA VIOLATION: Production must use production database');
+    const currentHost = EnvironmentIsolationService.getDatabaseHostname(databaseUrl);
+    const isProductionDb = productionHosts.has(currentHost);
+
+    if (this.currentEnvironment === 'production') {
+      if (productionHosts.size === 0) {
+        throw new Error('HIPAA VIOLATION: PRODUCTION_DATABASE_HOSTS must be configured in production');
+      }
+      if (!isProductionDb) {
+        throw new Error('HIPAA VIOLATION: Production must use production database');
+      }
     }
 
-    if (this.currentEnvironment !== 'production' && isProductionDb) {
-      throw new Error('HIPAA VIOLATION: Non-production cannot access production database');
+    if (this.currentEnvironment !== 'production') {
+      if (productionHosts.size > 0 && isProductionDb) {
+        throw new Error('HIPAA VIOLATION: Non-production cannot access production database');
+      }
     }
 
     if (this.currentEnvironment === 'production') {
@@ -61,34 +86,58 @@ export class EnvironmentIsolationService {
     const jwtSecret = process.env['JWT_SECRET'] ?? '';
     const encryptionKey = process.env['ENCRYPTION_KEY'] ?? '';
 
-    const insecure = ['example', 'test', 'demo', 'change'];
-    const hasInsecure = insecure.some(
-      (v) =>
-        jwtSecret.toLowerCase().includes(v) ||
-        encryptionKey.toLowerCase().includes(v)
-    );
+    const insecureValues = ['example', 'test', 'demo', 'change'];
+    
+    const errors: string[] = [];
 
-    if (hasInsecure || jwtSecret.length < 32 || encryptionKey.length < 64) {
-      throw new Error('HIPAA VIOLATION: Insecure production secrets detected');
+    if (jwtSecret.length < 32) {
+      errors.push('JWT_SECRET is shorter than 32 characters');
+    }
+    
+    if (encryptionKey.length < 64) {
+      errors.push('ENCRYPTION_KEY is shorter than 64 characters');
+    }
+
+    const jwtHasInsecure = insecureValues.some(v => jwtSecret.toLowerCase().includes(v));
+    if (jwtHasInsecure) {
+      errors.push('JWT_SECRET contains a placeholder value');
+    }
+
+    const encKeyHasInsecure = insecureValues.some(v => encryptionKey.toLowerCase().includes(v));
+    if (encKeyHasInsecure) {
+      errors.push('ENCRYPTION_KEY contains a placeholder value');
+    }
+
+    if (errors.length > 0) {
+      throw new Error(`HIPAA VIOLATION: Insecure production secrets detected: ${errors.join(', ')}`);
     }
   }
 
-  static assertNotProductionForDestructiveOperation(operationName = 'nuke'): void {
+  private static isProductionEnvironment(): boolean {
     const nodeEnv = process.env['NODE_ENV'] ?? '';
     const vercelEnv = process.env['VERCEL_ENV'] ?? '';
     const envVar = process.env['ENVIRONMENT'] ?? '';
+    
+    return nodeEnv === 'production' || vercelEnv === 'production' || envVar === 'production';
+  }
+
+  private static isProductionDatabase(): boolean {
     const databaseUrl = process.env['DATABASE_URL'] ?? '';
+    const productionHostsEnv = process.env['PRODUCTION_DATABASE_HOSTS'] ?? '';
 
-    const isProdEnv =
-      nodeEnv === 'production' ||
-      vercelEnv === 'production' ||
-      envVar === 'production';
-    const isProdDb =
-      databaseUrl.includes('production') ||
-      databaseUrl.includes('prod-') ||
-      databaseUrl.includes('br-solitary-glitter');
+    const productionHosts = new Set(
+      productionHostsEnv
+        .split(',')
+        .map(host => host.trim().toLowerCase())
+        .filter(host => host.length > 0)
+    );
 
-    if (isProdEnv || isProdDb) {
+    const currentHost = EnvironmentIsolationService.getDatabaseHostname(databaseUrl);
+    return productionHosts.has(currentHost);
+  }
+
+  static assertNotProductionForDestructiveOperation(operationName = 'nuke'): void {
+    if (this.isProductionEnvironment() || this.isProductionDatabase()) {
       throw new Error(
         `HIPAA VIOLATION: Destructive operation "${operationName}" is strictly prohibited in production environments or against production databases.`
       );
