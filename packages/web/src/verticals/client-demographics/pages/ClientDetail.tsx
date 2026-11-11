@@ -8,7 +8,7 @@ import { LoadingSpinner, ErrorMessage, StatusBadge, DemoBadge } from '@/core/com
 import { usePermissions, useSectionAccess } from '@/core/hooks';
 import { formatDate, formatPhone } from '@/core/utils';
 import { useClient, useDeleteClient } from '../hooks';
-import { FamilyPortalAccessCard } from '../components';
+import { FamilyPortalAccessCard, VisitHistoryCard } from '../components';
 
 export const ClientDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -225,6 +225,9 @@ export const ClientDetail: React.FC = () => {
 
           {/* Family Portal Access */}
           <FamilyPortalAccessCard clientId={client.id} />
+
+          {/* Visit History */}
+          <VisitHistoryCard clientId={client.id} />
         </div>
 
         <div className="space-y-6">

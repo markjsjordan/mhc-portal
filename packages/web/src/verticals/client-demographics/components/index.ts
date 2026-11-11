@@ -7,3 +7,5 @@ export * from './StateSelector';
 
 export * from './FamilyPortalAccessCard';
 
+export * from './VisitHistoryCard';
+

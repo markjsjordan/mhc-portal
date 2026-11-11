@@ -64,6 +64,7 @@ import { createAIUsageRouter } from './ai-usage.js';
 import { createServiceTypesRouter } from './service-types.js';
 import { createVisitNotesRouter } from './visit-notes.js';
 import { validationRouter } from './validation';
+import { createClientVisitHistoryRouter } from './client-visit-history.js';
 
 /**
  * Helper to create router from care plan handlers object
@@ -302,6 +303,11 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
   const clientRouter = createClientRouter(clientService, db);
   app.use('/api', generalApiLimiter, clientRouter);
   console.log('  ✓ Client Demographics routes registered (with rate limiting)');
+
+  // Client Visit History routes (separate from visits:read, gated on clients:read)
+  const clientVisitHistoryRouter = createClientVisitHistoryRouter(db);
+  app.use('/api', generalApiLimiter, clientVisitHistoryRouter);
+  console.log('  ✓ Client Visit History routes registered (with rate limiting)');
 
   // Care Plans & Tasks routes
   const carePlanRepository = new CarePlanRepository(db);
