@@ -14,14 +14,14 @@ import { CarePlanEffectivenessService } from '../services/care-plan-effectivenes
 
 // Validation schema for single care plan scoring
 const scoreEffectivenessSchema = z.object({
-  carePlanId: z.string().uuid(),
+  carePlanId: z.guid(),
   evaluationPeriodDays: z.number().int().min(7).max(365).optional().default(90),
   includeRecommendations: z.boolean().optional().default(true),
 });
 
 // Validation schema for batch scoring
 const batchScoreEffectivenessSchema = z.object({
-  carePlanIds: z.array(z.string().uuid()).min(1).max(10),
+  carePlanIds: z.array(z.guid()).min(1).max(10),
   evaluationPeriodDays: z.number().int().min(7).max(365).optional().default(90),
   includeRecommendations: z.boolean().optional().default(true),
 });

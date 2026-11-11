@@ -14,7 +14,7 @@ import { TrainingRecommendationService } from '../services/training-recommendati
 
 // Validation schema for single caregiver recommendation
 const recommendTrainingSchema = z.object({
-  caregiverId: z.string().uuid(),
+  caregiverId: z.guid(),
   includeUpcomingExpirations: z.boolean().optional().default(true),
   includePerformanceAnalysis: z.boolean().optional().default(true),
   lookAheadDays: z.number().int().min(30).max(365).optional().default(90),
@@ -22,7 +22,7 @@ const recommendTrainingSchema = z.object({
 
 // Validation schema for batch recommendations
 const batchRecommendTrainingSchema = z.object({
-  caregiverIds: z.array(z.string().uuid()).min(1).max(10),
+  caregiverIds: z.array(z.guid()).min(1).max(10),
   includeUpcomingExpirations: z.boolean().optional().default(true),
   includePerformanceAnalysis: z.boolean().optional().default(true),
   lookAheadDays: z.number().int().min(30).max(365).optional().default(90),

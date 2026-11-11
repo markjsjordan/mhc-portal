@@ -35,7 +35,7 @@ export function createCalloutRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const schema = z.object({
-          caregiverId: z.string().uuid(),
+          caregiverId: z.guid(),
           calloutDate: z.string().refine((d) => !isNaN(Date.parse(d)), {
             message: 'Invalid date format',
           }),
@@ -71,7 +71,7 @@ export function createCalloutRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const schema = z.object({
-          caregiverId: z.string().uuid(),
+          caregiverId: z.guid(),
           date: z.string().refine((d) => !isNaN(Date.parse(d))),
           visitIds: z.string().optional(), // comma-separated
         });
@@ -109,8 +109,8 @@ export function createCalloutRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const schema = z.object({
-          visitId: z.string().uuid(),
-          newCaregiverId: z.string().uuid(),
+          visitId: z.guid(),
+          newCaregiverId: z.guid(),
         });
 
         const { visitId, newCaregiverId } = schema.parse(req.body);

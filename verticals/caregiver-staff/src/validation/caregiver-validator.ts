@@ -9,6 +9,9 @@ import {
 } from '../types/caregiver';
 
 // Base schemas
+// NOTE: IDs use z.guid() (any 8-4-4-4-12 hex), not z.string().uuid(). Zod 4's uuid()
+// enforces RFC version/variant bits and rejects seeded IDs such as
+// 00000000-0000-0000-0000-000000000002 (Main Office), causing 400s on create.
 const PhoneSchema = z.object({
   number: z.string().regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number format'),
   type: z.enum(['MOBILE', 'HOME', 'WORK']),
@@ -30,7 +33,7 @@ const AddressSchema = z.object({
 });
 
 const EmergencyContactSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
   name: z.string().min(1, 'Name is required'),
   relationship: z.string().min(1, 'Relationship is required'),
   phone: PhoneSchema,
@@ -42,7 +45,7 @@ const EmergencyContactSchema = z.object({
 });
 
 const PayRateSchema = z.object({
-  id: z.string().uuid(),
+  id: z.guid(),
   rateType: z.enum([
     'BASE',
     'OVERTIME',
@@ -66,11 +69,11 @@ const PayRateSchema = z.object({
 
 // Create caregiver schema
 const CreateCaregiverSchema = z.object({
-  organizationId: z.string().uuid('Invalid organization ID'),
+  organizationId: z.guid('Invalid organization ID'),
   branchIds: z
-    .array(z.string().uuid())
+    .array(z.guid())
     .min(1, 'At least one branch is required'),
-  primaryBranchId: z.string().uuid('Invalid primary branch ID'),
+  primaryBranchId: z.guid('Invalid primary branch ID'),
   employeeNumber: z.string().optional(),
   firstName: z.string().min(1, 'First name is required'),
   middleName: z.string().optional(),
@@ -146,7 +149,7 @@ const UpdateCaregiverSchema = z.object({
   alternatePhone: PhoneSchema.optional(),
   email: z.string().email('Invalid email address').optional(),
   primaryAddress: AddressSchema.optional(),
-  branchIds: z.array(z.string().uuid()).optional(),
+  branchIds: z.array(z.guid()).optional(),
   emergencyContacts: z.array(EmergencyContactSchema).optional(),
   role: z
     .enum([
@@ -165,7 +168,7 @@ const UpdateCaregiverSchema = z.object({
       'ADMINISTRATIVE',
     ] as const)
     .optional(),
-  supervisorId: z.string().uuid().optional(),
+  supervisorId: z.guid().optional(),
   credentials: z.array(z.any()).optional(), // Simplified for now
   training: z.array(z.any()).optional(),
   skills: z.array(z.any()).optional(),

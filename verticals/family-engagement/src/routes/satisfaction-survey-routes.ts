@@ -87,7 +87,7 @@ const updateSurveyTemplateSchema = z.object({
 });
 
 const createSurveyQuestionSchema = z.object({
-  surveyTemplateId: z.string().uuid(),
+  surveyTemplateId: z.guid(),
   orderIndex: z.number().int().min(1),
   questionType: questionTypeSchema,
   questionText: z.string().min(1),
@@ -98,19 +98,19 @@ const createSurveyQuestionSchema = z.object({
   maxValue: z.number().int().optional(),
   minLabel: z.string().max(100).optional(),
   maxLabel: z.string().max(100).optional(),
-  conditionalOnQuestionId: z.string().uuid().optional(),
+  conditionalOnQuestionId: z.guid().optional(),
   conditionalOperator: conditionalOperatorSchema.optional(),
   conditionalValue: z.string().max(255).optional(),
   category: z.string().max(100).optional()
 });
 
 const sendInvitationSchema = z.object({
-  surveyTemplateId: z.string().uuid(),
-  familyMemberId: z.string().uuid(),
-  clientId: z.string().uuid(),
+  surveyTemplateId: z.guid(),
+  familyMemberId: z.guid(),
+  clientId: z.guid(),
   scheduledSendAt: z.string().datetime().optional(),
   expiresAt: z.string().datetime().optional(),
-  triggerEntityId: z.string().uuid().optional(),
+  triggerEntityId: z.guid().optional(),
   triggerEntityType: z.string().max(50).optional()
 });
 
@@ -121,8 +121,8 @@ const startResponseSchema = z.object({
 });
 
 const submitAnswerSchema = z.object({
-  surveyResponseId: z.string().uuid(),
-  surveyQuestionId: z.string().uuid(),
+  surveyResponseId: z.guid(),
+  surveyQuestionId: z.guid(),
   ratingValue: z.number().int().optional(),
   textValue: z.string().optional(),
   selectedOptions: z.array(z.number().int()).optional(),
@@ -135,7 +135,7 @@ const completeResponseSchema = z.object({
 });
 
 const reorderQuestionsSchema = z.object({
-  questionIds: z.array(z.string().uuid())
+  questionIds: z.array(z.guid())
 });
 
 // ============================================================================

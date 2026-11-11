@@ -7,7 +7,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { z, type ZodType, ZodError } from 'zod';
-import sanitizeHtml from 'sanitize-html';
+import { escapeHtmlStrict } from '../utils/html-escape';
 
 /**
  * Dangerous URI protocols that can execute code.
@@ -26,7 +26,7 @@ const DANGEROUS_URI_PROTOCOLS = [
 /**
  * Sanitize a string to prevent XSS attacks.
  * 1. First strips dangerous URI protocols (javascript:, data:, etc.)
- * 2. Then uses sanitize-html to handle nested HTML tags
+ * 2. Then neutralizes all HTML via escapeHtmlStrict (dependency-free; see utils/html-escape.ts)
  */
 function sanitizeString(str: string): string {
   let result = str;
@@ -48,12 +48,8 @@ function sanitizeString(str: string): string {
     }
   }
 
-  // Use sanitize-html with strict settings - strip ALL HTML
-  return sanitizeHtml(result, {
-    allowedTags: [], // No HTML tags allowed
-    allowedAttributes: {}, // No attributes allowed
-    disallowedTagsMode: 'recursiveEscape', // Escape nested tags properly
-  });
+  // Neutralize ALL HTML: tags escaped to inert text, attributes dropped, entities normalized
+  return escapeHtmlStrict(result);
 }
 
 /**

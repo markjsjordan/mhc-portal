@@ -34,7 +34,7 @@ export const administrationStatusSchema = z.enum(['GIVEN', 'REFUSED', 'HELD', 'M
  * Create Medication Input Schema
  */
 export const createMedicationSchema = z.object({
-  clientId: z.string().uuid(),
+  clientId: z.guid(),
   medicationName: z.string().min(1).max(200),
   genericName: z.string().min(1).max(200).optional(),
   dosage: z.string().min(1).max(100),
@@ -76,8 +76,8 @@ export const updateMedicationSchema = z.object({
  */
 export const recordAdministrationSchema = z
   .object({
-    medicationId: z.string().uuid(),
-    clientId: z.string().uuid(),
+    medicationId: z.guid(),
+    clientId: z.guid(),
     administeredAt: z.string().datetime().optional(),
     scheduledFor: z.string().datetime().optional(),
     dosageGiven: z.string().min(1).max(100),
@@ -86,7 +86,7 @@ export const recordAdministrationSchema = z
     notes: z.string().max(1000).optional(),
     refusalReason: z.string().max(500).optional(),
     holdReason: z.string().max(500).optional(),
-    witnessedBy: z.string().uuid().optional(),
+    witnessedBy: z.guid().optional(),
   })
   .refine(
     (data) => {
@@ -132,11 +132,11 @@ export const recordAdministrationSchema = z
  * Check Medication Interactions Input Schema
  */
 export const checkInteractionsSchema = z.object({
-  clientId: z.string().uuid(),
+  clientId: z.guid(),
   newMedicationName: z.string().min(1).max(200).optional(),
   newMedicationDosage: z.string().min(1).max(100).optional(),
   newMedicationRoute: z.string().optional(),
-  medicationIds: z.array(z.string().uuid()).optional(),
+  medicationIds: z.array(z.guid()).optional(),
 }).refine(
   (data) => {
     // Either newMedicationName or medicationIds must be provided

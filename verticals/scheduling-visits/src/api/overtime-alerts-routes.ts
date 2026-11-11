@@ -25,7 +25,7 @@ export function createOvertimeAlertsRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const schema = z.object({
-          caregiverId: z.string().uuid(),
+          caregiverId: z.guid(),
           visitDate: z.string().refine((d) => !isNaN(Date.parse(d)), {
             message: 'Invalid date format',
           }),

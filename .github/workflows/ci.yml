@@ -290,6 +290,12 @@ jobs:
           GITHUB_REF_NAME: ${{ github.ref_name }}
         run: npx turbo run build
 
+      # Vercel's serverless launcher cannot require() ES modules, but Node >= 22.12 can, so an
+      # ESM-only transitive dependency passes lint/typecheck/tests and then crashes the deployed
+      # API at cold start (every route 500). Boot the compiled app with require(esm) disabled.
+      - name: Smoke test API module load (Vercel launcher emulation)
+        run: ./scripts/smoke-api-load.sh
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:

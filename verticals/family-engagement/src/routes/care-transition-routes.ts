@@ -93,8 +93,8 @@ const transitionLocationSchema = z.object({
 });
 
 const createTransitionSchema = z.object({
-  clientId: z.string().uuid(),
-  familyMemberId: z.string().uuid(),
+  clientId: z.guid(),
+  familyMemberId: z.guid(),
   transitionType: transitionTypeSchema,
   urgency: transitionUrgencySchema,
   anticipatedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
@@ -103,10 +103,10 @@ const createTransitionSchema = z.object({
   reason: z.string().min(1).max(2000),
   diagnosisRelated: z.string().max(500).optional(),
   familyVisibleNotes: z.string().max(2000).optional(),
-  assignedCoordinatorId: z.string().uuid().optional(),
+  assignedCoordinatorId: z.guid().optional(),
   primaryPhysician: z.string().max(255).optional(),
-  organizationId: z.string().uuid(),
-  branchId: z.string().uuid()
+  organizationId: z.guid(),
+  branchId: z.guid()
 });
 
 const updateTransitionSchema = z.object({
@@ -121,7 +121,7 @@ const updateTransitionSchema = z.object({
   diagnosisRelated: z.string().max(500).optional(),
   coordinatorNotes: z.string().max(2000).optional(),
   familyVisibleNotes: z.string().max(2000).optional(),
-  assignedCoordinatorId: z.string().uuid().optional(),
+  assignedCoordinatorId: z.guid().optional(),
   primaryPhysician: z.string().max(255).optional(),
   dischargeManager: z.string().max(255).optional(),
   followUpRequired: z.boolean().optional(),
@@ -130,17 +130,17 @@ const updateTransitionSchema = z.object({
 });
 
 const createChecklistItemSchema = z.object({
-  transitionId: z.string().uuid(),
-  clientId: z.string().uuid(),
+  transitionId: z.guid(),
+  clientId: z.guid(),
   category: checklistCategorySchema,
   title: z.string().min(1).max(500),
   description: z.string().max(2000).optional(),
   priority: z.enum(['HIGH', 'MEDIUM', 'LOW']),
   dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   assignedTo: z.enum(['FAMILY', 'COORDINATOR', 'CAREGIVER', 'OTHER']).optional(),
-  assignedUserId: z.string().uuid().optional(),
+  assignedUserId: z.guid().optional(),
   sortOrder: z.number().int().optional(),
-  organizationId: z.string().uuid()
+  organizationId: z.guid()
 });
 
 const completeChecklistItemSchema = z.object({
@@ -148,9 +148,9 @@ const completeChecklistItemSchema = z.object({
 });
 
 const logCommunicationSchema = z.object({
-  transitionId: z.string().uuid(),
-  clientId: z.string().uuid(),
-  familyMemberId: z.string().uuid(),
+  transitionId: z.guid(),
+  clientId: z.guid(),
+  familyMemberId: z.guid(),
   communicationType: communicationTypeSchema,
   direction: z.enum(['INBOUND', 'OUTBOUND']),
   subject: z.string().min(1).max(500),
@@ -158,30 +158,30 @@ const logCommunicationSchema = z.object({
   outcome: z.string().max(1000).optional(),
   followUpRequired: z.boolean().optional(),
   followUpDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  organizationId: z.string().uuid()
+  organizationId: z.guid()
 });
 
 const postUpdateSchema = z.object({
-  transitionId: z.string().uuid(),
-  clientId: z.string().uuid(),
+  transitionId: z.guid(),
+  clientId: z.guid(),
   updateType: updateTypeSchema,
   title: z.string().min(1).max(500),
   description: z.string().min(1).max(5000),
   isPublic: z.boolean(),
-  organizationId: z.string().uuid()
+  organizationId: z.guid()
 });
 
 const transitionFiltersSchema = z.object({
-  clientId: z.string().uuid().optional(),
-  familyMemberId: z.string().uuid().optional(),
+  clientId: z.guid().optional(),
+  familyMemberId: z.guid().optional(),
   transitionType: transitionTypeSchema.optional(),
   status: z.union([transitionStatusSchema, z.array(transitionStatusSchema)]).optional(),
   urgency: transitionUrgencySchema.optional(),
-  assignedCoordinatorId: z.string().uuid().optional(),
+  assignedCoordinatorId: z.guid().optional(),
   fromDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   toDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  organizationId: z.string().uuid().optional(),
-  branchId: z.string().uuid().optional()
+  organizationId: z.guid().optional(),
+  branchId: z.guid().optional()
 });
 
 // ============================================================================

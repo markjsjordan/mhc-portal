@@ -136,7 +136,7 @@ export function createPatientEducationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          topicId: z.string().uuid(),
+          topicId: z.guid(),
         });
 
         const { topicId } = paramsSchema.parse(req.params);
@@ -197,7 +197,7 @@ export function createPatientEducationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          topicId: z.string().uuid(),
+          topicId: z.guid(),
         });
         const bodySchema = z.object({
           name: z.string().min(1).max(200).optional(),
@@ -230,7 +230,7 @@ export function createPatientEducationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          topicId: z.string().uuid(),
+          topicId: z.guid(),
         });
 
         const { topicId } = paramsSchema.parse(req.params);
@@ -255,7 +255,7 @@ export function createPatientEducationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const querySchema = z.object({
-          topicId: z.string().uuid().optional(),
+          topicId: z.guid().optional(),
           materialType: z.enum(materialTypes).optional(),
           language: z.string().optional(),
           activeOnly: z.coerce.boolean().optional(),
@@ -287,7 +287,7 @@ export function createPatientEducationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const bodySchema = z.object({
-          topicId: z.string().uuid().optional(),
+          topicId: z.guid().optional(),
           name: z.string().min(1).max(200),
           description: z.string().optional(),
           materialType: z.enum(materialTypes),
@@ -324,10 +324,10 @@ export function createPatientEducationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const bodySchema = z.object({
-          branchId: z.string().uuid().optional(),
-          clientId: z.string().uuid(),
-          visitId: z.string().uuid().optional(),
-          topicId: z.string().uuid().optional(),
+          branchId: z.guid().optional(),
+          clientId: z.guid(),
+          visitId: z.guid().optional(),
+          topicId: z.guid().optional(),
           topicName: z.string().min(1).max(200),
           category: z.enum(educationCategories),
           specificContent: z.string().optional(),
@@ -415,7 +415,7 @@ export function createPatientEducationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          educationId: z.string().uuid(),
+          educationId: z.guid(),
         });
 
         const { educationId } = paramsSchema.parse(req.params);
@@ -443,7 +443,7 @@ export function createPatientEducationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          clientId: z.string().uuid(),
+          clientId: z.guid(),
         });
         const querySchema = z.object({
           category: z.enum(educationCategories).optional(),
@@ -480,7 +480,7 @@ export function createPatientEducationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          visitId: z.string().uuid(),
+          visitId: z.guid(),
         });
 
         const { visitId } = paramsSchema.parse(req.params);
@@ -541,7 +541,7 @@ export function createPatientEducationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          educationId: z.string().uuid(),
+          educationId: z.guid(),
         });
         const bodySchema = z.object({
           specificContent: z.string().optional(),
@@ -581,7 +581,7 @@ export function createPatientEducationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          educationId: z.string().uuid(),
+          educationId: z.guid(),
         });
         const bodySchema = z.object({
           notes: z.string().min(1),
@@ -608,7 +608,7 @@ export function createPatientEducationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          educationId: z.string().uuid(),
+          educationId: z.guid(),
         });
 
         const { educationId } = paramsSchema.parse(req.params);
@@ -652,7 +652,7 @@ export function createPatientEducationRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          clientId: z.string().uuid(),
+          clientId: z.guid(),
         });
         const querySchema = z.object({
           clientName: z.string().optional(),

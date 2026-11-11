@@ -69,9 +69,9 @@ export function createOrderRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const bodySchema = z.object({
-          branchId: z.string().uuid().optional(),
-          clientId: z.string().uuid(),
-          physicianId: z.string().uuid().optional(),
+          branchId: z.guid().optional(),
+          clientId: z.guid(),
+          physicianId: z.guid().optional(),
           orderType: z.enum(orderTypes),
           priority: z.enum(priorities).optional(),
           orderNumber: z.string().max(50).optional(),
@@ -85,7 +85,7 @@ export function createOrderRoutes(pool: Pool): Router {
           frequency: z.string().max(100).optional(),
           duration: z.string().max(100).optional(),
           orderSource: z.enum(orderSources),
-          communicationId: z.string().uuid().optional(),
+          communicationId: z.guid().optional(),
           sourceDetails: z.string().optional(),
           orderingPhysicianName: z.string().min(1).max(200),
           orderingPhysicianNpi: z.string().max(10).optional(),
@@ -148,7 +148,7 @@ export function createOrderRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          orderId: z.string().uuid(),
+          orderId: z.guid(),
         });
 
         const { orderId } = paramsSchema.parse(req.params);
@@ -176,7 +176,7 @@ export function createOrderRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          clientId: z.string().uuid(),
+          clientId: z.guid(),
         });
         const querySchema = z.object({
           status: z.enum(statuses).optional(),
@@ -251,7 +251,7 @@ export function createOrderRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          orderId: z.string().uuid(),
+          orderId: z.guid(),
         });
         const bodySchema = z.object({
           orderDetails: z.string().optional(),
@@ -299,7 +299,7 @@ export function createOrderRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          orderId: z.string().uuid(),
+          orderId: z.guid(),
         });
 
         const { orderId } = paramsSchema.parse(req.params);
@@ -324,7 +324,7 @@ export function createOrderRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          orderId: z.string().uuid(),
+          orderId: z.guid(),
         });
         const bodySchema = z.object({
           verifiedByName: z.string().min(1).max(200),
@@ -353,7 +353,7 @@ export function createOrderRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          orderId: z.string().uuid(),
+          orderId: z.guid(),
         });
         const bodySchema = z.object({
           acknowledgedByName: z.string().min(1).max(200),
@@ -381,7 +381,7 @@ export function createOrderRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          orderId: z.string().uuid(),
+          orderId: z.guid(),
         });
         const bodySchema = z.object({
           startedByName: z.string().min(1).max(200),
@@ -410,7 +410,7 @@ export function createOrderRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          orderId: z.string().uuid(),
+          orderId: z.guid(),
         });
         const bodySchema = z.object({
           completedByName: z.string().min(1).max(200),
@@ -439,7 +439,7 @@ export function createOrderRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          orderId: z.string().uuid(),
+          orderId: z.guid(),
         });
         const bodySchema = z.object({
           discontinuedByName: z.string().min(1).max(200),
@@ -468,7 +468,7 @@ export function createOrderRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          orderId: z.string().uuid(),
+          orderId: z.guid(),
         });
         const bodySchema = z.object({
           heldByName: z.string().min(1).max(200),
@@ -497,7 +497,7 @@ export function createOrderRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          orderId: z.string().uuid(),
+          orderId: z.guid(),
         });
         const bodySchema = z.object({
           resumedByName: z.string().min(1).max(200),
@@ -525,10 +525,10 @@ export function createOrderRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          orderId: z.string().uuid(),
+          orderId: z.guid(),
         });
         const bodySchema = z.object({
-          assignedTo: z.string().uuid(),
+          assignedTo: z.guid(),
           assignedToName: z.string().min(1).max(200),
           assignedByName: z.string().min(1).max(200),
         });
@@ -561,7 +561,7 @@ export function createOrderRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          orderId: z.string().uuid(),
+          orderId: z.guid(),
         });
         const bodySchema = z.object({
           signatureMethod: z.string().min(1).max(200),
@@ -597,7 +597,7 @@ export function createOrderRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          orderId: z.string().uuid(),
+          orderId: z.guid(),
         });
 
         const { orderId } = paramsSchema.parse(req.params);
@@ -692,10 +692,10 @@ export function createOrderRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const bodySchema = z.object({
-          orderSetId: z.string().uuid(),
-          clientId: z.string().uuid(),
-          branchId: z.string().uuid().optional(),
-          physicianId: z.string().uuid().optional(),
+          orderSetId: z.guid(),
+          clientId: z.guid(),
+          branchId: z.guid().optional(),
+          physicianId: z.guid().optional(),
           orderingPhysicianName: z.string().min(1).max(200),
           enteredByName: z.string().min(1).max(200),
         });
@@ -754,7 +754,7 @@ export function createOrderRoutes(pool: Pool): Router {
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         const paramsSchema = z.object({
-          clientId: z.string().uuid(),
+          clientId: z.guid(),
         });
         const querySchema = z.object({
           clientName: z.string().optional(),

@@ -7,7 +7,7 @@
 import { z } from 'zod';
 
 // Base validators
-const uuidSchema = z.string().uuid();
+const uuidSchema = z.guid();
 const dateSchema = z.coerce.date();
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Must be in HH:MM format');
 

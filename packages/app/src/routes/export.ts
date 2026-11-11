@@ -55,7 +55,7 @@ const auditLogExportSchema = z.object({
   format: z.enum(['json', 'csv']),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
-  userId: z.string().uuid().optional(),
+  userId: z.guid().optional(),
   eventType: z.string().optional(),
   resource: z.string().optional(),
   action: z.string().optional(),
@@ -176,7 +176,7 @@ router.post('/audit-logs', asyncHandler(async (req: Request, res: Response) => {
 
 // Validation schema for FHIR batch export
 const fhirBatchExportSchema = z.object({
-  clientIds: z.array(z.string().uuid()).min(1).max(100),
+  clientIds: z.array(z.guid()).min(1).max(100),
   includeOrganization: z.boolean().optional().default(true),
 });
 
@@ -195,7 +195,7 @@ router.get('/fhir/patient/:clientId', asyncHandler(async (req: Request, res: Res
   }
 
   const clientId = req.params.clientId;
-  if (clientId === undefined || clientId === '' || !z.string().uuid().safeParse(clientId).success) {
+  if (clientId === undefined || clientId === '' || !z.guid().safeParse(clientId).success) {
     res.status(400).json({ error: 'Valid client ID required' });
     return;
   }
@@ -296,7 +296,7 @@ const hl7ExportOptionsSchema = z.object({
 
 // Validation schema for HL7 batch export
 const hl7BatchExportSchema = z.object({
-  clientIds: z.array(z.string().uuid()).min(1).max(100),
+  clientIds: z.array(z.guid()).min(1).max(100),
   options: hl7ExportOptionsSchema.optional(),
 });
 
@@ -315,7 +315,7 @@ router.get('/hl7/patient/:clientId', asyncHandler(async (req: Request, res: Resp
   }
 
   const clientId = req.params.clientId;
-  if (clientId === undefined || clientId === '' || !z.string().uuid().safeParse(clientId).success) {
+  if (clientId === undefined || clientId === '' || !z.guid().safeParse(clientId).success) {
     res.status(400).json({ error: 'Valid client ID required' });
     return;
   }
@@ -413,7 +413,7 @@ const auditPackSchema = z.object({
   endDate: z.string().optional(),
   from_date: z.string().optional(),
   to_date: z.string().optional(),
-  branchId: z.string().uuid().optional(),
+  branchId: z.guid().optional(),
   format: z.enum(['csv', 'json']).optional().default('csv'),
 });
 

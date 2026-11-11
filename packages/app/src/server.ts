@@ -35,6 +35,7 @@ import { dataEgressControl, restrictReferrerPolicy, validateExternalServiceConfi
 import { initializeDatabase, getDatabase } from '@folkcare/core';
 import { initCacheService } from '@folkcare/core/service/cache.service';
 import { setupRoutes } from './routes/index';
+import { createHealthRouter } from './routes/health.js';
 import { swaggerSpec } from './config/swagger';
 
 const app = express();
@@ -331,6 +332,12 @@ export async function createApp(): Promise<express.Express> {
     await initCacheService();
     console.log('Cache service initialized with in-memory cache');
   }
+
+  // Register health check route BEFORE hardening middleware
+  // This ensures /health remains accessible even if environment validation fails
+  const healthRouter = createHealthRouter(db);
+  app.use('/health', healthRouter);
+  console.log('✓ Health check route registered (before hardening middleware)');
 
   // Setup middleware and routes
   setupMiddleware();

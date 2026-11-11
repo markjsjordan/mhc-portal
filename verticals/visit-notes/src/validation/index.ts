@@ -91,14 +91,14 @@ export const signatureDataSchema = z.object({
  */
 
 export const createVisitNoteSchema = z.object({
-  visitId: z.string().uuid(),
-  evvRecordId: z.string().uuid().optional(),
-  organizationId: z.string().uuid(),
-  caregiverId: z.string().uuid(),
+  visitId: z.guid(),
+  evvRecordId: z.guid().optional(),
+  organizationId: z.guid(),
+  caregiverId: z.guid(),
   noteType: visitNoteTypeSchema.optional().default('GENERAL'),
   noteText: z.string().min(1).max(50000),
   noteHtml: z.string().max(100000).optional(),
-  templateId: z.string().uuid().optional(),
+  templateId: z.guid().optional(),
   activitiesPerformed: z.array(z.string().max(200)).optional(),
   clientMood: clientMoodSchema.optional(),
   clientConditionNotes: z.string().max(5000).optional(),
@@ -158,7 +158,7 @@ export type UpdateVisitNoteInput = z.infer<typeof updateVisitNoteSchema>;
  */
 
 export const addSignatureSchema = z.object({
-  noteId: z.string().uuid(),
+  noteId: z.guid(),
   signatureType: z.enum(['caregiver', 'client', 'supervisor']),
   signatureData: z.string().min(1), // Base64 encoded image
   signatureUrl: z.string().url().max(500).optional(),
@@ -188,8 +188,8 @@ export type AddSignatureInput = z.infer<typeof addSignatureSchema>;
  */
 
 export const createNoteTemplateSchema = z.object({
-  organizationId: z.string().uuid(),
-  branchId: z.string().uuid().optional(),
+  organizationId: z.guid(),
+  branchId: z.guid().optional(),
   name: z.string().min(1).max(200),
   description: z.string().max(1000).optional(),
   category: templateCategorySchema,
@@ -231,11 +231,11 @@ export type UpdateNoteTemplateInput = z.infer<typeof updateNoteTemplateSchema>;
  */
 
 export const visitNoteSearchFiltersSchema = z.object({
-  visitId: z.string().uuid().optional(),
-  visitIds: z.array(z.string().uuid()).optional(),
-  caregiverId: z.string().uuid().optional(),
-  organizationId: z.string().uuid().optional(),
-  branchId: z.string().uuid().optional(),
+  visitId: z.guid().optional(),
+  visitIds: z.array(z.guid()).optional(),
+  caregiverId: z.guid().optional(),
+  organizationId: z.guid().optional(),
+  branchId: z.guid().optional(),
   noteType: z.array(visitNoteTypeSchema).optional(),
   isIncident: z.boolean().optional(),
   incidentSeverity: z.array(incidentSeveritySchema).optional(),
@@ -251,8 +251,8 @@ export const visitNoteSearchFiltersSchema = z.object({
 export type VisitNoteSearchFilters = z.infer<typeof visitNoteSearchFiltersSchema>;
 
 export const templateSearchFiltersSchema = z.object({
-  organizationId: z.string().uuid().optional(),
-  branchId: z.string().uuid().optional(),
+  organizationId: z.guid().optional(),
+  branchId: z.guid().optional(),
   category: z.array(templateCategorySchema).optional(),
   isActive: z.boolean().optional(),
   isSystemTemplate: z.boolean().optional(),
@@ -265,8 +265,8 @@ export type TemplateSearchFilters = z.infer<typeof templateSearchFiltersSchema>;
  */
 
 export const complianceCheckRequestSchema = z.object({
-  visitId: z.string().uuid().optional(),
-  clientId: z.string().uuid().optional(),
+  visitId: z.guid().optional(),
+  clientId: z.guid().optional(),
   lookbackDays: z.number().int().min(1).max(30).optional().default(7),
 }).refine(
   (data) => data.visitId || data.clientId || (!data.visitId && !data.clientId),

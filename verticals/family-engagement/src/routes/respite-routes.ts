@@ -49,8 +49,8 @@ const emergencyContactSchema = z.object({
 });
 
 const createRespiteRequestSchema = z.object({
-  clientId: z.string().uuid(),
-  familyMemberId: z.string().uuid(),
+  clientId: z.guid(),
+  familyMemberId: z.guid(),
   priority: respitePrioritySchema.optional(),
   reasonCategory: respiteReasonCategorySchema,
   reasonDescription: z.string().max(1000).optional(),
@@ -59,14 +59,14 @@ const createRespiteRequestSchema = z.object({
   requestedEndDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   requestedEndTime: z.string().regex(/^\d{2}:\d{2}$/),
   flexibleTiming: z.boolean().optional(),
-  preferredCaregiverId: z.string().uuid().optional(),
+  preferredCaregiverId: z.guid().optional(),
   acceptAnyCaregiver: z.boolean().optional(),
   genderPreference: genderPreferenceSchema.optional(),
   requiredSkills: z.array(z.string()).optional(),
   specialInstructions: z.string().max(2000).optional(),
   emergencyContact: emergencyContactSchema,
-  organizationId: z.string().uuid(),
-  branchId: z.string().uuid()
+  organizationId: z.guid(),
+  branchId: z.guid()
 });
 
 const updateRespiteRequestSchema = z.object({
@@ -78,7 +78,7 @@ const updateRespiteRequestSchema = z.object({
   requestedEndDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   requestedEndTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   flexibleTiming: z.boolean().optional(),
-  preferredCaregiverId: z.string().uuid().optional(),
+  preferredCaregiverId: z.guid().optional(),
   acceptAnyCaregiver: z.boolean().optional(),
   genderPreference: genderPreferenceSchema.optional(),
   requiredSkills: z.array(z.string()).optional(),
@@ -95,8 +95,8 @@ const declineRequestSchema = z.object({
 });
 
 const assignCaregiverSchema = z.object({
-  caregiverId: z.string().uuid(),
-  visitId: z.string().uuid()
+  caregiverId: z.guid(),
+  visitId: z.guid()
 });
 
 const completeRequestSchema = z.object({
@@ -106,26 +106,26 @@ const completeRequestSchema = z.object({
 });
 
 const queryFiltersSchema = z.object({
-  clientId: z.string().uuid().optional(),
-  familyMemberId: z.string().uuid().optional(),
+  clientId: z.guid().optional(),
+  familyMemberId: z.guid().optional(),
   status: z.union([respiteRequestStatusSchema, z.array(respiteRequestStatusSchema)]).optional(),
   priority: respitePrioritySchema.optional(),
   startDateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   startDateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  assignedCaregiverId: z.string().uuid().optional(),
-  organizationId: z.string().uuid().optional(),
-  branchId: z.string().uuid().optional()
+  assignedCaregiverId: z.guid().optional(),
+  organizationId: z.guid().optional(),
+  branchId: z.guid().optional()
 });
 
 const availableCaregiversSchema = z.object({
-  organizationId: z.string().uuid(),
+  organizationId: z.guid(),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   startTime: z.string().regex(/^\d{2}:\d{2}$/),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   endTime: z.string().regex(/^\d{2}:\d{2}$/),
   requiredSkills: z.array(z.string()).optional(),
   genderPreference: genderPreferenceSchema.optional(),
-  preferredCaregiverId: z.string().uuid().optional()
+  preferredCaregiverId: z.guid().optional()
 });
 
 // ============================================================================

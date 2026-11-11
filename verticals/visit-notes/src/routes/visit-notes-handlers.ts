@@ -29,9 +29,9 @@ function handleError(error: unknown, res: Response, operation: string): void {
 
 // Validation schemas
 const autofillRequestSchema = z.object({
-  visitId: z.string().uuid(),
-  clientId: z.string().uuid().optional(),
-  caregiverId: z.string().uuid().optional(),
+  visitId: z.guid(),
+  clientId: z.guid().optional(),
+  caregiverId: z.guid().optional(),
 });
 
 /**
@@ -78,7 +78,7 @@ export function createVisitNotesHandlers(
      */
     scoreQuality: async (req: Request, res: Response): Promise<void> => {
       try {
-        const { noteId } = z.object({ noteId: z.string().uuid() }).parse(req.body);
+        const { noteId } = z.object({ noteId: z.guid() }).parse(req.body);
 
         const result = await qualityService.scoreDocumentationQuality({ noteId });
 
