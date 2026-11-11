@@ -159,8 +159,9 @@ function AppRoutes() {
     );
   };
 
-  // 401 handling is now done via onAuthFailure callback in api-provider-factory
-  // (see packages/web/src/core/providers/api-provider-factory.ts)
+  // 401 handling (silent refresh, redirect to login) comes from createSessionHandlers
+  // (core/services/auth-session-handlers.ts). This app mounts no ApiProviderProvider,
+  // so useApiClient() uses its legacy client, which wires those handlers itself.
 
   return (
     <>

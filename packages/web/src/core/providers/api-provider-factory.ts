@@ -8,6 +8,7 @@ import type { ApiProvider, ApiProviderConfig } from './api-provider.interface';
 import { ProductionApiProvider } from './production-api-provider';
 import { ShowcaseApiProvider } from './showcase-api-provider';
 import { useAuthStore } from '../hooks/auth';
+import { createSessionHandlers } from '../services/auth-session-handlers';
 
 export function createApiProvider(config: ApiProviderConfig): ApiProvider {
   if (config.type === 'showcase') {
@@ -36,57 +37,12 @@ export function createApiProvider(config: ApiProviderConfig): ApiProvider {
     };
   };
 
-  const onRefresh = async (): Promise<{ token: string }> => {
-    // Call refresh endpoint with credentials: include
-    const response = await fetch(`${baseUrl}/api/auth/refresh`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    if (!response.ok) {
-      throw new Error('Refresh failed');
-    }
-
-    const data = await response.json();
-    const token = data.data?.accessToken ?? data.accessToken;
-    const user = data.data?.user ?? data.user;
-
-    // Update auth store with new token
-    if (user && token) {
-      useAuthStore.getState().setAuth(user, token);
-    } else if (token) {
-      // Token only - keep existing user
-      const currentUser = useAuthStore.getState().user;
-      if (currentUser) {
-        useAuthStore.getState().setAuth(currentUser, token);
-      }
-    }
-
-    return { token };
-  };
-
-  const onAuthFailure = () => {
-    // Clear auth and redirect to login with expired reason
-    useAuthStore.getState().clearAuth();
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login?reason=expired';
-    }
-  };
-
-  const onAccountInactive = () => {
-    // Clear auth and redirect to login with deactivated reason
-    useAuthStore.getState().clearAuth();
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login?reason=deactivated';
-    }
-  };
-
-  return new ProductionApiProvider(baseUrl, getAuthToken, getUserContext, {
-    onRefresh,
-    onAuthFailure,
-    onAccountInactive,
-  });
+  return new ProductionApiProvider(
+    baseUrl,
+    getAuthToken,
+    getUserContext,
+    createSessionHandlers(baseUrl)
+  );
 }
 
 /**
