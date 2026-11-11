@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button.js';
 import { Badge } from '@/components/ui/badge.js';
 import { LoadingSpinner, ErrorMessage } from '@/core/components';
 import { formatDate, formatTime } from '@/core/utils';
-import { apiClient } from '@/lib/api-client';
+import { useApiClient } from '@/core/hooks/api';
 
 interface VisitHistoryEntry {
   id: string;
@@ -66,6 +66,7 @@ const STATUS_COLORS: Record<string, string> = {
 export const VisitHistoryCard: React.FC<VisitHistoryCardProps> = ({ clientId }) => {
   const [page, setPage] = useState(1);
   const limit = 10;
+  const apiClient = useApiClient();
 
   const { data, isLoading, error, refetch } = useQuery<VisitHistoryResponse>({
     queryKey: ['client-visit-history', clientId, page],

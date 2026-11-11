@@ -9,3 +9,5 @@ export * from './FamilyPortalAccessCard';
 
 export * from './VisitHistoryCard';
 
+export * from './ClientTimelineCard';
+
