@@ -1134,6 +1134,17 @@ export class CaregiverImportService implements ImportService<CaregiverImportRow,
           } else if (existingCaregiver && options.updateExisting) {
             const updateInput = this.mapRowToUpdateInput(record);
             await txRepo.update(existingCaregiver.id, updateInput, context);
+            // Trigger auto-revoke hook if employment status changed
+            if (
+              updateInput.employmentStatus &&
+              updateInput.employmentStatus !== existingCaregiver.employmentStatus
+            ) {
+              await this.handleImportStatusChange(
+                existingCaregiver,
+                updateInput.employmentStatus,
+                context
+              );
+            }
             importedIds.push(existingCaregiver.id);
             updated++;
           } else {
