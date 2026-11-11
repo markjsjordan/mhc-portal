@@ -73,8 +73,8 @@ async function seedBaseData(): Promise<void> {
         updated_at = NOW()
     `, [
       FIXED_ORG_ID,
-      'Folk Home Health',
-      'Folk Home Health Services, Inc.',
+      'MHC Portal',
+      'MHC Portal',
       '555-0100',
       'info@folkcare.example',
       JSON.stringify({
@@ -200,7 +200,7 @@ async function seedBaseData(): Promise<void> {
 
     console.log('\n✅ Base seed completed successfully!\n');
     console.log('📊 Operational data created:');
-    console.log('  Organization: Folk Home Health');
+    console.log('  Organization: MHC Portal');
     console.log('  Branch: Main Office');
     console.log('  Admin User: admin@folkcare.example / Admin123!');
     console.log('  Family User: family@folkcare.example / Family123!');
