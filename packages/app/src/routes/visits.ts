@@ -1507,7 +1507,6 @@ export function createVisitRouter(db: Database): Router {
         status: string;
         actual_start_time: Date | string | null;
         internal_notes: string | null;
-        notes?: string | null;
         client_instructions: string | null;
         version?: number;
       };
@@ -1685,7 +1684,7 @@ export function createVisitRouter(db: Database): Router {
         }
       }
 
-      let newNotes = existingVisit.internal_notes ?? existingVisit.notes ?? null;
+      let newNotes = existingVisit.internal_notes ?? null;
       if (notes !== undefined) {
         newNotes = notes;
       } else if (internalNotes !== undefined) {
@@ -1708,7 +1707,7 @@ export function createVisitRouter(db: Database): Router {
         visitType: existingVisit.visit_type,
         serviceTypeId: existingVisit.service_type_id,
         serviceTypeName: existingVisit.service_type_name,
-        notes: existingVisit.internal_notes ?? existingVisit.notes ?? null,
+        notes: existingVisit.internal_notes ?? null,
         clientInstructions: existingVisit.client_instructions,
         status: existingVisit.status,
       };
@@ -1724,7 +1723,6 @@ export function createVisitRouter(db: Database): Router {
             assignment_method = $7,
             status = $8,
             internal_notes = $9,
-            notes = $9,
             client_instructions = $10,
             service_type_id = $11,
             service_type_name = $12,
