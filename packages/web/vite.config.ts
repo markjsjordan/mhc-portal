@@ -266,6 +266,8 @@ export default defineConfig({
           if (id.includes('/verticals/client-demographics/')) {
             return 'clients';
           }
+          // Default: let Vite decide
+          return undefined;
         },
       },
     },
