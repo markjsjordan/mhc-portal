@@ -879,8 +879,8 @@ export const CaregiverDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Timesheet Status */}
-      <div>
+      {/* Timesheet Status - Hidden per ticket wdvf3abbtm - EVV data collection no longer needed */}
+      {/* <div>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <h2 className={`${isMobile ? 'text-xl' : 'text-lg'} font-semibold text-gray-900`}>Timesheet Status</h2>
@@ -913,7 +913,7 @@ export const CaregiverDashboard: React.FC = () => {
             />
           ))}
         </div>
-      </div>
+      </div> */}
 
       {/* Quick Actions */}
       <Card>
@@ -922,14 +922,15 @@ export const CaregiverDashboard: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Button
+            {/* Hidden per ticket wdvf3abbtm - EVV data collection no longer needed */}
+            {/* <Button
               variant="outline"
               className="justify-start"
               onClick={handleNavigateToTimeTracking}
             >
               <Clock className="h-5 w-5 mr-2" />
               Submit Timesheet
-            </Button>
+            </Button> */}
             <Button
               variant="outline"
               className="justify-start"

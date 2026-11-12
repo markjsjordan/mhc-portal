@@ -222,10 +222,10 @@ export const TaskDetailPage: React.FC = () => {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* EVV Clock In/Out */}
-          {task.visitId && (
+          {/* EVV Clock In/Out - Hidden per ticket wdvf3abbtm - EVV data collection no longer needed */}
+          {/* {task.visitId && (
             <EVVClockControl visitId={task.visitId} />
-          )}
+          )} */}
 
           {/* Requirements */}
           <Card>

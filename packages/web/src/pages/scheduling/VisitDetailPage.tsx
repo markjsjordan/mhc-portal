@@ -528,8 +528,8 @@ export const VisitDetailPage: React.FC = () => {
               {getStatusSubtitle(visit.status)}
             </span>
 
-            {/* Primary Clock In / Clock Out Action */}
-            <div className="pt-1">
+            {/* Primary Clock In / Clock Out Action - Hidden per ticket wdvf3abbtm - EVV data collection no longer needed */}
+            {/* <div className="pt-1">
               <VisitClockControl
                 visit={visit}
                 evvRecordId={evvRecordId}
@@ -541,7 +541,7 @@ export const VisitDetailPage: React.FC = () => {
                   void refetch();
                 }}
               />
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

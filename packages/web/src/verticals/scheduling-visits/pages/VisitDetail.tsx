@@ -413,8 +413,8 @@ export const VisitDetail: React.FC = () => {
           </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Clock In / Clock Out — primary caregiver action */}
-          <VisitClockControl
+          {/* Clock In / Clock Out — Hidden per ticket wdvf3abbtm - EVV data collection no longer needed */}
+          {/* <VisitClockControl
             visit={visit}
             evvRecordId={evvRecordId}
             onClockIn={(id) => {
@@ -424,7 +424,7 @@ export const VisitDetail: React.FC = () => {
             onClockOut={() => {
               void refetch();
             }}
-          />
+          /> */}
           {isInitialVisit && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
               <ShieldCheck className="h-4 w-4 text-emerald-600" />
