@@ -184,6 +184,46 @@ const DEMO_CAREGIVERS = [
   { id: 'cg-4', name: 'David Martinez', skills: ['Personal Care'], languages: ['English', 'Spanish'] },
 ];
 
+/**
+ * Format and validate US phone numbers.
+ * Accepts: (123) 456-7890, 123-456-7890, 1234567890, +1 123 456 7890
+ * Returns formatted: (123) 456-7890 or empty string if invalid
+ */
+function formatPhoneNumber(value: string): string {
+  // Remove all non-digit characters
+  const digits = value.replace(/\D/g, '');
+  
+  // Handle empty input
+  if (digits.length === 0) return '';
+  
+  // Remove leading 1 (country code) if present
+  const phoneDigits = digits.startsWith('1') && digits.length === 11 ? digits.slice(1) : digits;
+  
+  // Format as (XXX) XXX-XXXX as user types
+  if (phoneDigits.length <= 3) {
+    return phoneDigits;
+  }
+  if (phoneDigits.length <= 6) {
+    return `(${phoneDigits.slice(0, 3)}) ${phoneDigits.slice(3)}`;
+  }
+  if (phoneDigits.length <= 10) {
+    return `(${phoneDigits.slice(0, 3)}) ${phoneDigits.slice(3, 6)}-${phoneDigits.slice(6)}`;
+  }
+  
+  // Too many digits - truncate to 10
+  return `(${phoneDigits.slice(0, 3)}) ${phoneDigits.slice(3, 6)}-${phoneDigits.slice(6, 10)}`;
+}
+
+/**
+ * Validate if phone number is complete and valid.
+ * Must be exactly 10 digits (US format).
+ */
+function isValidPhoneNumber(value: string): boolean {
+  const digits = value.replace(/\D/g, '');
+  const phoneDigits = digits.startsWith('1') && digits.length === 11 ? digits.slice(1) : digits;
+  return phoneDigits.length === 10;
+}
+
 export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = {}) {
   const { initialData, isEditMode = false, clientId, onSuccess } = props;
   const [currentStep, setCurrentStep] = useState(1);
@@ -600,9 +640,18 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                     type="tel"
                     className="w-full min-h-[44px]"
                     value={intakeData.phone ?? ''}
-                    onChange={(e) => updateData('phone', e.target.value)}
+                    onChange={(e) => {
+                      const formatted = formatPhoneNumber(e.target.value);
+                      updateData('phone', formatted);
+                    }}
                     placeholder="(555) 123-4567"
+                    aria-invalid={intakeData.phone && !isValidPhoneNumber(intakeData.phone) ? 'true' : undefined}
                   />
+                  {intakeData.phone && !isValidPhoneNumber(intakeData.phone) && (
+                    <span className="text-xs text-destructive mt-1">
+                      Phone must be 10 digits
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -755,12 +804,19 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                         className="w-full min-h-[44px]"
                         value={contact.phone}
                         onChange={(e) => {
+                          const formatted = formatPhoneNumber(e.target.value);
                           const contacts = [...(intakeData.emergencyContacts ?? [])];
-                          if (contacts[index]) contacts[index].phone = e.target.value;
+                          if (contacts[index]) contacts[index].phone = formatted;
                           updateData('emergencyContacts', contacts);
                         }}
                         placeholder="(555) 123-4567"
+                        aria-invalid={contact.phone && !isValidPhoneNumber(contact.phone) ? 'true' : undefined}
                       />
+                      {contact.phone && !isValidPhoneNumber(contact.phone) && (
+                        <span className="text-xs text-destructive mt-1">
+                          Phone must be 10 digits
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
