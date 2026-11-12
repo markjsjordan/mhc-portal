@@ -82,6 +82,7 @@ Folk is designed with HIPAA compliance in mind:
 - **Monitoring**: Sentry for error tracking and security monitoring
 - **Secrets Management**: Environment variables, never committed to git
 - **Dependency Scanning**: Automated dependency vulnerability scanning
+- **Audit Exceptions**: Documented accepted findings in [docs/AUDIT_EXCEPTIONS.md](./docs/AUDIT_EXCEPTIONS.md)
 
 ## Security Best Practices for Self-Hosting
 
