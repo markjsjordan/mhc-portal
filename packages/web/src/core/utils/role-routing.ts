@@ -15,7 +15,7 @@ export const ROLE_DASHBOARDS: Record<Role, string> = {
   ADMIN: '/admin',
   COORDINATOR: '/analytics/coordinator',
   SCHEDULER: '/scheduling',
-  CAREGIVER: '/tasks',
+  CAREGIVER: '/caregiver/dashboard',
   FAMILY: '/family-portal',
   CLIENT: '/family-portal',
   BILLING: '/billing',

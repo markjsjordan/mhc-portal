@@ -59,9 +59,9 @@ describe('role-routing utilities', () => {
       expect(result).toBe('/scheduling');
     });
 
-    it('should return tasks for CAREGIVER', () => {
+    it('should return caregiver dashboard for CAREGIVER', () => {
       const result = getDashboardRoute(['CAREGIVER']);
-      expect(result).toBe('/tasks');
+      expect(result).toBe('/caregiver/dashboard');
     });
 
     it('should return clients dashboard for NURSE', () => {
@@ -157,7 +157,7 @@ describe('role-routing utilities', () => {
     });
 
     it('should not redirect caregivers on regular routes', () => {
-      const result = shouldRedirect(['CAREGIVER'], '/tasks');
+      const result = shouldRedirect(['CAREGIVER'], '/caregiver/dashboard');
       expect(result).toBe(false);
     });
   });
