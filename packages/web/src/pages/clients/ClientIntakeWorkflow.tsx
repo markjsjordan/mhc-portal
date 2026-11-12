@@ -28,6 +28,7 @@ import { Textarea } from '@/components/ui/textarea.js';
 import { Checkbox } from '@/components/ui/checkbox.js';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group.js';
 import { Label } from '@/components/ui/label.js';
+import { blankToUndefined, findIntakeFormatError } from './intake-payload.js';
 
 /**
  * Client Intake Workflow
@@ -334,6 +335,19 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       return;
     }
 
+    // Catch values the server will reject (phone, state, ZIP) here, on the step that
+    // owns the field, instead of failing after submit with a generic toast.
+    const formatError = findIntakeFormatError({
+      phone: intakeData.phone,
+      address: intakeData.address,
+      emergencyContacts: intakeData.emergencyContacts,
+    });
+    if (formatError) {
+      toast.error(formatError.message);
+      setCurrentStep(formatError.step);
+      return;
+    }
+
     // Resolve branch ID gracefully:
     // 1. User-selected branch
     // 2. User assigned branch (from JWT / user profile)
@@ -359,7 +373,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       ? {
           type: 'HOME' as const,
           line1: intakeData.address!.line1.trim(),
-          line2: intakeData.address?.line2.trim() ?? undefined,
+          line2: blankToUndefined(intakeData.address?.line2),
           city: intakeData.address!.city.trim(),
           state: intakeData.address!.state.trim().toUpperCase(),
           postalCode: intakeData.address!.postalCode.trim(),
@@ -389,7 +403,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           firstName: intakeData.firstName.trim(),
           lastName: intakeData.lastName.trim(),
           dateOfBirth: intakeData.dateOfBirth,
-          email: intakeData.email?.trim() ?? undefined,
+          email: blankToUndefined(intakeData.email),
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
           emergencyContacts: emergencyContactsInput,
@@ -413,7 +427,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           firstName: intakeData.firstName.trim(),
           lastName: intakeData.lastName.trim(),
           dateOfBirth: intakeData.dateOfBirth,
-          email: intakeData.email?.trim() ?? undefined,
+          email: blankToUndefined(intakeData.email),
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
           emergencyContacts: emergencyContactsInput,
