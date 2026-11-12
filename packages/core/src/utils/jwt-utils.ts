@@ -26,6 +26,7 @@ export interface TokenPayload {
   caregiverId?: UUID;
   familyMemberIds?: UUID[];
   familyClientIds?: UUID[];
+  directClientId?: UUID; // Direct client portal access (CLIENT role)
   impersonation?: {
     adminUserId: UUID;
     adminEmail: string;

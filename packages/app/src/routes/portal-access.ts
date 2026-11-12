@@ -392,5 +392,160 @@ export function createPortalAccessRouter(db: Database): Router {
     }
   });
 
+  /**
+   * POST /api/clients/:id/portal-invite
+   * Invite a client directly to the portal (CLIENT role)
+   */
+  router.post('/clients/:id/portal-invite', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const context = getUserContext(req);
+      const permissionService = new PermissionService();
+      if (!permissionService.hasPermission(context, 'clients:update')) {
+        res.status(403).json({ success: false, error: 'Permission denied: requires clients:update' });
+        return;
+      }
+
+      const clientId = req.params['id']!;
+
+      // Validate client
+      const clientCheckRes = await db.query<{
+        id: string;
+        email: string | null;
+        first_name: string | null;
+        last_name: string | null;
+        organization_id: string;
+        status: string;
+      }>(
+        `SELECT id, email, first_name, last_name, organization_id, status
+         FROM clients
+         WHERE id = $1 AND deleted_at IS NULL`,
+        [clientId]
+      );
+      const clientCheck = clientCheckRes.rows[0];
+      if (clientCheck === undefined || clientCheck.organization_id !== context.organizationId) {
+        res.status(404).json({ success: false, error: `Client not found: ${clientId}` });
+        return;
+      }
+
+      if (['DISCHARGED', 'DECEASED'].includes(clientCheck.status)) {
+        res.status(409).json({
+          success: false,
+          error: `Cannot invite client with status ${clientCheck.status}`,
+        });
+        return;
+      }
+
+      const trimmedEmail = clientCheck.email?.trim();
+      if (!trimmedEmail) {
+        res.status(400).json({ success: false, error: 'Client must have a valid email to be invited' });
+        return;
+      }
+
+      const auditService = new AuditService(db);
+      const portalAccessService = new PortalAccessService(db, permissionService, auditService);
+
+      const inviteResult = await portalAccessService.inviteClient(clientId, context);
+
+      // Attempt email send
+      try {
+        const orgRes = await db.query<{ name: string }>(
+          `SELECT name FROM organizations WHERE id = $1`,
+          [context.organizationId]
+        );
+        const orgName = orgRes.rows[0]?.name ?? 'MHC Portal';
+        const inviterRes = await db.query<{ first_name: string | null; last_name: string | null }>(
+          `SELECT first_name, last_name FROM users WHERE id = $1`,
+          [context.userId]
+        );
+        const inviter = inviterRes.rows[0];
+        const inviterName = inviter
+          ? `${inviter.first_name ?? ''} ${inviter.last_name ?? ''}`.trim() || 'Administrator'
+          : 'Administrator';
+
+        const emailService = createEmailService();
+        await emailService.sendInvitation({
+          recipientEmail: trimmedEmail,
+          recipientName: `${clientCheck.first_name ?? ''} ${clientCheck.last_name ?? ''}`.trim() || trimmedEmail,
+          inviterName,
+          organizationName: orgName,
+          invitationToken: inviteResult.token,
+          expiresAt: inviteResult.expiresAt,
+        });
+      } catch (err) {
+        console.warn('[PortalAccess] Failed to send client invitation email:', err);
+      }
+
+      res.json({ success: true, data: inviteResult });
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        res.status(404).json({ success: false, error: error.message });
+        return;
+      }
+      if (error instanceof ValidationError) {
+        res.status(400).json({ success: false, error: error.message });
+        return;
+      }
+      if (error instanceof ConflictError) {
+        res.status(409).json({ success: false, error: error.message });
+        return;
+      }
+      if (error instanceof PermissionError) {
+        res.status(403).json({ success: false, error: error.message });
+        return;
+      }
+      next(error);
+    }
+  });
+
+  /**
+   * POST /api/clients/:id/portal-revoke
+   * Revoke portal access for a client
+   */
+  router.post('/clients/:id/portal-revoke', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const context = getUserContext(req);
+      const permissionService = new PermissionService();
+      if (!permissionService.hasPermission(context, 'clients:update')) {
+        res.status(403).json({ success: false, error: 'Permission denied: requires clients:update' });
+        return;
+      }
+
+      const parseResult = revokeReasonSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        res.status(400).json({
+          success: false,
+          error: parseResult.error.issues[0]?.message ?? 'Invalid reason',
+        });
+        return;
+      }
+
+      const clientId = req.params['id']!;
+      const auditService = new AuditService(db);
+      const portalAccessService = new PortalAccessService(db, permissionService, auditService);
+
+      await portalAccessService.revokeClientAccess(clientId, parseResult.data.reason, context);
+
+      res.json({ success: true });
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        res.status(404).json({ success: false, error: error.message });
+        return;
+      }
+      if (error instanceof ValidationError) {
+        res.status(400).json({ success: false, error: error.message });
+        return;
+      }
+      if (error instanceof ConflictError) {
+        res.status(409).json({ success: false, error: error.message });
+        return;
+      }
+      if (error instanceof PermissionError) {
+        res.status(403).json({ success: false, error: error.message });
+        return;
+      }
+      next(error);
+    }
+  });
+
   return router;
 }
