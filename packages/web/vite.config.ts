@@ -216,8 +216,56 @@ export default defineConfig({
         /sentry_cpu_profiler.*\.node$/,
       ],
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+        manualChunks: (id) => {
+          // React core libraries - split react and react-dom
+          if (id.includes('node_modules/react/') && !id.includes('react-dom') && !id.includes('react-router')) {
+            return 'react';
+          }
+          if (id.includes('node_modules/react-dom')) {
+            return 'react-dom';
+          }
+          if (id.includes('node_modules/react-router-dom') || id.includes('node_modules/react-router')) {
+            return 'react-router';
+          }
+          // Vercel analytics (lazy loaded, non-critical)
+          if (id.includes('node_modules/@vercel/analytics') || id.includes('node_modules/@vercel/speed-insights')) {
+            return 'analytics';
+          }
+          // Date/time libraries
+          if (id.includes('node_modules/moment') || id.includes('node_modules/date-fns')) {
+            return 'moment';
+          }
+          // Validation libraries
+          if (id.includes('node_modules/zod')) {
+            return 'zod';
+          }
+          // TanStack Query
+          if (id.includes('node_modules/@tanstack/react-query')) {
+            return 'react-query';
+          }
+          // UI component libraries
+          if (id.includes('node_modules/sonner') || id.includes('node_modules/lucide-react') || id.includes('node_modules/@radix-ui')) {
+            return 'ui-libs';
+          }
+          // Large verticals - split each into its own chunk
+          if (id.includes('/verticals/scheduling-visits/')) {
+            return 'scheduling';
+          }
+          if (id.includes('/verticals/billing-invoicing/')) {
+            return 'billing';
+          }
+          if (id.includes('/verticals/payroll-processing/')) {
+            return 'payroll';
+          }
+          if (id.includes('/verticals/care-plans/')) {
+            return 'care-plans';
+          }
+          if (id.includes('/verticals/caregivers/')) {
+            return 'caregivers';
+          }
+          if (id.includes('/verticals/client-demographics/')) {
+            return 'clients';
+          }
         },
       },
     },
