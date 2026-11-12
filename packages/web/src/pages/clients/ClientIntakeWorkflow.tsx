@@ -431,7 +431,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
           emergencyContacts: emergencyContactsInput,
-          status: 'PENDING_INTAKE',
+          status: 'ACTIVE',
         };
 
         const newClient = await createClient.mutateAsync(createInput);

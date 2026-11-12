@@ -4,11 +4,11 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { CaregiverActionButtons } from '../CaregiverActionButtons';
-import { useAuth } from '@/core/hooks';
+import { useAuth } from '@/core/hooks/auth';
 import type { Caregiver } from '../../types/index';
 
 // Mock useAuth
-vi.mock('@/core/hooks', () => ({
+vi.mock('@/core/hooks/auth', () => ({
   useAuth: vi.fn(),
 }));
 
@@ -43,7 +43,7 @@ const mockAuthUser = {
   id: 'user-1',
   email: 'admin@example.com',
   roles: ['SUPER_ADMIN'],
-  permissions: ['CAREGIVER_READ', 'CAREGIVER_WRITE', 'CAREGIVER_DELETE', 'CAREGIVER_CREATE', 'AUDIT_READ'],
+  permissions: ['*:*'],
 };
 
 describe('CaregiverActionButtons', () => {
@@ -152,9 +152,9 @@ describe('CaregiverActionButtons', () => {
     expect(deleteButton).toBeDisabled();
   });
 
-  test('disables edit button when lacking CAREGIVER_WRITE permission', () => {
+  test('disables edit button when lacking caregivers:update permission', () => {
     (useAuth as any).mockReturnValue({
-      user: { ...mockAuthUser, permissions: ['CAREGIVER_READ'] },
+      user: { ...mockAuthUser, permissions: ['caregivers:read'] },
     });
 
     render(
@@ -169,9 +169,9 @@ describe('CaregiverActionButtons', () => {
     expect(screen.getByRole('button', { name: /edit/i })).toBeDisabled();
   });
 
-  test('disables delete button when lacking CAREGIVER_DELETE permission', () => {
+  test('disables delete button when lacking caregivers:delete permission', () => {
     (useAuth as any).mockReturnValue({
-      user: { ...mockAuthUser, permissions: ['CAREGIVER_READ', 'CAREGIVER_WRITE'] },
+      user: { ...mockAuthUser, permissions: ['caregivers:read', 'caregivers:update'] },
     });
 
     render(
@@ -239,9 +239,9 @@ describe('CaregiverActionButtons', () => {
     expect(onDuplicate).toHaveBeenCalled();
   });
 
-  test('hides duplicate menu item when lacking CAREGIVER_CREATE permission', async () => {
+  test('hides duplicate menu item when lacking caregivers:create permission', async () => {
     (useAuth as any).mockReturnValue({
-      user: { ...mockAuthUser, permissions: ['CAREGIVER_READ', 'CAREGIVER_WRITE', 'CAREGIVER_DELETE'] },
+      user: { ...mockAuthUser, permissions: ['caregivers:read', 'caregivers:update', 'caregivers:delete'] },
     });
 
     render(
@@ -302,5 +302,38 @@ describe('CaregiverActionButtons', () => {
     await waitFor(() => {
       expect(screen.queryByText(/duplicate caregiver/i)).not.toBeInTheDocument();
     });
+  });
+
+  test('caregivers:* holder can edit, delete and duplicate', async () => {
+    (useAuth as any).mockReturnValue({
+      user: { ...mockAuthUser, roles: ['ADMIN'], permissions: ['caregivers:*'] },
+    });
+    render(
+      <CaregiverActionButtons
+        caregiver={mockCaregiver}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onDuplicate={vi.fn()}
+      />
+    );
+    expect(screen.getByRole('button', { name: /edit/i })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /delete/i })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: /more actions/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/duplicate caregiver/i)).toBeInTheDocument();
+    });
+  });
+
+  test('super admin (*:*) can edit and delete', () => {
+    render(
+      <CaregiverActionButtons
+        caregiver={mockCaregiver}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onDuplicate={vi.fn()}
+      />
+    );
+    expect(screen.getByRole('button', { name: /edit/i })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /delete/i })).toBeEnabled();
   });
 });

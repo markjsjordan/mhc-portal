@@ -9,7 +9,7 @@
 import React, { useState } from 'react';
 import { Edit2, Trash2, Copy, History, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button.js';
-import { useAuth } from '@/core/hooks/index.js';
+import { usePermissions } from '@/core/hooks/permissions.js';
 import type { Caregiver } from '../types/index.js';
 
 export interface CaregiverActionButtonsProps {
@@ -111,14 +111,15 @@ export const CaregiverActionButtons: React.FC<CaregiverActionButtonsProps> = ({
   onViewHistory,
   isLoading = false,
 }) => {
-  const { user } = useAuth();
+  const { can } = usePermissions();
   const [moreOpen, setMoreOpen] = useState(false);
 
   // Permission checks
-  const canEdit = user?.permissions.includes('CAREGIVER_WRITE') ?? false;
-  const canDelete = user?.permissions.includes('CAREGIVER_DELETE') ?? false;
-  const canDuplicate = user?.permissions.includes('CAREGIVER_CREATE') ?? false;
-  const canViewHistory = user?.permissions.includes('AUDIT_READ') ?? false;
+  // Wildcard-aware; strings match what the backend enforces so UI and 403 agree.
+  const canEdit = can('caregivers:update');
+  const canDelete = can('caregivers:delete');
+  const canDuplicate = can('caregivers:create');
+  const canViewHistory = can('audit-logs:read');
 
   // Status-based rules
   const isDeletable = caregiver.status !== 'TERMINATED' && caregiver.status !== 'RETIRED';
