@@ -8,12 +8,13 @@
  * - Audits access to the audit log itself
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Activity,
   Download,
   ShieldAlert,
   Search,
+  Loader2,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card.js';
 import { Button } from '@/components/ui/button.js';
@@ -35,167 +36,53 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select.js';
-
-export interface AuditLogEntry {
-  id: string;
-  timestamp: string;
-  actor: {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-  };
-  action: string;
-  eventType: 'AUTHENTICATION' | 'AUTHORIZATION' | 'DATA_ACCESS' | 'DATA_MODIFICATION' | 'CONFIGURATION' | 'SECURITY';
-  resourceType: string;
-  resourceId: string;
-  clientName?: string;
-  phiAccessed: boolean;
-  result: 'SUCCESS' | 'FAILURE';
-  ipAddress: string;
-}
-
-// Demo IP helper avoiding sonarjs/no-hardcoded-ip
-const getDemoIP = (lastOctet: number): string => ['10', '0', '4', String(lastOctet)].join('.');
-
-const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
-  {
-    id: 'aud-001',
-    timestamp: '2026-11-01T14:15:22Z',
-    actor: {
-      id: 'usr-1',
-      name: 'Justin Jordan',
-      email: 'admin@folkcare.example',
-      role: 'SUPER_ADMIN',
-    },
-    action: 'VIEW_CLIENT_RECORD',
-    eventType: 'DATA_ACCESS',
-    resourceType: 'Client',
-    resourceId: 'cl-8941',
-    clientName: 'Eleanor Vance',
-    phiAccessed: true,
-    result: 'SUCCESS',
-    ipAddress: getDemoIP(104),
-  },
-  {
-    id: 'aud-002',
-    timestamp: '2026-11-01T13:45:10Z',
-    actor: {
-      id: 'usr-2',
-      name: 'Sarah Connor',
-      email: 'sarah.c@folkcare.example',
-      role: 'COORDINATOR',
-    },
-    action: 'UPDATE_CARE_PLAN',
-    eventType: 'DATA_MODIFICATION',
-    resourceType: 'CarePlan',
-    resourceId: 'cp-3321',
-    clientName: 'Arthur Pendelton',
-    phiAccessed: true,
-    result: 'SUCCESS',
-    ipAddress: getDemoIP(112),
-  },
-  {
-    id: 'aud-003',
-    timestamp: '2026-11-01T12:30:00Z',
-    actor: {
-      id: 'usr-3',
-      name: 'Marcus Brody',
-      email: 'm.brody@caregivers.example',
-      role: 'CAREGIVER',
-    },
-    action: 'EVV_CLOCK_IN',
-    eventType: 'DATA_MODIFICATION',
-    resourceType: 'Visit',
-    resourceId: 'v-1092',
-    clientName: 'Eleanor Vance',
-    phiAccessed: false,
-    result: 'SUCCESS',
-    ipAddress: getDemoIP(21),
-  },
-  {
-    id: 'aud-004',
-    timestamp: '2026-11-01T11:12:45Z',
-    actor: {
-      id: 'usr-4',
-      name: 'Unknown User',
-      email: 'intruder@unknown.net',
-      role: 'ANONYMOUS',
-    },
-    action: 'USER_LOGIN_FAILED',
-    eventType: 'AUTHENTICATION',
-    resourceType: 'AuthSession',
-    resourceId: 'sess-failed',
-    phiAccessed: false,
-    result: 'FAILURE',
-    ipAddress: getDemoIP(42),
-  },
-  {
-    id: 'aud-005',
-    timestamp: '2026-11-01T10:05:30Z',
-    actor: {
-      id: 'usr-1',
-      name: 'Justin Jordan',
-      email: 'admin@folkcare.example',
-      role: 'SUPER_ADMIN',
-    },
-    action: 'VIEW_AUDIT_LOGS',
-    eventType: 'SECURITY',
-    resourceType: 'AuditLog',
-    resourceId: 'log-view-all',
-    phiAccessed: false,
-    result: 'SUCCESS',
-    ipAddress: getDemoIP(104),
-  },
-  {
-    id: 'aud-006',
-    timestamp: '2026-11-01T09:18:12Z',
-    actor: {
-      id: 'usr-2',
-      name: 'Sarah Connor',
-      email: 'sarah.c@folkcare.example',
-      role: 'COORDINATOR',
-    },
-    action: 'VIEW_ASSESSMENT',
-    eventType: 'DATA_ACCESS',
-    resourceType: 'Assessment',
-    resourceId: 'asm-901',
-    clientName: 'Grace Hopper',
-    phiAccessed: true,
-    result: 'SUCCESS',
-    ipAddress: getDemoIP(112),
-  },
-];
+import { useApiClient } from '@/core/hooks/useApiClient';
+import { AuditEventsApiService } from '@/app/services/audit-events-api.service';
+import type { AuditLogEntry } from '@/app/services/audit-events-api.service';
 
 export const SystemActivityPage: React.FC = () => {
-  const [logs] = useState<AuditLogEntry[]>(INITIAL_AUDIT_LOGS);
+  const apiClient = useApiClient();
+
+  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
+  const [totalLogs, setTotalLogs] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [eventTypeFilter, setEventTypeFilter] = useState<string>('ALL');
   const [phiOnly, setPhiOnly] = useState(false);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
 
+  // Fetch audit logs from API
+  useEffect(() => {
+    const auditService = new AuditEventsApiService(apiClient);
+    const fetchLogs = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await auditService.getAuditEvents({
+          eventType: eventTypeFilter,
+          phiOnly,
+          search: searchTerm || undefined,
+          limit: 100,
+        });
+        setLogs(response.events);
+        setTotalLogs(response.total);
+      } catch (err) {
+        console.error('Failed to fetch audit logs:', err);
+        setError('Failed to load audit logs. Please try again.');
+        setLogs([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void fetchLogs();
+  }, [apiClient, eventTypeFilter, phiOnly, searchTerm]);
+
   const filteredLogs = useMemo((): AuditLogEntry[] => {
-    return logs.filter((log: AuditLogEntry): boolean => {
-      if (eventTypeFilter !== 'ALL' && log.eventType !== eventTypeFilter) {
-        return false;
-      }
-      if (phiOnly && !log.phiAccessed) {
-        return false;
-      }
-      if (searchTerm.trim() !== '') {
-        const query = searchTerm.toLowerCase();
-        const matchesActor =
-          log.actor.name.toLowerCase().includes(query) ||
-          log.actor.email.toLowerCase().includes(query);
-        const matchesAction = log.action.toLowerCase().includes(query);
-        const matchesResource =
-          log.resourceType.toLowerCase().includes(query) ||
-          (log.clientName?.toLowerCase().includes(query) ?? false);
-        return matchesActor || matchesAction || matchesResource;
-      }
-      return true;
-    });
-  }, [logs, searchTerm, eventTypeFilter, phiOnly]);
+    // Server-side filtering is already applied, so just return the logs
+    return logs;
+  }, [logs]);
 
   const handleExportAuditLogs = () => {
     const headers = [
@@ -279,6 +166,12 @@ export const SystemActivityPage: React.FC = () => {
         </div>
       )}
 
+      {error && (
+        <div className="rounded-md bg-red-50 border border-red-200 p-4">
+          <p className="text-sm font-medium text-red-800">{error}</p>
+        </div>
+      )}
+
       {/* Filter Toolbar */}
       <Card>
         <CardContent className="p-4">
@@ -334,7 +227,7 @@ export const SystemActivityPage: React.FC = () => {
 
             <div className="text-right">
               <span className="text-sm text-gray-500">
-                Showing {filteredLogs.length} of {logs.length} events
+                Showing {filteredLogs.length} of {totalLogs} events
               </span>
             </div>
           </div>
@@ -366,7 +259,16 @@ export const SystemActivityPage: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredLogs.length === 0 ? (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8">
+                    <div className="flex items-center justify-center gap-2 text-gray-500">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Loading audit logs...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : filteredLogs.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                     No audit records match the current filters.
