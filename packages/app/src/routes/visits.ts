@@ -797,6 +797,31 @@ export function createVisitRouter(db: Database): Router {
         return;
       }
 
+      // Verify caregiver exists, is active, and belongs to this organization
+      if (validated.caregiverId) {
+        const caregiverCheck = await db.query(
+          'SELECT id, status FROM caregivers WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL',
+          [validated.caregiverId, context.organizationId]
+        );
+
+        if (caregiverCheck.rows.length === 0) {
+          res.status(404).json({
+            success: false,
+            error: 'Caregiver not found',
+          });
+          return;
+        }
+
+        const caregiver = caregiverCheck.rows[0] as { id: string; status: string };
+        if (caregiver.status !== 'ACTIVE') {
+          res.status(400).json({
+            success: false,
+            error: 'Caregiver is not active',
+          });
+          return;
+        }
+      }
+
       // Enforce authorization limit on create
       const guard = getAuthorizationGuard();
       const authCheck = await guard.validatePattern({

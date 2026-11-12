@@ -144,9 +144,13 @@ describe('Visit Patterns Endpoints (FC-SCHED-002)', () => {
       };
 
       mockCreatePatternAndGenerateVisits.mockResolvedValueOnce(mockResult);
-      (mockDb.query as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        rows: [{ id: CLIENT_ID, organization_id: ORG_ID, branch_id: BRANCH_ID }],
-      });
+      (mockDb.query as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({
+          rows: [{ id: CLIENT_ID, organization_id: ORG_ID, branch_id: BRANCH_ID }],
+        })
+        .mockResolvedValueOnce({
+          rows: [{ id: CAREGIVER_ID, status: 'ACTIVE' }],
+        });
 
       const payload = {
         clientId: CLIENT_ID,
