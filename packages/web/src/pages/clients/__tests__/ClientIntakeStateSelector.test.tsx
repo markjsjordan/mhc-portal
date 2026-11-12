@@ -6,6 +6,7 @@ import { BrowserRouter } from 'react-router-dom';
 
 vi.mock('@/core/hooks', () => ({
   useAuth: () => ({ user: { id: 'test-user', organizationId: 'test-org', branchIds: ['branch-1'] } }),
+  useApiClient: () => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() }),
 }));
 
 vi.mock('@/verticals/client-demographics/hooks', () => ({
@@ -13,6 +14,17 @@ vi.mock('@/verticals/client-demographics/hooks', () => ({
   useUpdateClient: () => ({ mutateAsync: vi.fn().mockResolvedValue({ id: 'updated-client-id' }) }),
   useClients: () => ({ data: { items: [{ id: 'client-1', branchId: 'branch-1' }] } }),
   useBranches: () => ({ data: [{ id: 'branch-1', name: 'Main Branch', code: 'MB' }] }),
+}));
+
+vi.mock('@/verticals/caregivers/hooks', () => ({
+  useCaregivers: () => ({
+    data: {
+      items: [
+        { id: 'cg-1', firstName: 'Maria', lastName: 'Garcia', role: 'Personal Care Aide' },
+        { id: 'cg-2', firstName: 'James', lastName: 'Wilson', role: 'Home Health Aide' },
+      ],
+    },
+  }),
 }));
 
 const USPS_50 = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'];
