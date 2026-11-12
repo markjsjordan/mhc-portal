@@ -107,7 +107,6 @@ describe('ClientIntakeWorkflow - Mobile and Responsive Layout', () => {
         careAgreement: true,
         hipaa: true,
         financialResponsibility: true,
-        evv: true,
       },
       signature: 'Jane Doe',
     };

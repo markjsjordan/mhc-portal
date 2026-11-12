@@ -37,7 +37,7 @@ const baseData = {
     state: 'TX',
     postalCode: '78701',
   },
-  consents: { careAgreement: true, hipaa: true, financialResponsibility: true, evv: true },
+  consents: { careAgreement: true, hipaa: true, financialResponsibility: true },
   signature: 'Jane Doe',
 };
 
