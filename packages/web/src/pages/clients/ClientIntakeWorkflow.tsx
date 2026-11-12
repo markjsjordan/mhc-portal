@@ -139,7 +139,6 @@ interface IntakeData {
     careAgreement: boolean;
     hipaa: boolean;
     financialResponsibility: boolean;
-    evv: boolean;
   };
   signature: string;
   signedDate: string;
@@ -185,7 +184,6 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         careAgreement: false,
         hipaa: false,
         financialResponsibility: false,
-        evv: false,
       },
     }
   );
@@ -1329,24 +1327,6 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                     <p className="text-xs sm:text-sm text-gray-500 leading-relaxed font-normal">
                       I understand and agree to the payment terms, including my responsibility
                       for any services not covered by insurance.
-                    </p>
-                  </Label>
-                </div>
-              </div>
-
-              <div className="mb-4 p-4 md:p-5 bg-gray-50 rounded-xl border border-gray-200">
-                <div className="flex items-start gap-3.5">
-                  <Checkbox
-                    id="consent-evv"
-                    className="mt-0.5"
-                    checked={Boolean(intakeData.consents?.evv)}
-                    onCheckedChange={(checked) => updateNestedData('consents', 'evv', Boolean(checked))}
-                  />
-                  <Label htmlFor="consent-evv" className="text-sm cursor-pointer">
-                    <strong className="block text-gray-900 mb-1">Electronic Visit Verification (EVV)</strong>
-                    <p className="text-xs sm:text-sm text-gray-500 leading-relaxed font-normal">
-                      I consent to the use of EVV technology to verify visit times and locations
-                      for compliance with state and federal regulations.
                     </p>
                   </Label>
                 </div>
