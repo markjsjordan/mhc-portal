@@ -15,7 +15,8 @@ import { ScheduleRepository } from '@folkcare/scheduling-visits';
  */
 function getUserContext(req: Request): UserContext {
   const user = req.user!;
-  const anyUser = user as UserContext & { [key: string]: unknown };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const anyUser = user as any;
   return {
     userId: user.userId,
     organizationId: user.organizationId,
@@ -39,7 +40,7 @@ export function createClientVisitHistoryRouter(db: Database): Router {
   const router = Router();
   const authMiddleware = new AuthMiddleware(db);
   const auditService = new AuditService(db);
-  const scheduleRepository = new ScheduleRepository(db.pool);
+  const scheduleRepository = new ScheduleRepository(db.getPool());
 
   // All routes require authentication
   router.use(authMiddleware.requireAuth);
@@ -145,7 +146,7 @@ export function createClientVisitHistoryRouter(db: Database): Router {
 
         // Audit PHI access (HIPAA requirement)
         await auditService.logEvent(context, {
-          eventType: 'PHI_ACCESS',
+          eventType: 'DATA_ACCESS',
           resource: 'clients',
           resourceId: clientId,
           action: 'VIEW_VISIT_HISTORY',
