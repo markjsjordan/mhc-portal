@@ -814,6 +814,64 @@ describe('Visit Routes', () => {
       );
     });
 
+    it('writes notes to visits.internal_notes only (visits has no `notes` column)', async () => {
+      // Regression: the UPDATE also set `notes = $9`; Postgres rejects it with
+      // `column "notes" of relation "visits" does not exist`, so every save of the
+      // Edit Scheduled Visit modal returned 500. Mocked db.query never ran the SQL.
+      const existingRow = {
+        id: validVisitId,
+        organization_id: validOrgId,
+        client_id: '550e8400-e29b-41d4-a716-446655440099',
+        assigned_caregiver_id: null,
+        assignment_method: null,
+        service_type_id: 'svc-respite',
+        service_type_name: 'Respite Care',
+        visit_type: 'REGULAR',
+        scheduled_date: '2026-10-20',
+        scheduled_start_time: '14:00:00',
+        scheduled_end_time: '16:00:00',
+        scheduled_duration: 120,
+        status: 'UNASSIGNED',
+        actual_start_time: null,
+        internal_notes: null,
+        client_instructions: null,
+      };
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({ rows: [existingRow] } as any)
+        .mockResolvedValueOnce({ rows: [{ id: validCaregiverId, status: 'ACTIVE' }] } as any)
+        .mockResolvedValueOnce({ rows: [{ ...existingRow, internal_notes: 'n' }] } as any)
+        .mockResolvedValueOnce({ rows: [] } as any);
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find(
+        (layer: any) => layer.route?.path === '/:id' && layer.route?.methods?.put
+      )?.route?.stack[0]?.handle;
+      if (!handler) throw new Error('Handler not found');
+
+      await handler(mockRequest as Request, mockResponse as Response, nextMock);
+
+      const updateCall = vi
+        .mocked(mockDb.query)
+        .mock.calls.find(
+          ([sql]) => typeof sql === 'string' && sql.toLowerCase().includes('update visits')
+        );
+      expect(updateCall).toBeDefined();
+      const [sql, params] = updateCall as [string, unknown[]];
+
+      // Column on the left of each `col = ...` line of the SET list (one per line in
+      // the handler's SQL; avoids splitting on the comma inside COALESCE(version, 1)).
+      const lowerSql = sql.toLowerCase();
+      const setClause = sql.slice(lowerSql.indexOf('set') + 3, lowerSql.indexOf('where'));
+      const writtenColumns = setClause
+        .split('\n')
+        .map((line) => line.split('=')[0]?.trim())
+        .filter((column): column is string => column !== undefined && column !== '');
+      expect(writtenColumns).toContain('internal_notes');
+      expect(writtenColumns).not.toContain('notes');
+      expect(params).toContain('Respite care visit - Margaret Thompson');
+      expect(nextMock).not.toHaveBeenCalled();
+    });
+
     it('should return 400 for invalid visit ID format', async () => {
       mockRequest.params = { id: 'invalid-id' };
 
