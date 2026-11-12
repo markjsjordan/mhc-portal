@@ -83,7 +83,7 @@ vi.mock('@folkcare/core', async () => {
             userId: (req.headers['x-user-id'] as string | undefined) ?? 'user-admin-001',
             email: 'admin@folkcare.example',
             organizationId: (req.headers['x-organization-id'] as string | undefined) ?? ORG_ID,
-            branchIds: [BRANCH_ID],
+            branchIds: req.headers['x-no-branches'] === '1' ? [] : [BRANCH_ID],
             roles: ['SUPER_ADMIN', 'COORDINATOR'],
             permissions: ['visits:read', 'visits:write'],
           };
@@ -144,6 +144,9 @@ describe('Visit Patterns Endpoints (FC-SCHED-002)', () => {
       };
 
       mockCreatePatternAndGenerateVisits.mockResolvedValueOnce(mockResult);
+      (mockDb.query as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        rows: [{ id: CLIENT_ID, organization_id: ORG_ID, branch_id: BRANCH_ID }],
+      });
 
       const payload = {
         clientId: CLIENT_ID,
@@ -194,6 +197,96 @@ describe('Visit Patterns Endpoints (FC-SCHED-002)', () => {
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
       expect(res.body.error).toBe('Validation failed');
+    });
+
+    const validPayload = {
+      clientId: CLIENT_ID,
+      serviceTypeId: SERVICE_TYPE_ID,
+      frequency: 'WEEKLY',
+      dayOfWeek: ['MONDAY'],
+      startDate: FIXED_DATE,
+      startTime: '09:00',
+      duration: 120,
+    };
+
+    it('passes the client branch to the engine so visit rows always have a branch_id', async () => {
+      const clientBranchId = 'dd0e8400-e29b-41d4-a716-446655440000';
+      mockCreatePatternAndGenerateVisits.mockResolvedValueOnce({
+        pattern: { id: PATTERN_ID, status: 'ACTIVE' },
+        generatedVisitsCount: 0,
+        visits: [],
+        exceptions: [],
+      });
+      (mockDb.query as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        rows: [{ id: CLIENT_ID, organization_id: ORG_ID, branch_id: clientBranchId }],
+      });
+
+      const res = await request(app).post('/api/visits/patterns').send(validPayload);
+
+      expect(res.status).toBe(201);
+      expect(mockCreatePatternAndGenerateVisits).toHaveBeenCalledWith(
+        expect.objectContaining({ branchId: clientBranchId }),
+        expect.anything()
+      );
+    });
+
+    it('falls back to the organization first branch when client and user context have none', async () => {
+      const orgBranchId = 'ee0e8400-e29b-41d4-a716-446655440000';
+      mockCreatePatternAndGenerateVisits.mockResolvedValueOnce({
+        pattern: { id: PATTERN_ID, status: 'ACTIVE' },
+        generatedVisitsCount: 0,
+        visits: [],
+        exceptions: [],
+      });
+      (mockDb.query as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ rows: [{ id: CLIENT_ID, organization_id: ORG_ID, branch_id: null }] })
+        .mockResolvedValueOnce({ rows: [{ id: orgBranchId }] });
+
+      const res = await request(app)
+        .post('/api/visits/patterns')
+        .set('x-no-branches', '1')
+        .send(validPayload);
+
+      expect(res.status).toBe(201);
+      expect(mockCreatePatternAndGenerateVisits).toHaveBeenCalledWith(
+        expect.objectContaining({ branchId: orgBranchId }),
+        expect.anything()
+      );
+    });
+
+    it('returns 400 (not 500) when no branch can be determined', async () => {
+      (mockDb.query as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ rows: [{ id: CLIENT_ID, organization_id: ORG_ID, branch_id: null }] })
+        .mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app)
+        .post('/api/visits/patterns')
+        .set('x-no-branches', '1')
+        .send(validPayload);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Branch ID could not be determined');
+      expect(mockCreatePatternAndGenerateVisits).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when the client does not exist', async () => {
+      (mockDb.query as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ rows: [] });
+
+      const res = await request(app).post('/api/visits/patterns').send(validPayload);
+
+      expect(res.status).toBe(404);
+      expect(mockCreatePatternAndGenerateVisits).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 when the client belongs to another organization', async () => {
+      (mockDb.query as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        rows: [{ id: CLIENT_ID, organization_id: OTHER_ORG_ID, branch_id: BRANCH_ID }],
+      });
+
+      const res = await request(app).post('/api/visits/patterns').send(validPayload);
+
+      expect(res.status).toBe(403);
+      expect(mockCreatePatternAndGenerateVisits).not.toHaveBeenCalled();
     });
   });
 
