@@ -66,6 +66,7 @@ export function createClientVisitHistoryRouter(db: Database): Router {
    * Query params:
    * - page: Page number (default: 1)
    * - limit: Items per page (default: 20, max: 100)
+   * - status: Optional visit status filter (e.g. COMPLETED, CANCELLED)
    * 
    * Response:
    * - items: Array of visit history entries (minimum necessary fields)
@@ -136,12 +137,23 @@ export function createClientVisitHistoryRouter(db: Database): Router {
           return;
         }
 
+        // Optional status filter (e.g. COMPLETED, CANCELLED, NO_SHOW_CLIENT)
+        const statusParam = req.query.status as string | undefined;
+        if (statusParam !== undefined && !/^[A-Z_]{1,40}$/.test(statusParam)) {
+          res.status(400).json({
+            success: false,
+            error: 'Invalid status filter',
+          });
+          return;
+        }
+
         // Fetch visit history with org and branch scoping
         const result = await scheduleRepository.getClientVisitHistory(
           clientId,
           context.organizationId,
           context.branchIds.length > 0 ? context.branchIds : undefined,
-          { page, limit }
+          { page, limit },
+          statusParam
         );
 
         // Audit PHI access (HIPAA requirement)
@@ -155,6 +167,7 @@ export function createClientVisitHistoryRouter(db: Database): Router {
             visitCount: result.items.length,
             page,
             limit,
+            status: statusParam,
             ipAddress: req.ip,
           },
           ipAddress: req.ip,

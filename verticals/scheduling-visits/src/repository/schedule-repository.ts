@@ -578,13 +578,15 @@ export class ScheduleRepository {
    * @param organizationId - Organization ID for security scoping
    * @param branchIds - Optional branch IDs for branch-level scoping
    * @param pagination - Pagination parameters
+   * @param status - Optional exact visit status filter
    * @returns Paginated result with visit history
    */
   async getClientVisitHistory(
     clientId: UUID,
     organizationId: UUID,
     branchIds?: UUID[],
-    pagination?: PaginationParams
+    pagination?: PaginationParams,
+    status?: string
   ): Promise<PaginatedResult<VisitWithClient>> {
     const limit = pagination?.limit ?? 20;
     const page = pagination?.page ?? 1;
@@ -602,6 +604,12 @@ export class ScheduleRepository {
     if (branchIds && branchIds.length > 0) {
       conditions.push(`v.branch_id = ANY($${paramCount})`);
       values.push(branchIds);
+      paramCount++;
+    }
+
+    if (status) {
+      conditions.push(`v.status = $${paramCount}`);
+      values.push(status);
       paramCount++;
     }
 

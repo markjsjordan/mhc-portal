@@ -9,12 +9,15 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { VisitHistoryCard } from '../VisitHistoryCard';
-import { apiClient } from '@/lib/api-client';
 
-vi.mock('@/lib/api-client', () => ({
-  apiClient: {
-    get: vi.fn(),
-  },
+// Mock the hook the cards use. Tests below were written with an axios-style
+// { data: <body> } envelope; the real ApiClient resolves the body directly.
+const { apiClient } = vi.hoisted(() => {
+  const get = vi.fn();
+  return { apiClient: { get, real: { get: (...a: unknown[]) => (get(...a) as Promise<{ data: unknown }>).then((r) => r.data) } } };
+});
+vi.mock('@/core/hooks/api', () => ({
+  useApiClient: () => apiClient.real,
 }));
 
 const createWrapper = () => {
@@ -89,7 +92,7 @@ describe('VisitHistoryCard', () => {
     expect(screen.getByText('Nov 11, 2024')).toBeInTheDocument();
     expect(screen.getByText('COMPLETED')).toBeInTheDocument();
     expect(screen.getByText('Jane Doe')).toBeInTheDocument();
-    expect(screen.getByText(/09:00.*10:00/)).toBeInTheDocument();
+    expect(screen.getByText(/9:00 AM.*10:00 AM/)).toBeInTheDocument();
     expect(screen.getByText(/1h 0m/)).toBeInTheDocument(); // Duration
   });
 
@@ -196,10 +199,10 @@ describe('VisitHistoryCard', () => {
     render(<VisitHistoryCard clientId="test-client-id" />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      expect(screen.getByText(/Failed to load visit history/)).toBeInTheDocument();
-    });
+      expect(screen.getByText(/Network error/)).toBeInTheDocument();
+    }, { timeout: 4000 }); // card sets retry: 1 (1s backoff)
 
-    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
   });
 
   it('should show pagination controls when multiple pages', async () => {

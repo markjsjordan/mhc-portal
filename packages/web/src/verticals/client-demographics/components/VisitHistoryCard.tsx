@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Clock, User, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -8,50 +8,24 @@ import { Badge } from '@/components/ui/badge.js';
 import { LoadingSpinner, ErrorMessage } from '@/core/components';
 import { formatDate, formatTime } from '@/core/utils';
 import { useApiClient } from '@/core/hooks/api';
-
-interface VisitHistoryEntry {
-  id: string;
-  visitNumber: string;
-  visitType: string;
-  serviceTypeName: string;
-  scheduledDate: string;
-  scheduledStartTime: string;
-  scheduledEndTime: string;
-  scheduledDuration: number;
-  actualStartTime?: string;
-  actualEndTime?: string;
-  actualDuration?: number;
-  status: string;
-  statusHistory: Array<{
-    id: string;
-    fromStatus: string | null;
-    toStatus: string;
-    timestamp: string;
-    changedBy: string;
-    reason?: string;
-    notes?: string;
-    automatic: boolean;
-  }>;
-  caregiverFirstName?: string;
-  caregiverLastName?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface VisitHistoryResponse {
-  success: boolean;
-  data: {
-    items: VisitHistoryEntry[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-}
+import { createClientApiService } from '../services/client-api';
 
 interface VisitHistoryCardProps {
   clientId: string;
 }
+
+/** Format a calendar date (YYYY-MM-DD or ISO) without timezone day-shift. */
+const formatVisitDate = (value: string): string => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  return m ? formatDate(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))) : formatDate(value);
+};
+
+/** Format a wall-clock time string ("HH:MM[:SS]"). */
+const formatClockTime = (value: string): string => {
+  const m = /^(\d{1,2}):(\d{2})/.exec(value);
+  if (!m) return value;
+  return formatTime(new Date(2000, 0, 1, Number(m[1]), Number(m[2])));
+};
 
 const STATUS_COLORS: Record<string, string> = {
   COMPLETED: 'bg-green-100 text-green-800',
@@ -67,15 +41,11 @@ export const VisitHistoryCard: React.FC<VisitHistoryCardProps> = ({ clientId }) 
   const [page, setPage] = useState(1);
   const limit = 10;
   const apiClient = useApiClient();
+  const clientApi = useMemo(() => createClientApiService(apiClient), [apiClient]);
 
-  const { data, isLoading, error, refetch } = useQuery<VisitHistoryResponse>({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['client-visit-history', clientId, page],
-    queryFn: async () => {
-      const response = await apiClient.get(
-        `/clients/${clientId}/visit-history?page=${page}&limit=${limit}`
-      );
-      return response.data;
-    },
+    queryFn: () => clientApi.getClientVisitHistory(clientId, { page, limit }),
     retry: 1,
   });
 
@@ -86,7 +56,7 @@ export const VisitHistoryCard: React.FC<VisitHistoryCardProps> = ({ clientId }) 
           <CardTitle className="text-lg font-medium">Visit History</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex justify-center py-8">
+          <div className="flex justify-center py-8" role="status" aria-label="Loading visit history">
             <LoadingSpinner size="md" />
           </div>
         </CardContent>
@@ -112,9 +82,9 @@ export const VisitHistoryCard: React.FC<VisitHistoryCardProps> = ({ clientId }) 
     );
   }
 
-  const visits = data?.data?.items ?? [];
-  const total = data?.data?.total ?? 0;
-  const totalPages = data?.data?.totalPages ?? 1;
+  const visits = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = data?.totalPages ?? 1;
 
   const getStatusBadgeClass = (status: string): string => {
     return STATUS_COLORS[status] ?? 'bg-gray-100 text-gray-800';
@@ -181,7 +151,7 @@ export const VisitHistoryCard: React.FC<VisitHistoryCardProps> = ({ clientId }) 
                     <p className="text-sm text-gray-600">{visit.serviceTypeName}</p>
                   </div>
                   <span className="text-sm text-gray-500">
-                    {formatDate(visit.scheduledDate)}
+                    {formatVisitDate(visit.scheduledDate)}
                   </span>
                 </div>
 
@@ -192,8 +162,8 @@ export const VisitHistoryCard: React.FC<VisitHistoryCardProps> = ({ clientId }) 
                     <div>
                       <p className="text-gray-500 text-xs">Scheduled</p>
                       <p className="text-gray-900">
-                        {formatTime(visit.scheduledStartTime)} -{' '}
-                        {formatTime(visit.scheduledEndTime)}
+                        {formatClockTime(visit.scheduledStartTime)} -{' '}
+                        {formatClockTime(visit.scheduledEndTime)}
                       </p>
                       <p className="text-xs text-gray-500">
                         ({formatDuration(visit.scheduledDuration)})
@@ -208,8 +178,8 @@ export const VisitHistoryCard: React.FC<VisitHistoryCardProps> = ({ clientId }) 
                       <div>
                         <p className="text-gray-500 text-xs">Actual (EVV)</p>
                         <p className="text-gray-900">
-                          {formatTime(new Date(visit.actualStartTime).toTimeString().slice(0, 5))} -{' '}
-                          {formatTime(new Date(visit.actualEndTime).toTimeString().slice(0, 5))}
+                          {formatTime(new Date(visit.actualStartTime))} -{' '}
+                          {formatTime(new Date(visit.actualEndTime))}
                         </p>
                         <p className="text-xs text-gray-500">
                           ({formatDuration(visit.actualDuration)})

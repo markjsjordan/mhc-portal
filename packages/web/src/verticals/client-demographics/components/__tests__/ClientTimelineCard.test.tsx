@@ -4,12 +4,15 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { ClientTimelineCard } from '../ClientTimelineCard';
-import { apiClient } from '@/lib/api-client';
 
-vi.mock('@/lib/api-client', () => ({
-  apiClient: {
-    get: vi.fn(),
-  },
+// Mock the hook the cards use. Tests below were written with an axios-style
+// { data: <body> } envelope; the real ApiClient resolves the body directly.
+const { apiClient } = vi.hoisted(() => {
+  const get = vi.fn();
+  return { apiClient: { get, real: { get: (...a: unknown[]) => (get(...a) as Promise<{ data: unknown }>).then((r) => r.data) } } };
+});
+vi.mock('@/core/hooks/api', () => ({
+  useApiClient: () => apiClient.real,
 }));
 
 const createWrapper = () => {

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button.js';
 import { LoadingSpinner } from '@/core/components';
 import { formatDate } from '@/core/utils';
 import { useApiClient } from '@/core/hooks/api';
+import { createClientApiService } from '../services/client-api';
 
 interface TimelineVisit {
   id: string;
@@ -46,12 +47,7 @@ export const ClientTimelineCard: React.FC<ClientTimelineCardProps> = ({
   // Fetch recent completed visits for timeline
   const { data: visitsData, isLoading } = useQuery({
     queryKey: ['client-timeline-visits', clientId],
-    queryFn: async () => {
-      const response = await apiClient.get(
-        `/clients/${clientId}/visit-history?page=1&limit=5`
-      );
-      return response.data;
-    },
+    queryFn: () => createClientApiService(apiClient).getClientVisitHistory(clientId, { page: 1, limit: 5 }),
     retry: 1,
   });
 
@@ -79,8 +75,8 @@ export const ClientTimelineCard: React.FC<ClientTimelineCardProps> = ({
     }
 
     // Add completed visits from visit history
-    if (visitsData?.data?.items) {
-      const completedVisits = visitsData.data.items.filter(
+    if (visitsData?.items) {
+      const completedVisits = visitsData.items.filter(
         (visit: TimelineVisit) => visit.status === 'COMPLETED'
       );
 
