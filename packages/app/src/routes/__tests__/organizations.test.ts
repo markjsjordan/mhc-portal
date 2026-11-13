@@ -528,7 +528,8 @@ describe('Organization Routes', () => {
           oid: 0,
           fields: [],
         })
-        // resolvePortalLinks: caregiver link, family links (none)
+        // resolvePortalLinks runs three queries: caregiver link, family links, direct client link (none)
+        .mockResolvedValueOnce({ rows: [] } as never)
         .mockResolvedValueOnce({ rows: [] } as never)
         .mockResolvedValueOnce({ rows: [] } as never)
         .mockResolvedValueOnce({
@@ -576,7 +577,8 @@ describe('Organization Routes', () => {
           oid: 0,
           fields: [],
         })
-        // resolvePortalLinks: caregiver link, family links (none)
+        // resolvePortalLinks runs three queries: caregiver link, family links, direct client link (none)
+        .mockResolvedValueOnce({ rows: [] } as never)
         .mockResolvedValueOnce({ rows: [] } as never)
         .mockResolvedValueOnce({ rows: [] } as never)
         // 2. SectionAccessService.setOverride target user check
