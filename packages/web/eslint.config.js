@@ -189,6 +189,7 @@ export default [
       'migrations/**/*.d.ts',
       'migrations/**/*.js.map',
       'scripts/**/*.js',
+      'scripts/**/*.mjs',
       'scripts/**/*.d.ts',
       'scripts/**/*.js.map',
       // Exclude test files since they are excluded from tsconfig.json

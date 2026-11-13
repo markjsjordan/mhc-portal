@@ -217,55 +217,36 @@ export default defineConfig({
       ],
       output: {
         manualChunks: (id) => {
-          // React core libraries - split react and react-dom
-          if (id.includes('node_modules/react/') && !id.includes('react-dom') && !id.includes('react-router')) {
-            return 'react';
-          }
-          if (id.includes('node_modules/react-dom')) {
-            return 'react-dom';
-          }
-          if (id.includes('node_modules/react-router-dom') || id.includes('node_modules/react-router')) {
-            return 'react-router';
+          // React core MUST stay in ONE chunk. Splitting react / react-dom / react-router
+          // into separate chunks creates a circular chunk graph under React 19 and the app
+          // crashes at startup with "Cannot set properties of undefined (setting 'Activity')",
+          // leaving a blank page (regression from the #162 bundle split).
+          if (
+            id.includes('node_modules/react/') ||
+            id.includes('node_modules/react-dom/') ||
+            id.includes('node_modules/scheduler/') ||
+            id.includes('node_modules/react-router-dom/') ||
+            id.includes('node_modules/react-router/')
+          ) {
+            return 'react-vendor';
           }
           // Vercel analytics (lazy loaded, non-critical)
           if (id.includes('node_modules/@vercel/analytics') || id.includes('node_modules/@vercel/speed-insights')) {
             return 'analytics';
           }
-          // Date/time libraries
+          // Date/time libraries (pure third-party leaf, no back-edges)
           if (id.includes('node_modules/moment') || id.includes('node_modules/date-fns')) {
             return 'moment';
           }
-          // Validation libraries
+          // Validation libraries (pure third-party leaf, no back-edges)
           if (id.includes('node_modules/zod')) {
             return 'zod';
           }
-          // TanStack Query
-          if (id.includes('node_modules/@tanstack/react-query')) {
-            return 'react-query';
-          }
-          // UI component libraries
-          if (id.includes('node_modules/sonner') || id.includes('node_modules/lucide-react') || id.includes('node_modules/@radix-ui')) {
-            return 'ui-libs';
-          }
-          // Large verticals - split each into its own chunk
-          if (id.includes('/verticals/scheduling-visits/')) {
-            return 'scheduling';
-          }
-          if (id.includes('/verticals/billing-invoicing/')) {
-            return 'billing';
-          }
-          if (id.includes('/verticals/payroll-processing/')) {
-            return 'payroll';
-          }
-          if (id.includes('/verticals/care-plans/')) {
-            return 'care-plans';
-          }
-          if (id.includes('/verticals/caregivers/')) {
-            return 'caregivers';
-          }
-          if (id.includes('/verticals/client-demographics/')) {
-            return 'clients';
-          }
+          // NOTE: do NOT add manual chunks for app code (src/verticals/*) or for libraries that
+          // import app code or shared components (react-query, lucide/radix/sonner via shared UI).
+          // Those splits created static chunk cycles (ui-libs <-> billing, clients <-> care-plans
+          // <-> caregivers, ...) that crash at startup with TDZ errors and a blank page.
+          // `npm run check:chunk-cycles` fails the build pipeline if a cycle is reintroduced.
           // Default: let Vite decide
           return undefined;
         },
