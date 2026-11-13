@@ -565,8 +565,7 @@ export function createCaregiverRouter(db: Database): Router {
       // const service = new CaregiverService(db);
 
       // Verify user has permission to create caregivers
-      if (!context.permissions.includes('caregivers:create') && 
-          !context.permissions.includes('CAREGIVER_CREATE')) {
+      if (!new PermissionService().hasPermission(context, 'caregivers:create')) {
         res.status(403).json({ 
           error: 'PERMISSION_DENIED',
           message: 'User does not have permission to create caregivers'
