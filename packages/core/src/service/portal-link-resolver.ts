@@ -110,10 +110,10 @@ export function deriveRoles(
 }
 
 /** Roles that are derived from ACTIVE portal links and must never be written to users.roles directly. */
-export const PORTAL_DERIVED_ROLES = ['CAREGIVER', 'FAMILY'] as const;
+export const PORTAL_DERIVED_ROLES = ['CAREGIVER', 'FAMILY', 'CLIENT'] as const;
 
 export const PORTAL_DERIVED_ROLE_MESSAGE =
-  'CAREGIVER and FAMILY are granted by an ACTIVE portal link, not assigned as a team role. ' +
+  'CAREGIVER, FAMILY and CLIENT are granted by an ACTIVE portal link, not assigned as a team role. ' +
   'Use "Caregivers > Invite to portal" (or the family/client portal invite) instead.';
 
 /** Returns the portal-derived roles found in a role list (case-insensitive). */
