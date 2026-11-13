@@ -169,6 +169,7 @@ function getUserContext(req: Request): UserContext {
     caregiverId: anyUser?.caregiverId as UUID | undefined,
     familyMemberIds: anyUser?.familyMemberIds as UUID[] | undefined,
     familyClientIds: anyUser?.familyClientIds as UUID[] | undefined,
+    directClientId: anyUser?.directClientId as UUID | undefined,
   };
 }
 
@@ -759,6 +760,69 @@ export function createVisitRouter(db: Database): Router {
 
       const validated = parseResult.data;
 
+      // Tenant check + branch resolution (same order as POST /): the visits table
+      // requires branch_id NOT NULL, so a user context without a branch (e.g. an
+      // org-level admin) must fall back to the client's branch, then the org's
+      // first branch, instead of failing the visit INSERT with a 500.
+      const clientCheck = await db.query(
+        'SELECT id, organization_id, branch_id FROM clients WHERE id = $1 AND deleted_at IS NULL',
+        [validated.clientId]
+      );
+      if (clientCheck.rows.length === 0) {
+        res.status(404).json({ success: false, error: 'Client not found' });
+        return;
+      }
+      const patternClient = clientCheck.rows[0] as {
+        id: string;
+        organization_id: string;
+        branch_id?: string | null;
+      };
+      if (patternClient.organization_id !== context.organizationId) {
+        res.status(403).json({ success: false, error: 'Access denied to this client' });
+        return;
+      }
+
+      let patternBranchId = patternClient.branch_id ?? context.branchIds?.[0];
+      if (patternBranchId == null) {
+        const branchCheck = await db.query(
+          'SELECT id FROM branches WHERE organization_id = $1 AND deleted_at IS NULL ORDER BY created_at ASC LIMIT 1',
+          [context.organizationId]
+        );
+        patternBranchId = (branchCheck.rows[0] as { id: string } | undefined)?.id;
+      }
+      if (patternBranchId == null) {
+        res.status(400).json({
+          success: false,
+          error: 'Branch ID could not be determined for recurring pattern',
+        });
+        return;
+      }
+
+      // Verify caregiver exists, is active, and belongs to this organization
+      if (validated.caregiverId) {
+        const caregiverCheck = await db.query(
+          'SELECT id, status FROM caregivers WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL',
+          [validated.caregiverId, context.organizationId]
+        );
+
+        if (caregiverCheck.rows.length === 0) {
+          res.status(404).json({
+            success: false,
+            error: 'Caregiver not found',
+          });
+          return;
+        }
+
+        const caregiver = caregiverCheck.rows[0] as { id: string; status: string };
+        if (caregiver.status !== 'ACTIVE') {
+          res.status(400).json({
+            success: false,
+            error: 'Caregiver is not active',
+          });
+          return;
+        }
+      }
+
       // Enforce authorization limit on create
       const guard = getAuthorizationGuard();
       const authCheck = await guard.validatePattern({
@@ -786,7 +850,7 @@ export function createVisitRouter(db: Database): Router {
       const result = await patternEngine.createPatternAndGenerateVisits(
         {
           organizationId: context.organizationId!,
-          branchId: context.branchIds?.[0],
+          branchId: patternBranchId,
           clientId: validated.clientId,
           caregiverId: validated.caregiverId ?? undefined,
           serviceTypeId: validated.serviceTypeId,

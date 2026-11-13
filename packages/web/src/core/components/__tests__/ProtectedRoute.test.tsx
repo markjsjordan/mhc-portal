@@ -288,4 +288,85 @@ describe('PublicRoute', () => {
     expect(screen.queryByText('Login Page')).not.toBeInTheDocument();
     expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
   });
+
+  describe('no effective roles (wdvf3acxk6)', () => {
+    const authFor = (roles: User['roles']) =>
+      vi.mocked(hooks.useAuth).mockReturnValue({
+        isAuthenticated: true,
+        isInitializing: false,
+        user: {
+          id: '1',
+          organizationId: 'org-1',
+          email: 'test@example.com',
+          name: 'Test User',
+          roles,
+          permissions: [],
+        },
+        token: 't',
+        login: vi.fn(),
+        logout: vi.fn(),
+        setInitializing: vi.fn(),
+      });
+
+    it('renders NoAccess instead of redirecting to itself when the dashboard target is the current path', () => {
+      authFor([]);
+      vi.mocked(hooks.usePermissions).mockReturnValue({
+        can: vi.fn(() => false),
+        canAny: vi.fn(() => false),
+        canAll: vi.fn(() => false),
+        hasRole: vi.fn(() => false),
+        hasAnyRole: vi.fn(() => false),
+      });
+
+      render(
+        <MemoryRouter initialEntries={['/']}>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute permission="clients:read">
+                  <div>Protected Content</div>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      );
+
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Your account does not have portal access yet. Contact your administrator.'
+      );
+      expect(screen.getByText('Logout')).toBeInTheDocument();
+      expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
+    });
+
+    it('still redirects to the dashboard when that is a different path', async () => {
+      authFor(['COORDINATOR']);
+      vi.mocked(hooks.usePermissions).mockReturnValue({
+        can: vi.fn(() => false),
+        canAny: vi.fn(() => false),
+        canAll: vi.fn(() => false),
+        hasRole: vi.fn(() => false),
+        hasAnyRole: vi.fn(() => false),
+      });
+
+      render(
+        <MemoryRouter initialEntries={['/protected']}>
+          <Routes>
+            <Route
+              path="/protected"
+              element={
+                <ProtectedRoute permission="clients:read">
+                  <div>Protected Content</div>
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/analytics/coordinator" element={<div>Coordinator Dashboard</div>} />
+          </Routes>
+        </MemoryRouter>
+      );
+
+      await waitFor(() => expect(screen.getByText('Coordinator Dashboard')).toBeInTheDocument());
+    });
+  });
 });

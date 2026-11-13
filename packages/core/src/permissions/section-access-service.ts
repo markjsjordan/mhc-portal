@@ -31,7 +31,7 @@ export interface SectionAccessOverrides {
 
 export interface EffectiveSectionAccess {
   roleDefaults: SectionPermissionMap;
-  overrides: SectionAccessOverrides;
+  overrides: Array<{ section: Section; access: SectionAccessOverride }>;
   effective: SectionPermissionMap;
 }
 
@@ -124,12 +124,12 @@ export class SectionAccessService {
 
     const defaultsMap = new Map<string, SectionPermission>(Object.entries(roleDefaults));
     const effectiveEntries: Array<[Section, SectionPermission]> = [];
-    const overrideEntries: Array<[string, SectionAccessOverride]> = [];
+    const overrideList: Array<{ section: Section; access: SectionAccessOverride }> = [];
 
     for (const section of SECTIONS) {
       const override = overridesMap.get(section);
       if (override !== undefined) {
-        overrideEntries.push([section, override]);
+        overrideList.push({ section, access: override });
       }
       if (override === 'NONE') {
         effectiveEntries.push([section, { read: false, write: false }]);
@@ -147,7 +147,7 @@ export class SectionAccessService {
 
     return {
       roleDefaults,
-      overrides: Object.fromEntries(overrideEntries),
+      overrides: overrideList,
       effective: Object.fromEntries(effectiveEntries) as Record<Section, SectionPermission>,
     };
   }

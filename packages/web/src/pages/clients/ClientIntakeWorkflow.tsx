@@ -5,6 +5,7 @@ import { useCreateClient, useClients, useUpdateClient, useBranches } from '@/ver
 import type { CreateClientInput, UpdateClientInput } from '@/verticals/client-demographics/types';
 import { useAuth } from '@/core/hooks';
 import { US_STATES } from '@/core/constants/us-states';
+import { useCaregivers } from '@/verticals/caregivers/hooks';
 
 // Intake Step 1 offers the 50 U.S. states only (no DC, no territories).
 // Derived from the shared list so codes stay in one source of truth.
@@ -61,11 +62,23 @@ interface IntakeData {
     postalCode: string;
   };
   phone: string;
+  // Saved primary phone's type/SMS flag (edit mode); written back unchanged on save.
+  phoneType?: 'MOBILE' | 'HOME' | 'WORK';
+  phoneCanReceiveSMS?: boolean;
   email: string;
   emergencyContacts: Array<{
     name: string;
     relationship: string;
     phone: string;
+    // Set only when editing a saved contact. The row editors mutate name/relationship/
+    // phone in place, so these ride along and are written back unchanged on save.
+    id?: string;
+    isPrimary?: boolean;
+    canMakeHealthcareDecisions?: boolean;
+    phoneType?: 'MOBILE' | 'HOME' | 'WORK';
+    canReceiveSMS?: boolean;
+    email?: string;
+    notes?: string;
   }>;
   physician: {
     name: string;
@@ -138,7 +151,6 @@ interface IntakeData {
     careAgreement: boolean;
     hipaa: boolean;
     financialResponsibility: boolean;
-    evv: boolean;
   };
   signature: string;
   signedDate: string;
@@ -166,18 +178,58 @@ const getStepBarClass = (currentStep: number, stepId: number): string => {
   return 'bg-gray-200';
 };
 
-const DEMO_CAREGIVERS = [
-  { id: 'cg-1', name: 'Maria Garcia', skills: ['Personal Care', 'Dementia'], languages: ['English', 'Spanish'] },
-  { id: 'cg-2', name: 'James Wilson', skills: ['Personal Care', 'Mobility'], languages: ['English'] },
-  { id: 'cg-3', name: 'Sarah Chen', skills: ['Companion', 'Meal Prep'], languages: ['English', 'Mandarin'] },
-  { id: 'cg-4', name: 'David Martinez', skills: ['Personal Care'], languages: ['English', 'Spanish'] },
-];
+/**
+ * Format and validate US phone numbers.
+ * Accepts: (123) 456-7890, 123-456-7890, 1234567890, +1 123 456 7890
+ * Returns formatted: (123) 456-7890 or empty string if invalid
+ */
+function formatPhoneNumber(value: string): string {
+  // Remove all non-digit characters
+  const digits = value.replace(/\D/g, '');
+  
+  // Handle empty input
+  if (digits.length === 0) return '';
+  
+  // Remove leading 1 (country code) if present
+  const phoneDigits = digits.startsWith('1') && digits.length === 11 ? digits.slice(1) : digits;
+  
+  // Format as (XXX) XXX-XXXX as user types
+  if (phoneDigits.length <= 3) {
+    return phoneDigits;
+  }
+  if (phoneDigits.length <= 6) {
+    return `(${phoneDigits.slice(0, 3)}) ${phoneDigits.slice(3)}`;
+  }
+  if (phoneDigits.length <= 10) {
+    return `(${phoneDigits.slice(0, 3)}) ${phoneDigits.slice(3, 6)}-${phoneDigits.slice(6)}`;
+  }
+  
+  // Too many digits - truncate to 10
+  return `(${phoneDigits.slice(0, 3)}) ${phoneDigits.slice(3, 6)}-${phoneDigits.slice(6, 10)}`;
+}
+
+/**
+ * Validate if phone number is complete and valid.
+ * Must be exactly 10 digits (US format).
+ */
+function isValidPhoneNumber(value: string): boolean {
+  const digits = value.replace(/\D/g, '');
+  const phoneDigits = digits.startsWith('1') && digits.length === 11 ? digits.slice(1) : digits;
+  return phoneDigits.length === 10;
+}
 
 export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = {}) {
   const { initialData, isEditMode = false, clientId, onSuccess } = props;
   const [currentStep, setCurrentStep] = useState(1);
   const [intakeData, setIntakeData] = useState<Partial<IntakeData>>(
-    initialData ?? {
+    (initialData && {
+      ...initialData,
+      // Edit mode with no saved contacts still offers one blank row, as create mode does.
+      emergencyContacts:
+        initialData.emergencyContacts && initialData.emergencyContacts.length > 0
+          ? initialData.emergencyContacts
+          : [{ name: '', relationship: '', phone: '' }],
+    }) ?? {
       emergencyContacts: [{ name: '', relationship: '', phone: '' }],
       medications: [],
       allergies: [],
@@ -191,7 +243,6 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         careAgreement: false,
         hipaa: false,
         financialResponsibility: false,
-        evv: false,
       },
     }
   );
@@ -312,6 +363,15 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
   const defaultBranchId = user?.branchIds?.[0] ?? branches[0]?.id ?? '';
   const activeBranchId = selectedBranchId || defaultBranchId;
 
+  // Fetch real caregivers from the database
+  const { data: caregiversData } = useCaregivers({ status: ['ACTIVE'] }, 1, 100);
+  const caregivers = (caregiversData?.items ?? []).map((cg) => ({
+    id: cg.id,
+    name: `${cg.firstName} ${cg.lastName}`,
+    skills: [cg.role], // Use role as primary skill
+    languages: ['English'], // Default to English; extend later if multilingual data is available
+  }));
+
   const handleSubmit = async () => {
     // Validate required demographic fields with user-friendly error feedback
     if (!intakeData.firstName?.trim()) {
@@ -362,38 +422,52 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       undefined;
 
     // Build address only if all required address fields are provided
-    const hasCompleteAddress = Boolean(
-      intakeData.address?.line1.trim() &&
-      intakeData.address.city.trim() &&
-      intakeData.address.state.trim() &&
-      intakeData.address.postalCode.trim()
-    );
+    const addr = intakeData.address;
+    const line1 = blankToUndefined(addr?.line1);
+    const city = blankToUndefined(addr?.city);
+    const state = blankToUndefined(addr?.state);
+    const postalCode = blankToUndefined(addr?.postalCode);
 
-    const addressInput = hasCompleteAddress
+    const addressInput =
+      line1 && city && state && postalCode
+        ? {
+            type: 'HOME' as const,
+            line1,
+            line2: blankToUndefined(addr?.line2),
+            city,
+            state: state.toUpperCase(),
+            postalCode,
+            country: 'US' as const,
+          }
+        : undefined;
+
+    const phoneNumber = blankToUndefined(intakeData.phone);
+    const phoneInput = phoneNumber
       ? {
-          type: 'HOME' as const,
-          line1: intakeData.address!.line1.trim(),
-          line2: blankToUndefined(intakeData.address?.line2),
-          city: intakeData.address!.city.trim(),
-          state: intakeData.address!.state.trim().toUpperCase(),
-          postalCode: intakeData.address!.postalCode.trim(),
-          country: 'US' as const,
+          number: phoneNumber,
+          type: intakeData.phoneType ?? ('MOBILE' as const),
+          canReceiveSMS: intakeData.phoneCanReceiveSMS ?? false,
         }
       : undefined;
 
-    const phoneInput = intakeData.phone?.trim()
-      ? { number: intakeData.phone.trim(), type: 'MOBILE' as const, canReceiveSMS: false }
-      : undefined;
-
     const emergencyContactsInput = (intakeData.emergencyContacts ?? [])
-      .filter((c) => c.name.trim() && c.phone.trim())
+      .filter((c) => blankToUndefined(c.name) && blankToUndefined(c.phone))
       .map((c) => ({
-        id: crypto.randomUUID(),
-        name: c.name.trim(),
-        relationship: c.relationship.trim() || 'Emergency Contact',
-        phone: { number: c.phone.trim(), type: 'MOBILE' as const, canReceiveSMS: false },
-        isPrimary: true,
-        canMakeHealthcareDecisions: false,
+        // A saved contact keeps its id and flags; regenerating them on every edit
+        // would break references and reset healthcare-decision authority.
+        id: c.id ?? crypto.randomUUID(),
+        name: (c.name ?? '').trim(),
+        relationship: blankToUndefined(c.relationship) ?? 'Emergency Contact',
+        phone: {
+          number: (c.phone ?? '').trim(),
+          type: c.phoneType ?? ('MOBILE' as const),
+          canReceiveSMS: c.canReceiveSMS ?? false,
+        },
+        // New contacts keep the existing default (primary); saved flags are preserved.
+        isPrimary: c.isPrimary ?? true,
+        canMakeHealthcareDecisions: c.canMakeHealthcareDecisions ?? false,
+        ...(c.email !== undefined && { email: c.email }),
+        ...(c.notes !== undefined && { notes: c.notes }),
       }));
 
     try {
@@ -431,7 +505,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
           emergencyContacts: emergencyContactsInput,
-          status: 'PENDING_INTAKE',
+          status: 'ACTIVE',
         };
 
         const newClient = await createClient.mutateAsync(createInput);
@@ -582,9 +656,18 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                     type="tel"
                     className="w-full min-h-[44px]"
                     value={intakeData.phone ?? ''}
-                    onChange={(e) => updateData('phone', e.target.value)}
+                    onChange={(e) => {
+                      const formatted = formatPhoneNumber(e.target.value);
+                      updateData('phone', formatted);
+                    }}
                     placeholder="(555) 123-4567"
+                    aria-invalid={intakeData.phone && !isValidPhoneNumber(intakeData.phone) ? 'true' : undefined}
                   />
+                  {intakeData.phone && !isValidPhoneNumber(intakeData.phone) && (
+                    <span className="text-xs text-destructive mt-1">
+                      Phone must be 10 digits
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -737,12 +820,19 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                         className="w-full min-h-[44px]"
                         value={contact.phone}
                         onChange={(e) => {
+                          const formatted = formatPhoneNumber(e.target.value);
                           const contacts = [...(intakeData.emergencyContacts ?? [])];
-                          if (contacts[index]) contacts[index].phone = e.target.value;
+                          if (contacts[index]) contacts[index].phone = formatted;
                           updateData('emergencyContacts', contacts);
                         }}
                         placeholder="(555) 123-4567"
+                        aria-invalid={contact.phone && !isValidPhoneNumber(contact.phone) ? 'true' : undefined}
                       />
+                      {contact.phone && !isValidPhoneNumber(contact.phone) && (
+                        <span className="text-xs text-destructive mt-1">
+                          Phone must be 10 digits
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1142,7 +1232,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 Primary Caregiver
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {DEMO_CAREGIVERS.map((cg) => (
+                {caregivers.map((cg) => (
                   <div
                     key={cg.id}
                     className={`p-4 md:p-5 border-2 rounded-xl cursor-pointer text-center relative transition-all min-h-[160px] flex flex-col items-center justify-center ${
@@ -1174,7 +1264,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </h3>
               <p className="text-sm text-gray-500 mb-4">Select 1-2 backup caregivers for coverage</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {DEMO_CAREGIVERS.filter((cg) => cg.id !== intakeData.primaryCaregiver).map((cg) => (
+                {caregivers.filter((cg) => cg.id !== intakeData.primaryCaregiver).map((cg) => (
                   <div
                     key={cg.id}
                     className={`p-4 md:p-5 border-2 rounded-xl cursor-pointer text-center relative transition-all min-h-[160px] flex flex-col items-center justify-center ${
@@ -1326,24 +1416,6 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                     <p className="text-xs sm:text-sm text-gray-500 leading-relaxed font-normal">
                       I understand and agree to the payment terms, including my responsibility
                       for any services not covered by insurance.
-                    </p>
-                  </Label>
-                </div>
-              </div>
-
-              <div className="mb-4 p-4 md:p-5 bg-gray-50 rounded-xl border border-gray-200">
-                <div className="flex items-start gap-3.5">
-                  <Checkbox
-                    id="consent-evv"
-                    className="mt-0.5"
-                    checked={Boolean(intakeData.consents?.evv)}
-                    onCheckedChange={(checked) => updateNestedData('consents', 'evv', Boolean(checked))}
-                  />
-                  <Label htmlFor="consent-evv" className="text-sm cursor-pointer">
-                    <strong className="block text-gray-900 mb-1">Electronic Visit Verification (EVV)</strong>
-                    <p className="text-xs sm:text-sm text-gray-500 leading-relaxed font-normal">
-                      I consent to the use of EVV technology to verify visit times and locations
-                      for compliance with state and federal regulations.
                     </p>
                   </Label>
                 </div>
@@ -1514,7 +1586,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   Primary:
                 </span>
                 <span className="text-sm md:text-base font-medium sm:font-normal text-gray-900 break-words flex-1 min-w-0">
-                  {DEMO_CAREGIVERS.find((cg) => cg.id === intakeData.primaryCaregiver)?.name ?? (
+                  {caregivers.find((cg) => cg.id === intakeData.primaryCaregiver)?.name ?? (
                     <span className="text-gray-400 italic">None selected</span>
                   )}
                 </span>
@@ -1527,7 +1599,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   {intakeData.backupCaregivers && intakeData.backupCaregivers.length > 0 ? (
                     <div className="flex flex-wrap gap-1.5 mt-0.5">
                       {intakeData.backupCaregivers
-                        .map((id) => DEMO_CAREGIVERS.find((cg) => cg.id === id)?.name)
+                        .map((id) => caregivers.find((cg) => cg.id === id)?.name)
                         .filter(Boolean)
                         .map((name) => (
                           <span

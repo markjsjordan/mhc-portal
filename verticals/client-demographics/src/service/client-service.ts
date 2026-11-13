@@ -187,6 +187,7 @@ export class ClientService {
    */
   async getClientById(id: string, context: UserContext, skipAuditLog = false): Promise<Client> {
     this.permissionService.requirePermission(context, 'clients:read');
+    this.enforceClientSelfScope(id, context);
 
     const cache = getCacheService();
     const client = await cache.getOrSet(
@@ -231,6 +232,14 @@ export class ClientService {
     context: UserContext
   ): Promise<Client> {
     this.permissionService.requirePermission(context, 'clients:read');
+    if (this.isClientSelfScoped(context)) {
+      // Lookup by client number can't be proven in-scope before the read; resolve then compare.
+      const own = await this.getClientById(context.directClientId ?? '', context);
+      if (own.clientNumber !== clientNumber) {
+        throw new NotFoundError(`Client not found: ${clientNumber}`);
+      }
+      return own;
+    }
 
     const effectiveOrgId =
       !context.roles.includes('SUPER_ADMIN') && context.organizationId
@@ -334,6 +343,18 @@ export class ClientService {
 
     // Verify client exists (internal existence check, not a PHI read — skip audit log)
     const client = await this.getClientById(id, context, true);
+
+    // Revoke family portal access before the soft delete (same contract as a
+    // DISCHARGED status change), so a deleted client leaves no live family logins.
+    if (this.portalAccessHook) {
+      await this.portalAccessHook.handleClientStatusChange(
+        id,
+        client.status as CoreClientStatus,
+        'DISCHARGED',
+        context
+      );
+    }
+
     await this.repository.delete(id, context);
 
     // Invalidate cache
@@ -351,6 +372,18 @@ export class ClientService {
     context: UserContext
   ): Promise<PaginatedResult<Client>> {
     this.permissionService.requirePermission(context, 'clients:read');
+
+    if (this.isClientSelfScoped(context)) {
+      // CLIENT users never run org-wide searches: return only their own record.
+      const own = await this.getClientById(context.directClientId ?? '', context);
+      return {
+        items: [own],
+        total: 1,
+        page: pagination.page,
+        limit: pagination.limit,
+        totalPages: 1,
+      };
+    }
 
     // Apply organizational scope to filters
     if (!context.roles.includes('SUPER_ADMIN')) {
@@ -391,6 +424,9 @@ export class ClientService {
     activeOnly: boolean = true
   ): Promise<Client[]> {
     this.permissionService.requirePermission(context, 'clients:read');
+    if (this.isClientSelfScoped(context)) {
+      throw new PermissionError('Client portal users cannot list clients by branch');
+    }
 
     // Check branch access
     if (
@@ -636,6 +672,27 @@ export class ClientService {
   /**
    * Check organizational access
    */
+  /**
+   * A user whose ONLY role is CLIENT is a self-service portal user and may see
+   * nothing but the client record linked to them (HIPAA minimum necessary).
+   */
+  private isClientSelfScoped(context: UserContext): boolean {
+    return context.roles.includes('CLIENT') && context.roles.every((r) => r === 'CLIENT');
+  }
+
+  /**
+   * Fail closed: a self-scoped user without a directClientId, or asking for any
+   * other client id, gets 404 (indistinguishable from a nonexistent record).
+   */
+  private enforceClientSelfScope(clientId: string, context: UserContext): void {
+    if (!this.isClientSelfScoped(context)) {
+      return;
+    }
+    if (context.directClientId === undefined || context.directClientId === '' || context.directClientId !== clientId) {
+      throw new NotFoundError(`Client not found: ${clientId}`);
+    }
+  }
+
   private checkOrganizationalAccess(
     client: Client,
     context: UserContext

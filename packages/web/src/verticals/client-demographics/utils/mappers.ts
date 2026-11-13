@@ -22,11 +22,20 @@ export interface IntakeData {
     postalCode: string;
   };
   phone: string;
+  phoneType?: 'MOBILE' | 'HOME' | 'WORK';
+  phoneCanReceiveSMS?: boolean;
   email: string;
   emergencyContacts: Array<{
     name: string;
     relationship: string;
     phone: string;
+    id?: string;
+    isPrimary?: boolean;
+    canMakeHealthcareDecisions?: boolean;
+    phoneType?: 'MOBILE' | 'HOME' | 'WORK';
+    canReceiveSMS?: boolean;
+    email?: string;
+    notes?: string;
   }>;
   physician: {
     name: string;
@@ -109,7 +118,19 @@ export interface IntakeData {
  * Map a Client database object to IntakeData form structure
  * Handles type conversions and provides sensible defaults for missing fields
  */
-export function mapClientToIntakeData(client: Client): Partial<IntakeData> {
+/**
+ * What the API actually returns. `Client` declares primaryAddress and emergencyContacts
+ * as always present, but a client can be saved without an address (intake allows it)
+ * and older rows can lack contacts, so the mapper must not trust those two fields.
+ * Widening only the mapper's input keeps the guards honest without changing `Client`,
+ * which ClientCard, ClientDetail and the scheduler still dereference directly.
+ */
+type ClientWire = Omit<Client, 'primaryAddress' | 'emergencyContacts'> & {
+  primaryAddress?: Client['primaryAddress'] | null;
+  emergencyContacts?: Client['emergencyContacts'] | null;
+};
+
+export function mapClientToIntakeData(client: Client | ClientWire): Partial<IntakeData> {
   return {
     // Demographics
     firstName: client.firstName,
@@ -121,21 +142,40 @@ export function mapClientToIntakeData(client: Client): Partial<IntakeData> {
       : '',
     gender: client.gender ?? '',
 
-    // Address
+    // Address. The API can return a client saved without one (intake allows it), so
+    // never dereference primaryAddress unguarded: that crashed the edit page.
     address: {
-      line1: client.primaryAddress.line1,
-      line2: client.primaryAddress.line2 ?? '',
-      city: client.primaryAddress.city,
-      state: client.primaryAddress.state,
-      postalCode: client.primaryAddress.postalCode,
+      line1: client.primaryAddress?.line1 ?? '',
+      line2: client.primaryAddress?.line2 ?? '',
+      city: client.primaryAddress?.city ?? '',
+      state: client.primaryAddress?.state ?? '',
+      postalCode: client.primaryAddress?.postalCode ?? '',
     },
 
     // Contact
     phone: client.primaryPhone?.number ?? '',
+    ...(client.primaryPhone && {
+      phoneType: client.primaryPhone.type,
+      phoneCanReceiveSMS: client.primaryPhone.canReceiveSMS,
+    }),
     email: client.email ?? '',
 
+    // Saved emergency contacts. Without this the edit form opened empty and saving
+    // sent emergencyContacts: [], which overwrote the stored list.
+    emergencyContacts: (client.emergencyContacts ?? []).map((contact) => ({
+      id: contact.id,
+      name: contact.name,
+      relationship: contact.relationship,
+      phone: contact.phone.number,
+      isPrimary: contact.isPrimary,
+      canMakeHealthcareDecisions: contact.canMakeHealthcareDecisions,
+      phoneType: contact.phone.type,
+      canReceiveSMS: contact.phone.canReceiveSMS,
+      ...(contact.email !== undefined && { email: contact.email }),
+      ...(contact.notes !== undefined && { notes: contact.notes }),
+    })),
+
     // Default empty structures for other fields
-    emergencyContacts: [],
     physician: {
       name: '',
       phone: '',

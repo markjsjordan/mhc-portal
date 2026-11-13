@@ -24,8 +24,8 @@ const STATE_PATTERN = /^[A-Za-z]{2}$/;
 
 export interface IntakeFormatInput {
   phone?: string;
-  address?: { state: string; postalCode: string };
-  emergencyContacts?: ReadonlyArray<{ name: string; phone: string }>;
+  address?: { state?: string; postalCode?: string };
+  emergencyContacts?: ReadonlyArray<{ name?: string; phone?: string }>;
 }
 
 /**
@@ -59,7 +59,7 @@ export function findIntakeFormatError(
     if (contactPhone !== undefined && !PHONE_PATTERN.test(contactPhone)) {
       return {
         step: 1,
-        message: `Emergency contact phone for ${contact.name.trim() || 'contact'} may contain only digits, spaces, dashes, parentheses and a leading +`,
+        message: `Emergency contact phone for ${blankToUndefined(contact.name) ?? 'contact'} may contain only digits, spaces, dashes, parentheses and a leading +`,
       };
     }
   }

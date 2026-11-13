@@ -4,7 +4,6 @@
  * Dashboard for caregivers showing:
  * - Today's schedule with map/directions
  * - Pending tasks by client
- * - Timesheet status (submitted, approved, paid)
  * - Training/credential expiration reminders
  * 
  * Error Recovery Features:
@@ -52,12 +51,6 @@ import {
   Wifi,
   WifiOff,
 } from 'lucide-react';
-
-function getPeriodByIndex(index: number): string {
-  if (index === 0) return 'current';
-  if (index === 1) return 'last';
-  return String(index);
-}
 
 interface VisitCardProps {
   clientName: string;
@@ -278,67 +271,6 @@ const VisitCard: React.FC<VisitCardProps> = ({
   );
 };
 
-interface TimesheetStatusProps {
-  period: string;
-  hours: number;
-  status: 'draft' | 'submitted' | 'approved' | 'paid';
-  onClick?: () => void;
-}
-
-const TimesheetStatus: React.FC<TimesheetStatusProps> = ({ period, hours, status, onClick }) => {
-  const getStatusStyles = () => {
-    switch (status) {
-      case 'draft':
-        return {
-          bg: 'bg-gray-100',
-          text: 'text-gray-700',
-          badge: 'bg-gray-500',
-          label: 'Draft',
-        };
-      case 'submitted':
-        return {
-          bg: 'bg-blue-100',
-          text: 'text-blue-700',
-          badge: 'bg-blue-500',
-          label: 'Submitted',
-        };
-      case 'approved':
-        return {
-          bg: 'bg-green-100',
-          text: 'text-green-700',
-          badge: 'bg-green-500',
-          label: 'Approved',
-        };
-      case 'paid':
-        return {
-          bg: 'bg-purple-100',
-          text: 'text-purple-700',
-          badge: 'bg-purple-500',
-          label: 'Paid',
-        };
-    }
-  };
-
-  const styles = getStatusStyles();
-
-  return (
-    <div
-      className={`p-4 rounded-lg ${styles.bg} ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
-      onClick={onClick}
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <p className="font-semibold text-gray-900">{period}</p>
-          <p className={`text-sm mt-1 ${styles.text}`}>{hours} hours</p>
-        </div>
-        <span className={`px-3 py-1 text-xs font-bold text-white rounded ${styles.badge}`}>
-          {styles.label}
-        </span>
-      </div>
-    </div>
-  );
-};
-
 interface CredentialAlertProps {
   title: string;
   expiresIn: string;
@@ -400,12 +332,6 @@ interface VisitData {
   tasks: string[];
 }
 
-interface TimesheetData {
-  period: string;
-  hours: number;
-  status: 'draft' | 'submitted' | 'approved' | 'paid';
-}
-
 interface CredentialData {
   title: string;
   expiresIn: string;
@@ -429,9 +355,6 @@ export const CaregiverDashboard: React.FC = () => {
   const [visits, setVisits] = useState<VisitData[]>(() =>
     getLocalStorage(CACHE_KEYS.CAREGIVER_DASHBOARD_VISITS, [])
   );
-  const [timesheets, setTimesheets] = useState<TimesheetData[]>(() =>
-    getLocalStorage(CACHE_KEYS.CAREGIVER_DASHBOARD_TIMESHEETS, [])
-  );
   const [credentials, setCredentials] = useState<CredentialData[]>(() =>
     getLocalStorage(CACHE_KEYS.CAREGIVER_DASHBOARD_CREDENTIALS, [])
   );
@@ -446,16 +369,12 @@ export const CaregiverDashboard: React.FC = () => {
 
   // Track refresh state for each widget
   const [isRefreshingVisits, setIsRefreshingVisits] = useState(false);
-  const [isRefreshingTimesheets, setIsRefreshingTimesheets] = useState(false);
   const [isRefreshingCredentials, setIsRefreshingCredentials] = useState(false);
   const [isRefreshingStats, setIsRefreshingStats] = useState(false);
 
   // Track last updated times
   const [visitsLastUpdated, setVisitsLastUpdated] = useState<Date | null>(
     () => getLastUpdated(CACHE_KEYS.CAREGIVER_DASHBOARD_VISITS)
-  );
-  const [timesheetsLastUpdated, setTimesheetsLastUpdated] = useState<Date | null>(
-    () => getLastUpdated(CACHE_KEYS.CAREGIVER_DASHBOARD_TIMESHEETS)
   );
   const [credentialsLastUpdated, setCredentialsLastUpdated] = useState<Date | null>(
     () => getLastUpdated(CACHE_KEYS.CAREGIVER_DASHBOARD_CREDENTIALS)
@@ -529,44 +448,6 @@ export const CaregiverDashboard: React.FC = () => {
     }
   }, []);
 
-  // Fetch timesheets data
-  const fetchTimesheets = useCallback(async () => {
-    setIsRefreshingTimesheets(true);
-    try {
-      // API integration pending - using mock data for demonstration
-      const mockTimesheets: TimesheetData[] = [
-        {
-          period: 'Current Week (11/10 - 11/16)',
-          hours: 32.5,
-          status: 'draft',
-        },
-        {
-          period: 'Last Week (11/3 - 11/9)',
-          hours: 40,
-          status: 'submitted',
-        },
-        {
-          period: 'Week of 10/27 - 11/2',
-          hours: 38,
-          status: 'approved',
-        },
-        {
-          period: 'Week of 10/20 - 10/26',
-          hours: 40,
-          status: 'paid',
-        },
-      ];
-
-      setTimesheets(mockTimesheets);
-      setLocalStorage(CACHE_KEYS.CAREGIVER_DASHBOARD_TIMESHEETS, mockTimesheets, CACHE_EXPIRATION.FIFTEEN_MINUTES);
-      setTimesheetsLastUpdated(new Date());
-    } catch (error) {
-      console.error('Error fetching timesheets:', error);
-    } finally {
-      setIsRefreshingTimesheets(false);
-    }
-  }, []);
-
   // Fetch credentials data
   const fetchCredentials = useCallback(async () => {
     setIsRefreshingCredentials(true);
@@ -621,11 +502,10 @@ export const CaregiverDashboard: React.FC = () => {
   const refreshAll = useCallback(async () => {
     await Promise.all([
       fetchVisits(),
-      fetchTimesheets(),
       fetchCredentials(),
       fetchStats(),
     ]);
-  }, [fetchVisits, fetchTimesheets, fetchCredentials, fetchStats]);
+  }, [fetchVisits, fetchCredentials, fetchStats]);
 
   // Navigation handlers to avoid void operator issues
   const handleNavigateToCredentials = useCallback(() => {
@@ -638,10 +518,6 @@ export const CaregiverDashboard: React.FC = () => {
 
   const handleNavigateToMyWeeklySchedule = useCallback(() => {
     Promise.resolve(navigate('/caregiver/schedule')).catch(() => {});
-  }, [navigate]);
-
-  const handleNavigateToTimeTracking = useCallback(() => {
-    Promise.resolve(navigate('/time-tracking')).catch(() => {});
   }, [navigate]);
 
   const handleNavigateToTraining = useCallback(() => {
@@ -879,42 +755,6 @@ export const CaregiverDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Timesheet Status */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <h2 className={`${isMobile ? 'text-xl' : 'text-lg'} font-semibold text-gray-900`}>Timesheet Status</h2>
-            <DemoBadge size="sm" />
-          </div>
-          <div className="flex items-center gap-3">
-            <DataFreshness
-              lastUpdated={timesheetsLastUpdated}
-              onRefresh={async () => fetchTimesheets()}
-              isRefreshing={isRefreshingTimesheets}
-              compact
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleNavigateToTimeTracking}
-            >
-              View All
-            </Button>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 gap-4">
-          {timesheets.map((timesheet, index) => (
-            <TimesheetStatus
-              key={index}
-              {...timesheet}
-              onClick={() => { 
-                Promise.resolve(navigate(`/time-tracking?period=${getPeriodByIndex(index)}`)).catch(() => {});
-              }}
-            />
-          ))}
-        </div>
-      </div>
-
       {/* Quick Actions */}
       <Card>
         <CardHeader>
@@ -922,14 +762,6 @@ export const CaregiverDashboard: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Button
-              variant="outline"
-              className="justify-start"
-              onClick={handleNavigateToTimeTracking}
-            >
-              <Clock className="h-5 w-5 mr-2" />
-              Submit Timesheet
-            </Button>
             <Button
               variant="outline"
               className="justify-start"

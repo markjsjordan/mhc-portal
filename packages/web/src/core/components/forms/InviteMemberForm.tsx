@@ -22,7 +22,6 @@ const ROLE_OPTIONS = [
   { value: 'BRANCH_ADMIN', label: 'Branch Administrator' },
   { value: 'COORDINATOR', label: 'Coordinator' },
   { value: 'SCHEDULER', label: 'Scheduler' },
-  { value: 'CAREGIVER', label: 'Caregiver' },
   { value: 'BILLING', label: 'Billing Staff' },
 ];
 

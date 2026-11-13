@@ -18,6 +18,7 @@ import {
 import { OrganizationRepository } from '../repository/organization-repository';
 import { UserRepository, CreateUserRequest } from '../repository/user-repository';
 import { Database } from '../db/connection';
+import { findPortalDerivedRoles, PORTAL_DERIVED_ROLE_MESSAGE } from './portal-link-resolver';
 
 export interface TeamMember {
   id: UUID;
@@ -206,6 +207,13 @@ export class OrganizationService implements IOrganizationService {
     // Validate email format
     if (!this.isValidEmail(request.email)) {
       throw new ValidationError('Invalid email address', { email: request.email });
+    }
+
+    // CAREGIVER/FAMILY/CLIENT are derived from portal links; staff invites cannot grant them
+    if (findPortalDerivedRoles(request.roles).length > 0 && request.targetType !== 'CAREGIVER' &&
+      request.targetType !== 'FAMILY'
+    ) {
+      throw new ValidationError(PORTAL_DERIVED_ROLE_MESSAGE, { roles: request.roles });
     }
 
     // Check if user already exists
@@ -487,6 +495,10 @@ export class OrganizationService implements IOrganizationService {
 
     if (updates.roles?.length === 0) {
       throw new ValidationError('At least one role must be assigned');
+    }
+
+    if (findPortalDerivedRoles(updates.roles).length > 0) {
+      throw new ValidationError(PORTAL_DERIVED_ROLE_MESSAGE, { roles: updates.roles });
     }
 
     const updatedUser = await this.userRepo.updateUser(userId, organizationId, updates, updatedBy);

@@ -1031,6 +1031,15 @@ describe('PortalAccessService', () => {
           fields: [],
         });
 
+      // No direct client portal link on this client
+      vi.mocked(mockDb.query).mockResolvedValueOnce({
+        rows: [],
+        command: 'SELECT',
+        rowCount: 0,
+        oid: 0,
+        fields: [],
+      });
+
       await service.handleClientStatusChange(clientId, 'ACTIVE', 'DISCHARGED', adminContext);
 
       expect(mockAudit.logEvent).toHaveBeenCalledTimes(2);

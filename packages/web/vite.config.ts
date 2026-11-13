@@ -216,8 +216,39 @@ export default defineConfig({
         /sentry_cpu_profiler.*\.node$/,
       ],
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+        manualChunks: (id) => {
+          // React core MUST stay in ONE chunk. Splitting react / react-dom / react-router
+          // into separate chunks creates a circular chunk graph under React 19 and the app
+          // crashes at startup with "Cannot set properties of undefined (setting 'Activity')",
+          // leaving a blank page (regression from the #162 bundle split).
+          if (
+            id.includes('node_modules/react/') ||
+            id.includes('node_modules/react-dom/') ||
+            id.includes('node_modules/scheduler/') ||
+            id.includes('node_modules/react-router-dom/') ||
+            id.includes('node_modules/react-router/')
+          ) {
+            return 'react-vendor';
+          }
+          // Vercel analytics (lazy loaded, non-critical)
+          if (id.includes('node_modules/@vercel/analytics') || id.includes('node_modules/@vercel/speed-insights')) {
+            return 'analytics';
+          }
+          // Date/time libraries (pure third-party leaf, no back-edges)
+          if (id.includes('node_modules/moment') || id.includes('node_modules/date-fns')) {
+            return 'moment';
+          }
+          // Validation libraries (pure third-party leaf, no back-edges)
+          if (id.includes('node_modules/zod')) {
+            return 'zod';
+          }
+          // NOTE: do NOT add manual chunks for app code (src/verticals/*) or for libraries that
+          // import app code or shared components (react-query, lucide/radix/sonner via shared UI).
+          // Those splits created static chunk cycles (ui-libs <-> billing, clients <-> care-plans
+          // <-> caregivers, ...) that crash at startup with TDZ errors and a blank page.
+          // `npm run check:chunk-cycles` fails the build pipeline if a cycle is reintroduced.
+          // Default: let Vite decide
+          return undefined;
         },
       },
     },
