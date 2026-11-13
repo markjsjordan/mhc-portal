@@ -48,6 +48,10 @@ export const ClientEditPage: React.FC = () => {
 
   return (
     <ClientIntakeWorkflow
+      // The form copies initialData into state once. Re-key on the record's version so a
+      // refetch (or switching clients) remounts it with the new data instead of
+      // silently showing and saving stale values.
+      key={`${client.id}:${client.updatedAt}`}
       initialData={initialData}
       isEditMode={true}
       clientId={id}
