@@ -646,12 +646,12 @@ export class PortalAccessService {
       branchIds: [],
     };
 
-    const auditResourceByTarget: Record<string, string> = {
-      CAREGIVER: 'caregiver',
-      CLIENT: 'client',
-      FAMILY: 'family_member',
-    };
-    const auditResource = auditResourceByTarget[targetType ?? ''] ?? 'family_member';
+    const auditResourceByTarget = new Map<string, string>([
+      ['CAREGIVER', 'caregiver'],
+      ['CLIENT', 'client'],
+      ['FAMILY', 'family_member'],
+    ]);
+    const auditResource = auditResourceByTarget.get(targetType) ?? 'family_member';
     await this.audit.logEvent(auditContext, {
       eventType: 'PORTAL_INVITATION_ACCEPTED',
       resource: auditResource,

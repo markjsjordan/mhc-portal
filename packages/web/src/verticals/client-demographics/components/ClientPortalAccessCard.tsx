@@ -90,6 +90,12 @@ export const ClientPortalAccessCard: React.FC<ClientPortalAccessCardProps> = ({ 
     const status = data.status;
     const badge = statusBadgeConfig[status];
     const hasEmail = data.email.trim() !== '';
+    let inviteLabel = 'Invite to portal';
+    if (inviteMutation.isPending) {
+      inviteLabel = 'Sending...';
+    } else if (status === 'INVITED') {
+      inviteLabel = 'Resend invite';
+    }
     return (
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -118,7 +124,7 @@ export const ClientPortalAccessCard: React.FC<ClientPortalAccessCardProps> = ({ 
               onClick={() => inviteMutation.mutate()}
               disabled={inviteMutation.isPending || !hasEmail}
             >
-              {inviteMutation.isPending ? 'Sending...' : status === 'INVITED' ? 'Resend invite' : 'Invite to portal'}
+              {inviteLabel}
             </Button>
           )}
           {status === 'ACTIVE' && (

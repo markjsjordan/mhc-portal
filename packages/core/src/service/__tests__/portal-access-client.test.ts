@@ -22,7 +22,6 @@ const OTHER_ORG = '99999999-9999-4999-8999-999999999999';
 const CLIENT_ID = '66666666-6666-4666-8666-666666666666';
 const USER_ID = '77777777-7777-4777-8777-777777777777';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const res = (rows: unknown[]): any => ({ rows, command: 'SELECT', rowCount: rows.length, oid: 0, fields: [] });
 
 describe('PortalAccessService - client portal access', () => {
