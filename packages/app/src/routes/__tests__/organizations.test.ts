@@ -16,7 +16,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import express from 'express';
 import request from 'supertest';
-import { AuditService, type Database } from '@folkcare/core';
+import { AuditService, OrganizationService, ValidationError, type Database } from '@folkcare/core';
 import type { Router } from 'express';
 
 // Type for Express Router stack layer (Express internals aren't fully typed)
@@ -528,6 +528,10 @@ describe('Organization Routes', () => {
           oid: 0,
           fields: [],
         })
+        // resolvePortalLinks runs three queries: caregiver link, family links, direct client link (none)
+        .mockResolvedValueOnce({ rows: [] } as never)
+        .mockResolvedValueOnce({ rows: [] } as never)
+        .mockResolvedValueOnce({ rows: [] } as never)
         .mockResolvedValueOnce({
           rows: [{ section: 'clients', access: 'READ' }],
           command: 'SELECT',
@@ -544,7 +548,7 @@ describe('Organization Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.roleDefaults.clients).toEqual({ read: true, write: true });
-      expect(res.body.data.overrides).toEqual({ clients: 'READ' });
+      expect(res.body.data.overrides).toEqual([{ section: 'clients', access: 'READ' }]);
       expect(res.body.data.effective.clients).toEqual({ read: true, write: false });
     });
 
@@ -573,6 +577,10 @@ describe('Organization Routes', () => {
           oid: 0,
           fields: [],
         })
+        // resolvePortalLinks runs three queries: caregiver link, family links, direct client link (none)
+        .mockResolvedValueOnce({ rows: [] } as never)
+        .mockResolvedValueOnce({ rows: [] } as never)
+        .mockResolvedValueOnce({ rows: [] } as never)
         // 2. SectionAccessService.setOverride target user check
         .mockResolvedValueOnce({
           rows: [{ id: targetUserId, organization_id: orgId, deleted_at: null }],
@@ -633,6 +641,66 @@ describe('Organization Routes', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.code).toBe('VALIDATION_ERROR');
+    });
+
+    const isReadable = (p: unknown): boolean => {
+      const perm = p as { read: boolean; write: boolean };
+      return perm.read || perm.write;
+    };
+
+    describe('derived roles in section-access defaults (wdvf3acxk6)', () => {
+      const targetRow = {
+        rows: [{ id: targetUserId, roles: ['CAREGIVER'], permissions: [], branch_ids: [] }],
+      };
+
+      it('GET returns the CAREGIVER role defaults when the user has an ACTIVE caregiver link', async () => {
+        vi.mocked(mockDb.query)
+          .mockResolvedValueOnce(targetRow as never)
+          .mockResolvedValueOnce({ rows: [{ id: 'cg-1' }] } as never) // caregiver link
+          .mockResolvedValueOnce({ rows: [] } as never) // family links
+          .mockResolvedValueOnce({ rows: [] } as never); // overrides
+        const res = await request(buildOrgTestApp(['ORG_ADMIN'], orgId)).get(
+          `/api/organizations/${orgId}/users/${targetUserId}/section-access`
+        );
+        expect(res.status).toBe(200);
+        const anyReadable = Object.values(res.body.data.roleDefaults).some(isReadable);
+        expect(anyReadable).toBe(true);
+      });
+
+      it('GET returns NONE everywhere for a CAREGIVER-role user without a link', async () => {
+        vi.mocked(mockDb.query)
+          .mockResolvedValueOnce(targetRow as never)
+          .mockResolvedValueOnce({ rows: [] } as never)
+          .mockResolvedValueOnce({ rows: [] } as never)
+          .mockResolvedValueOnce({ rows: [] } as never);
+        const res = await request(buildOrgTestApp(['ORG_ADMIN'], orgId)).get(
+          `/api/organizations/${orgId}/users/${targetUserId}/section-access`
+        );
+        expect(res.status).toBe(200);
+        const anyReadable = Object.values(res.body.data.roleDefaults).some(isReadable);
+        expect(anyReadable).toBe(false);
+      });
+    });
+  });
+
+  describe('PUT /organizations/:id/users/:userId role write (wdvf3acxk6)', () => {
+    const orgId = '223e4567-e89b-12d3-a456-426614174000';
+    const userId = '333e4567-e89b-12d3-a456-426614174000';
+
+    it('returns 400 naming the portal invite flow when the service rejects CAREGIVER', async () => {
+      const results = vi.mocked(OrganizationService).mock.results;
+      const svc = results[results.length - 1]?.value as { updateOrganizationUser: ReturnType<typeof vi.fn> };
+      svc.updateOrganizationUser = vi
+        .fn()
+        .mockRejectedValue(new ValidationError('Use "Caregivers > Invite to portal" instead'));
+      const app = express();
+      app.use(express.json());
+      app.use('/api', router);
+      const res = await request(app)
+        .put(`/api/organizations/${orgId}/users/${userId}`)
+        .send({ roles: ['CAREGIVER'] });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/Invite to portal/);
     });
   });
 });

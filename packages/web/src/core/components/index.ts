@@ -5,6 +5,7 @@ export * from './Checkbox';
 export * from './forms';
 export * from './feedback';
 export * from './ProtectedRoute';
+export * from './NoAccess';
 
 export * from './FilterDropdown';
 export * from './FilterCheckboxSection';

@@ -29,6 +29,8 @@ import {
   SectionAccessService,
   PortalAccessService,
   PermissionError,
+  resolvePortalLinks,
+  deriveRoles,
 } from '@folkcare/core';
 
 export function createOrganizationRouter(db: Database): Router {
@@ -935,10 +937,12 @@ export function createOrganizationRouter(db: Database): Router {
     if (row === undefined) {
       return null;
     }
+    // Use derived (effective) roles, same two calls login uses, so role defaults match what the user receives
+    const links = await resolvePortalLinks(db, row.id);
     return {
       userId: row.id,
       organizationId,
-      roles: row.roles ?? [],
+      roles: deriveRoles(row.roles ?? [], links),
       permissions: row.permissions ?? [],
       branchIds: row.branch_ids ?? [],
     };

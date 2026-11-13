@@ -7,6 +7,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth, usePermissions } from '../hooks';
 import { getDashboardRoute } from '../utils/role-routing';
 import { LoadingSpinner } from './feedback/LoadingSpinner';
+import { NoAccess } from './NoAccess';
 import type { Role } from '../types/auth';
 import type { Section } from '../types/sections';
 
@@ -68,34 +69,39 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Redirect to the fallback/dashboard, unless that is where we already are
+  // (or the user has no routable dashboard): show NoAccess instead of looping.
+  const deny = (): React.ReactElement => {
+    const redirect = fallbackPath ?? getDashboardRoute(user.roles);
+    if (redirect === location.pathname) {
+      return <NoAccess />;
+    }
+    return <Navigate to={redirect} replace />;
+  };
+
   // Check single permission
   if (permission && !can(permission)) {
-    const redirect = fallbackPath ?? getDashboardRoute(user.roles);
-    return <Navigate to={redirect} replace />;
+    return deny();
   }
 
   // Check section access (READ access required to view route)
   if (section && !canSection(section, 'READ')) {
-    const redirect = fallbackPath ?? getDashboardRoute(user.roles);
-    return <Navigate to={redirect} replace />;
+    return deny();
   }
 
   // Check multiple permissions (all required)
   if (permissions && !canAll(permissions)) {
-    const redirect = fallbackPath ?? getDashboardRoute(user.roles);
-    return <Navigate to={redirect} replace />;
+    return deny();
   }
 
   // Check single required role
   if (requiredRole && !hasRole(requiredRole)) {
-    const redirect = fallbackPath ?? getDashboardRoute(user.roles);
-    return <Navigate to={redirect} replace />;
+    return deny();
   }
 
   // Check multiple required roles (at least one)
   if (requiredRoles && !hasAnyRole(requiredRoles)) {
-    const redirect = fallbackPath ?? getDashboardRoute(user.roles);
-    return <Navigate to={redirect} replace />;
+    return deny();
   }
 
   // All checks passed
@@ -125,7 +131,11 @@ export const FamilyProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
 
   // Redirect non-family users to their appropriate dashboard
   if (!user.roles.includes('FAMILY') && !user.roles.includes('CLIENT')) {
-    return <Navigate to={getDashboardRoute(user.roles)} replace />;
+    const redirect = getDashboardRoute(user.roles);
+    if (redirect === location.pathname) {
+      return <NoAccess />;
+    }
+    return <Navigate to={redirect} replace />;
   }
 
   return <>{children}</>;
