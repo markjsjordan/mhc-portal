@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { blankToUndefined, findIntakeFormatError } from '../intake-payload';
+import {
+  blankToUndefined,
+  findIntakeFormatError,
+  hasRequiredIntakeFields,
+  shouldActivateOnEdit,
+} from '../intake-payload';
 
 describe('blankToUndefined', () => {
   it('returns undefined for undefined, null, empty and whitespace-only values', () => {
@@ -64,5 +69,48 @@ describe('findIntakeFormatError', () => {
     });
     expect(result?.step).toBe(1);
     expect(result?.message).toContain('Sam Smith');
+  });
+});
+
+describe('hasRequiredIntakeFields / shouldActivateOnEdit', () => {
+  const full = {
+    firstName: 'Jane',
+    lastName: 'Doe',
+    dateOfBirth: '1950-03-04',
+    email: 'j@x.com',
+    phone: '5125551212',
+    emergencyContacts: [{ name: 'Sam' }],
+  };
+
+  it('passes when everything is present', () => {
+    expect(hasRequiredIntakeFields(full)).toBe(true);
+  });
+
+  it.each([
+    ['firstName', { firstName: '' }],
+    ['lastName', { lastName: '' }],
+    ['dateOfBirth', { dateOfBirth: '' }],
+    ['contact method', { email: '', phone: '' }],
+    ['emergency contact', { emergencyContacts: [] }],
+  ])('fails when %s is missing', (_n, patch) => {
+    expect(hasRequiredIntakeFields({ ...full, ...patch })).toBe(false);
+  });
+
+  it('treats whitespace-only values as missing', () => {
+    expect(hasRequiredIntakeFields({ ...full, firstName: '   ' })).toBe(false);
+    expect(hasRequiredIntakeFields({ ...full, lastName: ' ' })).toBe(false);
+    expect(hasRequiredIntakeFields({ ...full, email: '  ', phone: ' ' })).toBe(false);
+  });
+
+  it('accepts null email when phone is present, and email without phone', () => {
+    expect(hasRequiredIntakeFields({ ...full, email: null })).toBe(true);
+    expect(hasRequiredIntakeFields({ ...full, phone: null })).toBe(true);
+  });
+
+  it('only activates PENDING_INTAKE', () => {
+    expect(shouldActivateOnEdit('PENDING_INTAKE', full)).toBe(true);
+    for (const s of ['INQUIRY', 'ACTIVE', 'INACTIVE', 'ON_HOLD', 'DISCHARGED', 'DECEASED', undefined]) {
+      expect(shouldActivateOnEdit(s, full)).toBe(false);
+    }
   });
 });
