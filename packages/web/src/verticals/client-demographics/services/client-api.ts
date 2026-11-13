@@ -30,7 +30,42 @@ export interface DashboardClient {
   outstandingTasks: number;
 }
 
+export interface ClientVisitHistoryEntry {
+  id: string;
+  visitNumber: string;
+  visitType: string;
+  serviceTypeName: string;
+  scheduledDate: string;
+  scheduledStartTime: string;
+  scheduledEndTime: string;
+  scheduledDuration: number;
+  actualStartTime?: string;
+  actualEndTime?: string;
+  actualDuration?: number;
+  status: string;
+  statusHistory: Array<{
+    id: string;
+    fromStatus: string | null;
+    toStatus: string;
+    timestamp: string;
+    automatic: boolean;
+  }>;
+  caregiverFirstName?: string;
+  caregiverLastName?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClientVisitHistoryPage {
+  items: ClientVisitHistoryEntry[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface ClientApiService {
+  getClientVisitHistory(clientId: string, params?: { page?: number; limit?: number }): Promise<ClientVisitHistoryPage>;
   getClients(filters?: ClientSearchFilters & SearchParams): Promise<PaginatedResult<Client>>;
   getClientsDashboard(filters?: ClientSearchFilters & SearchParams): Promise<PaginatedResult<DashboardClient>>;
   getClientById(id: string): Promise<Client>;
@@ -49,6 +84,16 @@ export interface ClientApiService {
 
 export const createClientApiService = (apiClient: ApiClient): ClientApiService => {
   return {
+    async getClientVisitHistory(clientId: string, params?: { page?: number; limit?: number }): Promise<ClientVisitHistoryPage> {
+      const qs = new URLSearchParams();
+      qs.append('page', String(params?.page ?? 1));
+      qs.append('limit', String(params?.limit ?? 10));
+      const response = await apiClient.get<{ success: boolean; data: ClientVisitHistoryPage }>(
+        `/api/clients/${clientId}/visit-history?${qs.toString()}`
+      );
+      return response.data;
+    },
+
     async getClients(filters?: ClientSearchFilters & SearchParams): Promise<PaginatedResult<Client>> {
       const params = new URLSearchParams();
       if (filters?.query) params.append('query', filters.query);

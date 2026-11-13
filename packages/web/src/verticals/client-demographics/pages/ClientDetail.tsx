@@ -8,7 +8,12 @@ import { LoadingSpinner, ErrorMessage, StatusBadge, DemoBadge } from '@/core/com
 import { usePermissions, useSectionAccess } from '@/core/hooks';
 import { formatDate, formatPhone } from '@/core/utils';
 import { useClient, useDeleteClient } from '../hooks';
-import { FamilyPortalAccessCard, ClientPortalAccessCard } from '../components';
+import {
+  FamilyPortalAccessCard,
+  ClientPortalAccessCard,
+  VisitHistoryCard,
+  ClientTimelineCard,
+} from '../components';
 
 export const ClientDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -226,6 +231,11 @@ export const ClientDetail: React.FC = () => {
           {/* Portal Access (client + family) */}
           <ClientPortalAccessCard clientId={client.id} />
           <FamilyPortalAccessCard clientId={client.id} />
+
+          {/* Visit History */}
+          <div id="visit-history">
+            <VisitHistoryCard clientId={client.id} />
+          </div>
         </div>
 
         <div className="space-y-6">
@@ -276,46 +286,12 @@ export const ClientDetail: React.FC = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-medium">Timeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="h-2 w-2 mt-2 rounded-full bg-green-500" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Client Created</p>
-                    <p className="text-xs text-gray-600">
-                      {formatDate(client.createdAt)}
-                    </p>
-                  </div>
-                </div>
-                {client.intakeDate && (
-                  <div className="flex items-start gap-3">
-                    <div className="h-2 w-2 mt-2 rounded-full bg-blue-500" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Intake Completed</p>
-                      <p className="text-xs text-gray-600">
-                        {formatDate(client.intakeDate)}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {client.dischargeDate && (
-                  <div className="flex items-start gap-3">
-                    <div className="h-2 w-2 mt-2 rounded-full bg-red-500" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Discharged</p>
-                      <p className="text-xs text-gray-600">
-                        {formatDate(client.dischargeDate)}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <ClientTimelineCard
+            clientId={client.id}
+            createdAt={client.createdAt}
+            intakeDate={client.intakeDate}
+            dischargeDate={client.dischargeDate}
+          />
         </div>
       </div>
     </div>

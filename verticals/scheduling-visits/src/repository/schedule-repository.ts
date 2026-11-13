@@ -569,6 +569,140 @@ export class ScheduleRepository {
   }
 
   /**
+   * Get visit history for a specific client (paginated, no date range limit)
+   * 
+   * Used for client profile visit history card - returns minimum necessary fields
+   * for billing reference and audit trail, sorted by most recent first.
+   * 
+   * @param clientId - ID of the client
+   * @param organizationId - Organization ID for security scoping
+   * @param branchIds - Optional branch IDs for branch-level scoping
+   * @param pagination - Pagination parameters
+   * @param status - Optional exact visit status filter
+   * @returns Paginated result with visit history
+   */
+  async getClientVisitHistory(
+    clientId: UUID,
+    organizationId: UUID,
+    branchIds?: UUID[],
+    pagination?: PaginationParams,
+    status?: string
+  ): Promise<PaginatedResult<VisitWithClient>> {
+    const limit = pagination?.limit ?? 20;
+    const page = pagination?.page ?? 1;
+    const offset = (page - 1) * limit;
+
+    // Build WHERE conditions
+    const conditions: string[] = [
+      'v.client_id = $1',
+      'v.organization_id = $2',
+      'v.deleted_at IS NULL',
+    ];
+    const values: unknown[] = [clientId, organizationId];
+    let paramCount = 3;
+
+    if (branchIds && branchIds.length > 0) {
+      conditions.push(`v.branch_id = ANY($${paramCount})`);
+      values.push(branchIds);
+      paramCount++;
+    }
+
+    if (status) {
+      conditions.push(`v.status = $${paramCount}`);
+      values.push(status);
+      paramCount++;
+    }
+
+    const whereClause = conditions.join(' AND ');
+
+    // Count total matching visits
+    const countQuery = `SELECT COUNT(*) FROM visits v WHERE ${whereClause}`;
+    const countResult = await this.pool.query(countQuery, values);
+    const total = parseInt(countResult.rows[0].count, 10);
+
+    // Fetch paginated results with caregiver info
+    // Return minimum necessary fields: no internal_notes, risk_flags, or caregiver_instructions
+    const dataQuery = `
+      SELECT 
+        v.id,
+        v.organization_id,
+        v.branch_id,
+        v.client_id,
+        v.visit_number,
+        v.visit_type,
+        v.service_type_id,
+        v.service_type_name,
+        to_char(v.scheduled_date, 'YYYY-MM-DD') AS scheduled_date,
+        to_char(v.scheduled_start_time, 'HH24:MI:SS') AS scheduled_start_time,
+        to_char(v.scheduled_end_time, 'HH24:MI:SS') AS scheduled_end_time,
+        v.scheduled_duration,
+        v.timezone,
+        v.actual_start_time,
+        v.actual_end_time,
+        v.actual_duration,
+        v.assigned_caregiver_id,
+        v.status,
+        v.status_history,
+        v.created_at,
+        v.updated_at,
+        cg.first_name as caregiver_first_name,
+        cg.last_name as caregiver_last_name
+      FROM visits v
+      LEFT JOIN caregivers cg ON v.assigned_caregiver_id = cg.id
+      WHERE ${whereClause}
+      ORDER BY v.scheduled_date DESC, v.scheduled_start_time DESC
+      LIMIT $${paramCount} OFFSET $${paramCount + 1}
+    `;
+    values.push(limit, offset);
+
+    const result = await this.pool.query(dataQuery, values);
+    
+    // Map to VisitWithClient but only include the fields we selected
+    const items = result.rows.map(row => ({
+      id: row.id,
+      organizationId: row.organization_id,
+      branchId: row.branch_id,
+      clientId: row.client_id,
+      visitNumber: row.visit_number,
+      visitType: row.visit_type,
+      serviceTypeId: row.service_type_id,
+      serviceTypeName: row.service_type_name,
+      scheduledDate: row.scheduled_date,
+      scheduledStartTime: row.scheduled_start_time,
+      scheduledEndTime: row.scheduled_end_time,
+      scheduledDuration: row.scheduled_duration,
+      timezone: row.timezone,
+      actualStartTime: row.actual_start_time,
+      actualEndTime: row.actual_end_time,
+      actualDuration: row.actual_duration,
+      assignedCaregiverId: row.assigned_caregiver_id,
+      status: row.status,
+      // Minimum necessary: drop changedBy (user id), reason and notes (free text)
+      statusHistory: (Array.isArray(row.status_history) ? row.status_history : []).map(
+        (h: { id?: string; fromStatus?: string | null; toStatus?: string; timestamp?: string; automatic?: boolean }) => ({
+          id: h.id,
+          fromStatus: h.fromStatus ?? null,
+          toStatus: h.toStatus,
+          timestamp: h.timestamp,
+          automatic: h.automatic ?? false,
+        })
+      ),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      caregiverFirstName: row.caregiver_first_name,
+      caregiverLastName: row.caregiver_last_name,
+    } as VisitWithClient));
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  /**
    * Helper methods
    */
 
