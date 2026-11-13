@@ -51,6 +51,7 @@ export const ClientEditPage: React.FC = () => {
       initialData={initialData}
       isEditMode={true}
       clientId={id}
+      currentStatus={client.status}
       onSuccess={handleSuccess}
     />
   );

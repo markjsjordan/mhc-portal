@@ -28,7 +28,11 @@ import { Textarea } from '@/components/ui/textarea.js';
 import { Checkbox } from '@/components/ui/checkbox.js';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group.js';
 import { Label } from '@/components/ui/label.js';
-import { blankToUndefined, findIntakeFormatError } from './intake-payload.js';
+import {
+  blankToUndefined,
+  findIntakeFormatError,
+  shouldActivateOnEdit,
+} from './intake-payload.js';
 
 /**
  * Client Intake Workflow
@@ -45,6 +49,8 @@ interface ClientIntakeWorkflowProps {
   initialData?: Partial<IntakeData>;
   isEditMode?: boolean;
   clientId?: string;
+  /** Loaded client's current status (edit mode); only PENDING_INTAKE may be advanced. */
+  currentStatus?: string;
   onSuccess?: (client: Client) => void;
 }
 
@@ -174,7 +180,7 @@ const DEMO_CAREGIVERS = [
 ];
 
 export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = {}) {
-  const { initialData, isEditMode = false, clientId, onSuccess } = props;
+  const { initialData, isEditMode = false, clientId, currentStatus, onSuccess } = props;
   const [currentStep, setCurrentStep] = useState(1);
   const [intakeData, setIntakeData] = useState<Partial<IntakeData>>(
     initialData ?? {
@@ -409,10 +415,23 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           emergencyContacts: emergencyContactsInput,
         };
 
+        const activate = shouldActivateOnEdit(currentStatus, {
+          firstName: updateInput.firstName,
+          lastName: updateInput.lastName,
+          dateOfBirth: updateInput.dateOfBirth,
+          email: intakeData.email,
+          phone: intakeData.phone,
+          emergencyContacts: emergencyContactsInput,
+        });
+        if (activate) {
+          updateInput.status = 'ACTIVE';
+        }
+
         const updatedClient = await updateClient.mutateAsync({
           id: clientId,
           input: updateInput,
         });
+        toast.success(activate ? 'Client saved and activated.' : 'Client saved.');
 
         if (onSuccess) {
           onSuccess(updatedClient);
