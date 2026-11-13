@@ -4,8 +4,10 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
 const getMock = vi.fn();
 const postMock = vi.fn();
+const stableClient = { get: getMock, post: postMock };
 vi.mock('@/core/hooks/api.js', () => ({
-  useApiClient: () => ({ get: getMock, post: postMock }),
+  // Stable identity: a fresh object per render would re-trigger the fetch effect forever.
+  useApiClient: () => stableClient,
 }));
 
 import { SystemActivityPage } from '../SystemActivityPage.js';
@@ -62,7 +64,7 @@ describe('SystemActivityPage (wdvf3acxk9)', () => {
   it('requests ePHI-only server-side when toggled', async () => {
     getMock.mockResolvedValue({ data: { events: [ROW], total: 1, limit: 100, offset: 0 } });
     renderPage();
-    await screen.findByText('VIEW_CLIENT_RECORD', {}, { timeout: 5000 });
+    await screen.findByText('VIEW_CLIENT_RECORD');
     fireEvent.click(screen.getByText('Filter ePHI Access'));
     await waitFor(() =>
       expect(getMock).toHaveBeenLastCalledWith(expect.stringContaining('phiOnly=true'))
@@ -73,9 +75,9 @@ describe('SystemActivityPage (wdvf3acxk9)', () => {
     getMock.mockResolvedValue({ data: { events: [ROW], total: 1, limit: 100, offset: 0 } });
     postMock.mockRejectedValue(new Error('fail'));
     renderPage();
-    await screen.findByText('VIEW_CLIENT_RECORD', {}, { timeout: 5000 });
+    await screen.findByText('VIEW_CLIENT_RECORD');
     fireEvent.click(screen.getByText('Export Audit Pack (CSV)'));
-    expect(await screen.findByText(/Export blocked/i, {}, { timeout: 5000 })).toBeInTheDocument();
+    expect(await screen.findByText(/Export blocked/i)).toBeInTheDocument();
     expect(screen.queryByText(/recorded in the audit log/i)).not.toBeInTheDocument();
   });
 });
