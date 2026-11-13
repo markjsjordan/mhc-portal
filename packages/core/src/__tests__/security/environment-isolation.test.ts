@@ -308,6 +308,9 @@ describe('HIPAA-001: EnvironmentIsolationService', () => {
 
       expect(exitCode).not.toBe(0);
       expect(stderrOutput).toContain('HIPAA VIOLATION');
-    });
+      // This test cold-starts a real `tsx` subprocess, so it is far slower than the 5s vitest default
+      // inside a parallel `turbo test` run (observed 3.7s-4.1s, and a hard timeout under QA load). The
+      // timeout bounds how long we wait for the guard to abort; it does not weaken the assertions.
+    }, 30_000);
   });
 });
