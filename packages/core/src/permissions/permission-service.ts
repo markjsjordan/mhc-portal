@@ -139,6 +139,20 @@ export class PermissionService {
       ])
     );
 
+    // CLIENT - direct client portal access (self-view only, scoped via directClientId)
+    this.rolePermissions.set(
+      'CLIENT',
+      new Set([
+        'clients:read',
+        'care-plans:read',
+        'notes:read',
+        'visits:read',
+        'client-portal:view',
+        'activity-feed:view',
+        'notifications:view',
+      ])
+    );
+
     // Billing - financial access
     this.rolePermissions.set(
       'BILLING',
