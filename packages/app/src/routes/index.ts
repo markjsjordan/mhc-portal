@@ -5,7 +5,7 @@
  */
 
 import { Express, Router } from 'express';
-import { Database, PermissionService, UserRepository, AuthMiddleware, AuditService as CoreAuditService } from '@folkcare/core';
+import { Database, PermissionService, PortalAccessService, UserRepository, AuthMiddleware, AuditService as CoreAuditService } from '@folkcare/core';
 import { createClientRouter, ClientService, ClientRepository, ClientAuditService } from '@folkcare/client-demographics';
 import { CarePlanService, CarePlanRepository } from '@folkcare/care-plans-tasks';
 import { TemplateService } from '@folkcare/care-plans-tasks';
@@ -299,7 +299,18 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
   // needs (same object used directly via db.query(...) elsewhere, e.g.
   // security-monitoring.service.ts / routes/sync.ts).
   const clientAuditService = new ClientAuditService(db);
-  const clientService = new ClientService(clientRepository, clientAuditService);
+  // The client status hook is optional in ClientService; without it a DISCHARGED/DECEASED
+  // status change (or a delete) never revoked family portal access in production.
+  const clientPortalAccessService = new PortalAccessService(
+    db,
+    new PermissionService(),
+    new CoreAuditService(db)
+  );
+  const clientService = new ClientService(
+    clientRepository,
+    clientAuditService,
+    clientPortalAccessService
+  );
   const clientRouter = createClientRouter(clientService, db);
   app.use('/api', generalApiLimiter, clientRouter);
   console.log('  ✓ Client Demographics routes registered (with rate limiting)');

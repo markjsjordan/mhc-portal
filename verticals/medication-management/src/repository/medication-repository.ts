@@ -11,6 +11,31 @@ import type {
   RecordAdministrationInput,
 } from '../types/medication.js';
 
+/**
+ * Parse a value that may be a jsonb array or a JSON string.
+ * node-postgres returns jsonb columns already parsed as arrays,
+ * so we need to handle both cases to avoid double-parsing.
+ */
+function parseJsonStringArray(value: unknown): string[] {
+  // If already an array, return it
+  if (Array.isArray(value)) {
+    return value;
+  }
+  
+  // If it's a string, parse it
+  if (typeof value === 'string' && value.trim() !== '') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  
+  // For null, undefined, or other types, return empty array
+  return [];
+}
+
 export class MedicationRepository extends Repository<Medication> {
   constructor(database: Database) {
     super({
@@ -58,10 +83,10 @@ export class MedicationRepository extends Repository<Medication> {
       entity.refillsRemaining = row['refills_remaining'] as number;
     }
     if (row['side_effects'] !== null && row['side_effects'] !== undefined) {
-      entity.sideEffects = JSON.parse(row['side_effects'] as string) as string[];
+      entity.sideEffects = parseJsonStringArray(row['side_effects']);
     }
     if (row['warnings'] !== null && row['warnings'] !== undefined) {
-      entity.warnings = JSON.parse(row['warnings'] as string) as string[];
+      entity.warnings = parseJsonStringArray(row['warnings']);
     }
 
     return entity;

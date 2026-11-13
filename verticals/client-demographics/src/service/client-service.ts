@@ -334,6 +334,18 @@ export class ClientService {
 
     // Verify client exists (internal existence check, not a PHI read — skip audit log)
     const client = await this.getClientById(id, context, true);
+
+    // Revoke family portal access before the soft delete (same contract as a
+    // DISCHARGED status change), so a deleted client leaves no live family logins.
+    if (this.portalAccessHook) {
+      await this.portalAccessHook.handleClientStatusChange(
+        id,
+        client.status as CoreClientStatus,
+        'DISCHARGED',
+        context
+      );
+    }
+
     await this.repository.delete(id, context);
 
     // Invalidate cache

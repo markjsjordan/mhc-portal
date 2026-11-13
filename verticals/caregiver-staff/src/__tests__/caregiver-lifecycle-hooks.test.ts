@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CaregiverService, CaregiverStatusHook } from '../service/caregiver-service.js';
 import { CaregiverImportService } from '../service/caregiver-import-service.js';
 import { CaregiverRepository } from '../repository/caregiver-repository.js';
@@ -100,6 +100,63 @@ describe('Caregiver Lifecycle Hooks', () => {
       // Or if employmentStatus is explicitly the same
       await service.updateCaregiver('cg-1', { employmentStatus: 'ACTIVE' }, mockContext);
       expect(mockHook.handleCaregiverStatusChange).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('CaregiverService.deleteCaregiver access revocation', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    const deleteContext = {
+      userId: 'user-admin',
+      organizationId: 'org-123',
+      branchIds: ['branch-123'],
+      roles: ['ORG_ADMIN'],
+      permissions: ['caregivers:read', 'caregivers:delete'],
+    } as UserContext;
+
+    it('revokes portal access BEFORE the soft delete', async () => {
+      const service = new CaregiverService(mockDb, mockHook);
+      const existing: Partial<Caregiver> = {
+        id: 'cg-1',
+        organizationId: 'org-123',
+        employmentStatus: 'ACTIVE',
+        status: 'ACTIVE',
+      };
+
+      vi.spyOn(CaregiverRepository.prototype, 'findById').mockResolvedValue(existing as Caregiver);
+      const deleteSpy = vi.spyOn(CaregiverRepository.prototype, 'delete').mockResolvedValue(undefined);
+
+      await service.deleteCaregiver('cg-1', deleteContext);
+
+      expect(mockHook.handleCaregiverStatusChange).toHaveBeenCalledWith(
+        'cg-1',
+        'ACTIVE',
+        'TERMINATED',
+        deleteContext
+      );
+      const revokeOrder = vi.mocked(mockHook.handleCaregiverStatusChange).mock.invocationCallOrder[0];
+      const deleteOrder = deleteSpy.mock.invocationCallOrder[0];
+      expect(revokeOrder).toBeDefined();
+      expect(deleteOrder).toBeDefined();
+      expect(revokeOrder!).toBeLessThan(deleteOrder!);
+    });
+
+    it('does not soft delete when the revoke fails', async () => {
+      const service = new CaregiverService(mockDb, mockHook);
+      vi.spyOn(CaregiverRepository.prototype, 'findById').mockResolvedValue({
+        id: 'cg-1',
+        organizationId: 'org-123',
+        employmentStatus: 'ACTIVE',
+      } as Caregiver);
+      (mockHook.handleCaregiverStatusChange as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('revoke failed')
+      );
+      const deleteSpy = vi.spyOn(CaregiverRepository.prototype, 'delete').mockResolvedValue(undefined);
+
+      await expect(service.deleteCaregiver('cg-1', deleteContext)).rejects.toThrow('revoke failed');
+      expect(deleteSpy).not.toHaveBeenCalled();
     });
   });
 

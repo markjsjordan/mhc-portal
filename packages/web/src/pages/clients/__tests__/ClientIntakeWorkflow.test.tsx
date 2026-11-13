@@ -13,6 +13,7 @@ vi.mock('@/core/hooks', () => ({
       branchIds: ['branch-1'],
     },
   }),
+  useApiClient: () => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() }),
 }));
 
 // Mock hooks from client-demographics
@@ -31,6 +32,18 @@ vi.mock('@/verticals/client-demographics/hooks', () => ({
       { id: 'branch-1', name: 'Main Branch', code: 'MB' },
       { id: 'branch-2', name: 'North Branch', code: 'NB' },
     ],
+  }),
+}));
+
+// Mock caregivers hook
+vi.mock('@/verticals/caregivers/hooks', () => ({
+  useCaregivers: () => ({
+    data: {
+      items: [
+        { id: 'cg-1', firstName: 'Maria', lastName: 'Garcia', role: 'Personal Care Aide' },
+        { id: 'cg-2', firstName: 'James', lastName: 'Wilson', role: 'Home Health Aide' },
+      ],
+    },
   }),
 }));
 
@@ -107,7 +120,6 @@ describe('ClientIntakeWorkflow - Mobile and Responsive Layout', () => {
         careAgreement: true,
         hipaa: true,
         financialResponsibility: true,
-        evv: true,
       },
       signature: 'Jane Doe',
     };
