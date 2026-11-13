@@ -50,6 +50,7 @@ function getUserContext(req: Request): UserContext {
     caregiverId: user.caregiverId,
     familyMemberIds: user.familyMemberIds,
     familyClientIds: user.familyClientIds,
+    directClientId: user.directClientId,
   };
 }
 

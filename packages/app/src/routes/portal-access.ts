@@ -62,7 +62,7 @@ export function createPortalAccessRouter(db: Database): Router {
    * Helper to fetch latest pending invite token expiration for a target
    */
   async function getLatestPendingInviteExpiresAt(
-    targetType: 'FAMILY' | 'CAREGIVER',
+    targetType: 'FAMILY' | 'CAREGIVER' | 'CLIENT',
     targetId: string
   ): Promise<string | null> {
     const tokenRes = await db.query<{ expires_at: Date }>(
@@ -533,6 +533,100 @@ export function createPortalAccessRouter(db: Database): Router {
       }
       if (error instanceof ValidationError) {
         res.status(400).json({ success: false, error: error.message });
+        return;
+      }
+      if (error instanceof ConflictError) {
+        res.status(409).json({ success: false, error: error.message });
+        return;
+      }
+      if (error instanceof PermissionError) {
+        res.status(403).json({ success: false, error: error.message });
+        return;
+      }
+      next(error);
+    }
+  });
+
+  /**
+   * GET /api/clients/:id/portal-access
+   * Client's own portal-access status (staff view; requires clients:update)
+   */
+  router.get('/clients/:id/portal-access', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const context = getUserContext(req);
+      const permissionService = new PermissionService();
+      if (!permissionService.hasPermission(context, 'clients:update')) {
+        res.status(403).json({ success: false, error: 'Permission denied: requires clients:update' });
+        return;
+      }
+      const clientId = req.params['id']!;
+      const r = await db.query<{
+        id: string;
+        organization_id: string;
+        email: string | null;
+        status: string;
+        user_id: string | null;
+        portal_access_status: string | null;
+        portal_invited_at: Date | null;
+        portal_activated_at: Date | null;
+        portal_revoked_at: Date | null;
+        portal_revoked_reason: string | null;
+      }>(
+        `SELECT id, organization_id, email, status, user_id, portal_access_status, portal_invited_at,
+                portal_activated_at, portal_revoked_at, portal_revoked_reason
+         FROM clients WHERE id = $1 AND deleted_at IS NULL`,
+        [clientId]
+      );
+      const row = r.rows[0];
+      if (row === undefined || row.organization_id !== context.organizationId) {
+        res.status(404).json({ success: false, error: `Client not found: ${clientId}` });
+        return;
+      }
+      const expiresAt = await getLatestPendingInviteExpiresAt('CLIENT', clientId);
+      res.json({
+        success: true,
+        data: {
+          clientId: row.id,
+          email: row.email ?? '',
+          clientStatus: row.status,
+          status: row.portal_access_status ?? 'NONE',
+          invitedAt: row.portal_invited_at != null ? new Date(row.portal_invited_at).toISOString() : null,
+          activatedAt: row.portal_activated_at != null ? new Date(row.portal_activated_at).toISOString() : null,
+          revokedAt: row.portal_revoked_at != null ? new Date(row.portal_revoked_at).toISOString() : null,
+          revokedReason: row.portal_revoked_reason,
+          inviteExpiresAt: expiresAt,
+          linked: row.user_id != null && row.user_id !== '',
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  /**
+   * POST /api/clients/:id/portal-suspend
+   * Temporarily suspend client portal access
+   */
+  router.post('/clients/:id/portal-suspend', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const context = getUserContext(req);
+      const permissionService = new PermissionService();
+      if (!permissionService.hasPermission(context, 'clients:update')) {
+        res.status(403).json({ success: false, error: 'Permission denied: requires clients:update' });
+        return;
+      }
+      const parseResult = revokeReasonSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        res.status(400).json({ success: false, error: parseResult.error.issues[0]?.message ?? 'Invalid reason' });
+        return;
+      }
+      const auditService = new AuditService(db);
+      const portalAccessService = new PortalAccessService(db, permissionService, auditService);
+      await portalAccessService.suspendClientAccess(req.params['id']!, parseResult.data.reason, context);
+      res.json({ success: true });
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        res.status(404).json({ success: false, error: error.message });
         return;
       }
       if (error instanceof ConflictError) {

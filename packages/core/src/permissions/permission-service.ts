@@ -139,18 +139,14 @@ export class PermissionService {
       ])
     );
 
-    // CLIENT - direct client portal access (self-view only, scoped via directClientId)
+    // CLIENT - direct client portal access (self-view only).
+    // Least privilege / HIPAA minimum necessary: only clients:read, which
+    // ClientService scopes server-side to the user's own directClientId.
+    // visits/care-plans/notes/messages are intentionally NOT granted until each
+    // of those endpoints enforces per-client scoping (follow-up).
     this.rolePermissions.set(
       'CLIENT',
-      new Set([
-        'clients:read',
-        'care-plans:read',
-        'notes:read',
-        'visits:read',
-        'client-portal:view',
-        'activity-feed:view',
-        'notifications:view',
-      ])
+      new Set(['clients:read', 'client-portal:view', 'notifications:view'])
     );
 
     // Billing - financial access

@@ -646,9 +646,15 @@ export class PortalAccessService {
       branchIds: [],
     };
 
+    const auditResourceByTarget: Record<string, string> = {
+      CAREGIVER: 'caregiver',
+      CLIENT: 'client',
+      FAMILY: 'family_member',
+    };
+    const auditResource = auditResourceByTarget[targetType ?? ''] ?? 'family_member';
     await this.audit.logEvent(auditContext, {
       eventType: 'PORTAL_INVITATION_ACCEPTED',
-      resource: targetType === 'CAREGIVER' ? 'caregiver' : targetType === 'CLIENT' ? 'client' : 'family_member',
+      resource: auditResource,
       resourceId: targetId,
       action: 'ACCEPT_PORTAL_INVITATION',
       result: 'SUCCESS',
@@ -693,7 +699,68 @@ export class PortalAccessService {
     context: UserContext
   ): Promise<void> {
     this.permissions.requirePermission(context, 'clients:update');
+    await this.assertClientInOrg(clientId, context);
     await this.performClientRevoke(clientId, reason, context, 'MANUAL');
+  }
+
+  /**
+   * Temporarily suspend client portal access (reversible by re-invite)
+   */
+  async suspendClientAccess(
+    clientId: UUID,
+    reason: string,
+    context: UserContext
+  ): Promise<void> {
+    this.permissions.requirePermission(context, 'clients:update');
+
+    const orgId = context.organizationId;
+    if (orgId === undefined || orgId === '') {
+      throw new ValidationError('Organization ID is required in user context');
+    }
+
+    const clientRes = await this.db.query<{
+      id: string;
+      organization_id: string;
+      user_id: string | null;
+      portal_access_status: string | null;
+    }>(
+      `SELECT id, organization_id, user_id, portal_access_status
+       FROM clients
+       WHERE id = $1 AND deleted_at IS NULL`,
+      [clientId]
+    );
+    const row = clientRes.rows[0];
+    if (row?.organization_id !== orgId) {
+      throw new NotFoundError(`Client not found: ${clientId}`);
+    }
+    if (row.portal_access_status !== 'ACTIVE') {
+      throw new ConflictError('Only ACTIVE client portal access can be suspended');
+    }
+
+    const linkedUserId = row.user_id;
+    await this.db.transaction(async (txClient: PoolClient) => {
+      await txClient.query(
+        `UPDATE clients
+         SET portal_access_status = 'SUSPENDED',
+             portal_revoked_reason = $3,
+             updated_at = NOW(),
+             updated_by = $2
+         WHERE id = $1`,
+        [clientId, context.userId, reason]
+      );
+      if (typeof linkedUserId === 'string' && linkedUserId !== '') {
+        await this.reconcileUserAccount(txClient, linkedUserId, context.userId, 'SUSPENDED');
+      }
+    });
+
+    await this.audit.logEvent(context, {
+      eventType: 'PORTAL_ACCESS_SUSPENDED',
+      resource: 'client',
+      resourceId: clientId,
+      action: 'SUSPEND_CLIENT_ACCESS',
+      result: 'SUCCESS',
+      metadata: { targetType: 'CLIENT', clientId },
+    });
   }
 
   /**
@@ -1064,6 +1131,17 @@ export class PortalAccessService {
         ...(typeof linkedUserId === 'string' ? { linkedUserId } : {}),
       },
     });
+  }
+
+  private async assertClientInOrg(clientId: UUID, context: UserContext): Promise<void> {
+    const res = await this.db.query<{ organization_id: string }>(
+      `SELECT organization_id FROM clients WHERE id = $1 AND deleted_at IS NULL`,
+      [clientId]
+    );
+    const row = res.rows[0];
+    if (row === undefined || row.organization_id !== context.organizationId) {
+      throw new NotFoundError(`Client not found: ${clientId}`);
+    }
   }
 
   private async performClientRevoke(

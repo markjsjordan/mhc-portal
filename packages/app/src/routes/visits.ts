@@ -169,6 +169,7 @@ function getUserContext(req: Request): UserContext {
     caregiverId: anyUser?.caregiverId as UUID | undefined,
     familyMemberIds: anyUser?.familyMemberIds as UUID[] | undefined,
     familyClientIds: anyUser?.familyClientIds as UUID[] | undefined,
+    directClientId: anyUser?.directClientId as UUID | undefined,
   };
 }
 

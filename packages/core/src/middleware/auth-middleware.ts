@@ -129,6 +129,7 @@ export class AuthMiddleware {
         caregiverId: payload.caregiverId,
         familyMemberIds: payload.familyMemberIds,
         familyClientIds: payload.familyClientIds,
+        directClientId: payload.directClientId,
         ipAddress: (typeof req.ip === 'string' && req.ip !== '' ? req.ip : null) ?? (typeof req.headers['x-forwarded-for'] === 'string' && req.headers['x-forwarded-for'] !== '' ? req.headers['x-forwarded-for'] : null),
         userAgent: typeof req.headers['user-agent'] === 'string' && req.headers['user-agent'] !== '' ? req.headers['user-agent'] : null
       };
