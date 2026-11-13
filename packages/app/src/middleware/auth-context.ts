@@ -45,6 +45,7 @@ export function authContextMiddleware(
       caregiverId: req.user.caregiverId,
       familyMemberIds: req.user.familyMemberIds,
       familyClientIds: req.user.familyClientIds,
+      directClientId: req.user.directClientId,
     };
     next();
     return;
@@ -67,6 +68,7 @@ export function authContextMiddleware(
           caregiverId: payload.caregiverId,
           familyMemberIds: payload.familyMemberIds,
           familyClientIds: payload.familyClientIds,
+          directClientId: payload.directClientId,
         };
         next();
         return;
@@ -125,6 +127,7 @@ export function requireAuth(
       caregiverId: req.user.caregiverId,
       familyMemberIds: req.user.familyMemberIds,
       familyClientIds: req.user.familyClientIds,
+      directClientId: req.user.directClientId,
     };
   }
 

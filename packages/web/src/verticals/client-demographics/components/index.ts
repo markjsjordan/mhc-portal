@@ -11,3 +11,4 @@ export * from './VisitHistoryCard';
 
 export * from './ClientTimelineCard';
 
+export * from './ClientPortalAccessCard';

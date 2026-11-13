@@ -188,7 +188,7 @@ describe('VisitDetailPage', () => {
     expect(screen.queryByTestId('edit-visit-button')).not.toBeInTheDocument();
   });
 
-  it('renders VisitClockControl and correct client demographics for non-hardcoded clients', () => {
+  it('hides VisitClockControl and renders correct client demographics for non-hardcoded clients', () => {
     mockVisitData = {
       id: 'vis-mark-1',
       visitNumber: 'V2026-000001',
@@ -212,7 +212,7 @@ describe('VisitDetailPage', () => {
 
     renderPage('vis-mark-1');
 
-    expect(screen.getByTestId('mock-visit-clock-control')).toBeInTheDocument();
+    expect(screen.queryByTestId('mock-visit-clock-control')).not.toBeInTheDocument();
     expect(screen.getByText('Mark Jordan')).toBeInTheDocument();
     expect(screen.queryByText('Margaret Thompson')).not.toBeInTheDocument();
   });

@@ -1,6 +1,6 @@
 import type { ApiClient } from '@/core/services';
 import type { PaginatedResult, SearchParams } from '@/core/types';
-import type { Client, CreateClientInput, UpdateClientInput, ClientSearchFilters, FamilyPortalAccessRow } from '../types';
+import type { Client, CreateClientInput, UpdateClientInput, ClientSearchFilters, FamilyPortalAccessRow, ClientPortalAccess } from '../types';
 
 export interface DashboardClient {
   id: string;
@@ -76,6 +76,10 @@ export interface ClientApiService {
   getFamilyPortalAccess(clientId: string): Promise<FamilyPortalAccessRow[]>;
   inviteFamilyPortal(familyMemberId: string): Promise<FamilyPortalAccessRow>;
   revokeFamilyPortal(familyMemberId: string, reason: string): Promise<FamilyPortalAccessRow>;
+  getClientPortalAccess(clientId: string): Promise<ClientPortalAccess>;
+  inviteClientPortal(clientId: string): Promise<void>;
+  revokeClientPortal(clientId: string, reason: string): Promise<void>;
+  suspendClientPortal(clientId: string, reason: string): Promise<void>;
 }
 
 export const createClientApiService = (apiClient: ApiClient): ClientApiService => {
@@ -201,6 +205,28 @@ export const createClientApiService = (apiClient: ApiClient): ClientApiService =
         return response.data;
       }
       return response as FamilyPortalAccessRow;
+    },
+
+    async getClientPortalAccess(clientId: string): Promise<ClientPortalAccess> {
+      const response = await apiClient.get<{ success?: boolean; data?: ClientPortalAccess } | ClientPortalAccess>(
+        `/api/clients/${clientId}/portal-access`
+      );
+      if ('data' in response && response.data) {
+        return response.data;
+      }
+      return response as ClientPortalAccess;
+    },
+
+    async inviteClientPortal(clientId: string): Promise<void> {
+      await apiClient.post(`/api/clients/${clientId}/portal-invite`);
+    },
+
+    async revokeClientPortal(clientId: string, reason: string): Promise<void> {
+      await apiClient.post(`/api/clients/${clientId}/portal-revoke`, { reason });
+    },
+
+    async suspendClientPortal(clientId: string, reason: string): Promise<void> {
+      await apiClient.post(`/api/clients/${clientId}/portal-suspend`, { reason });
     },
   };
 };

@@ -142,3 +142,48 @@ export const useRevokeFamilyPortal = (clientId: string | undefined) => {
     },
   });
 };
+
+export const useClientPortalAccess = (clientId: string | undefined, enabled = true) => {
+  const clientApi = useClientApi();
+
+  return useQuery({
+    queryKey: ['client-portal-access', clientId],
+    queryFn: () => clientApi.getClientPortalAccess(clientId!),
+    enabled: !!clientId && enabled,
+  });
+};
+
+export const useInviteClientPortal = (clientId: string | undefined) => {
+  const clientApi = useClientApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => clientApi.inviteClientPortal(clientId!),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['client-portal-access', clientId] });
+      toast.success('Invitation sent successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to send invitation');
+    },
+  });
+};
+
+export const useRevokeClientPortal = (clientId: string | undefined) => {
+  const clientApi = useClientApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ reason, suspend }: { reason: string; suspend?: boolean }) =>
+      suspend === true
+        ? clientApi.suspendClientPortal(clientId!, reason)
+        : clientApi.revokeClientPortal(clientId!, reason),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ['client-portal-access', clientId] });
+      toast.success(variables.suspend === true ? 'Portal access suspended' : 'Portal access revoked');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update portal access');
+    },
+  });
+};

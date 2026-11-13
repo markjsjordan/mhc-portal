@@ -6,7 +6,6 @@ import {
   Calendar,
   ClipboardList,
   CheckSquare,
-  FileText,
   DollarSign,
   Settings,
   LogOut,
@@ -93,13 +92,6 @@ const navItems: NavItem[] = [
     icon: <CheckSquare className="h-5 w-5" />,
     permission: 'tasks:read',
     section: 'tasks',
-  },
-  {
-    label: 'Time Tracking',
-    path: '/time-tracking',
-    icon: <FileText className="h-5 w-5" />,
-    permission: 'evv:read',
-    section: 'visits',
   },
   {
     label: 'Billing',

@@ -754,6 +754,7 @@ export function createAuthRouter(db: Database): Router {
           ...(links.caregiverId !== undefined && links.caregiverId !== '' ? { caregiverId: links.caregiverId } : {}),
           familyMemberIds: links.familyMemberIds,
           familyClientIds: links.familyClientIds,
+          ...(links.directClientId !== undefined && links.directClientId !== '' ? { directClientId: links.directClientId } : {}),
           impersonation: {
             adminUserId: admin.userId,
             adminEmail: admin.email,
