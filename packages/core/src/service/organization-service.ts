@@ -209,7 +209,7 @@ export class OrganizationService implements IOrganizationService {
       throw new ValidationError('Invalid email address', { email: request.email });
     }
 
-    // CAREGIVER/FAMILY are derived from portal links; staff invites cannot grant them
+    // CAREGIVER/FAMILY/CLIENT are derived from portal links; staff invites cannot grant them
     if (findPortalDerivedRoles(request.roles).length > 0 && request.targetType !== 'CAREGIVER' &&
       request.targetType !== 'FAMILY'
     ) {

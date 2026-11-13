@@ -17,7 +17,7 @@ function build() {
 }
 
 describe('portal-derived roles cannot be assigned as team roles (wdvf3acxk6)', () => {
-  it.each(['CAREGIVER', 'FAMILY'])('updateOrganizationUser rejects %s and names the portal invite flow', async (role) => {
+  it.each(['CAREGIVER', 'FAMILY', 'CLIENT'])('updateOrganizationUser rejects %s and names the portal invite flow', async (role) => {
     const { svc, userRepo } = build();
     await expect(
       svc.updateOrganizationUser('o', 'u', { roles: [role as never] }, 'admin')
