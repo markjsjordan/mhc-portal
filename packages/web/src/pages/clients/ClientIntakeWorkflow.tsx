@@ -62,11 +62,23 @@ interface IntakeData {
     postalCode: string;
   };
   phone: string;
+  // Saved primary phone's type/SMS flag (edit mode); written back unchanged on save.
+  phoneType?: 'MOBILE' | 'HOME' | 'WORK';
+  phoneCanReceiveSMS?: boolean;
   email: string;
   emergencyContacts: Array<{
     name: string;
     relationship: string;
     phone: string;
+    // Set only when editing a saved contact. The row editors mutate name/relationship/
+    // phone in place, so these ride along and are written back unchanged on save.
+    id?: string;
+    isPrimary?: boolean;
+    canMakeHealthcareDecisions?: boolean;
+    phoneType?: 'MOBILE' | 'HOME' | 'WORK';
+    canReceiveSMS?: boolean;
+    email?: string;
+    notes?: string;
   }>;
   physician: {
     name: string;
@@ -166,11 +178,58 @@ const getStepBarClass = (currentStep: number, stepId: number): string => {
   return 'bg-gray-200';
 };
 
+/**
+ * Format and validate US phone numbers.
+ * Accepts: (123) 456-7890, 123-456-7890, 1234567890, +1 123 456 7890
+ * Returns formatted: (123) 456-7890 or empty string if invalid
+ */
+function formatPhoneNumber(value: string): string {
+  // Remove all non-digit characters
+  const digits = value.replace(/\D/g, '');
+  
+  // Handle empty input
+  if (digits.length === 0) return '';
+  
+  // Remove leading 1 (country code) if present
+  const phoneDigits = digits.startsWith('1') && digits.length === 11 ? digits.slice(1) : digits;
+  
+  // Format as (XXX) XXX-XXXX as user types
+  if (phoneDigits.length <= 3) {
+    return phoneDigits;
+  }
+  if (phoneDigits.length <= 6) {
+    return `(${phoneDigits.slice(0, 3)}) ${phoneDigits.slice(3)}`;
+  }
+  if (phoneDigits.length <= 10) {
+    return `(${phoneDigits.slice(0, 3)}) ${phoneDigits.slice(3, 6)}-${phoneDigits.slice(6)}`;
+  }
+  
+  // Too many digits - truncate to 10
+  return `(${phoneDigits.slice(0, 3)}) ${phoneDigits.slice(3, 6)}-${phoneDigits.slice(6, 10)}`;
+}
+
+/**
+ * Validate if phone number is complete and valid.
+ * Must be exactly 10 digits (US format).
+ */
+function isValidPhoneNumber(value: string): boolean {
+  const digits = value.replace(/\D/g, '');
+  const phoneDigits = digits.startsWith('1') && digits.length === 11 ? digits.slice(1) : digits;
+  return phoneDigits.length === 10;
+}
+
 export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = {}) {
   const { initialData, isEditMode = false, clientId, onSuccess } = props;
   const [currentStep, setCurrentStep] = useState(1);
   const [intakeData, setIntakeData] = useState<Partial<IntakeData>>(
-    initialData ?? {
+    (initialData && {
+      ...initialData,
+      // Edit mode with no saved contacts still offers one blank row, as create mode does.
+      emergencyContacts:
+        initialData.emergencyContacts && initialData.emergencyContacts.length > 0
+          ? initialData.emergencyContacts
+          : [{ name: '', relationship: '', phone: '' }],
+    }) ?? {
       emergencyContacts: [{ name: '', relationship: '', phone: '' }],
       medications: [],
       allergies: [],
@@ -383,18 +442,31 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       : undefined;
 
     const phoneInput = intakeData.phone?.trim()
-      ? { number: intakeData.phone.trim(), type: 'MOBILE' as const, canReceiveSMS: false }
+      ? {
+          number: intakeData.phone.trim(),
+          type: intakeData.phoneType ?? ('MOBILE' as const),
+          canReceiveSMS: intakeData.phoneCanReceiveSMS ?? false,
+        }
       : undefined;
 
     const emergencyContactsInput = (intakeData.emergencyContacts ?? [])
       .filter((c) => c.name.trim() && c.phone.trim())
       .map((c) => ({
-        id: crypto.randomUUID(),
+        // A saved contact keeps its id and flags; regenerating them on every edit
+        // would break references and reset healthcare-decision authority.
+        id: c.id ?? crypto.randomUUID(),
         name: c.name.trim(),
         relationship: c.relationship.trim() || 'Emergency Contact',
-        phone: { number: c.phone.trim(), type: 'MOBILE' as const, canReceiveSMS: false },
-        isPrimary: true,
-        canMakeHealthcareDecisions: false,
+        phone: {
+          number: c.phone.trim(),
+          type: c.phoneType ?? ('MOBILE' as const),
+          canReceiveSMS: c.canReceiveSMS ?? false,
+        },
+        // New contacts keep the existing default (primary); saved flags are preserved.
+        isPrimary: c.isPrimary ?? true,
+        canMakeHealthcareDecisions: c.canMakeHealthcareDecisions ?? false,
+        ...(c.email !== undefined && { email: c.email }),
+        ...(c.notes !== undefined && { notes: c.notes }),
       }));
 
     try {
@@ -583,9 +655,18 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                     type="tel"
                     className="w-full min-h-[44px]"
                     value={intakeData.phone ?? ''}
-                    onChange={(e) => updateData('phone', e.target.value)}
+                    onChange={(e) => {
+                      const formatted = formatPhoneNumber(e.target.value);
+                      updateData('phone', formatted);
+                    }}
                     placeholder="(555) 123-4567"
+                    aria-invalid={intakeData.phone && !isValidPhoneNumber(intakeData.phone) ? 'true' : undefined}
                   />
+                  {intakeData.phone && !isValidPhoneNumber(intakeData.phone) && (
+                    <span className="text-xs text-destructive mt-1">
+                      Phone must be 10 digits
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -738,12 +819,19 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                         className="w-full min-h-[44px]"
                         value={contact.phone}
                         onChange={(e) => {
+                          const formatted = formatPhoneNumber(e.target.value);
                           const contacts = [...(intakeData.emergencyContacts ?? [])];
-                          if (contacts[index]) contacts[index].phone = e.target.value;
+                          if (contacts[index]) contacts[index].phone = formatted;
                           updateData('emergencyContacts', contacts);
                         }}
                         placeholder="(555) 123-4567"
+                        aria-invalid={contact.phone && !isValidPhoneNumber(contact.phone) ? 'true' : undefined}
                       />
+                      {contact.phone && !isValidPhoneNumber(contact.phone) && (
+                        <span className="text-xs text-destructive mt-1">
+                          Phone must be 10 digits
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
