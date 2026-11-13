@@ -184,13 +184,13 @@ describe('Client Delete Permission Enforcement - wdvf3abfwc', () => {
         mockClientService.deleteClient.mockResolvedValue(undefined);
 
         const res = await request(app)
-          .delete('/api/clients/client-123')
+          .delete('/api/clients/123e4567-e89b-12d3-a456-426614174001')
           .expect(200);
 
         expect(res.body.success).toBe(true);
         expect(res.body.message).toContain('deleted successfully');
         expect(mockClientService.deleteClient).toHaveBeenCalledWith(
-          'client-123',
+          '123e4567-e89b-12d3-a456-426614174001',
           expect.objectContaining({
             roles: ['BRANCH_ADMIN'],
           })
@@ -201,11 +201,11 @@ describe('Client Delete Permission Enforcement - wdvf3abfwc', () => {
         mockClientService.deleteClient.mockResolvedValue(undefined);
 
         await request(app)
-          .delete('/api/clients/client-456')
+          .delete('/api/clients/123e4567-e89b-12d3-a456-426614174002')
           .expect(200);
 
         const callArgs = mockClientService.deleteClient.mock.calls[0];
-        expect(callArgs[0]).toBe('client-456');
+        expect(callArgs[0]).toBe('123e4567-e89b-12d3-a456-426614174002');
         expect(callArgs[1].roles).toContain('BRANCH_ADMIN');
         expect(callArgs[1].organizationId).toBe('org-1');
       });
@@ -238,13 +238,13 @@ describe('Client Delete Permission Enforcement - wdvf3abfwc', () => {
         mockClientService.deleteClient.mockResolvedValue(undefined);
 
         const res = await request(app)
-          .delete('/api/clients/client-123')
+          .delete('/api/clients/123e4567-e89b-12d3-a456-426614174001')
           .expect(200);
 
         expect(res.body.success).toBe(true);
         expect(res.body.message).toContain('deleted successfully');
         expect(mockClientService.deleteClient).toHaveBeenCalledWith(
-          'client-123',
+          '123e4567-e89b-12d3-a456-426614174001',
           expect.objectContaining({
             roles: ['COORDINATOR'],
           })
@@ -255,11 +255,11 @@ describe('Client Delete Permission Enforcement - wdvf3abfwc', () => {
         mockClientService.deleteClient.mockResolvedValue(undefined);
 
         await request(app)
-          .delete('/api/clients/client-789')
+          .delete('/api/clients/123e4567-e89b-12d3-a456-426614174003')
           .expect(200);
 
         const callArgs = mockClientService.deleteClient.mock.calls[0];
-        expect(callArgs[0]).toBe('client-789');
+        expect(callArgs[0]).toBe('123e4567-e89b-12d3-a456-426614174003');
         expect(callArgs[1].roles).toContain('COORDINATOR');
         expect(callArgs[1].organizationId).toBe('org-1');
       });
@@ -292,7 +292,7 @@ describe('Client Delete Permission Enforcement - wdvf3abfwc', () => {
         );
 
         await request(app)
-          .delete('/api/clients/client-999')
+          .delete('/api/clients/123e4567-e89b-12d3-a456-426614174004')
           .expect(403); // PermissionError from requirePermission() maps to 403
 
         // Permission check short-circuits before the service is invoked
@@ -325,7 +325,7 @@ describe('Client Delete Permission Enforcement - wdvf3abfwc', () => {
         );
 
         await request(app)
-          .delete('/api/clients/client-999')
+          .delete('/api/clients/123e4567-e89b-12d3-a456-426614174004')
           .expect(403); // PermissionError from requirePermission() maps to 403
 
         expect(mockClientService.deleteClient).not.toHaveBeenCalled();
@@ -394,7 +394,7 @@ describe('Client Delete Permission Enforcement - wdvf3abfwc', () => {
       mockClientService.deleteClient.mockResolvedValue(undefined);
 
       await request(app)
-        .delete('/api/clients/client-id-xyz')
+        .delete('/api/clients/123e4567-e89b-12d3-a456-426614174005')
         .expect(200);
 
       // Verify the handler passed the correct context
@@ -426,7 +426,7 @@ describe('Client Delete Permission Enforcement - wdvf3abfwc', () => {
       mockClientService.deleteClient.mockResolvedValue(undefined);
 
       const res = await request(app)
-        .delete('/api/clients/client-123')
+        .delete('/api/clients/123e4567-e89b-12d3-a456-426614174001')
         .expect(200);
 
       expect(res.body).toEqual({

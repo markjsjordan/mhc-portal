@@ -5,7 +5,7 @@
  */
 
 import { Request, Response, NextFunction, Router } from 'express';
-import { UserContext, Database, AuthMiddleware, getPermissionService } from '@folkcare/core';
+import { UserContext, Database, AuthMiddleware, getPermissionService, isValidUUID } from '@folkcare/core';
 import { ClientService } from '../service/client-service';
 import { CreateClientInput, UpdateClientInput, ClientSearchFilters, ClientStatus, RiskType } from '../types/client';
 
@@ -311,6 +311,13 @@ export class ClientHandlers {
       });
     }
 
+    if (!isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Client ID must be a valid UUID',
+      });
+    }
+
     const client = await this.clientService.getClientById(id, context);
 
     return res.json({
@@ -536,6 +543,13 @@ export class ClientHandlers {
       });
     }
 
+    if (!isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Client ID must be a valid UUID',
+      });
+    }
+
     const client = await this.clientService.updateClient(id, updates, context);
 
     return res.json({
@@ -557,6 +571,13 @@ export class ClientHandlers {
       return res.status(400).json({
         success: false,
         error: 'Client ID is required',
+      });
+    }
+
+    if (!isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Client ID must be a valid UUID',
       });
     }
 
@@ -1118,6 +1139,16 @@ export function createClientRouter(clientService: ClientService, db: Database): 
   const router = Router();
   const handlers = new ClientHandlers(clientService);
   const authMiddleware = new AuthMiddleware(db);
+
+  // Reject malformed client ids for every /clients/:id/... sub-route before the
+  // handler passes them to uuid-keyed queries (non-UUID -> Postgres 22P02 -> 500).
+  router.param('id', (req: Request, res: Response, next: NextFunction) => {
+    if (!isValidUUID(req.params['id'])) {
+      res.status(400).json({ success: false, error: 'Client ID must be a valid UUID' });
+      return;
+    }
+    next();
+  });
 
   // CRITICAL: All client routes require authentication (HIPAA compliance)
   router.use(authMiddleware.requireAuth);

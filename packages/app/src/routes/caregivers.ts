@@ -17,6 +17,7 @@ import {
   ConflictError,
   PermissionError,
   UUID,
+  isValidUUID,
 } from '@folkcare/core';
 import { 
   CaregiverService,
@@ -136,6 +137,18 @@ async function handleSaveAvailabilityError(
 
 export function createCaregiverRouter(db: Database): Router {
   const router = Router();
+
+  // Reject malformed ids before any handler/service touches the uuid-keyed
+  // caregivers table (a non-UUID would otherwise surface as a Postgres 22P02 -> 500).
+  router.param('id', (req: Request, res: Response, next: NextFunction) => {
+    const id = req.params['id'];
+    if (!isValidUUID(id)) {
+      res.status(400).json({ success: false, error: 'Invalid caregiver ID format' });
+      return;
+    }
+    next();
+  });
+
   const authMiddleware = new AuthMiddleware(db);
 
   // All routes require authentication
