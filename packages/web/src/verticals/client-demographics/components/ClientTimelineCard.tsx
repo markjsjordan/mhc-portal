@@ -81,7 +81,7 @@ export const ClientTimelineCard: React.FC<ClientTimelineCardProps> = ({
       );
 
       // Show only the 3 most recent completed visits in timeline
-      completedVisits.slice(0, 3).forEach((visit: TimelineVisit) => {
+      for (const visit of completedVisits.slice(0, 3)) {
         const caregiverName =
           visit.caregiverFirstName && visit.caregiverLastName
             ? `${visit.caregiverFirstName} ${visit.caregiverLastName}`
@@ -96,7 +96,7 @@ export const ClientTimelineCard: React.FC<ClientTimelineCardProps> = ({
           linkTo: `/scheduling/visits/${visit.id}`,
           color: 'purple',
         });
-      });
+      }
     }
 
     if (dischargeDate) {

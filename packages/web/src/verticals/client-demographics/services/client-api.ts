@@ -48,9 +48,6 @@ export interface ClientVisitHistoryEntry {
     fromStatus: string | null;
     toStatus: string;
     timestamp: string;
-    changedBy: string;
-    reason?: string;
-    notes?: string;
     automatic: boolean;
   }>;
   caregiverFirstName?: string;

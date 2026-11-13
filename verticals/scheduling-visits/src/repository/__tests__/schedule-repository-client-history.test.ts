@@ -68,4 +68,24 @@ describe('ScheduleRepository.getClientVisitHistory (mocked pool)', () => {
     expect(res.items[0]).toMatchObject({ id: 'v1', status: 'NO_SHOW_CLIENT', caregiverFirstName: 'Pat', caregiverLastName: 'Lee' });
     expect(res.items[1]?.statusHistory).toEqual([]);
   });
+
+  it('projects status history to minimum fields (no changedBy/reason/notes) and formats date/time columns in SQL', async () => {
+    const { pool, query } = makePool(1, [
+      {
+        id: 'v1',
+        client_id: 'c1',
+        status: 'COMPLETED',
+        status_history: [
+          { id: 'h1', fromStatus: 'IN_PROGRESS', toStatus: 'COMPLETED', timestamp: 'T1', changedBy: 'user-1', reason: 'free text', notes: 'private', automatic: false },
+        ],
+      },
+    ]);
+    const res = await new ScheduleRepository(pool as never).getClientVisitHistory('c1', 'o1');
+    expect(res.items[0]?.statusHistory).toEqual([
+      { id: 'h1', fromStatus: 'IN_PROGRESS', toStatus: 'COMPLETED', timestamp: 'T1', automatic: false },
+    ]);
+    const sql = dataCall(query)[0];
+    expect(sql).toContain("to_char(v.scheduled_date, 'YYYY-MM-DD') AS scheduled_date");
+    expect(sql).toContain("to_char(v.scheduled_start_time, 'HH24:MI:SS')");
+  });
 });

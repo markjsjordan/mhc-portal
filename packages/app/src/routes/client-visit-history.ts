@@ -7,7 +7,7 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { Database, AuthMiddleware, UserContext, AuditService, isValidUUID } from '@folkcare/core';
+import { Database, AuthMiddleware, UserContext, AuditService, PermissionService, isValidUUID } from '@folkcare/core';
 import { ScheduleRepository } from '@folkcare/scheduling-visits';
 
 /**
@@ -15,36 +15,26 @@ import { ScheduleRepository } from '@folkcare/scheduling-visits';
  */
 function getUserContext(req: Request): UserContext {
   const user = req.user!;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const anyUser = user as any;
   return {
     userId: user.userId,
     organizationId: user.organizationId,
-    branchIds: user.branchIds ?? [],
+    branchIds: Array.isArray(user.branchIds) ? user.branchIds : [],
     roles: user.roles,
     permissions: user.permissions,
-    familyClientIds: anyUser.familyClientIds as string[] | undefined,
+    familyClientIds: user.familyClientIds,
   };
-}
-
-/**
- * Check if user has clients:read permission
- */
-function hasClientReadPermission(context: UserContext): boolean {
-  return context.permissions.some((perm) => {
-    return perm === '*:*' || perm === 'clients:*' || perm === 'clients:read';
-  });
 }
 
 export function createClientVisitHistoryRouter(db: Database): Router {
   const router = Router();
   const authMiddleware = new AuthMiddleware(db);
   const auditService = new AuditService(db);
+  const permissionService = new PermissionService();
   const scheduleRepository = new ScheduleRepository(db.getPool());
 
   // All routes require authentication
   router.use(authMiddleware.requireAuth);
-  if (authMiddleware.auditImpersonatedActions) {
+  if (typeof authMiddleware.auditImpersonatedActions === 'function') {
     router.use((req: Request, res: Response, next: NextFunction) => 
       authMiddleware.auditImpersonatedActions(req, res, next)
     );
@@ -93,8 +83,8 @@ export function createClientVisitHistoryRouter(db: Database): Router {
           return;
         }
 
-        // Check clients:read permission
-        if (!hasClientReadPermission(context)) {
+        // Check clients:read permission (service layer resolves wildcards and role grants)
+        if (!permissionService.hasPermission(context, 'clients:read')) {
           res.status(403).json({
             success: false,
             error: 'Access denied: clients:read permission required',

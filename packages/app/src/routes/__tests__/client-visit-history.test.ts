@@ -104,6 +104,17 @@ describe('GET /api/clients/:clientId/visit-history (mocked repository)', () => {
   });
 
   describe('authorization', () => {
+    it('200 for a role-granted user with no explicit permissions (resolved by PermissionService)', async () => {
+      const res = await get(app, url, user({ roles: ['CAREGIVER'], permissions: [] }));
+      expect(res.status).toBe(200);
+    });
+
+    it('403 for a user with neither role nor token grant for clients', async () => {
+      const res = await get(app, url, user({ roles: ['HR'], permissions: [] }));
+      expect(res.status).toBe(403);
+      expect(mocks.getClientVisitHistory).not.toHaveBeenCalled();
+    });
+
     it('401 when unauthenticated; repository and audit untouched', async () => {
       const res = await get(app, url);
       expect(res.status).toBe(401);
@@ -112,7 +123,7 @@ describe('GET /api/clients/:clientId/visit-history (mocked repository)', () => {
     });
 
     it('403 PERMISSION_DENIED without clients:read (even with visits:read)', async () => {
-      const res = await get(app, url, user({ roles: ['SCHEDULER'], permissions: ['visits:read', 'staff:*'] }));
+      const res = await get(app, url, user({ roles: ['HR'], permissions: ['visits:read', 'staff:*'] }));
       expect(res.status).toBe(403);
       expect(res.body).toMatchObject({ success: false, code: 'PERMISSION_DENIED' });
       expect(mocks.getClientVisitHistory).not.toHaveBeenCalled();
@@ -300,7 +311,7 @@ describe('GET /api/clients/:clientId/visit-history (mocked repository)', () => {
     });
 
     it('does not audit denied or invalid requests', async () => {
-      await get(app, url, user({ permissions: ['visits:read'] }));
+      await get(app, url, user({ roles: ['HR'], permissions: ['visits:read'] }));
       await get(app, `${url}?page=0`, user());
       expect(mocks.logEvent).not.toHaveBeenCalled();
     });

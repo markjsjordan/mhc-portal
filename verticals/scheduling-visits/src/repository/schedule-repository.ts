@@ -632,9 +632,9 @@ export class ScheduleRepository {
         v.visit_type,
         v.service_type_id,
         v.service_type_name,
-        v.scheduled_date,
-        v.scheduled_start_time,
-        v.scheduled_end_time,
+        to_char(v.scheduled_date, 'YYYY-MM-DD') AS scheduled_date,
+        to_char(v.scheduled_start_time, 'HH24:MI:SS') AS scheduled_start_time,
+        to_char(v.scheduled_end_time, 'HH24:MI:SS') AS scheduled_end_time,
         v.scheduled_duration,
         v.timezone,
         v.actual_start_time,
@@ -677,7 +677,16 @@ export class ScheduleRepository {
       actualDuration: row.actual_duration,
       assignedCaregiverId: row.assigned_caregiver_id,
       status: row.status,
-      statusHistory: row.status_history ?? [],
+      // Minimum necessary: drop changedBy (user id), reason and notes (free text)
+      statusHistory: (Array.isArray(row.status_history) ? row.status_history : []).map(
+        (h: { id?: string; fromStatus?: string | null; toStatus?: string; timestamp?: string; automatic?: boolean }) => ({
+          id: h.id,
+          fromStatus: h.fromStatus ?? null,
+          toStatus: h.toStatus,
+          timestamp: h.timestamp,
+          automatic: h.automatic ?? false,
+        })
+      ),
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       caregiverFirstName: row.caregiver_first_name,
