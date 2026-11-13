@@ -21,8 +21,6 @@ import {
   DollarSign,
   FileText,
   TrendingUp,
-  Clock,
-  CheckCircle,
   AlertTriangle,
   Activity,
   Award,
@@ -36,18 +34,6 @@ import {
   useComplianceAlerts,
 } from '@/verticals/analytics-reporting/hooks/useAnalytics';
 import { LoginAsModal } from './admin/components/index.js';
-
-function getEvvIcon(rate: number): React.JSX.Element {
-  if (rate >= 0.95) return <CheckCircle className="h-6 w-6 text-green-600" />;
-  if (rate >= 0.85) return <AlertCircle className="h-6 w-6 text-yellow-600" />;
-  return <AlertCircle className="h-6 w-6 text-red-600" />;
-}
-
-function getEvvTrend(rate: number): 'up' | 'neutral' | 'down' {
-  if (rate >= 0.95) return 'up';
-  if (rate >= 0.85) return 'neutral';
-  return 'down';
-}
 
 interface StatCardProps {
   label: string;
@@ -253,14 +239,6 @@ export const AdministratorDashboard: React.FC = () => {
       trend: 'neutral' as const,
       onClick: () => navigate('/scheduling'),
     },
-    // Hidden per ticket wdvf3abbtm - EVV data collection no longer needed
-    // {
-    //   label: 'EVV Compliance',
-    //   value: `${Math.round((kpis?.evvCompliance.complianceRate ?? 0) * 100)}%`,
-    //   icon: getEvvIcon(kpis?.evvCompliance.complianceRate ?? 0),
-    //   change: `${kpis?.evvCompliance.compliantVisits ?? 0} of ${kpis?.evvCompliance.totalVisits ?? 0} compliant`,
-    //   trend: getEvvTrend(kpis?.evvCompliance.complianceRate ?? 0),
-    // },
   ];
 
   // Map real financial data from revenue metrics
@@ -350,19 +328,6 @@ export const AdministratorDashboard: React.FC = () => {
       icon: <LogIn className="h-5 w-5" />,
       onClick: () => setIsLoginAsOpen(true),
     },
-    // Hidden per ticket wdvf3abbtm - EVV data collection no longer needed
-    // {
-    //   title: 'Approve Timesheets',
-    //   description: '23 pending approvals',
-    //   icon: <Clock className="h-5 w-5" />,
-    //   onClick: () => navigate('/time-tracking?tab=approvals'),
-    // },
-    // {
-    //   title: 'Review Exceptions',
-    //   description: 'Visit and billing exceptions',
-    //   icon: <AlertTriangle className="h-5 w-5" />,
-    //   onClick: () => navigate('/time-tracking/aggregator-submissions'),
-    // },
     {
       title: 'Run Reports',
       description: 'Analytics and compliance reports',

@@ -636,22 +636,9 @@ export const Onboarding: React.FC = () => {
                 Based on your state selection, we&apos;ve pre-configured settings for your state&apos;s EVV requirements.
               </p>
             </div>
-            {/* Hidden per ticket wdvf3abbtm - EVV data collection no longer needed */}
-            {/* <div className="flex gap-3">
-              <Button
-                onClick={() => {
-                  void handleNavigateAndComplete('/time-tracking/aggregator-submissions', step.id);
-                }}
-              >
-                Configure EVV
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => void handleSkipStep(step.id)}
-              >
-                Skip for Now
-              </Button>
-            </div> */}
+            <Button variant="outline" onClick={() => void handleSkipStep(step.id)}>
+              Skip for Now
+            </Button>
           </div>
         );
       
