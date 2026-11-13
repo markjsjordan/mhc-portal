@@ -194,7 +194,8 @@ export class AuthService {
       tokenVersion: user.token_version,
       ...(links.caregiverId !== undefined && links.caregiverId !== '' ? { caregiverId: links.caregiverId } : {}),
       familyMemberIds: links.familyMemberIds,
-      familyClientIds: links.familyClientIds
+      familyClientIds: links.familyClientIds,
+      ...(links.directClientId !== undefined && links.directClientId !== '' ? { directClientId: links.directClientId } : {}),
     };
 
     const tokens = JWTUtils.generateTokenPair(tokenPayload);
@@ -310,7 +311,8 @@ export class AuthService {
       tokenVersion: user.token_version,
       ...(links.caregiverId !== undefined && links.caregiverId !== '' ? { caregiverId: links.caregiverId } : {}),
       familyMemberIds: links.familyMemberIds,
-      familyClientIds: links.familyClientIds
+      familyClientIds: links.familyClientIds,
+      ...(links.directClientId !== undefined && links.directClientId !== '' ? { directClientId: links.directClientId } : {}),
     };
 
     const tokens = JWTUtils.generateTokenPair(tokenPayload);
@@ -387,7 +389,8 @@ export class AuthService {
       tokenVersion: user.token_version,
       ...(links.caregiverId !== undefined && links.caregiverId !== '' ? { caregiverId: links.caregiverId } : {}),
       familyMemberIds: links.familyMemberIds,
-      familyClientIds: links.familyClientIds
+      familyClientIds: links.familyClientIds,
+      ...(links.directClientId !== undefined && links.directClientId !== '' ? { directClientId: links.directClientId } : {}),
     };
 
     // Generate new token pair (rotation)

@@ -285,6 +285,119 @@ export class PortalAccessService {
     return { token, expiresAt };
   }
 
+  /**
+   * Invite a client directly to the portal (CLIENT role)
+   */
+  async inviteClient(
+    clientId: UUID,
+    context: UserContext
+  ): Promise<PortalInviteResult> {
+    this.permissions.requirePermission(context, 'clients:update');
+
+    const orgId = context.organizationId;
+    if (orgId === undefined || orgId === '') {
+      throw new ValidationError('Organization ID is required in user context');
+    }
+
+    const clientRes = await this.db.query<{
+      id: string;
+      organization_id: string;
+      email: string | null;
+      first_name: string | null;
+      last_name: string | null;
+      status: string;
+      deleted_at: Date | null;
+    }>(
+      `SELECT id, organization_id, email, first_name, last_name, status, deleted_at
+       FROM clients
+       WHERE id = $1 AND deleted_at IS NULL`,
+      [clientId]
+    );
+
+    const client = clientRes.rows[0];
+    if (client === undefined) {
+      throw new NotFoundError(`Client not found: ${clientId}`);
+    }
+
+    if (client.organization_id !== orgId) {
+      throw new NotFoundError(`Client not found in organization: ${clientId}`);
+    }
+
+    if (['DISCHARGED', 'DECEASED'].includes(client.status)) {
+      throw new ValidationError(
+        `Cannot invite client with status ${client.status}`
+      );
+    }
+
+    const trimmedEmail = client.email?.trim();
+    if (trimmedEmail === undefined || trimmedEmail === '') {
+      throw new ValidationError('Client must have a valid email to be invited');
+    }
+
+    const token = this.generateInviteToken();
+    const expiresInDays = 7;
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+
+    await this.db.transaction(async (txClient: PoolClient) => {
+      // 1. Mark existing pending tokens as REVOKED
+      await txClient.query(
+        `UPDATE invite_tokens
+         SET status = 'REVOKED', updated_by = $2
+         WHERE target_type = 'CLIENT' AND target_id = $1 AND status = 'PENDING'`,
+        [clientId, context.userId]
+      );
+
+      // 2. Insert new invite token
+      await txClient.query(
+        `INSERT INTO invite_tokens (
+           token, organization_id, email, first_name, last_name,
+           roles, branch_ids, expires_at, status, created_by, updated_by,
+           target_type, target_id
+         )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'PENDING', $9, $9, $10, $11)`,
+        [
+          token,
+          orgId,
+          trimmedEmail.toLowerCase(),
+          client.first_name,
+          client.last_name,
+          [],
+          [],
+          expiresAt,
+          context.userId,
+          'CLIENT',
+          clientId,
+        ]
+      );
+
+      // 3. Update clients portal status
+      await txClient.query(
+        `UPDATE clients
+         SET portal_access_status = 'INVITED',
+             portal_invited_at = NOW(),
+             updated_at = NOW(),
+             updated_by = $2
+         WHERE id = $1`,
+        [clientId, context.userId]
+      );
+    });
+
+    await this.audit.logEvent(context, {
+      eventType: 'PORTAL_INVITATION_SENT',
+      resource: 'client',
+      resourceId: clientId,
+      action: 'INVITE_CLIENT',
+      result: 'SUCCESS',
+      metadata: {
+        targetType: 'CLIENT',
+        clientId,
+      },
+    });
+
+    return { token, expiresAt };
+  }
+
   private async linkCaregiverOnInviteAccept(
     client: PoolClient,
     caregiverId: string,
@@ -379,6 +492,53 @@ export class PortalAccessService {
     );
   }
 
+  private async linkClientOnInviteAccept(
+    client: PoolClient,
+    clientId: string,
+    userId: UUID
+  ): Promise<void> {
+    const clientRes = await client.query<{
+      id: string;
+      user_id: string | null;
+      portal_access_status: string | null;
+      status: string;
+    }>(
+      `SELECT id, user_id, portal_access_status, status
+       FROM clients
+       WHERE id = $1 AND deleted_at IS NULL
+       FOR UPDATE`,
+      [clientId]
+    );
+    const clientRow = clientRes.rows[0];
+    if (clientRow === undefined) {
+      throw new NotFoundError(`Client not found: ${clientId}`);
+    }
+
+    if (
+      clientRow.portal_access_status !== 'INVITED' ||
+      ['DISCHARGED', 'DECEASED'].includes(clientRow.status)
+    ) {
+      throw new ConflictError('Portal invitation is no longer valid');
+    }
+
+    if (typeof clientRow.user_id === 'string' && clientRow.user_id !== userId) {
+      throw new ConflictError(
+        `Client is already linked to a different user account`
+      );
+    }
+
+    await client.query(
+      `UPDATE clients
+       SET user_id = $2,
+           portal_access_status = 'ACTIVE',
+           portal_activated_at = NOW(),
+           updated_at = NOW(),
+           updated_by = $2
+       WHERE id = $1`,
+      [clientId, userId]
+    );
+  }
+
   /**
    * Accept an invitation token and link the identity to the portal record
    */
@@ -390,7 +550,7 @@ export class PortalAccessService {
       email: string;
       status: string;
       expires_at: Date;
-      target_type: 'STAFF' | 'CAREGIVER' | 'FAMILY' | null;
+      target_type: 'STAFF' | 'CAREGIVER' | 'FAMILY' | 'CLIENT' | null;
       target_id: string | null;
     }>(
       `SELECT id, token, organization_id, email, status, expires_at, target_type, target_id
@@ -450,6 +610,8 @@ export class PortalAccessService {
         await this.linkCaregiverOnInviteAccept(client, targetId, userId);
       } else if (targetType === 'FAMILY') {
         await this.linkFamilyMemberOnInviteAccept(client, targetId, userId);
+      } else if (targetType === 'CLIENT') {
+        await this.linkClientOnInviteAccept(client, targetId, userId);
       } else {
         throw new ValidationError(`Unsupported portal target type: ${String(targetType)}`);
       }
@@ -484,9 +646,15 @@ export class PortalAccessService {
       branchIds: [],
     };
 
+    const auditResourceByTarget = new Map<string, string>([
+      ['CAREGIVER', 'caregiver'],
+      ['CLIENT', 'client'],
+      ['FAMILY', 'family_member'],
+    ]);
+    const auditResource = auditResourceByTarget.get(targetType) ?? 'family_member';
     await this.audit.logEvent(auditContext, {
       eventType: 'PORTAL_INVITATION_ACCEPTED',
-      resource: targetType === 'CAREGIVER' ? 'caregiver' : 'family_member',
+      resource: auditResource,
       resourceId: targetId,
       action: 'ACCEPT_PORTAL_INVITATION',
       result: 'SUCCESS',
@@ -523,6 +691,79 @@ export class PortalAccessService {
   }
 
   /**
+   * Manual client portal access revocation
+   */
+  async revokeClientAccess(
+    clientId: UUID,
+    reason: string,
+    context: UserContext
+  ): Promise<void> {
+    this.permissions.requirePermission(context, 'clients:update');
+    await this.assertClientInOrg(clientId, context);
+    await this.performClientRevoke(clientId, reason, context, 'MANUAL');
+  }
+
+  /**
+   * Temporarily suspend client portal access (reversible by re-invite)
+   */
+  async suspendClientAccess(
+    clientId: UUID,
+    reason: string,
+    context: UserContext
+  ): Promise<void> {
+    this.permissions.requirePermission(context, 'clients:update');
+
+    const orgId = context.organizationId;
+    if (orgId === undefined || orgId === '') {
+      throw new ValidationError('Organization ID is required in user context');
+    }
+
+    const clientRes = await this.db.query<{
+      id: string;
+      organization_id: string;
+      user_id: string | null;
+      portal_access_status: string | null;
+    }>(
+      `SELECT id, organization_id, user_id, portal_access_status
+       FROM clients
+       WHERE id = $1 AND deleted_at IS NULL`,
+      [clientId]
+    );
+    const row = clientRes.rows[0];
+    if (row?.organization_id !== orgId) {
+      throw new NotFoundError(`Client not found: ${clientId}`);
+    }
+    if (row.portal_access_status !== 'ACTIVE') {
+      throw new ConflictError('Only ACTIVE client portal access can be suspended');
+    }
+
+    const linkedUserId = row.user_id;
+    await this.db.transaction(async (txClient: PoolClient) => {
+      await txClient.query(
+        `UPDATE clients
+         SET portal_access_status = 'SUSPENDED',
+             portal_revoked_reason = $3,
+             updated_at = NOW(),
+             updated_by = $2
+         WHERE id = $1`,
+        [clientId, context.userId, reason]
+      );
+      if (typeof linkedUserId === 'string' && linkedUserId !== '') {
+        await this.reconcileUserAccount(txClient, linkedUserId, context.userId, 'SUSPENDED');
+      }
+    });
+
+    await this.audit.logEvent(context, {
+      eventType: 'PORTAL_ACCESS_SUSPENDED',
+      resource: 'client',
+      resourceId: clientId,
+      action: 'SUSPEND_CLIENT_ACCESS',
+      result: 'SUCCESS',
+      metadata: { targetType: 'CLIENT', clientId },
+    });
+  }
+
+  /**
    * Handle caregiver status transition (automatic hooks)
    */
   async handleCaregiverStatusChange(
@@ -556,7 +797,7 @@ export class PortalAccessService {
 
   /**
    * Handle client status change (automatic hooks)
-   * DISCHARGED/DECEASED revokes every ACTIVE/INVITED/SUSPENDED family link
+   * DISCHARGED/DECEASED revokes every ACTIVE/INVITED/SUSPENDED family link AND direct client portal access
    */
   async handleClientStatusChange(
     clientId: UUID,
@@ -568,6 +809,7 @@ export class PortalAccessService {
       return;
     }
 
+    // Revoke family member portal access
     const fmRes = await this.db.query<{ id: string }>(
       `SELECT id FROM family_members
        WHERE client_id = $1
@@ -578,6 +820,23 @@ export class PortalAccessService {
     for (const row of fmRes.rows) {
       await this.performFamilyRevoke(
         row.id,
+        `Client status changed to ${newStatus}`,
+        context,
+        'AUTO_REVOKE'
+      );
+    }
+
+    // Revoke direct client portal access
+    const clientRes = await this.db.query<{ id: string; portal_access_status: string | null }>(
+      `SELECT id, portal_access_status FROM clients
+       WHERE id = $1
+         AND portal_access_status IN ('ACTIVE', 'INVITED', 'SUSPENDED')`,
+      [clientId]
+    );
+
+    if (clientRes.rows[0] !== undefined) {
+      await this.performClientRevoke(
+        clientId,
         `Client status changed to ${newStatus}`,
         context,
         'AUTO_REVOKE'
@@ -874,13 +1133,98 @@ export class PortalAccessService {
     });
   }
 
+  private async assertClientInOrg(clientId: UUID, context: UserContext): Promise<void> {
+    const res = await this.db.query<{ organization_id: string }>(
+      `SELECT organization_id FROM clients WHERE id = $1 AND deleted_at IS NULL`,
+      [clientId]
+    );
+    const row = res.rows[0];
+    if (row === undefined || row.organization_id !== context.organizationId) {
+      throw new NotFoundError(`Client not found: ${clientId}`);
+    }
+  }
+
+  private async performClientRevoke(
+    clientId: UUID,
+    reason: string,
+    context: UserContext,
+    trigger: 'MANUAL' | 'AUTO_REVOKE'
+  ): Promise<void> {
+    const clientRes = await this.db.query<{
+      id: string;
+      user_id: string | null;
+      portal_access_status: string | null;
+    }>(
+      `SELECT id, user_id, portal_access_status
+       FROM clients
+       WHERE id = $1 AND deleted_at IS NULL`,
+      [clientId]
+    );
+
+    const client = clientRes.rows[0];
+    if (client === undefined) {
+      throw new NotFoundError(`Client not found: ${clientId}`);
+    }
+
+    let userDeactivated = false;
+    const linkedUserId = client.user_id;
+
+    await this.db.transaction(async (txClient: PoolClient) => {
+      // 1. Update client portal access status
+      await txClient.query(
+        `UPDATE clients
+         SET portal_access_status = 'REVOKED',
+             portal_revoked_at = NOW(),
+             portal_revoked_by = $2,
+             portal_revoked_reason = $3,
+             updated_at = NOW(),
+             updated_by = $2
+         WHERE id = $1`,
+        [clientId, context.userId, reason]
+      );
+
+      // 2. Mark any PENDING invite tokens as REVOKED
+      await txClient.query(
+        `UPDATE invite_tokens
+         SET status = 'REVOKED', updated_by = $2
+         WHERE target_type = 'CLIENT' AND target_id = $1 AND status = 'PENDING'`,
+        [clientId, context.userId]
+      );
+
+      // 3. Reconcile user account if linked
+      if (typeof linkedUserId === 'string' && linkedUserId !== '') {
+        userDeactivated = await this.reconcileUserAccount(
+          txClient,
+          linkedUserId,
+          context.userId,
+          'INACTIVE'
+        );
+      }
+    });
+
+    await this.audit.logEvent(context, {
+      eventType: 'PORTAL_ACCESS_REVOKED',
+      resource: 'client',
+      resourceId: clientId,
+      action: 'REVOKE_CLIENT_ACCESS',
+      result: 'SUCCESS',
+      metadata: {
+        targetType: 'CLIENT',
+        clientId,
+        trigger,
+        userAccountDeactivated: userDeactivated,
+        ...(typeof linkedUserId === 'string' ? { linkedUserId } : {}),
+      },
+    });
+  }
+
   /**
    * Reconcile user account status and bump token version.
    *
    * Rule:
-   * users.roles holds STAFF roles only (never CAREGIVER or FAMILY).
+   * users.roles holds STAFF roles only (never CAREGIVER, FAMILY, or CLIENT).
    * users.status is changed only when the person has NO other ACTIVE or INVITED link
-   * and no staff roles (staff roles = every role in users.roles other than CAREGIVER and FAMILY).
+   * and no staff roles (staff roles = every role in users.roles other than CAREGIVER, FAMILY, and CLIENT).
    * Then set status to 'INACTIVE' or 'SUSPENDED' when the only link was suspended.
    * Bump token_version = token_version + 1 in the SAME transaction.
    *
@@ -907,14 +1251,15 @@ export class PortalAccessService {
     }
 
     const staffRoles = user.roles.filter(
-      (r) => r !== 'CAREGIVER' && r !== 'FAMILY'
+      (r) => r !== 'CAREGIVER' && r !== 'FAMILY' && r !== 'CLIENT'
     );
     const hasStaffRoles = staffRoles.length > 0;
 
     const activeOrInvitedLinksRes = await client.query<{ count: string }>(
       `SELECT (
          (SELECT COUNT(*) FROM caregivers WHERE user_id = $1 AND deleted_at IS NULL AND portal_access_status IN ('ACTIVE', 'INVITED')) +
-         (SELECT COUNT(*) FROM family_members WHERE user_id = $1 AND portal_access_status IN ('ACTIVE', 'INVITED'))
+         (SELECT COUNT(*) FROM family_members WHERE user_id = $1 AND portal_access_status IN ('ACTIVE', 'INVITED')) +
+         (SELECT COUNT(*) FROM clients WHERE user_id = $1 AND deleted_at IS NULL AND portal_access_status IN ('ACTIVE', 'INVITED'))
        ) AS count`,
       [userId]
     );

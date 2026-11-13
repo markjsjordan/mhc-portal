@@ -123,3 +123,16 @@ export interface FamilyPortalAccessRow extends PortalAccessSummary {
   portalAccessLevel: 'VIEW_BASIC' | 'VIEW_DETAILED' | 'VIEW_MEDICAL' | 'VIEW_FINANCIAL' | 'FULL_ACCESS';
 }
 
+
+export interface ClientPortalAccess {
+  clientId: string;
+  email: string;
+  clientStatus: string;
+  status: PortalAccessStatus;
+  invitedAt: string | null;
+  activatedAt: string | null;
+  revokedAt: string | null;
+  revokedReason: string | null;
+  inviteExpiresAt: string | null;
+  linked: boolean;
+}

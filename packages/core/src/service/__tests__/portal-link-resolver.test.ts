@@ -80,7 +80,7 @@ describe('portal-link-resolver', () => {
         familyMemberIds: ['fm-1', 'fm-2'],
         familyClientIds: ['client-1', 'client-2'],
       });
-      expect(mockDb.query).toHaveBeenCalledTimes(2);
+      expect(mockDb.query).toHaveBeenCalledTimes(3);
     });
 
     it('returns empty lists when no records match', async () => {
