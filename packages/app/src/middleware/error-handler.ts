@@ -7,6 +7,33 @@ import { Request, Response, NextFunction } from 'express';
 export interface AppError extends Error {
   statusCode?: number;
   details?: unknown;
+  code?: string;
+}
+
+/** Postgres SQLSTATE invalid_text_representation (e.g. malformed uuid input). */
+const PG_INVALID_TEXT_REPRESENTATION = '22P02';
+
+/**
+ * Determine the safe client-facing error message.
+ * 4xx: specific message; 5xx: generic in production to avoid information disclosure;
+ * pg 22P02: fixed message (driver text contains the submitted value).
+ */
+function resolveClientMessage(
+  err: AppError,
+  statusCode: number,
+  isInvalidIdentifier: boolean,
+  isProduction: boolean
+): string {
+  if (isInvalidIdentifier) {
+    return 'Invalid identifier format';
+  }
+  if (statusCode >= 400 && statusCode < 500) {
+    return err.message.length > 0 ? err.message : 'Invalid request';
+  }
+  if (isProduction) {
+    return 'An unexpected error occurred. Please try again later.';
+  }
+  return err.message.length > 0 ? err.message : 'Internal server error';
 }
 
 /**
@@ -22,7 +49,9 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
-  const statusCode = err.statusCode ?? 500;
+  const isInvalidIdentifier =
+    err.statusCode === undefined && err.code === PG_INVALID_TEXT_REPRESENTATION;
+  const statusCode = isInvalidIdentifier ? 400 : (err.statusCode ?? 500);
   const isProduction = process.env['NODE_ENV'] === 'production';
   
   // Log full error details server-side for debugging (never sent to client)
@@ -39,20 +68,7 @@ export function errorHandler(
     ip: req.ip,
   });
 
-  // Determine safe client-facing error message
-  let clientMessage: string;
-  
-  if (statusCode >= 400 && statusCode < 500) {
-    // Client errors (4xx) - safe to send specific message
-    clientMessage = err.message.length > 0 ? err.message : 'Invalid request';
-  } else {
-    // Server errors (5xx) - use generic message to avoid information disclosure
-    if (isProduction) {
-      clientMessage = 'An unexpected error occurred. Please try again later.';
-    } else {
-      clientMessage = err.message.length > 0 ? err.message : 'Internal server error';
-    }
-  }
+  const clientMessage = resolveClientMessage(err, statusCode, isInvalidIdentifier, isProduction);
 
   res.status(statusCode).json({
     success: false,

@@ -2,7 +2,7 @@
  * Tests for error handling middleware
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Request, Response, NextFunction } from 'express';
 import { errorHandler, notFoundHandler, type AppError } from '../error-handler.js';
 
@@ -167,6 +167,72 @@ describe('errorHandler', () => {
     });
 
     process.env['NODE_ENV'] = originalEnv;
+  });
+
+  describe('pg invalid_text_representation (22P02)', () => {
+    const originalEnv = process.env['NODE_ENV'];
+
+    afterEach(() => {
+      if (originalEnv === undefined) {
+        delete process.env['NODE_ENV'];
+      } else {
+        process.env['NODE_ENV'] = originalEnv;
+      }
+    });
+
+    it('maps a pg 22P02 error without statusCode to 400 with a fixed message', () => {
+      process.env['NODE_ENV'] = 'production';
+      const err: AppError = {
+        name: 'error',
+        message: 'invalid input syntax for type uuid: "cg-201"',
+        code: '22P02',
+      };
+
+      errorHandler(err, mockReq as Request, mockRes as Response, mockNext);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Invalid identifier format',
+      });
+      expect(consoleErrorSpy).toHaveBeenCalled();
+    });
+
+    it('does not echo the driver message for 22P02 in development', () => {
+      process.env['NODE_ENV'] = 'development';
+      const err: AppError = {
+        name: 'error',
+        message: 'invalid input syntax for type uuid: "cg-201"',
+        code: '22P02',
+      };
+
+      errorHandler(err, mockReq as Request, mockRes as Response, mockNext);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.json).toHaveBeenCalledWith(
+        expect.objectContaining({ error: 'Invalid identifier format' })
+      );
+    });
+
+    it('keeps a plain Error at 500 with the masked message in production', () => {
+      process.env['NODE_ENV'] = 'production';
+
+      errorHandler(new Error('db exploded') as AppError, mockReq as Request, mockRes as Response, mockNext);
+
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'An unexpected error occurred. Please try again later.',
+      });
+    });
+
+    it('keeps an error with statusCode 404 at 404', () => {
+      const err: AppError = { name: 'NotFoundError', message: 'Caregiver not found', statusCode: 404 };
+
+      errorHandler(err, mockReq as Request, mockRes as Response, mockNext);
+
+      expect(mockRes.status).toHaveBeenCalledWith(404);
+    });
   });
 });
 
