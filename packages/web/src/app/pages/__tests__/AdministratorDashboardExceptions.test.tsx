@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AdministratorDashboard } from '../AdministratorDashboard.js';
@@ -48,7 +48,7 @@ vi.mock('@/core/hooks', async (importOriginal) => {
 });
 
 describe('AdministratorDashboard Quick Actions (wdvf3acfj0)', () => {
-  it('navigates Review Exceptions quick action to /time-tracking/aggregator-submissions', () => {
+  it('does not render EVV collection quick actions or the EVV Compliance KPI (wdvf3abbtm)', () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
@@ -61,12 +61,10 @@ describe('AdministratorDashboard Quick Actions (wdvf3acfj0)', () => {
       </QueryClientProvider>
     );
 
-    const reviewExceptionsBtn = screen.getByText('Review Exceptions');
-    expect(reviewExceptionsBtn).toBeInTheDocument();
-
-    fireEvent.click(reviewExceptionsBtn);
-
-    expect(mockNavigate).toHaveBeenCalledWith('/time-tracking/aggregator-submissions');
+    expect(screen.queryByText('Review Exceptions')).not.toBeInTheDocument();
+    expect(screen.queryByText('Approve Timesheets')).not.toBeInTheDocument();
+    expect(screen.queryByText('EVV Compliance')).not.toBeInTheDocument();
+    expect(screen.getByText('Run Reports')).toBeInTheDocument();
   });
 });
 

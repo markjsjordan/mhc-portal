@@ -19,7 +19,7 @@ import {
   Edit3,
   Lock,
 } from 'lucide-react';
-import { useVisit, EditVisitModal, VisitClockControl } from '../../verticals/scheduling-visits';
+import { useVisit, EditVisitModal } from '../../verticals/scheduling-visits';
 import { useClient } from '../../verticals/client-demographics';
 import { useCaregiver } from '../../verticals/caregivers';
 import { Badge } from '@/components/ui/badge.js';
@@ -50,8 +50,7 @@ export const VisitDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const { data: apiVisit, isLoading, refetch } = useVisit(id);
-  const [evvRecordId, setEvvRecordId] = useState<string | undefined>();
+  const { data: apiVisit, isLoading } = useVisit(id);
 
   // Fallback visit for demo/offline resilience when backend does not have the ID
   const fallbackVisit = useMemo<Visit | null>(() => {
@@ -138,7 +137,7 @@ export const VisitDetailPage: React.FC = () => {
     );
   }, [visit]);
 
-  const effectiveEvvRecordId = evvRecordId ?? (visit as { evvRecordId?: string } | undefined)?.evvRecordId;
+  const effectiveEvvRecordId = (visit as { evvRecordId?: string } | undefined)?.evvRecordId;
   const { data: evvRecord } = useEVVRecord(effectiveEvvRecordId);
   const evvData = (visit as {
     evv?: {
@@ -528,20 +527,6 @@ export const VisitDetailPage: React.FC = () => {
               {getStatusSubtitle(visit.status)}
             </span>
 
-            {/* Primary Clock In / Clock Out Action */}
-            <div className="pt-1">
-              <VisitClockControl
-                visit={visit}
-                evvRecordId={evvRecordId}
-                onClockIn={(recordId) => {
-                  setEvvRecordId(recordId);
-                  void refetch();
-                }}
-                onClockOut={() => {
-                  void refetch();
-                }}
-              />
-            </div>
           </div>
         </div>
       </div>
