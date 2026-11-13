@@ -16,7 +16,7 @@ import { Database } from '../../../packages/core/src/db/connection.js';
  * would be invisible to that spec.
  *
  * Creates one clockable visit:
- * - Reuses the existing seeded org/branch (Folk Home Health / Main Office)
+ * - Reuses the existing seeded org/branch (MHC Portal / Main Office)
  *   that admin@folkcare.example already belongs to.
  * - One caregiver with a CLEARED background check and no restricted-client
  *   entries (so EVVService.canProvideService + the background-screening
@@ -35,7 +35,7 @@ import { Database } from '../../../packages/core/src/db/connection.js';
  *   clean clockable visit).
  */
 
-const ORG_ID = '00000000-0000-0000-0000-000000000001'; // Folk Home Health (existing)
+const ORG_ID = '00000000-0000-0000-0000-000000000001'; // MHC Portal (existing)
 const BRANCH_ID = '00000000-0000-0000-0000-000000000002'; // Main Office (existing)
 const ADMIN_USER_ID = '00000000-0000-0000-0000-000000000003'; // admin@folkcare.example (existing)
 

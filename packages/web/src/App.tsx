@@ -1,36 +1,39 @@
 // Build revision: 2026-10-08-login-chunk-fix
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Analytics } from '@vercel/analytics/react';
-import { SpeedInsights } from '@vercel/speed-insights/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { useAuth, refreshAuthSession } from './core/hooks';
 import { ProtectedRoute, FamilyProtectedRoute, PublicRoute, LoadingSpinner, UpdatePrompt, OnlineStatus } from './core/components';
 import { AppShell } from './app/components';
 import { initAuthStorage } from './core/utils/auth-storage';
-import { AcceptInvite } from './app/pages/AcceptInvite';
-import { Dashboard } from './app/pages/Dashboard';
-import { DashboardSelector } from './app/pages/DashboardSelector';
-import { Login } from './app/pages/Login';
-import { Logout } from './app/pages/Logout';
-import { Onboarding } from './app/pages/Onboarding';
-import { NotFound } from './app/pages/NotFound';
+
+// Lazy load analytics and search
+const Analytics = React.lazy(() => import('@vercel/analytics/react').then((m) => ({ default: m.Analytics })));
+const SpeedInsights = React.lazy(() => import('@vercel/speed-insights/react').then((m) => ({ default: m.SpeedInsights })));
+const GlobalSearch = React.lazy(() => import('./components/search/index.js').then((m) => ({ default: m.GlobalSearch })));
+// Lazy loaded core app pages
+const AcceptInvite = React.lazy(() => import('./app/pages/AcceptInvite').then((m) => ({ default: m.AcceptInvite })));
+const Dashboard = React.lazy(() => import('./app/pages/Dashboard').then((m) => ({ default: m.Dashboard })));
+const DashboardSelector = React.lazy(() => import('./app/pages/DashboardSelector').then((m) => ({ default: m.DashboardSelector })));
+const Login = React.lazy(() => import('./app/pages/Login').then((m) => ({ default: m.Login })));
+const Logout = React.lazy(() => import('./app/pages/Logout').then((m) => ({ default: m.Logout })));
+const Onboarding = React.lazy(() => import('./app/pages/Onboarding').then((m) => ({ default: m.Onboarding })));
+const NotFound = React.lazy(() => import('./app/pages/NotFound').then((m) => ({ default: m.NotFound })));
 import { DemoModeBar } from './demo';
 import { FamilyPortalLayout } from './app/layouts/FamilyPortalLayout';
-import {
-  FamilyDashboard,
-  FamilySettings,
-  ActivityPage,
-  MessagesPage,
-  StaffMessagesPage,
-  CaregiverMessagesPage,
-  NotificationsPage,
-  SchedulePage,
-  CarePlanPage,
-  HealthUpdatesPage
-} from './verticals/family-engagement/pages';
-import { GlobalSearch, useGlobalSearch } from './components/search/index.js';
+// Lazy loaded family portal pages
+const FamilyDashboard = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.FamilyDashboard })));
+const FamilySettings = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.FamilySettings })));
+const ActivityPage = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.ActivityPage })));
+const MessagesPage = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.MessagesPage })));
+const StaffMessagesPage = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.StaffMessagesPage })));
+const CaregiverMessagesPage = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.CaregiverMessagesPage })));
+const NotificationsPage = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.NotificationsPage })));
+const SchedulePage = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.SchedulePage })));
+const CarePlanPage = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.CarePlanPage })));
+const HealthUpdatesPage = React.lazy(() => import('./verticals/family-engagement/pages').then((m) => ({ default: m.HealthUpdatesPage })));
+import { useGlobalSearch } from './components/search/index.js';
 
 // Lazy loaded dashboards
 const AdministratorDashboard = React.lazy(() => import('./app/pages/AdministratorDashboard').then((m) => ({ default: m.AdministratorDashboard })));
@@ -159,12 +162,17 @@ function AppRoutes() {
     );
   };
 
-  // 401 handling is now done via onAuthFailure callback in api-provider-factory
-  // (see packages/web/src/core/providers/api-provider-factory.ts)
+  // 401 handling (silent refresh, redirect to login) comes from createSessionHandlers
+  // (core/services/auth-session-handlers.ts). This app mounts no ApiProviderProvider,
+  // so useApiClient() uses its legacy client, which wires those handlers itself.
 
   return (
     <>
-      {isAuthenticated && <GlobalSearch isOpen={isOpen} onClose={closeSearch} />}
+      {isAuthenticated && (
+        <React.Suspense fallback={null}>
+          <GlobalSearch isOpen={isOpen} onClose={closeSearch} />
+        </React.Suspense>
+      )}
       <React.Suspense
         fallback={
           <div className="flex items-center justify-center min-h-[400px]">
@@ -1007,8 +1015,10 @@ function App() {
         <Toaster position="top-right" />
         <UpdatePrompt />
       </BrowserRouter>
-      <Analytics />
-      <SpeedInsights />
+      <React.Suspense fallback={null}>
+        <Analytics />
+        <SpeedInsights />
+      </React.Suspense>
     </QueryClientProvider>
   );
 }

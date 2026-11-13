@@ -5,6 +5,7 @@ import { useCreateClient, useClients, useUpdateClient, useBranches } from '@/ver
 import type { CreateClientInput, UpdateClientInput } from '@/verticals/client-demographics/types';
 import { useAuth } from '@/core/hooks';
 import { US_STATES } from '@/core/constants/us-states';
+import { useCaregivers } from '@/verticals/caregivers/hooks';
 
 // Intake Step 1 offers the 50 U.S. states only (no DC, no territories).
 // Derived from the shared list so codes stay in one source of truth.
@@ -28,6 +29,7 @@ import { Textarea } from '@/components/ui/textarea.js';
 import { Checkbox } from '@/components/ui/checkbox.js';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group.js';
 import { Label } from '@/components/ui/label.js';
+import { blankToUndefined, findIntakeFormatError } from './intake-payload.js';
 
 /**
  * Client Intake Workflow
@@ -149,7 +151,6 @@ interface IntakeData {
     careAgreement: boolean;
     hipaa: boolean;
     financialResponsibility: boolean;
-    evv: boolean;
   };
   signature: string;
   signedDate: string;
@@ -176,13 +177,6 @@ const getStepBarClass = (currentStep: number, stepId: number): string => {
   if (currentStep === stepId) return 'bg-blue-600 ring-2 ring-blue-200';
   return 'bg-gray-200';
 };
-
-const DEMO_CAREGIVERS = [
-  { id: 'cg-1', name: 'Maria Garcia', skills: ['Personal Care', 'Dementia'], languages: ['English', 'Spanish'] },
-  { id: 'cg-2', name: 'James Wilson', skills: ['Personal Care', 'Mobility'], languages: ['English'] },
-  { id: 'cg-3', name: 'Sarah Chen', skills: ['Companion', 'Meal Prep'], languages: ['English', 'Mandarin'] },
-  { id: 'cg-4', name: 'David Martinez', skills: ['Personal Care'], languages: ['English', 'Spanish'] },
-];
 
 /**
  * Format and validate US phone numbers.
@@ -249,7 +243,6 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         careAgreement: false,
         hipaa: false,
         financialResponsibility: false,
-        evv: false,
       },
     }
   );
@@ -370,6 +363,15 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
   const defaultBranchId = user?.branchIds?.[0] ?? branches[0]?.id ?? '';
   const activeBranchId = selectedBranchId || defaultBranchId;
 
+  // Fetch real caregivers from the database
+  const { data: caregiversData } = useCaregivers({ status: ['ACTIVE'] }, 1, 100);
+  const caregivers = (caregiversData?.items ?? []).map((cg) => ({
+    id: cg.id,
+    name: `${cg.firstName} ${cg.lastName}`,
+    skills: [cg.role], // Use role as primary skill
+    languages: ['English'], // Default to English; extend later if multilingual data is available
+  }));
+
   const handleSubmit = async () => {
     // Validate required demographic fields with user-friendly error feedback
     if (!intakeData.firstName?.trim()) {
@@ -390,6 +392,19 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
 
     if (!isEditMode && !user?.organizationId) {
       toast.error('Unable to submit: no organization context for the signed-in user.');
+      return;
+    }
+
+    // Catch values the server will reject (phone, state, ZIP) here, on the step that
+    // owns the field, instead of failing after submit with a generic toast.
+    const formatError = findIntakeFormatError({
+      phone: intakeData.phone,
+      address: intakeData.address,
+      emergencyContacts: intakeData.emergencyContacts,
+    });
+    if (formatError) {
+      toast.error(formatError.message);
+      setCurrentStep(formatError.step);
       return;
     }
 
@@ -418,7 +433,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       ? {
           type: 'HOME' as const,
           line1: intakeData.address!.line1.trim(),
-          line2: intakeData.address?.line2.trim() ?? undefined,
+          line2: blankToUndefined(intakeData.address?.line2),
           city: intakeData.address!.city.trim(),
           state: intakeData.address!.state.trim().toUpperCase(),
           postalCode: intakeData.address!.postalCode.trim(),
@@ -461,7 +476,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           firstName: intakeData.firstName.trim(),
           lastName: intakeData.lastName.trim(),
           dateOfBirth: intakeData.dateOfBirth,
-          email: intakeData.email?.trim() ?? undefined,
+          email: blankToUndefined(intakeData.email),
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
           emergencyContacts: emergencyContactsInput,
@@ -485,11 +500,11 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           firstName: intakeData.firstName.trim(),
           lastName: intakeData.lastName.trim(),
           dateOfBirth: intakeData.dateOfBirth,
-          email: intakeData.email?.trim() ?? undefined,
+          email: blankToUndefined(intakeData.email),
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
           emergencyContacts: emergencyContactsInput,
-          status: 'PENDING_INTAKE',
+          status: 'ACTIVE',
         };
 
         const newClient = await createClient.mutateAsync(createInput);
@@ -1216,7 +1231,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 Primary Caregiver
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {DEMO_CAREGIVERS.map((cg) => (
+                {caregivers.map((cg) => (
                   <div
                     key={cg.id}
                     className={`p-4 md:p-5 border-2 rounded-xl cursor-pointer text-center relative transition-all min-h-[160px] flex flex-col items-center justify-center ${
@@ -1248,7 +1263,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </h3>
               <p className="text-sm text-gray-500 mb-4">Select 1-2 backup caregivers for coverage</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {DEMO_CAREGIVERS.filter((cg) => cg.id !== intakeData.primaryCaregiver).map((cg) => (
+                {caregivers.filter((cg) => cg.id !== intakeData.primaryCaregiver).map((cg) => (
                   <div
                     key={cg.id}
                     className={`p-4 md:p-5 border-2 rounded-xl cursor-pointer text-center relative transition-all min-h-[160px] flex flex-col items-center justify-center ${
@@ -1400,24 +1415,6 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                     <p className="text-xs sm:text-sm text-gray-500 leading-relaxed font-normal">
                       I understand and agree to the payment terms, including my responsibility
                       for any services not covered by insurance.
-                    </p>
-                  </Label>
-                </div>
-              </div>
-
-              <div className="mb-4 p-4 md:p-5 bg-gray-50 rounded-xl border border-gray-200">
-                <div className="flex items-start gap-3.5">
-                  <Checkbox
-                    id="consent-evv"
-                    className="mt-0.5"
-                    checked={Boolean(intakeData.consents?.evv)}
-                    onCheckedChange={(checked) => updateNestedData('consents', 'evv', Boolean(checked))}
-                  />
-                  <Label htmlFor="consent-evv" className="text-sm cursor-pointer">
-                    <strong className="block text-gray-900 mb-1">Electronic Visit Verification (EVV)</strong>
-                    <p className="text-xs sm:text-sm text-gray-500 leading-relaxed font-normal">
-                      I consent to the use of EVV technology to verify visit times and locations
-                      for compliance with state and federal regulations.
                     </p>
                   </Label>
                 </div>
@@ -1588,7 +1585,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   Primary:
                 </span>
                 <span className="text-sm md:text-base font-medium sm:font-normal text-gray-900 break-words flex-1 min-w-0">
-                  {DEMO_CAREGIVERS.find((cg) => cg.id === intakeData.primaryCaregiver)?.name ?? (
+                  {caregivers.find((cg) => cg.id === intakeData.primaryCaregiver)?.name ?? (
                     <span className="text-gray-400 italic">None selected</span>
                   )}
                 </span>
@@ -1601,7 +1598,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   {intakeData.backupCaregivers && intakeData.backupCaregivers.length > 0 ? (
                     <div className="flex flex-wrap gap-1.5 mt-0.5">
                       {intakeData.backupCaregivers
-                        .map((id) => DEMO_CAREGIVERS.find((cg) => cg.id === id)?.name)
+                        .map((id) => caregivers.find((cg) => cg.id === id)?.name)
                         .filter(Boolean)
                         .map((name) => (
                           <span
