@@ -33,7 +33,6 @@ import {
   SupervisoryCadenceResult,
 } from '../utils/supervisory-cadence';
 import { SupervisionAlertBanner } from '../components/SupervisionAlertBanner';
-import { VisitClockControl } from '../components/VisitClockControl';
 import {
   convertAssessmentFindingsToDraftTasks,
   DraftCarePlanTask,
@@ -157,7 +156,6 @@ export const VisitDetail: React.FC = () => {
   const [checklist, setChecklist] = useState<ChecklistItem[]>(() => DEFAULT_INITIAL_ASSESSMENT_CHECKLIST);
 
   // EVV clock-in record id — set after a successful clock-in from this page
-  const [evvRecordId, setEvvRecordId] = useState<string | undefined>();
 
   // Draft care plan tasks state
   const [convertedTasks, setConvertedTasks] = useState<DraftCarePlanTask[] | null>(null);
@@ -413,18 +411,6 @@ export const VisitDetail: React.FC = () => {
           </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Clock In / Clock Out — primary caregiver action */}
-          <VisitClockControl
-            visit={visit}
-            evvRecordId={evvRecordId}
-            onClockIn={(id) => {
-              setEvvRecordId(id);
-              void refetch();
-            }}
-            onClockOut={() => {
-              void refetch();
-            }}
-          />
           {isInitialVisit && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
               <ShieldCheck className="h-4 w-4 text-emerald-600" />

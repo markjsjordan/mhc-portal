@@ -28,6 +28,7 @@ function getUserContext(req: Request): UserContext {
     branchIds: user.branchIds,
     roles: user.roles,
     permissions: user.permissions,
+    ...(user.directClientId !== undefined ? { directClientId: user.directClientId } : {}),
   };
 }
 

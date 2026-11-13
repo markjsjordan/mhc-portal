@@ -113,6 +113,7 @@ export const SECTION_PREFIX_TABLE: readonly PrefixRule[] = [
   { prefix: 'audits', section: 'compliance' },
   { prefix: 'qa-audits', section: 'compliance' },
   { prefix: 'audit-logs', section: 'audit-logs' },
+  { prefix: 'audit-events', section: 'audit-logs' },
   { prefix: 'admin', section: 'admin-settings' },
   { prefix: 'settings', section: 'admin-settings' },
   { prefix: 'organizations', section: 'admin-settings' },

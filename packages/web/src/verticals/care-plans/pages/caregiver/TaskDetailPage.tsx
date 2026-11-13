@@ -21,7 +21,6 @@ import {
   TaskCategoryIcon,
   getTaskCategoryLabel,
 } from '../../components';
-import { EVVClockControl } from '@/verticals/time-tracking-evv';
 
 export const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -222,10 +221,6 @@ export const TaskDetailPage: React.FC = () => {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* EVV Clock In/Out */}
-          {task.visitId && (
-            <EVVClockControl visitId={task.visitId} />
-          )}
 
           {/* Requirements */}
           <Card>

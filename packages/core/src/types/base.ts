@@ -86,6 +86,10 @@ export interface UserContext {
    * Associated client entity IDs accessible via ACTIVE family portal links, not from users.roles
    */
   familyClientIds?: UUID[];
+  /**
+   * Direct client entity ID when user has CLIENT role via ACTIVE portal link
+   */
+  directClientId?: UUID;
 }
 
 /**
