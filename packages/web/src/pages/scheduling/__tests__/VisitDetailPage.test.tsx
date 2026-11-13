@@ -24,11 +24,23 @@ vi.mock('@/core/hooks', () => ({
 
 // Mock visit hook
 let mockVisitData: Visit | null = null;
+let mockVisitError: (Error & { status?: number }) | null = null;
+const mockRefetch = vi.fn();
+const mockUseClient = vi.fn((_id?: string) => ({ data: undefined }));
+const mockUseCaregiver = vi.fn((_id?: string) => ({ data: undefined }));
+vi.mock('../../../verticals/client-demographics', () => ({
+  useClient: (id?: string) => mockUseClient(id),
+}));
+vi.mock('../../../verticals/caregivers', () => ({
+  useCaregiver: (id?: string) => mockUseCaregiver(id),
+}));
 vi.mock('../../../verticals/scheduling-visits', () => ({
   useVisit: () => ({
     data: mockVisitData,
     isLoading: false,
-    refetch: vi.fn(),
+    isError: mockVisitError !== null,
+    error: mockVisitError,
+    refetch: mockRefetch,
   }),
   useVisitApi: () => ({
     checkConflicts: vi.fn().mockResolvedValue({ hasConflicts: false, conflicts: [] }),
@@ -51,6 +63,8 @@ describe('VisitDetailPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockVisitError = null;
+    mockVisitData = null;
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
@@ -384,5 +398,61 @@ describe('VisitDetailPage', () => {
 
     expect(screen.getByText('Sarah Jenkins')).toBeInTheDocument();
     expect(screen.queryByText(/ID:\s*cg-201/i)).not.toBeInTheDocument();
+  });
+
+  it('renders Not Found and fetches no client/caregiver when there is no visit data', () => {
+    renderPage('vis-missing');
+
+    expect(screen.getByText('Visit Record Not Found')).toBeInTheDocument();
+    expect(mockUseClient).toHaveBeenCalled();
+    expect(mockUseCaregiver).toHaveBeenCalled();
+    for (const call of [...mockUseClient.mock.calls, ...mockUseCaregiver.mock.calls]) {
+      expect(call[0]).toBeUndefined();
+    }
+    const allArgs = JSON.stringify([...mockUseClient.mock.calls, ...mockUseCaregiver.mock.calls]);
+    expect(allArgs).not.toContain('client-101');
+    expect(allArgs).not.toContain('cg-201');
+  });
+
+  it('renders an error state with Retry for non-404 failures and Retry calls refetch', () => {
+    mockVisitError = Object.assign(new Error('Server error'), { status: 500 });
+
+    renderPage('vis-err');
+
+    expect(screen.queryByText('Visit Record Not Found')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /retry/i }));
+    expect(mockRefetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps Not Found for a 404 error', () => {
+    mockVisitError = Object.assign(new Error('Not found'), { status: 404 });
+
+    renderPage('vis-404');
+
+    expect(screen.getByText('Visit Record Not Found')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /retry/i })).not.toBeInTheDocument();
+  });
+
+  it('passes the real visit clientId and assignedCaregiverId to useClient/useCaregiver', () => {
+    mockVisitData = {
+      id: 'vis-real-1',
+      visitNumber: 'VST-REAL-01',
+      clientId: 'real-client-uuid',
+      clientFirstName: 'Real',
+      clientLastName: 'Client',
+      scheduledDate: '2026-10-25',
+      scheduledStartTime: '09:00 AM',
+      scheduledEndTime: '11:00 AM',
+      scheduledDuration: 120,
+      visitType: 'REGULAR',
+      status: 'SCHEDULED',
+      assignedCaregiverId: 'real-caregiver-uuid',
+      address: { line1: '1 Main St', city: 'Negaunee', state: 'MI', postalCode: '49866' },
+    } as unknown as Visit;
+
+    renderPage('vis-real-1');
+
+    expect(mockUseClient).toHaveBeenCalledWith('real-client-uuid');
+    expect(mockUseCaregiver).toHaveBeenCalledWith('real-caregiver-uuid');
   });
 });

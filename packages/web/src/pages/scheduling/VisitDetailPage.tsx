@@ -36,9 +36,6 @@ import {
 } from './visitTaskUtils';
 import { Button } from '@/components/ui/button.js';
 
-const FALLBACK_SCHEDULED_DATE = new Date('2026-10-08T08:30:00.000Z');
-const FALLBACK_ACTUAL_START_TIME = new Date('2026-10-08T08:35:00.000Z');
-
 const getStatusSubtitle = (status: string) => {
   if (status === 'COMPLETED') return 'EVV Verified & Completed';
   if (status === 'IN_PROGRESS') return 'Currently Active in Field';
@@ -50,57 +47,7 @@ export const VisitDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const { data: apiVisit, isLoading } = useVisit(id);
-
-  // Fallback visit for demo/offline resilience when backend does not have the ID
-  const fallbackVisit = useMemo<Visit | null>(() => {
-    if (!id) return null;
-    return {
-      id,
-      organizationId: 'org-demo-1',
-      branchId: 'branch-demo-1',
-      visitNumber: `VST-${id.slice(0, 8).toUpperCase()}`,
-      clientId: 'client-101',
-      clientFirstName: 'Margaret',
-      clientLastName: 'Thompson',
-      clientPhone: {
-        number: '555-0101',
-        type: 'Mobile',
-        canReceiveSMS: true,
-      },
-      serviceTypeId: 'svc-personal-care',
-      serviceTypeName: 'Personal Care & Assistance',
-      visitType: 'REGULAR',
-      status: 'IN_PROGRESS',
-      scheduledDate: FALLBACK_SCHEDULED_DATE,
-      scheduledStartTime: '08:30 AM',
-      scheduledEndTime: '11:30 AM',
-      scheduledDuration: 180,
-      actualStartTime: FALLBACK_ACTUAL_START_TIME,
-      actualDuration: 45,
-      timezone: 'America/New_York',
-      isUrgent: false,
-      isPriority: true,
-      requiresSupervision: false,
-      address: {
-        line1: '789 Oak Avenue',
-        line2: 'Apt 4B',
-        city: 'Portland',
-        state: 'OR',
-        postalCode: '97201',
-        country: 'US',
-        latitude: 45.5152,
-        longitude: -122.6784,
-        accessInstructions: 'Building callbox #0412. Apartment on 4th floor, elevator to left. Dog friendly.',
-      },
-      assignedCaregiverId: 'cg-201',
-      caregiverFirstName: 'Sarah',
-      caregiverLastName: 'Jenkins',
-      assignmentMethod: 'PREFERRED',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-  }, [id]);
+  const { data: apiVisit, isLoading, isError, error, refetch } = useVisit(id);
 
   const [modifiedVisit, setModifiedVisit] = useState<Visit | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -124,7 +71,7 @@ export const VisitDetailPage: React.FC = () => {
       'SUPERVISOR',
     ]));
 
-  const visit: Visit | null = modifiedVisit ?? apiVisit ?? fallbackVisit;
+  const visit: Visit | null = modifiedVisit ?? apiVisit ?? null;
   const { data: client } = useClient(visit?.clientId);
   const { data: caregiver } = useCaregiver(visit?.assignedCaregiverId ?? undefined);
 
@@ -316,6 +263,37 @@ export const VisitDetailPage: React.FC = () => {
       <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-gray-200">
         <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
         <p className="text-gray-600 font-medium">Loading visit details...</p>
+      </div>
+    );
+  }
+
+  const errorStatus = (error as { status?: number } | null | undefined)?.status;
+  if (!visit && isError && errorStatus !== 404) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 p-12 text-center max-w-lg mx-auto shadow-sm my-8">
+        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Unable to Load Visit</h2>
+        <p className="text-sm text-gray-500 mb-6">
+          Something went wrong while loading this visit. Please try again.
+        </p>
+        <div className="flex items-center justify-center gap-3">
+          <Button
+            onClick={() => {
+              Promise.resolve(refetch()).catch(() => {});
+            }}
+          >
+            Retry
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              Promise.resolve(navigate('/scheduling')).catch(() => {});
+            }}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Scheduling
+          </Button>
+        </div>
       </div>
     );
   }
