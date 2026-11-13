@@ -14,6 +14,10 @@ import type { Role } from '../../types/auth';
 
 describe('role-routing utilities', () => {
   describe('getDashboardRoute', () => {
+    it('falls back to "/" when there are no effective roles (callers must show NoAccess)', () => {
+      expect(getDashboardRoute([])).toBe('/');
+    });
+
     it('should return family portal for FAMILY role', () => {
       const result = getDashboardRoute(['FAMILY']);
       expect(result).toBe('/family-portal');

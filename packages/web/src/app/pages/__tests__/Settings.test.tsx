@@ -77,7 +77,7 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
               id: 'inv-1',
               token: 'existing-token-abc123',
               email: 'pending@example.com',
-              roles: ['CAREGIVER'],
+              roles: ['SCHEDULER'],
               status: 'PENDING',
               expiresAt: '2026-12-31T00:00:00.000Z',
               createdAt: '2026-01-01T00:00:00.000Z',
@@ -107,7 +107,7 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
         id: 'inv-new',
         token: 'generated-secret-token-xyz789',
         email: 'newemployee@example.com',
-        roles: ['CAREGIVER'],
+        roles: ['SCHEDULER'],
         status: 'PENDING',
         expiresAt: '2026-12-31T00:00:00.000Z',
       },
@@ -143,7 +143,7 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
     fireEvent.change(screen.getByLabelText(/First Name/i), { target: { value: 'Jane' } });
     fireEvent.change(screen.getByLabelText(/Last Name/i), { target: { value: 'Smith' } });
     fireEvent.change(screen.getByLabelText(/Email Address/i), { target: { value: 'newemployee@example.com' } });
-    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'CAREGIVER' } });
+    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'SCHEDULER' } });
 
     fireEvent.click(screen.getByRole('button', { name: /Generate Invite URL/i }));
 
@@ -158,7 +158,7 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
         email: 'newemployee@example.com',
         firstName: 'Jane',
         lastName: 'Smith',
-        roles: ['CAREGIVER'],
+        roles: ['SCHEDULER'],
       });
     });
   }, 30000);
@@ -182,7 +182,7 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
     fireEvent.change(screen.getByLabelText(/First Name/i), { target: { value: 'Mark' } });
     fireEvent.change(screen.getByLabelText(/Last Name/i), { target: { value: 'Jordan' } });
     fireEvent.change(screen.getByLabelText(/Email Address/i), { target: { value: 'markjsjordan@gmail.com' } });
-    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'CAREGIVER' } });
+    fireEvent.change(screen.getByLabelText(/Role/i), { target: { value: 'SCHEDULER' } });
 
     fireEvent.click(screen.getByRole('button', { name: /Generate Invite URL/i }));
 

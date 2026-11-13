@@ -57,7 +57,7 @@ describe('SectionAccessService', () => {
 
       const effective = await service.getEffective(ctx);
       expect(effective.roleDefaults.clients).toEqual({ read: true, write: false });
-      expect(effective.overrides['clients']).toBe('NONE');
+      expect(effective.overrides).toEqual([{ section: 'clients', access: 'NONE' }]);
       expect(effective.effective.clients).toEqual({ read: false, write: false });
     });
 
