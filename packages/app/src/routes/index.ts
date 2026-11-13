@@ -64,6 +64,7 @@ import { createAIUsageRouter } from './ai-usage.js';
 import { createServiceTypesRouter } from './service-types.js';
 import { createVisitNotesRouter } from './visit-notes.js';
 import { validationRouter } from './validation';
+import { createAuditEventsRouter } from './audit-events.js';
 
 /**
  * Helper to create router from care plan handlers object
@@ -544,6 +545,11 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
   // State Validation routes (validation helper for form state selection)
   app.use('/api/validation', generalApiLimiter, validationRouter);
   console.log('  ✓ State Validation routes registered (with rate limiting)');
+
+  // Audit Events routes (HIPAA audit log viewer)
+  const auditEventsRouter = createAuditEventsRouter(db);
+  app.use('/api/audit-events', generalApiLimiter, auditEventsRouter);
+  console.log('  ✓ Audit Events routes registered (with rate limiting)');
 
   console.log('API routes setup complete\n');
 }
