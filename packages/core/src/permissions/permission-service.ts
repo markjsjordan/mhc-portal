@@ -49,6 +49,7 @@ export class PermissionService {
         'settings:*',
         'compliance:read',
         'compliance:write',
+        'audit-logs:read',
         'admin:access',
         'admin:state-config',
         'admin:data-access',

@@ -85,4 +85,12 @@ export class AuditEventsApiService {
     const response = await this.apiClient.get<{ data: AuditEventsResponse }>(url);
     return response.data;
   }
+
+  /**
+   * Record that the audit log is being exported. Resolves only once the
+   * server has written the audit row.
+   */
+  async recordExport(details: { rowCount: number; eventType?: string; phiOnly: boolean }): Promise<void> {
+    await this.apiClient.post('/audit-events/export-log', details);
+  }
 }

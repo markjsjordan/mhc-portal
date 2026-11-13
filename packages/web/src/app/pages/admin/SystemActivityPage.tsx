@@ -36,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select.js';
-import { useApiClient } from '@/core/hooks/useApiClient';
+import { useApiClient } from '@/core/hooks/api.js';
 import { AuditEventsApiService } from '@/app/services/audit-events-api.service';
 import type { AuditLogEntry } from '@/app/services/audit-events-api.service';
 
@@ -84,7 +84,13 @@ export const SystemActivityPage: React.FC = () => {
     return logs;
   }, [logs]);
 
-  const handleExportAuditLogs = () => {
+  const csvCell = (value: string): string => {
+    // Neutralise spreadsheet formula injection, then quote/escape.
+    const safe = /^[\t\r+=@-]/.test(value) ? `'${value}` : value;
+    return `"${safe.replace(/"/g, '""')}"`;
+  };
+
+  const handleExportAuditLogs = async () => {
     const headers = [
       'Timestamp',
       'Event ID',
@@ -101,37 +107,48 @@ export const SystemActivityPage: React.FC = () => {
       'IP Address',
     ];
 
-    const rows = filteredLogs.map((log) => [
-      log.timestamp,
-      log.id,
-      `"${log.actor.name}"`,
-      `"${log.actor.email}"`,
-      log.actor.role,
-      log.action,
-      log.eventType,
-      log.resourceType,
-      log.resourceId,
-      log.clientName ? `"${log.clientName}"` : 'N/A',
-      log.phiAccessed ? 'YES' : 'NO',
-      log.result,
-      log.ipAddress,
-    ]);
+    const rows = filteredLogs.map((log) =>
+      [
+        log.timestamp,
+        log.id,
+        log.actor.name,
+        log.actor.email,
+        log.actor.role,
+        log.action,
+        log.eventType,
+        log.resourceType,
+        log.resourceId,
+        log.clientName ?? 'N/A',
+        log.phiAccessed ? 'YES' : 'NO',
+        log.result,
+        log.ipAddress,
+      ].map((v) => csvCell(String(v)))
+    );
 
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    try {
+      // Log the export first; only download once the audit row is confirmed.
+      await new AuditEventsApiService(apiClient).recordExport({
+        rowCount: rows.length,
+        eventType: eventTypeFilter,
+        phiOnly,
+      });
+    } catch (err) {
+      console.error('Failed to record audit log export:', err);
+      setError('Export blocked: could not record this export in the audit log.');
+      return;
+    }
 
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = [headers.map(csvCell).join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const blobUrl = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.setAttribute('href', blobUrl);
     link.setAttribute('download', `hipaa-audit-log-export-${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
 
-    setExportNotice(
-      'Audit log exported successfully. Access to audit logs logged for HIPAA § 164.312(b) compliance.'
-    );
+    setExportNotice('Audit log exported. This export was recorded in the audit log (HIPAA § 164.312(b)).');
     setTimeout(() => setExportNotice(null), 5000);
   };
 
@@ -152,7 +169,7 @@ export const SystemActivityPage: React.FC = () => {
           <Button
             variant="outline"
             className="flex items-center gap-2"
-            onClick={handleExportAuditLogs}
+            onClick={() => void handleExportAuditLogs()}
           >
             <Download className="h-4 w-4" />
             Export Audit Pack (CSV)
@@ -271,7 +288,7 @@ export const SystemActivityPage: React.FC = () => {
               ) : filteredLogs.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                    No audit records match the current filters.
+                    No audit events in this range
                   </TableCell>
                 </TableRow>
               ) : (

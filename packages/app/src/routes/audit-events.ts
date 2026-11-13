@@ -6,7 +6,17 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { Database, AuthMiddleware, AuditService } from '@folkcare/core';
+import { Database, AuthMiddleware, AuditService, PermissionService, PermissionError } from '@folkcare/core';
+import type { UserContext } from '@folkcare/core';
+
+const MAX_LIMIT = 200;
+const DEFAULT_LIMIT = 100;
+
+function parseBoundedInt(raw: string | undefined, fallback: number, min: number, max: number): number {
+  const n = Number.parseInt(raw ?? '', 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(Math.max(n, min), max);
+}
 
 interface AuditEventQuery {
   eventType?: string;
@@ -22,6 +32,7 @@ export function createAuditEventsRouter(db: Database): Router {
   const router = Router();
   const authMiddleware = new AuthMiddleware(db);
   const auditService = new AuditService(db);
+  const permissionService = new PermissionService();
 
   /**
    * @openapi
@@ -86,22 +97,40 @@ export function createAuditEventsRouter(db: Database): Router {
   router.get(
     '/',
     authMiddleware.requireAuth,
-    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN']),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const organizationId = req.user!.organizationId;
         const userId = req.user!.userId;
         const query = req.query as AuditEventQuery;
+        const roles = req.user!.roles;
+
+        // Service-layer, wildcard-aware permission check (audit-logs:read).
+        // Restricted to SUPER_ADMIN / ORG_ADMIN (and AUDITOR); always org-scoped.
+        const actorContext: UserContext = {
+          userId,
+          organizationId,
+          roles,
+          permissions: req.user!.permissions,
+          branchIds: req.user!.branchIds,
+        };
+        const allowedRole = roles.some((role) => ['SUPER_ADMIN', 'ORG_ADMIN', 'AUDITOR'].includes(role));
+        try {
+          if (!allowedRole) {
+            throw new PermissionError('Permission denied: audit-logs:read', { userId, permission: 'audit-logs:read' });
+          }
+          permissionService.requirePermission(actorContext, 'audit-logs:read');
+        } catch (permError) {
+          if (permError instanceof PermissionError) {
+            res.status(403).json({ success: false, error: 'Insufficient permissions' });
+            return;
+          }
+          throw permError;
+        }
+        const canSeeClientNames = permissionService.hasPermission(actorContext, 'clients:read');
 
         // Log this audit log access (HIPAA § 164.312(b) - audit the audit)
         await auditService.logEvent(
-          {
-            userId,
-            organizationId,
-            roles: req.user!.roles || [],
-            permissions: req.user!.permissions || [],
-            branchIds: req.user!.branchIds || [],
-          },
+          actorContext,
           {
             eventType: 'SECURITY',
             resource: 'AuditLog',
@@ -123,11 +152,8 @@ export function createAuditEventsRouter(db: Database): Router {
         );
 
         // Parse query parameters
-        const limit = Math.min(
-          parseInt(query.limit ?? '100', 10),
-          1000
-        );
-        const offset = parseInt(query.offset ?? '0', 10);
+        const limit = parseBoundedInt(query.limit, DEFAULT_LIMIT, 1, MAX_LIMIT);
+        const offset = parseBoundedInt(query.offset, 0, 0, Number.MAX_SAFE_INTEGER);
 
         // Build the SQL query
         const conditions: string[] = ['ae.organization_id = $1'];
@@ -156,19 +182,19 @@ export function createAuditEventsRouter(db: Database): Router {
 
         // PHI-only filter: check metadata->>'phiAccessed'
         if (query.phiOnly === 'true') {
-          conditions.push(`(ae.metadata->>'phiAccessed')::boolean = true`);
+          conditions.push(`(ae.event_type = 'DATA_ACCESS' OR ae.metadata->>'phiAccessed' = 'true')`);
         }
 
         // Search filter: search in user fields, resource, action
         if (query.search && query.search.trim() !== '') {
-          const searchTerm = `%${query.search.toLowerCase()}%`;
+          const escaped = query.search.toLowerCase().replace(/[%\\_]/g, (c) => `\\${c}`);
+          const searchTerm = `%${escaped}%`;
           conditions.push(`(
             LOWER(u.first_name) LIKE $${paramIndex} OR
             LOWER(u.last_name) LIKE $${paramIndex} OR
             LOWER(u.email) LIKE $${paramIndex} OR
             LOWER(ae.resource) LIKE $${paramIndex} OR
-            LOWER(ae.action) LIKE $${paramIndex} OR
-            LOWER(ae.metadata->>'clientName') LIKE $${paramIndex}
+            LOWER(ae.action) LIKE $${paramIndex}
           )`);
           params.push(searchTerm);
           paramIndex++;
@@ -180,11 +206,11 @@ export function createAuditEventsRouter(db: Database): Router {
         const countQuery = `
           SELECT COUNT(*) as total
           FROM audit_events ae
-          JOIN users u ON ae.user_id = u.id
+          LEFT JOIN users u ON ae.user_id = u.id
           WHERE ${whereClause}
         `;
         const countResult = await db.query<{ total: string }>(countQuery, params);
-        const total = parseInt(countResult.rows[0]?.total ?? '0', 10);
+        const total = Number.parseInt(countResult.rows[0]?.total ?? '0', 10);
 
         // Fetch paginated results
         const dataQuery = `
@@ -199,13 +225,13 @@ export function createAuditEventsRouter(db: Database): Router {
             ae.metadata,
             ae.ip_address,
             ae.user_agent,
-            u.id as user_id,
+            ae.user_id as user_id,
             u.first_name,
             u.last_name,
             u.email,
             u.roles
           FROM audit_events ae
-          JOIN users u ON ae.user_id = u.id
+          LEFT JOIN users u ON ae.user_id = u.id
           WHERE ${whereClause}
           ORDER BY ae.timestamp DESC
           LIMIT $${paramIndex}
@@ -217,15 +243,18 @@ export function createAuditEventsRouter(db: Database): Router {
 
         // Transform the results to match the frontend interface
         const events = result.rows.map((row) => {
-          const metadata = typeof row['metadata'] === 'string' 
-            ? JSON.parse(row['metadata'])
-            : (row['metadata'] ?? {});
+          const rawMetadata: unknown = row['metadata'];
+          const parsedMetadata: unknown = typeof rawMetadata === 'string' ? JSON.parse(rawMetadata) : rawMetadata;
+          const metadata: Record<string, unknown> =
+            typeof parsedMetadata === 'object' && parsedMetadata !== null
+              ? (parsedMetadata as Record<string, unknown>)
+              : {};
 
           // Extract role - roles can be an array
           const rolesRaw = row['roles'];
           let role = 'USER';
           if (Array.isArray(rolesRaw) && rolesRaw.length > 0) {
-            role = rolesRaw[0];
+            role = String(rolesRaw[0]);
           } else if (typeof rolesRaw === 'string') {
             role = rolesRaw;
           }
@@ -235,15 +264,20 @@ export function createAuditEventsRouter(db: Database): Router {
             timestamp: row['timestamp'],
             actor: {
               id: row['user_id'],
-              name: `${row['first_name']} ${row['last_name']}`,
-              email: row['email'],
+              name: row['first_name'] != null
+                ? `${String(row['first_name'])} ${String(row['last_name'] ?? '')}`.trim()
+                : String(row['user_id']),
+              email: row['email'] ?? '',
               role,
             },
             action: row['action'],
             eventType: row['event_type'],
             resourceType: row['resource'],
             resourceId: row['resource_id'],
-            clientName: metadata.clientName,
+            clientName:
+              canSeeClientNames && typeof metadata.clientName === 'string'
+                ? metadata.clientName
+                : undefined,
             phiAccessed: metadata.phiAccessed === true,
             result: row['result'],
             ipAddress: row['ip_address'] ?? 'N/A',
@@ -265,6 +299,53 @@ export function createAuditEventsRouter(db: Database): Router {
           success: false,
           error: 'Failed to retrieve audit events',
         });
+      }
+    }
+  );
+
+  /**
+   * Records that the audit log was exported (HIPAA § 164.312(b) - audit the audit).
+   * The client only offers the download after this row is confirmed written.
+   */
+  router.post(
+    '/export-log',
+    authMiddleware.requireAuth,
+    async (req: Request, res: Response): Promise<void> => {
+      try {
+        const organizationId = req.user!.organizationId;
+        const userId = req.user!.userId;
+        const roles = req.user!.roles;
+        const ctx: UserContext = {
+          userId,
+          organizationId,
+          roles,
+          permissions: req.user!.permissions,
+          branchIds: req.user!.branchIds,
+        };
+        const allowedRole = roles.some((role) => ['SUPER_ADMIN', 'ORG_ADMIN', 'AUDITOR'].includes(role));
+        if (!allowedRole || !permissionService.hasPermission(ctx, 'audit-logs:read')) {
+          res.status(403).json({ success: false, error: 'Insufficient permissions' });
+          return;
+        }
+        const body = (req.body ?? {}) as { rowCount?: unknown; eventType?: unknown; phiOnly?: unknown };
+        await auditService.logEvent(ctx, {
+          eventType: 'SECURITY',
+          resource: 'AuditLog',
+          resourceId: 'system-audit-export',
+          action: 'EXPORT_AUDIT_LOGS',
+          result: 'SUCCESS',
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+          metadata: {
+            rowCount: typeof body.rowCount === 'number' ? body.rowCount : undefined,
+            eventType: typeof body.eventType === 'string' ? body.eventType : undefined,
+            phiOnly: body.phiOnly === true,
+          },
+        });
+        res.json({ success: true });
+      } catch (error) {
+        console.error('[Audit Events] Export log error:', error);
+        res.status(500).json({ success: false, error: 'Failed to record audit log export' });
       }
     }
   );
