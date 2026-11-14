@@ -10,7 +10,8 @@ import {
   AlertTriangle,
   CheckCircle,
   FileText,
-  Trash2
+  Trash2,
+  Plus
 } from 'lucide-react';
 import { LoadingSpinner, ErrorMessage, StatusBadge } from '@/core/components';
 import { Button } from '@/components/ui/button.js';
@@ -20,6 +21,7 @@ import { usePermissions } from '@/core/hooks';
 import { useSectionAccess } from '@/core/hooks/permissions';
 import { formatDate } from '@/core/utils';
 import { useCarePlan, useActivateCarePlan, useUpdateCarePlan, useDeleteCarePlan } from '../hooks';
+import { CreateGoalModal } from '../components/CreateGoalModal.js';
 import { useClient } from '@/verticals/client-demographics/hooks';
 
 const getDeleteDisabledReason = (status?: string): string | undefined => {
@@ -47,6 +49,7 @@ export const CarePlanDetail: React.FC = () => {
   const deleteCarePlan = useDeleteCarePlan();
   const [now] = useState(() => Date.now());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showCreateGoal, setShowCreateGoal] = useState(false);
 
   const canManageCarePlans = canWrite && (can('care-plans:delete') || can('care-plans:*') || can('care_plans:write'));
   const canEditCarePlans = canWrite && (can('care-plans:update') || can('care-plans:*') || can('care_plans:write'));
@@ -295,8 +298,14 @@ export const CarePlanDetail: React.FC = () => {
 
           {/* Goals */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg font-semibold">{`Goals (${carePlan.goals.length})`}</CardTitle>
+              {canEditCarePlans && (
+                <Button size="sm" variant="outline" onClick={() => setShowCreateGoal(true)}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Goal
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -485,6 +494,13 @@ export const CarePlanDetail: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* Create Goal Modal */}
+      <CreateGoalModal
+        carePlanId={carePlan.id}
+        open={showCreateGoal}
+        onOpenChange={setShowCreateGoal}
+      />
 
       {/* Delete Confirmation Dialog */}
       {showDeleteConfirm && (
