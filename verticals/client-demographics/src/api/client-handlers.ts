@@ -5,7 +5,7 @@
  */
 
 import { Request, Response, NextFunction, Router } from 'express';
-import { UserContext, Database, AuthMiddleware, getPermissionService } from '@folkcare/core';
+import { UserContext, Database, AuthMiddleware, getPermissionService, isValidUUID } from '@folkcare/core';
 import { ClientService } from '../service/client-service';
 import { CreateClientInput, UpdateClientInput, ClientSearchFilters, ClientStatus, RiskType } from '../types/client';
 
@@ -310,6 +310,13 @@ export class ClientHandlers {
       });
     }
 
+    if (!isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid client ID format',
+      });
+    }
+
     const client = await this.clientService.getClientById(id, context);
 
     return res.json({
@@ -535,6 +542,13 @@ export class ClientHandlers {
       });
     }
 
+    if (!isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid client ID format',
+      });
+    }
+
     const client = await this.clientService.updateClient(id, updates, context);
 
     return res.json({
@@ -556,6 +570,13 @@ export class ClientHandlers {
       return res.status(400).json({
         success: false,
         error: 'Client ID is required',
+      });
+    }
+
+    if (!isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid client ID format',
       });
     }
 
@@ -583,6 +604,13 @@ export class ClientHandlers {
       return res.status(400).json({
         success: false,
         error: 'Client ID is required',
+      });
+    }
+
+    if (!isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid client ID format',
       });
     }
 
@@ -665,6 +693,13 @@ export class ClientHandlers {
       });
     }
 
+    if (!isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid client ID format',
+      });
+    }
+
     const client = await this.clientService.addRiskFlag(id, riskFlag, context);
 
     return res.json({
@@ -714,6 +749,13 @@ export class ClientHandlers {
       });
     }
 
+    if (!isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid client ID format',
+      });
+    }
+
     const client = await this.clientService.updateClientStatus(id, status, context, reason);
 
     return res.json({
@@ -735,6 +777,13 @@ export class ClientHandlers {
       return res.status(400).json({
         success: false,
         error: 'Client ID is required',
+      });
+    }
+
+    if (!isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid client ID format',
       });
     }
 
@@ -858,6 +907,13 @@ export class ClientHandlers {
       return res.status(400).json({
         success: false,
         error: 'Client ID is required',
+      });
+    }
+
+    if (!isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid client ID format',
       });
     }
 
@@ -1123,6 +1179,17 @@ export function createClientRouter(clientService: ClientService, db: Database): 
   if (authMiddleware.auditImpersonatedActions) {
     router.use((req, res, next) => authMiddleware.auditImpersonatedActions(req, res, next));
   }
+
+  router.param('id', (_req, res, next, id) => {
+    if (!isValidUUID(id)) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid client ID format',
+      });
+      return;
+    }
+    next();
+  });
 
   // Main CRUD endpoints
   // NOTE: Route registration order matters — Express matches in order, and any
