@@ -2,9 +2,42 @@
  * Audit logging service for compliance and security
  */
 
+import { createHash } from 'node:crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { Database } from '../db/connection';
 import { UserContext, Timestamp, UUID } from '../types/base';
+
+export const GENESIS_AUDIT_HASH = '0'.repeat(64);
+
+/**
+ * Compute deterministic SHA-256 hash for an audit_events entry chained to previousHash.
+ */
+export function computeAuditEntryHash(input: {
+  previousHash: string;
+  eventId: string;
+  timestamp: Date;
+  userId: string;
+  organizationId: string;
+  eventType: string;
+  resource: string;
+  resourceId: string;
+  action: string;
+  result: string;
+}): string {
+  const payload = [
+    input.previousHash,
+    input.eventId,
+    input.timestamp.toISOString(),
+    input.userId,
+    input.organizationId,
+    input.eventType,
+    input.resource,
+    input.resourceId,
+    input.action,
+    input.result,
+  ].join('|');
+  return createHash('sha256').update(payload).digest('hex');
+}
 
 export interface AuditEvent {
   eventId: string;
@@ -72,11 +105,29 @@ export class AuditService {
     const resource = event.resource.slice(0, RESOURCE_MAX_LENGTH);
     const resourceId = event.resourceId.slice(0, RESOURCE_MAX_LENGTH);
 
+    const entryHash = computeAuditEntryHash({
+      previousHash: GENESIS_AUDIT_HASH,
+      eventId,
+      timestamp,
+      userId: context.userId ?? 'system',
+      organizationId: context.organizationId ?? 'system',
+      eventType: event.eventType,
+      resource,
+      resourceId,
+      action: event.action,
+      result: event.result,
+    });
+
     const query = `
       INSERT INTO audit_events (
         event_id, timestamp, user_id, organization_id, event_type,
-        resource, resource_id, action, result, metadata, ip_address, user_agent
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        resource, resource_id, action, result, metadata, ip_address, user_agent,
+        previous_hash, entry_hash
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+        COALESCE((SELECT entry_hash FROM audit_events ORDER BY timestamp DESC LIMIT 1), $13),
+        $14
+      )
     `;
 
     await this.database.query(query, [
@@ -92,6 +143,8 @@ export class AuditService {
       JSON.stringify(event.metadata ?? {}),
       event.ipAddress,
       event.userAgent,
+      GENESIS_AUDIT_HASH,
+      entryHash,
     ]);
   }
 

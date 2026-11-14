@@ -63,6 +63,7 @@ import exportRouter from './export.js';
 import { createAIUsageRouter } from './ai-usage.js';
 import { createServiceTypesRouter } from './service-types.js';
 import { createVisitNotesRouter } from './visit-notes.js';
+import { auditPhiRouteAccess } from '../middleware/audit-phi-middleware.js';
 import { validationRouter } from './validation';
 import { createClientVisitHistoryRouter } from './client-visit-history.js';
 import { createAuditEventsRouter } from './audit-events.js';
@@ -380,7 +381,8 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
 
   // Shift Matching & Assignment routes
   const shiftMatchingRouter = createShiftMatchingRouter(db);
-  app.use('/api/shift-matching', generalApiLimiter, shiftMatchingRouter);
+  const coreAuditService = new CoreAuditService(db);
+  app.use('/api/shift-matching', generalApiLimiter, auditPhiRouteAccess(coreAuditService, 'shift-matching'), shiftMatchingRouter);
   console.log('  ✓ Shift Matching & Assignment routes registered (with rate limiting)');
 
   // Demo routes (interactive demo system) - includes EVV clock-in/out
@@ -400,7 +402,7 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
 
   // Analytics & Reporting routes
   const analyticsRouter = createAnalyticsRouter(db);
-  app.use('/api/analytics', reportLimiter, analyticsRouter);
+  app.use('/api/analytics', reportLimiter, auditPhiRouteAccess(coreAuditService, 'analytics'), analyticsRouter);
   console.log('  ✓ Analytics & Reporting routes registered (with rate limiting)');
 
   // Offline Sync routes
@@ -493,9 +495,9 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
 
   // EVV & Time Tracking routes
   const evvRouter = createEVVRouter(db);
-  app.use('/api/evv', evvLimiter, evvRouter);
+  app.use('/api/evv', evvLimiter, auditPhiRouteAccess(coreAuditService, 'evv'), evvRouter);
   // Alias for backwards compatibility with frontend
-  app.use('/api/time-tracking', evvLimiter, evvRouter);
+  app.use('/api/time-tracking', evvLimiter, auditPhiRouteAccess(coreAuditService, 'evv'), evvRouter);
   console.log('  ✓ EVV & Time Tracking routes registered (with rate limiting)');
 
   // Usage Statistics routes
@@ -515,12 +517,12 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
 
   // Billing & Invoicing routes
   const billingRouter = createBillingRouter(db);
-  app.use('/api/billing', generalApiLimiter, billingRouter);
+  app.use('/api/billing', generalApiLimiter, auditPhiRouteAccess(coreAuditService, 'billing'), billingRouter);
   console.log('  ✓ Billing & Invoicing routes registered (with rate limiting)');
 
   // Compliance Autopilot routes
   const complianceRouter = createComplianceRouter(db);
-  app.use('/api/compliance', generalApiLimiter, complianceRouter);
+  app.use('/api/compliance', generalApiLimiter, auditPhiRouteAccess(coreAuditService, 'compliance'), complianceRouter);
   console.log('  ✓ Compliance Autopilot routes registered (with rate limiting)');
 
   // Data Export routes
@@ -545,7 +547,7 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
 
   // Visit Notes routes (AI autofill suggestions)
   const visitNotesRouter = createVisitNotesRouter(db);
-  app.use('/api/visit-notes', generalApiLimiter, visitNotesRouter);
+  app.use('/api/visit-notes', generalApiLimiter, auditPhiRouteAccess(coreAuditService, 'visit-notes'), visitNotesRouter);
   console.log('  ✓ Visit Notes routes registered (with rate limiting)');
 
   // State Validation routes (validation helper for form state selection)

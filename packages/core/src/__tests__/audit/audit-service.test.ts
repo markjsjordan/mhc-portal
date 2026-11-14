@@ -95,6 +95,8 @@ describe('AuditService', () => {
           JSON.stringify({ ip: '192.168.1.1' }),
           '192.168.1.1',
           'Mozilla/5.0',
+          expect.any(String),
+          expect.any(String)
         ]
       );
     });
@@ -128,6 +130,8 @@ describe('AuditService', () => {
           JSON.stringify({}),
           undefined,
           undefined,
+          expect.any(String),
+          expect.any(String)
         ]
       );
     });
@@ -161,6 +165,8 @@ describe('AuditService', () => {
           JSON.stringify({ query: 'search by name' }),
           undefined,
           undefined,
+          expect.any(String),
+          expect.any(String)
         ]
       );
     });
@@ -225,6 +231,8 @@ describe('AuditService', () => {
           JSON.stringify({ duration: 120 }),
           undefined,
           undefined,
+          expect.any(String),
+          expect.any(String)
         ]
       );
     });
@@ -319,6 +327,8 @@ describe('AuditService', () => {
           JSON.stringify({ method: 'self_service' }),
           undefined,
           undefined,
+          expect.any(String),
+          expect.any(String)
         ]
       );
     });
@@ -349,6 +359,8 @@ describe('AuditService', () => {
           JSON.stringify({ reason: 'invalid_password', attempts: 3 }),
           undefined,
           undefined,
+          expect.any(String),
+          expect.any(String)
         ]
       );
     });
@@ -387,6 +399,8 @@ describe('AuditService', () => {
           }),
           undefined,
           undefined,
+          expect.any(String),
+          expect.any(String)
         ]
       );
 
@@ -429,6 +443,8 @@ describe('AuditService', () => {
           }),
           undefined,
           undefined,
+          expect.any(String),
+          expect.any(String)
         ]
       );
     });
