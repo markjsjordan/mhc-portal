@@ -1837,7 +1837,7 @@ export function createVisitRouter(db: Database): Router {
         await auditService.logEvent(context, {
           eventType: 'DATA_MODIFICATION',
           resource: 'VISIT',
-          resourceId: visitId,
+          resourceId: visitId ?? '',
           action: 'UPDATE',
           result: 'SUCCESS',
           metadata: {
@@ -2077,26 +2077,23 @@ export function createVisitRouter(db: Database): Router {
 
       // If compliance was overridden, log the override for audit trail
       if (complianceOverridden) {
-        await db.query(
-          `INSERT INTO audit_events (
-            organization_id, user_id, action, entity_type, entity_id,
-            details, created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
-          [
-            organizationId,
-            context.userId,
-            'COMPLIANCE_OVERRIDE',
-            'VISIT',
-            visitId,
-            JSON.stringify({
-              caregiverId,
-              caregiverName: `${caregiver.first_name} ${caregiver.last_name}`,
-              complianceIssues,
-              overrideReason,
-              visitDate: visit.scheduled_date,
-            }),
-          ]
-        );
+        const auditService = new AuditService(db);
+        await auditService.logEvent(context, {
+          eventType: 'COMPLIANCE',
+          resource: 'VISIT',
+          resourceId: visitId ?? '',
+          action: 'COMPLIANCE_OVERRIDE',
+          result: 'SUCCESS',
+          metadata: {
+            caregiverId,
+            caregiverName: `${caregiver.first_name} ${caregiver.last_name}`,
+            complianceIssues,
+            overrideReason,
+            visitDate: visit.scheduled_date,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent'),
+        });
       }
 
       // Assign caregiver to visit

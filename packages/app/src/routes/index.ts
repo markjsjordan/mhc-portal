@@ -6,6 +6,7 @@
 
 import { Express, Router } from 'express';
 import { Database, PermissionService, PortalAccessService, UserRepository, AuthMiddleware, AuditService as CoreAuditService } from '@folkcare/core';
+import { createEphiAuditMiddleware } from '../middleware/ephi-audit.js';
 import { createClientRouter, ClientService, ClientRepository, ClientAuditService } from '@folkcare/client-demographics';
 import { CarePlanService, CarePlanRepository } from '@folkcare/care-plans-tasks';
 import { TemplateService } from '@folkcare/care-plans-tasks';
@@ -266,6 +267,9 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
   if (authMiddlewareForAudit.auditImpersonatedActions) {
     app.use('/api', (req, res, next) => authMiddlewareForAudit.auditImpersonatedActions(req, res, next));
   }
+
+  // HIPAA § 164.312(b) audit logging for ePHI-bearing routes
+  app.use('/api', createEphiAuditMiddleware(db));
 
   // Section-based READ/WRITE access control (wdvf3abzp9). Must precede all /api routers.
   // Mode is controlled by SECTION_ACCESS_ENFORCEMENT (off|shadow|enforce, default shadow).
