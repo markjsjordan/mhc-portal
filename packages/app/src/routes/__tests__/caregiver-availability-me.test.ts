@@ -183,7 +183,7 @@ describe('Caregiver Availability Routes - /api/caregivers/me/availability', () =
 
   describe('200 and 409 Paths', () => {
     const mockCaregiverRow = {
-      id: 'cg-123',
+      id: '923e4567-e89b-12d3-a456-426614174000',
       organization_id: 'org-1',
       user_id: 'user-caregiver-1',
       first_name: 'Jane',

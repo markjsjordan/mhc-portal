@@ -28,6 +28,8 @@ const mockSearchCaregivers = vi.fn().mockResolvedValue({
   totalPages: 0,
 });
 
+const mockGetCaregiverById = vi.fn();
+
 // Mock all external dependencies before importing the router
 vi.mock('@folkcare/caregiver-staff', () => ({
   CaregiverService: vi.fn().mockImplementation(function() {
@@ -38,7 +40,7 @@ vi.mock('@folkcare/caregiver-staff', () => ({
       getCaregiverByEmployeeNumber: vi.fn(),
       getCaregiversByBranch: vi.fn(),
       listCaregivers: vi.fn(),
-      getCaregiverById: vi.fn(),
+      getCaregiverById: mockGetCaregiverById,
       createCaregiver: vi.fn(),
       updateCaregiver: vi.fn(),
       deleteCaregiver: vi.fn(),
@@ -91,6 +93,8 @@ vi.mock('@folkcare/core', async () => {
 
 // Import after mocking
 import { createCaregiverRouter } from '../caregivers.js';
+import { errorHandler } from '../../middleware/error-handler.js';
+import { NotFoundError } from '@folkcare/core';
 
 describe('Caregiver Routes', () => {
   let mockDb: Database;
@@ -370,6 +374,63 @@ describe('Caregiver Routes', () => {
 
       expect(response.status).toBe(403);
       expect(mockSearchCaregivers).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('malformed :id guard (router.param)', () => {
+    const KNOWN_ID = '323e4567-e89b-12d3-a456-426614174000';
+    const UNKNOWN_ID = '423e4567-e89b-12d3-a456-426614174000';
+    let app: express.Express;
+
+    beforeEach(() => {
+      mockGetCaregiverById.mockReset();
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      app = express();
+      app.use(express.json());
+      app.use('/api/caregivers', router);
+      app.use(errorHandler);
+    });
+
+    it('GET /:id returns 400 with exact body for a non-UUID id and skips the service', async () => {
+      const response = await request(app).get('/api/caregivers/cg-201');
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({ success: false, error: 'Invalid caregiver ID format' });
+      expect(mockGetCaregiverById).not.toHaveBeenCalled();
+    });
+
+    it('POST /:id/duplicate returns 400 for a non-UUID id (guard covers sub-routes)', async () => {
+      const response = await request(app).post('/api/caregivers/cg-201/duplicate').send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({ success: false, error: 'Invalid caregiver ID format' });
+    });
+
+    it('PATCH and DELETE /:id return 400 for a non-UUID id', async () => {
+      const patch = await request(app).patch('/api/caregivers/cg-201').send({});
+      const del = await request(app).delete('/api/caregivers/cg-201');
+
+      expect(patch.status).toBe(400);
+      expect(del.status).toBe(400);
+      expect(del.body).toEqual({ success: false, error: 'Invalid caregiver ID format' });
+    });
+
+    it('GET /:id returns 404 for a valid but unknown UUID', async () => {
+      mockGetCaregiverById.mockRejectedValue(new NotFoundError('Caregiver not found', { id: UNKNOWN_ID }));
+
+      const response = await request(app).get(`/api/caregivers/${UNKNOWN_ID}`);
+
+      expect(response.status).toBe(404);
+      expect(mockGetCaregiverById).toHaveBeenCalledWith(UNKNOWN_ID, expect.anything());
+    });
+
+    it('GET /:id returns 200 for a real record', async () => {
+      mockGetCaregiverById.mockResolvedValue({ id: KNOWN_ID, firstName: 'Test' });
+
+      const response = await request(app).get(`/api/caregivers/${KNOWN_ID}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ id: KNOWN_ID, firstName: 'Test' });
     });
   });
 });

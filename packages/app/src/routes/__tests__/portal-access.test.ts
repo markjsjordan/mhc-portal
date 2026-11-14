@@ -90,7 +90,7 @@ describe('Portal Access API Routes', () => {
         })
         .mockResolvedValueOnce({ rows: [] });
 
-      const res = await request(app).get('/api/caregivers/cg-1/portal-access');
+      const res = await request(app).get('/api/caregivers/623e4567-e89b-12d3-a456-426614174000/portal-access');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toEqual({
@@ -125,7 +125,7 @@ describe('Portal Access API Routes', () => {
         })
         .mockResolvedValueOnce({ rows: [] });
 
-      const res = await request(app).get('/api/caregivers/cg-1/portal-access');
+      const res = await request(app).get('/api/caregivers/623e4567-e89b-12d3-a456-426614174000/portal-access');
       expect(res.status).toBe(200);
       expect(res.body.data.revokedReason).toBeNull();
       expect(res.body.data.status).toBe('REVOKED');
@@ -151,7 +151,7 @@ describe('Portal Access API Routes', () => {
         })
         .mockResolvedValueOnce({ rows: [] });
 
-      const res = await request(app).get('/api/caregivers/cg-1/portal-access');
+      const res = await request(app).get('/api/caregivers/623e4567-e89b-12d3-a456-426614174000/portal-access');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
@@ -160,7 +160,7 @@ describe('Portal Access API Routes', () => {
       mockUserContext.roles = ['CAREGIVER'];
       mockUserContext.permissions = ['clients:read'];
 
-      const res = await request(app).get('/api/caregivers/cg-1/portal-access');
+      const res = await request(app).get('/api/caregivers/623e4567-e89b-12d3-a456-426614174000/portal-access');
       expect(res.status).toBe(403);
       expect(res.body.success).toBe(false);
     });
@@ -177,7 +177,7 @@ describe('Portal Access API Routes', () => {
         ],
       });
 
-      const res = await request(app).post('/api/caregivers/cg-1/portal-invite');
+      const res = await request(app).post('/api/caregivers/623e4567-e89b-12d3-a456-426614174000/portal-invite');
       expect(res.status).toBe(409);
       expect(res.body.success).toBe(false);
       expect(res.body.error).toContain('TERMINATED');
@@ -195,7 +195,7 @@ describe('Portal Access API Routes', () => {
         ],
       });
 
-      const res = await request(app).post('/api/caregivers/cg-1/portal-invite');
+      const res = await request(app).post('/api/caregivers/623e4567-e89b-12d3-a456-426614174000/portal-invite');
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
       expect(res.body.error).toContain('email');
@@ -203,7 +203,7 @@ describe('Portal Access API Routes', () => {
 
     it('POST /api/caregivers/:id/portal-revoke returns 400 for missing or empty reason', async () => {
       const res = await request(app)
-        .post('/api/caregivers/cg-1/portal-revoke')
+        .post('/api/caregivers/623e4567-e89b-12d3-a456-426614174000/portal-revoke')
         .send({ reason: '' });
 
       expect(res.status).toBe(400);

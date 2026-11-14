@@ -15,6 +15,7 @@ import {
   // SyncMetadata,
   NotFoundError,
   ConflictError,
+  isValidUUID,
 } from '../types/base';
 import { Database } from './connection';
 import {
@@ -119,6 +120,12 @@ export abstract class Repository<T extends Entity> {
    * Find entity by ID
    */
   async findById(id: string): Promise<T | null> {
+    // Primary keys are uuid columns: a non-UUID can never match, and sending it to
+    // Postgres raises 22P02 (invalid_text_representation) instead of "not found".
+    if (!isValidUUID(id)) {
+      return null;
+    }
+
     const whereClause = this.enableSoftDelete
       ? 'WHERE id = $1 AND deleted_at IS NULL'
       : 'WHERE id = $1';

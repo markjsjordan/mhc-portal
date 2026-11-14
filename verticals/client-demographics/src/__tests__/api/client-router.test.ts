@@ -106,17 +106,17 @@ describe('createClientRouter - route registration order', () => {
 
   it('GET /clients/:id still resolves correctly for a real (non-reserved) id', async () => {
     mockClientService.getClientById.mockResolvedValueOnce({
-      id: 'real-client-id',
+      id: '523e4567-e89b-12d3-a456-426614174000',
       clientNumber: 'CL-REAL',
       firstName: 'Real',
       lastName: 'Client',
       status: 'ACTIVE',
     });
 
-    const res = await request(app).get('/api/clients/real-client-id');
+    const res = await request(app).get('/api/clients/523e4567-e89b-12d3-a456-426614174000');
 
     expect(res.status).toBe(200);
-    expect(mockClientService.getClientById).toHaveBeenCalledWith('real-client-id', expect.anything());
+    expect(mockClientService.getClientById).toHaveBeenCalledWith('523e4567-e89b-12d3-a456-426614174000', expect.anything());
   });
 
   it('GET /clients/number/:clientNumber does not fall through to :id handler', async () => {
