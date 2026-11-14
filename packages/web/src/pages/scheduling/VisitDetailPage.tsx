@@ -49,7 +49,6 @@ export const VisitDetailPage: React.FC = () => {
 
   const { data: apiVisit, isLoading, isError, error, refetch } = useVisit(id);
 
-  const [modifiedVisit, setModifiedVisit] = useState<Visit | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const { can, hasAnyRole } = usePermissions();
@@ -71,7 +70,7 @@ export const VisitDetailPage: React.FC = () => {
       'SUPERVISOR',
     ]));
 
-  const visit: Visit | null = modifiedVisit ?? apiVisit ?? null;
+  const visit: Visit | null = apiVisit ?? null;
   const { data: client } = useClient(visit?.clientId);
   const { data: caregiver } = useCaregiver(visit?.assignedCaregiverId ?? undefined);
 
@@ -885,8 +884,8 @@ export const VisitDetailPage: React.FC = () => {
           visit={visit}
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
-          onSaved={(updated) => {
-            setModifiedVisit(updated);
+          onSaved={() => {
+            void refetch();
           }}
         />
       )}
