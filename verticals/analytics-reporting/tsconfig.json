@@ -5,12 +5,28 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@folkcare/core": [
+        "../../packages/core/dist/index.d.ts"
+      ],
+      "@folkcare/core/*": [
+        "../../packages/core/dist/*"
+      ]
+    }
   },
-  "include": ["src/**/*"],
-  "exclude": ["src/**/*.test.ts", "src/**/__tests__/**"],
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/__tests__/**"
+  ],
   "references": [
-    { "path": "../../packages/core" }
+    {
+      "path": "../../packages/core"
+    }
   ],
   "tsc-alias": {
     "resolveFullPaths": true,
