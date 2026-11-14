@@ -32,6 +32,18 @@
       ],
       "@/app/*": [
         "./src/app/*"
+      ],
+      "@folkcare/core": [
+        "../core/dist/index.d.ts"
+      ],
+      "@folkcare/core/*": [
+        "../core/dist/*"
+      ],
+      "@folkcare/shared-components": [
+        "../shared-components/dist/index.d.ts"
+      ],
+      "@folkcare/*": [
+        "../../verticals/*/dist/index.d.ts"
       ]
     },
     "noImplicitAny": false

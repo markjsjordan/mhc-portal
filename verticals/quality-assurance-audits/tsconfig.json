@@ -8,7 +8,11 @@
     "declarationMap": true,
     "types": [
       "vitest/globals"
-    ]
+    ],
+    "paths": {
+      "@folkcare/core": ["../../packages/core/dist/index.d.ts"],
+      "@folkcare/core/*": ["../../packages/core/dist/*"]
+    }
   },
   "include": [
     "src/**/*"

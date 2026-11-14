@@ -8,7 +8,13 @@
     "declarationMap": true,
     "types": [
       "vitest/globals"
-    ]
+    ],
+    "paths": {
+      "@folkcare/core": ["../../packages/core/dist/index.d.ts"],
+      "@folkcare/core/*": ["../../packages/core/dist/*"],
+      "@folkcare/client-demographics": ["../../verticals/client-demographics/dist/index.d.ts"],
+      "@folkcare/care-plans-tasks": ["../../verticals/care-plans-tasks/dist/index.d.ts"]
+    }
   },
   "include": [
     "src/**/*"
