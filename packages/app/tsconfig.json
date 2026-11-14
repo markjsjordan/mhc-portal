@@ -7,7 +7,13 @@
     "declarationMap": true,
     "isolatedModules": true,
     "skipLibCheck": true,
-    "lib": ["ES2022", "DOM"]
+    "lib": ["ES2022", "DOM"],
+    "baseUrl": ".",
+    "paths": {
+      "@folkcare/core": ["../core/dist/index.d.ts"],
+      "@folkcare/core/*": ["../core/dist/*"],
+      "@folkcare/*": ["../../verticals/*/dist/index.d.ts"]
+    }
   },
   "tsc-alias": {
     "resolveFullPaths": true,
