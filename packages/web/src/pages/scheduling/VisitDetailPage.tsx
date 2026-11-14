@@ -354,8 +354,10 @@ export const VisitDetailPage: React.FC = () => {
   const totalCount = tasks.length;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
-  const formatDate = (date: Date | string) => {
+  const formatDate = (date: Date | string | undefined | null) => {
+    if (!date) return '—';
     const d = typeof date === 'string' ? new Date(date) : date;
+    if (!(d instanceof Date) || Number.isNaN(d.getTime())) return '—';
     return d.toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'short',

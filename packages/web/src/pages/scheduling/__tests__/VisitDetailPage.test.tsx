@@ -49,10 +49,30 @@ vi.mock('../../../verticals/scheduling-visits', () => ({
     mutateAsync: vi.fn(),
     isPending: false,
   }),
-  EditVisitModal: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) =>
+  EditVisitModal: ({
+    isOpen,
+    onClose,
+    onSaved,
+  }: {
+    isOpen: boolean;
+    onClose: () => void;
+    onSaved?: (updated: unknown) => void;
+  }) =>
     isOpen ? (
       <div role="dialog" data-testid="mock-edit-visit-modal">
         <button onClick={onClose}>Close</button>
+        <button
+          onClick={() =>
+            onSaved?.({
+              id: 'vis-123',
+              visit_number: 'VIS-2026-001',
+              scheduled_date: '2026-10-26',
+              status: 'SCHEDULED',
+            })
+          }
+        >
+          Save Raw
+        </button>
       </div>
     ) : null,
   VisitClockControl: () => <div data-testid="mock-visit-clock-control">Clock Control</div>,
@@ -454,5 +474,36 @@ describe('VisitDetailPage', () => {
 
     expect(mockUseClient).toHaveBeenCalledWith('real-client-uuid');
     expect(mockUseCaregiver).toHaveBeenCalledWith('real-caregiver-uuid');
+  });
+
+  it('does not unmount when onSaved receives a raw snake_case object and triggers refetch', () => {
+    mockVisitData = {
+      id: 'vis-123',
+      visitNumber: 'VIS-2026-001',
+      clientId: 'client-1',
+      clientName: 'Margaret Thompson',
+      scheduledDate: '2026-10-25',
+      scheduledStartTime: '18:10',
+      scheduledEndTime: '21:10',
+      scheduledDuration: 180,
+      visitType: 'RESPITE',
+      status: 'SCHEDULED',
+      assignedCaregiverId: 'cg-1',
+      assignedCaregiverName: 'Sarah Jenkins',
+      address: {
+        line1: '123 Main St',
+        city: 'Portland',
+        state: 'OR',
+        postalCode: '97201',
+      },
+    };
+
+    renderPage('vis-123');
+
+    fireEvent.click(screen.getByTestId('edit-visit-button'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save Raw' }));
+
+    expect(mockRefetch).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('edit-visit-button')).toBeInTheDocument();
   });
 });
