@@ -29,7 +29,11 @@ import { Textarea } from '@/components/ui/textarea.js';
 import { Checkbox } from '@/components/ui/checkbox.js';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group.js';
 import { Label } from '@/components/ui/label.js';
-import { blankToUndefined, findIntakeFormatError } from './intake-payload.js';
+import {
+  blankToUndefined,
+  findIntakeFormatError,
+  shouldActivateOnEdit,
+} from './intake-payload.js';
 
 /**
  * Client Intake Workflow
@@ -46,6 +50,8 @@ interface ClientIntakeWorkflowProps {
   initialData?: Partial<IntakeData>;
   isEditMode?: boolean;
   clientId?: string;
+  /** Loaded client's current status (edit mode); only PENDING_INTAKE may be advanced. */
+  currentStatus?: string;
   onSuccess?: (client: Client) => void;
 }
 
@@ -219,7 +225,7 @@ function isValidPhoneNumber(value: string): boolean {
 }
 
 export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = {}) {
-  const { initialData, isEditMode = false, clientId, onSuccess } = props;
+  const { initialData, isEditMode = false, clientId, currentStatus, onSuccess } = props;
   const [currentStep, setCurrentStep] = useState(1);
   const [intakeData, setIntakeData] = useState<Partial<IntakeData>>(
     (initialData && {
@@ -422,43 +428,44 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       undefined;
 
     // Build address only if all required address fields are provided
-    const hasCompleteAddress = Boolean(
-      intakeData.address?.line1.trim() &&
-      intakeData.address.city.trim() &&
-      intakeData.address.state.trim() &&
-      intakeData.address.postalCode.trim()
-    );
+    const addr = intakeData.address;
+    const line1 = blankToUndefined(addr?.line1);
+    const city = blankToUndefined(addr?.city);
+    const state = blankToUndefined(addr?.state);
+    const postalCode = blankToUndefined(addr?.postalCode);
 
-    const addressInput = hasCompleteAddress
-      ? {
-          type: 'HOME' as const,
-          line1: intakeData.address!.line1.trim(),
-          line2: blankToUndefined(intakeData.address?.line2),
-          city: intakeData.address!.city.trim(),
-          state: intakeData.address!.state.trim().toUpperCase(),
-          postalCode: intakeData.address!.postalCode.trim(),
-          country: 'US' as const,
-        }
-      : undefined;
+    const addressInput =
+      line1 && city && state && postalCode
+        ? {
+            type: 'HOME' as const,
+            line1,
+            line2: blankToUndefined(addr?.line2),
+            city,
+            state: state.toUpperCase(),
+            postalCode,
+            country: 'US' as const,
+          }
+        : undefined;
 
-    const phoneInput = intakeData.phone?.trim()
+    const phoneNumber = blankToUndefined(intakeData.phone);
+    const phoneInput = phoneNumber
       ? {
-          number: intakeData.phone.trim(),
+          number: phoneNumber,
           type: intakeData.phoneType ?? ('MOBILE' as const),
           canReceiveSMS: intakeData.phoneCanReceiveSMS ?? false,
         }
       : undefined;
 
     const emergencyContactsInput = (intakeData.emergencyContacts ?? [])
-      .filter((c) => c.name.trim() && c.phone.trim())
+      .filter((c) => blankToUndefined(c.name) && blankToUndefined(c.phone))
       .map((c) => ({
         // A saved contact keeps its id and flags; regenerating them on every edit
         // would break references and reset healthcare-decision authority.
         id: c.id ?? crypto.randomUUID(),
-        name: c.name.trim(),
-        relationship: c.relationship.trim() || 'Emergency Contact',
+        name: (c.name ?? '').trim(),
+        relationship: blankToUndefined(c.relationship) ?? 'Emergency Contact',
         phone: {
-          number: c.phone.trim(),
+          number: (c.phone ?? '').trim(),
           type: c.phoneType ?? ('MOBILE' as const),
           canReceiveSMS: c.canReceiveSMS ?? false,
         },
@@ -482,10 +489,23 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           emergencyContacts: emergencyContactsInput,
         };
 
+        const activate = shouldActivateOnEdit(currentStatus, {
+          firstName: updateInput.firstName,
+          lastName: updateInput.lastName,
+          dateOfBirth: updateInput.dateOfBirth,
+          email: intakeData.email,
+          phone: intakeData.phone,
+          emergencyContacts: emergencyContactsInput,
+        });
+        if (activate) {
+          updateInput.status = 'ACTIVE';
+        }
+
         const updatedClient = await updateClient.mutateAsync({
           id: clientId,
           input: updateInput,
         });
+        toast.success(activate ? 'Client saved and activated.' : 'Client saved.');
 
         if (onSuccess) {
           onSuccess(updatedClient);

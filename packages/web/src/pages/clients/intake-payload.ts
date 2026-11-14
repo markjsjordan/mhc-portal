@@ -24,8 +24,8 @@ const STATE_PATTERN = /^[A-Za-z]{2}$/;
 
 export interface IntakeFormatInput {
   phone?: string;
-  address?: { state: string; postalCode: string };
-  emergencyContacts?: ReadonlyArray<{ name: string; phone: string }>;
+  address?: { state?: string; postalCode?: string };
+  emergencyContacts?: ReadonlyArray<{ name?: string; phone?: string }>;
 }
 
 /**
@@ -59,10 +59,42 @@ export function findIntakeFormatError(
     if (contactPhone !== undefined && !PHONE_PATTERN.test(contactPhone)) {
       return {
         step: 1,
-        message: `Emergency contact phone for ${contact.name.trim() || 'contact'} may contain only digits, spaces, dashes, parentheses and a leading +`,
+        message: `Emergency contact phone for ${blankToUndefined(contact.name) ?? 'contact'} may contain only digits, spaces, dashes, parentheses and a leading +`,
       };
     }
   }
 
   return null;
+}
+
+export interface IntakeCompletenessInput {
+  firstName?: string | null;
+  lastName?: string | null;
+  dateOfBirth?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  emergencyContacts?: ReadonlyArray<unknown> | null;
+}
+
+/**
+ * Required-field rule for moving a PENDING_INTAKE client to ACTIVE on edit save:
+ * first name, last name, date of birth, a contact method (email OR phone) and at
+ * least one emergency contact. Whitespace-only values count as missing.
+ */
+export function hasRequiredIntakeFields(input: IntakeCompletenessInput): boolean {
+  return (
+    blankToUndefined(input.firstName) !== undefined &&
+    blankToUndefined(input.lastName) !== undefined &&
+    blankToUndefined(input.dateOfBirth) !== undefined &&
+    (blankToUndefined(input.email) !== undefined || blankToUndefined(input.phone) !== undefined) &&
+    (input.emergencyContacts?.length ?? 0) >= 1
+  );
+}
+
+/** True only for a PENDING_INTAKE client whose required fields are all present. */
+export function shouldActivateOnEdit(
+  currentStatus: string | null | undefined,
+  input: IntakeCompletenessInput
+): boolean {
+  return currentStatus === 'PENDING_INTAKE' && hasRequiredIntakeFields(input);
 }

@@ -98,6 +98,16 @@ describe('ClientIntakeWorkflow submit payload', () => {
     expect(payload['email']).toBe('jane@example.com');
   });
 
+  it('create payload still carries status ACTIVE', async () => {
+    renderAtReview({ ...baseData });
+
+    fireEvent.click(screen.getByRole('button', { name: /Submit & Create Client/i }));
+
+    await waitFor(() => expect(createMutateAsync).toHaveBeenCalledTimes(1));
+    const payload = createMutateAsync.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload['status']).toBe('ACTIVE');
+  });
+
   it('blocks submit and reports a ZIP the server would reject, without calling the API', async () => {
     renderAtReview({ ...baseData, address: { ...baseData.address, postalCode: '7870' } });
 
