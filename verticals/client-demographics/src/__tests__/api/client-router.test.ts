@@ -105,18 +105,50 @@ describe('createClientRouter - route registration order', () => {
   });
 
   it('GET /clients/:id still resolves correctly for a real (non-reserved) id', async () => {
+    const validUuid = '123e4567-e89b-12d3-a456-426614174000';
     mockClientService.getClientById.mockResolvedValueOnce({
-      id: 'real-client-id',
+      id: validUuid,
       clientNumber: 'CL-REAL',
       firstName: 'Real',
       lastName: 'Client',
       status: 'ACTIVE',
     });
 
-    const res = await request(app).get('/api/clients/real-client-id');
+    const res = await request(app).get(`/api/clients/${validUuid}`);
 
     expect(res.status).toBe(200);
-    expect(mockClientService.getClientById).toHaveBeenCalledWith('real-client-id', expect.anything());
+    expect(mockClientService.getClientById).toHaveBeenCalledWith(validUuid, expect.anything());
+  });
+
+  it('GET /clients/client-101 returns 400 Invalid client ID format', async () => {
+    const res = await request(app).get('/api/clients/client-101');
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      success: false,
+      error: 'Invalid client ID format',
+    });
+    expect(mockClientService.getClientById).not.toHaveBeenCalled();
+  });
+
+  it('PATCH /clients/client-101 returns 400 Invalid client ID format', async () => {
+    const res = await request(app).patch('/api/clients/client-101').send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      success: false,
+      error: 'Invalid client ID format',
+    });
+  });
+
+  it('DELETE /clients/client-101 returns 400 Invalid client ID format', async () => {
+    const res = await request(app).delete('/api/clients/client-101');
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      success: false,
+      error: 'Invalid client ID format',
+    });
   });
 
   it('GET /clients/number/:clientNumber does not fall through to :id handler', async () => {

@@ -168,6 +168,24 @@ describe('errorHandler', () => {
 
     process.env['NODE_ENV'] = originalEnv;
   });
+
+  it('should map pg 22P02 invalid_text_representation error to 400', () => {
+    const err: AppError = {
+      name: 'DatabaseError',
+      message: 'invalid input syntax for type uuid: "cg-201"',
+      code: '22P02',
+    };
+
+    errorHandler(err, mockReq as Request, mockRes as Response, mockNext);
+
+    expect(mockRes.status).toHaveBeenCalledWith(400);
+    expect(mockRes.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        error: 'Invalid identifier format',
+      })
+    );
+  });
 });
 
 describe('notFoundHandler', () => {

@@ -371,5 +371,45 @@ describe('Caregiver Routes', () => {
       expect(response.status).toBe(403);
       expect(mockSearchCaregivers).not.toHaveBeenCalled();
     });
+
+    it('GET /api/caregivers/cg-201 returns 400 Invalid caregiver ID format', async () => {
+      const response = await request(app).get('/api/caregivers/cg-201');
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        success: false,
+        error: 'Invalid caregiver ID format',
+      });
+    });
+
+    it('PATCH /api/caregivers/cg-201 returns 400 Invalid caregiver ID format', async () => {
+      const response = await request(app).patch('/api/caregivers/cg-201').send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        success: false,
+        error: 'Invalid caregiver ID format',
+      });
+    });
+
+    it('DELETE /api/caregivers/cg-201 returns 400 Invalid caregiver ID format', async () => {
+      const response = await request(app).delete('/api/caregivers/cg-201');
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        success: false,
+        error: 'Invalid caregiver ID format',
+      });
+    });
+
+    it('POST /api/caregivers/cg-201/portal-invite returns 400 Invalid caregiver ID format', async () => {
+      const response = await request(app).post('/api/caregivers/cg-201/portal-invite').send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        success: false,
+        error: 'Invalid caregiver ID format',
+      });
+    });
   });
 });

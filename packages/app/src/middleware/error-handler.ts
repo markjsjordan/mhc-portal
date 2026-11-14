@@ -6,6 +6,7 @@ import { Request, Response, NextFunction } from 'express';
 
 export interface AppError extends Error {
   statusCode?: number;
+  code?: string;
   details?: unknown;
 }
 
@@ -16,13 +17,32 @@ export interface AppError extends Error {
  * Security: Never exposes internal error details, stack traces, or file paths to clients
  * All detailed error information is logged server-side only for debugging
  */
+function resolveClientMessage(
+  err: AppError,
+  statusCode: number,
+  isProduction: boolean,
+  isPgInvalidTextRepresentation: boolean
+): string {
+  if (statusCode >= 400 && statusCode < 500) {
+    if (isPgInvalidTextRepresentation) {
+      return 'Invalid identifier format';
+    }
+    return err.message.length > 0 ? err.message : 'Invalid request';
+  }
+  if (isProduction) {
+    return 'An unexpected error occurred. Please try again later.';
+  }
+  return err.message.length > 0 ? err.message : 'Internal server error';
+}
+
 export function errorHandler(
   err: AppError,
   req: Request,
   res: Response,
   _next: NextFunction
 ): void {
-  const statusCode = err.statusCode ?? 500;
+  const isPgInvalidTextRepresentation = err.code === '22P02';
+  const statusCode = isPgInvalidTextRepresentation ? 400 : (err.statusCode ?? 500);
   const isProduction = process.env['NODE_ENV'] === 'production';
   
   // Log full error details server-side for debugging (never sent to client)
@@ -40,19 +60,12 @@ export function errorHandler(
   });
 
   // Determine safe client-facing error message
-  let clientMessage: string;
-  
-  if (statusCode >= 400 && statusCode < 500) {
-    // Client errors (4xx) - safe to send specific message
-    clientMessage = err.message.length > 0 ? err.message : 'Invalid request';
-  } else {
-    // Server errors (5xx) - use generic message to avoid information disclosure
-    if (isProduction) {
-      clientMessage = 'An unexpected error occurred. Please try again later.';
-    } else {
-      clientMessage = err.message.length > 0 ? err.message : 'Internal server error';
-    }
-  }
+  const clientMessage = resolveClientMessage(
+    err,
+    statusCode,
+    isProduction,
+    isPgInvalidTextRepresentation
+  );
 
   res.status(statusCode).json({
     success: false,

@@ -21,7 +21,7 @@ describe('CaregiverService - getCurrentCaregiverProfile', () => {
   let mockContext: UserContext;
 
   const mockCaregiverRow = {
-    id: 'caregiver-123',
+    id: '44444444-4444-4444-8444-444444444123',
     organization_id: 'org-123',
     user_id: 'user-123',
     branch_ids: ['branch-123'],
@@ -135,7 +135,7 @@ describe('CaregiverService - getCurrentCaregiverProfile', () => {
     const result = await service.getCurrentCaregiverProfile(mockContext);
 
     expect(result).toBeDefined();
-    expect(result.id).toBe('caregiver-123');
+    expect(result.id).toBe('44444444-4444-4444-8444-444444444123');
     expect(result.userId).toBe('user-123');
     expect(result.email).toBe('john.doe@example.com');
     expect(result.credentials).toHaveLength(1);
@@ -170,10 +170,10 @@ describe('CaregiverService - getCurrentCaregiverProfile', () => {
 
     const result = await service.getCurrentCaregiverProfile({
       ...mockContext,
-      caregiverId: 'caregiver-123',
+      caregiverId: '44444444-4444-4444-8444-444444444123',
     });
 
-    expect(result.id).toBe('caregiver-123');
+    expect(result.id).toBe('44444444-4444-4444-8444-444444444123');
   });
 
   it('throws NotFoundError when caregiver has no ACTIVE user_id link (never falls back to email)', async () => {

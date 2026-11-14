@@ -203,7 +203,7 @@ describe('Repository Pattern', () => {
     it('should find entity by ID successfully', async () => {
       const mockResult = {
         rows: [{
-          id: 'test-id',
+          id: '11111111-1111-4111-8111-111111111111',
           name: 'Test Entity',
           email: 'test@example.com',
           status: 'ACTIVE',
@@ -221,15 +221,15 @@ describe('Repository Pattern', () => {
 
       mockDatabase.query.mockResolvedValue(mockResult);
 
-      const result = await repository.findById('test-id');
+      const result = await repository.findById('11111111-1111-4111-8111-111111111111');
 
       expect(mockDatabase.query).toHaveBeenCalledWith(
         'SELECT * FROM test_entities WHERE id = $1 AND deleted_at IS NULL',
-        ['test-id']
+        ['11111111-1111-4111-8111-111111111111']
       );
 
       expect(result).toEqual({
-        id: 'test-id',
+        id: '11111111-1111-4111-8111-111111111111',
         name: 'Test Entity',
         email: 'test@example.com',
         status: 'ACTIVE',
@@ -245,7 +245,7 @@ describe('Repository Pattern', () => {
       const mockResult = { rows: [], rowCount: 0, command: 'SELECT' as const, oid: 0, fields: [] };
       mockDatabase.query.mockResolvedValue(mockResult);
 
-      const result = await repository.findById('non-existent-id');
+      const result = await repository.findById('22222222-2222-4222-8222-222222222222-id');
 
       expect(result).toBeNull();
     });
@@ -255,7 +255,7 @@ describe('Repository Pattern', () => {
       const mockDataResult = {
         rows: [
           {
-            id: 'test-id-1',
+            id: '11111111-1111-4111-8111-111111111111-1',
             name: 'Entity 1',
             email: 'test1@example.com',
             status: 'ACTIVE',
@@ -266,7 +266,7 @@ describe('Repository Pattern', () => {
             version: 1,
           },
           {
-            id: 'test-id-2',
+            id: '11111111-1111-4111-8111-111111111111-2',
             name: 'Entity 2',
             email: 'test2@example.com',
             status: 'INACTIVE',
@@ -329,7 +329,7 @@ describe('Repository Pattern', () => {
 
       const mockFindResult = {
         rows: [{
-          id: 'test-id',
+          id: '11111111-1111-4111-8111-111111111111',
           name: 'Old Name',
           email: 'old@example.com',
           status: 'ACTIVE',
@@ -347,7 +347,7 @@ describe('Repository Pattern', () => {
 
       const mockUpdateResult = {
         rows: [{
-          id: 'test-id',
+          id: '11111111-1111-4111-8111-111111111111',
           name: 'New Name',
           email: 'old@example.com',
           status: 'ACTIVE',
@@ -367,10 +367,10 @@ describe('Repository Pattern', () => {
         .mockResolvedValueOnce(mockFindResult) // findById
         .mockResolvedValueOnce(mockUpdateResult); // UPDATE
 
-      const result = await repository.update('test-id', updates, mockUserContext);
+      const result = await repository.update('11111111-1111-4111-8111-111111111111', updates, mockUserContext);
 
       expect(result).toEqual({
-        id: 'test-id',
+        id: '11111111-1111-4111-8111-111111111111',
         name: 'New Name',
         email: 'old@example.com',
         status: 'ACTIVE',
@@ -389,7 +389,7 @@ describe('Repository Pattern', () => {
       mockDatabase.query.mockResolvedValue(mockResult);
 
       await expect(
-        repository.update('non-existent-id', { name: 'New Name' }, mockUserContext)
+        repository.update('22222222-2222-4222-8222-222222222222', { name: 'New Name' }, mockUserContext)
       ).rejects.toThrow(NotFoundError);
 
       expect(mockDatabase.query).toHaveBeenCalledTimes(1);
@@ -397,7 +397,7 @@ describe('Repository Pattern', () => {
 
     it('should throw ConflictError on version mismatch', async () => {
       const mockFindResult = {
-        rows: [{ id: 'test-id', version: 2 }],
+        rows: [{ id: '11111111-1111-4111-8111-111111111111', version: 2 }],
         rowCount: 1,
         command: 'SELECT' as const,
         oid: 0,
@@ -407,14 +407,14 @@ describe('Repository Pattern', () => {
       mockDatabase.query.mockResolvedValue(mockFindResult);
 
       await expect(
-        repository.update('test-id', { version: 1 }, mockUserContext)
+        repository.update('11111111-1111-4111-8111-111111111111', { version: 1 }, mockUserContext)
       ).rejects.toThrow(ConflictError);
     });
 
     it('should throw ConflictError when update query returns no rows', async () => {
       const mockFindResult = {
         rows: [{
-          id: 'test-id',
+          id: '11111111-1111-4111-8111-111111111111',
           name: 'Old Name',
           email: 'old@example.com',
           status: 'ACTIVE',
@@ -443,7 +443,7 @@ describe('Repository Pattern', () => {
         .mockResolvedValueOnce(mockUpdateResult); // UPDATE (empty result)
 
       await expect(
-        repository.update('test-id', { name: 'New Name', version: 1 }, mockUserContext)
+        repository.update('11111111-1111-4111-8111-111111111111', { name: 'New Name', version: 1 }, mockUserContext)
       ).rejects.toThrow(ConflictError);
       expect(mockDatabase.query).toHaveBeenCalledTimes(2); // findById + UPDATE
     });
@@ -453,7 +453,7 @@ describe('Repository Pattern', () => {
     it('should soft delete entity successfully', async () => {
       const mockFindResult = {
         rows: [{
-          id: 'test-id',
+          id: '11111111-1111-4111-8111-111111111111',
           name: 'Test Entity',
           email: 'test@example.com',
           status: 'ACTIVE',
@@ -471,7 +471,7 @@ describe('Repository Pattern', () => {
 
       mockDatabase.query.mockResolvedValue(mockFindResult);
 
-      await repository.delete('test-id', mockUserContext);
+      await repository.delete('11111111-1111-4111-8111-111111111111', mockUserContext);
 
       expect(mockDatabase.query).toHaveBeenNthCalledWith(2,
         `
@@ -479,7 +479,7 @@ describe('Repository Pattern', () => {
       SET deleted_at = $1, deleted_by = $2
       WHERE id = $3
     `,
-        [expect.any(Date), mockUserContext.userId, 'test-id']
+        [expect.any(Date), mockUserContext.userId, '11111111-1111-4111-8111-111111111111']
       );
 
       expect(mockDatabase.query).toHaveBeenCalledTimes(3); // findById + UPDATE + audit
@@ -492,15 +492,15 @@ describe('Repository Pattern', () => {
         enableSoftDelete: false,
       });
 
-      await expect(repo.delete('test-id', mockUserContext))
+      await expect(repo.delete('11111111-1111-4111-8111-111111111111', mockUserContext))
         .rejects.toThrow('Hard delete not supported. Use deleteHard() instead.');
     });
 
-    it('should throw NotFoundError when deleting non-existent entity', async () => {
+    it('should throw NotFoundError when deleting 22222222-2222-4222-8222-222222222222 entity', async () => {
       const mockResult = { rows: [], rowCount: 0, command: 'SELECT' as const, oid: 0, fields: [] };
       mockDatabase.query.mockResolvedValue(mockResult);
 
-      await expect(repository.delete('non-existent-id', mockUserContext))
+      await expect(repository.delete('22222222-2222-4222-8222-222222222222-id', mockUserContext))
         .rejects.toThrow(NotFoundError);
     });
   });
@@ -510,7 +510,7 @@ describe('Repository Pattern', () => {
       const mockRevisions = [
         {
           revision_id: 'rev-1',
-          entity_id: 'test-id',
+          entity_id: '11111111-1111-4111-8111-111111111111',
           entity_type: 'test_entities',
           timestamp: new Date(),
           user_id: 'user-id',
@@ -525,7 +525,7 @@ describe('Repository Pattern', () => {
       const mockResult = { rows: mockRevisions, rowCount: 1, command: 'SELECT' as const, oid: 0, fields: [] };
       mockDatabase.query.mockResolvedValue(mockResult);
 
-      const history = await repository.getRevisionHistory('test-id');
+      const history = await repository.getRevisionHistory('11111111-1111-4111-8111-111111111111');
 
       expect(mockDatabase.query).toHaveBeenCalledWith(
         `
@@ -533,7 +533,7 @@ describe('Repository Pattern', () => {
       WHERE entity_id = $1 AND entity_type = $2
       ORDER BY timestamp DESC
     `,
-        ['test-id', 'test_entities']
+        ['11111111-1111-4111-8111-111111111111', 'test_entities']
       );
 
       expect(history).toEqual([
@@ -556,7 +556,7 @@ describe('Repository Pattern', () => {
         enableAudit: false,
       });
 
-      const history = await repo.getRevisionHistory('test-id');
+      const history = await repo.getRevisionHistory('11111111-1111-4111-8111-111111111111');
 
       expect(history).toEqual([]);
       expect(mockDatabase.query).not.toHaveBeenCalled();
@@ -615,7 +615,7 @@ describe('Repository Pattern', () => {
       // Test that findById query doesn't include soft delete condition
       const mockResult = {
         rows: [{
-          id: 'test-id',
+          id: '11111111-1111-4111-8111-111111111111',
           name: 'Test Entity',
           email: 'test@example.com',
           status: 'ACTIVE',
@@ -633,11 +633,11 @@ describe('Repository Pattern', () => {
 
       mockDatabase.query.mockResolvedValue(mockResult);
 
-      const result = await repo.findById('test-id');
+      const result = await repo.findById('11111111-1111-4111-8111-111111111111');
 
       expect(mockDatabase.query).toHaveBeenCalledWith(
         'SELECT * FROM test_entities WHERE id = $1', // No deleted_at condition
-        ['test-id']
+        ['11111111-1111-4111-8111-111111111111']
       );
       expect(result).toBeTruthy();
     });
@@ -682,6 +682,13 @@ describe('Repository Pattern', () => {
         sortBy: 'name',
         sortOrder: 'asc',
       })).rejects.toThrow('Count query returned no rows');
+    });
+
+    it('should return null from findById without querying when id is not a valid UUID', async () => {
+      const result = await repository.findById('cg-201');
+
+      expect(result).toBeNull();
+      expect(mockDatabase.query).not.toHaveBeenCalled();
     });
   });
 });
