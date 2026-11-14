@@ -1852,9 +1852,23 @@ export function createVisitRouter(db: Database): Router {
         console.error('Audit trail logging failed for visit update:', auditError);
       }
 
+      let mappedVisit: unknown = updatedRow;
+      try {
+        const pool = typeof db.getPool === 'function' ? db.getPool() : null;
+        if (pool) {
+          const repository = new ScheduleRepository(pool);
+          const fetched = await repository.getVisitById(visitId);
+          if (fetched) {
+            mappedVisit = fetched;
+          }
+        }
+      } catch {
+        // Fallback to updatedRow when db.getPool() or repository lookup is mocked/unavailable
+      }
+
       res.json({
         success: true,
-        data: updatedRow,
+        data: mappedVisit,
       });
     } catch (error) {
       next(error);

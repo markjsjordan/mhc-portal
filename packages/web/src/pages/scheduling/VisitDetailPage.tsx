@@ -49,7 +49,6 @@ export const VisitDetailPage: React.FC = () => {
 
   const { data: apiVisit, isLoading, isError, error, refetch } = useVisit(id);
 
-  const [modifiedVisit, setModifiedVisit] = useState<Visit | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const { can, hasAnyRole } = usePermissions();
@@ -71,7 +70,7 @@ export const VisitDetailPage: React.FC = () => {
       'SUPERVISOR',
     ]));
 
-  const visit: Visit | null = modifiedVisit ?? apiVisit ?? null;
+  const visit: Visit | null = apiVisit ?? null;
   const { data: client } = useClient(visit?.clientId);
   const { data: caregiver } = useCaregiver(visit?.assignedCaregiverId ?? undefined);
 
@@ -355,8 +354,10 @@ export const VisitDetailPage: React.FC = () => {
   const totalCount = tasks.length;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
-  const formatDate = (date: Date | string) => {
+  const formatDate = (date: Date | string | undefined | null) => {
+    if (!date) return '—';
     const d = typeof date === 'string' ? new Date(date) : date;
+    if (!(d instanceof Date) || Number.isNaN(d.getTime())) return '—';
     return d.toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'short',
@@ -885,8 +886,8 @@ export const VisitDetailPage: React.FC = () => {
           visit={visit}
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
-          onSaved={(updated) => {
-            setModifiedVisit(updated);
+          onSaved={() => {
+            void refetch();
           }}
         />
       )}
