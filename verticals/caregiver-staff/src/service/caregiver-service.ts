@@ -542,14 +542,6 @@ export class CaregiverService {
     // Check if caregiver has active assignments (would be in scheduling vertical)
     // For now, just perform the delete
     await this.repository.delete(id, context);
-
-    // Trigger auto-revoke when deleting (soft delete implies termination)
-    await this.portalAccessHook.handleCaregiverStatusChange(
-      id,
-      caregiver.employmentStatus as CaregiverEmploymentStatus,
-      'TERMINATED',
-      context
-    );
   }
 
   /**

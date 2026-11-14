@@ -21,6 +21,7 @@ import { Modal } from '@/core/components/index.js';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '../../../lib/api-error.js';
 import { caregiverApi } from '../api/index.js';
 import type { Caregiver } from '../types/index.js';
 
@@ -89,10 +90,11 @@ export const DuplicateCaregiverModal: React.FC<DuplicateCaregiverModalProps> = (
       });
     },
     onError: (error: { response?: { data?: { error?: string; message?: string } } }) => {
+      console.error('Failed to duplicate caregiver:', error);
       if (error.response?.data?.error === 'DUPLICATE_EMAIL') {
         toast.error('Email already in use');
       } else {
-        toast.error(error.response?.data?.message ?? 'Failed to duplicate caregiver');
+        toast.error(getApiErrorMessage(error, 'Failed to duplicate caregiver'));
       }
     },
   });
