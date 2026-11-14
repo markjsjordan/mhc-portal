@@ -17,8 +17,35 @@ export function extractApiErrorMessage(body: ApiError | null | undefined, fallba
   const details = nested?.details ?? body?.details;
   const detailErrors = details?.errors;
   if (Array.isArray(detailErrors)) {
-    const reasons = detailErrors.filter((e): e is string => typeof e === 'string' && e.length > 0);
-    if (reasons.length > 0) return `${base}: ${reasons.join('; ')}`;
+    const seen = new Set<string>();
+    const reasons: string[] = [];
+    for (const entry of detailErrors) {
+      let formatted = '';
+      if (typeof entry === 'string') {
+        formatted = entry.trim();
+      } else if (entry && typeof entry === 'object') {
+        const record = entry as { field?: unknown; message?: unknown };
+        const field = typeof record.field === 'string' ? record.field.trim() : '';
+        const message = typeof record.message === 'string' ? record.message.trim() : '';
+        if (field && message) {
+          formatted = `${field}: ${message}`;
+        } else if (message) {
+          formatted = message;
+        } else if (field) {
+          formatted = field;
+        }
+      }
+      if (formatted && !seen.has(formatted)) {
+        seen.add(formatted);
+        reasons.push(formatted);
+        if (reasons.length >= 5) break;
+      }
+    }
+    if (reasons.length > 0) {
+      const joined = reasons.join('; ');
+      const full = `${base}: ${joined}`;
+      return full.length > 300 ? `${full.slice(0, 297)}...` : full;
+    }
   }
   return base;
 }
