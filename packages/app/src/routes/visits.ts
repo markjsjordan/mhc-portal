@@ -2079,15 +2079,17 @@ export function createVisitRouter(db: Database): Router {
       if (complianceOverridden) {
         await db.query(
           `INSERT INTO audit_events (
-            organization_id, user_id, action, entity_type, entity_id,
-            details, created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+            event_id, timestamp, organization_id, user_id, event_type,
+            resource, resource_id, action, result, metadata
+          ) VALUES (gen_random_uuid(), NOW(), $1, $2, $3, $4, $5, $6, $7, $8)`,
           [
             organizationId,
             context.userId,
-            'COMPLIANCE_OVERRIDE',
+            'DATA_MODIFICATION',
             'VISIT',
             visitId,
+            'COMPLIANCE_OVERRIDE',
+            'SUCCESS',
             JSON.stringify({
               caregiverId,
               caregiverName: `${caregiver.first_name} ${caregiver.last_name}`,
