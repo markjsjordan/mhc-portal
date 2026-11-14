@@ -35,15 +35,48 @@ function parseBranchIds(raw: string): string[] {
     .filter((id) => id.length > 0);
 }
 
-function validate(values: CaregiverFormValues): Partial<Record<keyof CaregiverFormValues, string>> {
+export const CAREGIVER_PHONE_REGEX = /^\+?[1-9]\d{1,14}$/;
+
+export function validate(
+  values: CaregiverFormValues,
+  referenceDate: Date = new Date()
+): Partial<Record<keyof CaregiverFormValues, string>> {
   const errors: Partial<Record<keyof CaregiverFormValues, string>> = {};
 
   if (!values.firstName.trim()) errors.firstName = 'First name is required';
   if (!values.lastName.trim()) errors.lastName = 'Last name is required';
   if (!values.email.trim()) errors.email = 'Email is required';
-  if (!values.phoneNumber.trim()) errors.phoneNumber = 'Phone number is required';
-  if (!values.dateOfBirth) errors.dateOfBirth = 'Date of birth is required';
-  if (!values.hireDate) errors.hireDate = 'Hire date is required';
+  const normalizedPhone = normalizePhoneDigits(values.phoneNumber);
+  if (!values.phoneNumber.trim()) {
+    errors.phoneNumber = 'Phone number is required';
+  } else if (!CAREGIVER_PHONE_REGEX.test(normalizedPhone)) {
+    errors.phoneNumber = 'Invalid phone number format (must not start with 0 and must be 2–15 digits)';
+  }
+  if (!values.dateOfBirth) {
+    errors.dateOfBirth = 'Date of birth is required';
+  } else {
+    const dob = new Date(values.dateOfBirth);
+    if (Number.isNaN(dob.getTime())) {
+      errors.dateOfBirth = 'Invalid date of birth';
+    } else {
+      const age = referenceDate.getFullYear() - dob.getFullYear();
+      if (age < 16 || age > 100) {
+        errors.dateOfBirth = 'Age must be between 16 and 100';
+      }
+    }
+  }
+  if (!values.hireDate) {
+    errors.hireDate = 'Hire date is required';
+  } else {
+    const hire = new Date(values.hireDate);
+    const maxHire = new Date(referenceDate);
+    maxHire.setFullYear(maxHire.getFullYear() + 1);
+    if (Number.isNaN(hire.getTime())) {
+      errors.hireDate = 'Invalid hire date';
+    } else if (hire > maxHire) {
+      errors.hireDate = 'Hire date cannot be more than 1 year in the future';
+    }
+  }
   if (!values.addressLine1.trim()) errors.addressLine1 = 'Street address is required';
   if (!values.addressCity.trim()) errors.addressCity = 'City is required';
   if (values.addressState.trim().length !== 2) errors.addressState = 'State must be 2 letters';
@@ -52,7 +85,12 @@ function validate(values: CaregiverFormValues): Partial<Record<keyof CaregiverFo
   }
   if (!values.emergencyContactName.trim()) errors.emergencyContactName = 'Required';
   if (!values.emergencyContactRelationship.trim()) errors.emergencyContactRelationship = 'Required';
-  if (!values.emergencyContactPhone.trim()) errors.emergencyContactPhone = 'Required';
+  const normalizedEmergencyPhone = normalizePhoneDigits(values.emergencyContactPhone);
+  if (!values.emergencyContactPhone.trim()) {
+    errors.emergencyContactPhone = 'Required';
+  } else if (!CAREGIVER_PHONE_REGEX.test(normalizedEmergencyPhone)) {
+    errors.emergencyContactPhone = 'Invalid phone number format (must not start with 0 and must be 2–15 digits)';
+  }
   if (parseBranchIds(values.branchIdsRaw).length === 0) {
     errors.branchIdsRaw = 'At least one branch ID is required';
   }
