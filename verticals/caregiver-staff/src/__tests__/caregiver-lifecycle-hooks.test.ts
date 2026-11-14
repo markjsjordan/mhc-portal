@@ -47,6 +47,7 @@ describe('Caregiver Lifecycle Hooks', () => {
       await service.updateCaregiver('cg-1', { employmentStatus: 'TERMINATED' }, mockContext);
 
       expect(mockHook.handleCaregiverStatusChange).toHaveBeenCalledTimes(1);
+      expect(mockHook.handleCaregiverStatusChange).toHaveBeenCalledTimes(1);
       expect(mockHook.handleCaregiverStatusChange).toHaveBeenCalledWith(
         'cg-1',
         'ACTIVE',
@@ -72,6 +73,7 @@ describe('Caregiver Lifecycle Hooks', () => {
 
       await service.updateCaregiver('cg-1', { employmentStatus: 'ON_LEAVE' }, mockContext);
 
+      expect(mockHook.handleCaregiverStatusChange).toHaveBeenCalledTimes(1);
       expect(mockHook.handleCaregiverStatusChange).toHaveBeenCalledTimes(1);
       expect(mockHook.handleCaregiverStatusChange).toHaveBeenCalledWith(
         'cg-1',
@@ -130,6 +132,7 @@ describe('Caregiver Lifecycle Hooks', () => {
 
       await service.deleteCaregiver('cg-1', deleteContext);
 
+      expect(mockHook.handleCaregiverStatusChange).toHaveBeenCalledTimes(1);
       expect(mockHook.handleCaregiverStatusChange).toHaveBeenCalledWith(
         'cg-1',
         'ACTIVE',
@@ -205,6 +208,7 @@ describe('Caregiver Lifecycle Hooks', () => {
         }
       );
 
+      expect(mockHook.handleCaregiverStatusChange).toHaveBeenCalledTimes(1);
       expect(mockHook.handleCaregiverStatusChange).toHaveBeenCalledTimes(1);
       expect(mockHook.handleCaregiverStatusChange).toHaveBeenCalledWith(
         'cg-import-1',
