@@ -57,8 +57,10 @@ describe('CaregiverAvailabilityService', () => {
     sunday: { available: false },
   };
 
+  const TEST_CAREGIVER_ID = '11111111-1111-4111-8111-111111111123';
+
   const mockCaregiver = {
-    id: 'cg-123',
+    id: TEST_CAREGIVER_ID,
     organization_id: 'org-456',
     user_id: 'user-789',
     timezone: 'America/New_York',
@@ -166,7 +168,7 @@ describe('CaregiverAvailabilityService', () => {
 
       await expect(
         service.saveAvailabilityOverride(
-          'cg-123',
+          TEST_CAREGIVER_ID,
           { weekStart: '2026-11-02', schedule: validSchedule, expectedVersion: 1 },
           context
         )
@@ -185,7 +187,7 @@ describe('CaregiverAvailabilityService', () => {
 
       await expect(
         service.saveAvailabilityOverride(
-          'cg-123',
+          TEST_CAREGIVER_ID,
           { weekStart: '2026-11-02', schedule: validSchedule, expectedVersion: 1 },
           context
         )
@@ -209,7 +211,7 @@ describe('CaregiverAvailabilityService', () => {
       });
 
       const res = await service.saveAvailabilityOverride(
-        'cg-123',
+        TEST_CAREGIVER_ID,
         { weekStart: '2026-11-02', schedule: validSchedule, expectedVersion: 1 },
         context
       );
@@ -231,7 +233,7 @@ describe('CaregiverAvailabilityService', () => {
 
       await expect(
         service.saveAvailabilityOverride(
-          'cg-123',
+          TEST_CAREGIVER_ID,
           { weekStart: '2026-10-05', schedule: validSchedule, expectedVersion: 1 },
           context
         )
@@ -283,7 +285,7 @@ describe('CaregiverAvailabilityService', () => {
       });
 
       const res = await service.saveAvailabilityOverride(
-        'cg-123',
+        TEST_CAREGIVER_ID,
         { weekStart: '2026-11-02', schedule: validSchedule, expectedVersion: 1 },
         context
       );
@@ -313,7 +315,7 @@ describe('CaregiverAvailabilityService', () => {
 
       try {
         await service.saveAvailabilityOverride(
-          'cg-123',
+          TEST_CAREGIVER_ID,
           { weekStart: '2026-11-02', schedule: validSchedule, expectedVersion: 1 },
           context
         );
@@ -348,7 +350,7 @@ describe('CaregiverAvailabilityService', () => {
       });
 
       const res = await service.saveAvailabilityOverride(
-        'cg-123',
+        TEST_CAREGIVER_ID,
         { weekStart: '2026-11-02', schedule: validSchedule, expectedVersion: 1 },
         context
       );
@@ -375,7 +377,7 @@ describe('CaregiverAvailabilityService', () => {
 
       await expect(
         service.saveAvailabilityOverride(
-          'cg-123',
+          TEST_CAREGIVER_ID,
           { weekStart: '2026-11-02', schedule: validSchedule, expectedVersion: 1 },
           context
         )
@@ -403,7 +405,7 @@ describe('CaregiverAvailabilityService', () => {
       });
 
       await service.saveAvailabilityOverride(
-        'cg-123',
+        TEST_CAREGIVER_ID,
         { weekStart: '2026-11-02', schedule: validSchedule, expectedVersion: 1 },
         context
       );

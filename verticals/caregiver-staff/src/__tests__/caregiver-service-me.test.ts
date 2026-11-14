@@ -15,15 +15,17 @@ const mockDatabase: Database = {
 
 // Fixed test date
 const FIXED_DATE = new Date('2024-01-15T10:00:00Z');
+const TEST_USER_ID = '11111111-1111-4111-8111-111111111123';
+const TEST_CAREGIVER_ID = '22222222-2222-4222-8222-222222222123';
 
 describe('CaregiverService - getCurrentCaregiverProfile', () => {
   let service: CaregiverService;
   let mockContext: UserContext;
 
   const mockCaregiverRow = {
-    id: 'caregiver-123',
+    id: TEST_CAREGIVER_ID,
     organization_id: 'org-123',
-    user_id: 'user-123',
+    user_id: TEST_USER_ID,
     branch_ids: ['branch-123'],
     primary_branch_id: 'branch-123',
     employee_number: '1001',
@@ -104,7 +106,7 @@ describe('CaregiverService - getCurrentCaregiverProfile', () => {
     service = new CaregiverService(mockDatabase);
     
     mockContext = {
-      userId: 'user-123',
+      userId: TEST_USER_ID,
       organizationId: 'org-123',
       branchIds: ['branch-123'],
       roles: ['CAREGIVER'],
@@ -135,8 +137,8 @@ describe('CaregiverService - getCurrentCaregiverProfile', () => {
     const result = await service.getCurrentCaregiverProfile(mockContext);
 
     expect(result).toBeDefined();
-    expect(result.id).toBe('caregiver-123');
-    expect(result.userId).toBe('user-123');
+    expect(result.id).toBe(TEST_CAREGIVER_ID);
+    expect(result.userId).toBe(TEST_USER_ID);
     expect(result.email).toBe('john.doe@example.com');
     expect(result.credentials).toHaveLength(1);
     expect(result.languages).toContain('Spanish');
@@ -170,10 +172,10 @@ describe('CaregiverService - getCurrentCaregiverProfile', () => {
 
     const result = await service.getCurrentCaregiverProfile({
       ...mockContext,
-      caregiverId: 'caregiver-123',
+      caregiverId: TEST_CAREGIVER_ID,
     });
 
-    expect(result.id).toBe('caregiver-123');
+    expect(result.id).toBe(TEST_CAREGIVER_ID);
   });
 
   it('throws NotFoundError when caregiver has no ACTIVE user_id link (never falls back to email)', async () => {
@@ -188,7 +190,7 @@ describe('CaregiverService - getCurrentCaregiverProfile', () => {
     });
 
     await expect(service.getCurrentCaregiverProfile(mockContext)).rejects.toThrow(
-      'Caregiver profile not found for user: user-123'
+      `Caregiver profile not found for user: ${TEST_USER_ID}`
     );
 
     const calls = vi.mocked(mockDatabase.query).mock.calls;
@@ -234,7 +236,7 @@ describe('CaregiverService - getCurrentCaregiverProfile', () => {
     });
 
     await expect(service.getCurrentCaregiverProfile(mockContext)).rejects.toThrow(
-      'Caregiver profile not found for user: user-123'
+      `Caregiver profile not found for user: ${TEST_USER_ID}`
     );
   });
 });
