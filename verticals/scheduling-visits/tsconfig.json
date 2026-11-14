@@ -6,7 +6,13 @@
     "composite": true,
     "declaration": true,
     "declarationMap": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "paths": {
+      "@folkcare/core": ["../../packages/core/dist/index.d.ts"],
+      "@folkcare/core/*": ["../../packages/core/dist/*"],
+      "@folkcare/time-tracking-evv": ["../../verticals/time-tracking-evv/dist/index.d.ts"],
+      "@folkcare/client-demographics": ["../../verticals/client-demographics/dist/index.d.ts"]
+    }
   },
   "include": [
     "src/**/*"
