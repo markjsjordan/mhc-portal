@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox.js';
 import { Modal } from '@/core/components/index.js';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '../../../lib/api-error.js';
 import { caregiverApi } from '../api/index.js';
 import type { Caregiver } from '../types/index.js';
 
@@ -43,10 +44,11 @@ export const DeleteCaregiverConfirmation: React.FC<DeleteCaregiverConfirmationPr
       onClose();
     },
     onError: (error: { response?: { data?: { error?: string; message?: string } } }) => {
+      console.error('Failed to delete caregiver:', error);
       if (error.response?.data?.error === 'INVALID_STATUS_TRANSITION') {
         toast.error('Cannot delete terminated caregiver');
       } else {
-        toast.error(error.response?.data?.message ?? 'Failed to delete caregiver');
+        toast.error(getApiErrorMessage(error, 'Failed to delete caregiver'));
       }
     },
   });
