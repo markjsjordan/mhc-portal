@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button.js';
 import { Modal, LoadingSpinner } from '@/core/components/index.js';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '../../../lib/api-error.js';
 import { caregiverApi } from '../api/index.js';
 import type { Caregiver } from '../types/index.js';
 import { CaregiverForm } from './CaregiverForm.js';
@@ -133,12 +134,13 @@ export const EditCaregiverModal: React.FC<EditCaregiverModalProps> = ({
       onClose();
     },
     onError: (error: { response?: { data?: { error?: string; message?: string } } }) => {
+      console.error('Failed to update caregiver:', error);
       if (error.response?.data?.error === 'OPTIMISTIC_LOCK_FAILURE') {
         toast.error(
           'Record was modified by another user. Please refresh and try again.'
         );
       } else {
-        toast.error(error.response?.data?.message ?? 'Failed to update caregiver');
+        toast.error(getApiErrorMessage(error, 'Failed to update caregiver'));
       }
     },
   });
