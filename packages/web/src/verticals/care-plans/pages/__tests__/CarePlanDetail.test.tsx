@@ -11,6 +11,10 @@ const mockMutateUpdateAsync = vi.fn();
 let mockCarePlanData: CarePlan | null = null;
 let mockClientData: { firstName: string; lastName: string; preferredName?: string } | null = null;
 
+vi.mock('../../hooks/use-create-goal.js', () => ({
+  useCreateGoal: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
 vi.mock('react-router-dom', () => ({
   useParams: () => ({ id: 'plan-123' }),
   useNavigate: () => mockNavigate,
