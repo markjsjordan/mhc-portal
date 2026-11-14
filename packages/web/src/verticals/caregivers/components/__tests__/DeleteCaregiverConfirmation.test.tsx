@@ -262,7 +262,7 @@ describe('DeleteCaregiverConfirmation', () => {
     const user = userEvent.setup();
     const error = new Error('Delete failed');
     (error as any).response = {
-      data: { message: 'Failed to delete caregiver' },
+      data: { success: false, error: 'Permission denied: caregivers:delete' },
     };
     (caregiverApi.deleteCaregiver as any).mockRejectedValue(error);
 
@@ -285,7 +285,7 @@ describe('DeleteCaregiverConfirmation', () => {
     await user.click(screen.getByRole('button', { name: /delete caregiver/i }));
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('Failed to delete caregiver');
+      expect(toast.error).toHaveBeenCalledWith('Permission denied: caregivers:delete');
     });
   });
 
