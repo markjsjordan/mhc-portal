@@ -36,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select.js';
-import { useApiClient } from '@/core/hooks/useApiClient';
+import { useApiClient } from '@/core/hooks/api.js';
 import { AuditEventsApiService } from '@/app/services/audit-events-api.service';
 import type { AuditLogEntry } from '@/app/services/audit-events-api.service';
 
