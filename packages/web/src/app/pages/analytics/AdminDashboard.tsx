@@ -18,7 +18,6 @@ import { KPICard } from './components/KPICard';
 import { AnalyticsFilters, type FilterValues } from './components/AnalyticsFilters';
 import { RevenueChart } from './components/charts/RevenueChart';
 import { VisitMetricsChart } from './components/charts/VisitMetricsChart';
-import { ComplianceGauge } from './components/charts/ComplianceGauge';
 import { TopPerformersTable } from './components/charts/TopPerformersTable';
 import { AlertsList } from './components/charts/AlertsList';
 import {
@@ -164,8 +163,8 @@ export function AdminDashboard() {
             </CardContent>
           </Card>
 
-          {/* Visit Metrics and EVV Compliance */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Visit Metrics */}
+          <div className="grid grid-cols-1 gap-6 mb-6">
             <Card>
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg font-semibold text-gray-900">Visit Metrics</CardTitle>
@@ -177,25 +176,6 @@ export function AdminDashboard() {
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     No visit data available
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-semibold text-gray-900">EVV Compliance</CardTitle>
-                <CardDescription className="text-sm text-gray-600">Electronic Visit Verification</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {kpis?.evvCompliance ? (
-                  <ComplianceGauge
-                    value={kpis.evvCompliance.complianceRate * 100}
-                    label="EVV Compliance Rate"
-                  />
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    No EVV data available
                   </div>
                 )}
               </CardContent>
