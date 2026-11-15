@@ -42,4 +42,25 @@ describe('VisitFilters', () => {
       })
     );
   });
+
+  it('clamps popover width to viewport and closes on Escape', () => {
+    render(
+      <VisitFilters
+        filters={{}}
+        onFiltersChange={vi.fn()}
+        activeCount={0}
+      />
+    );
+
+    const filterButton = screen.getByRole('button', { name: /filters/i });
+    fireEvent.click(filterButton);
+
+    const heading = screen.getByText('Filter Visits');
+    const popoverContent = heading.closest('[role="dialog"]');
+    expect(popoverContent).not.toBeNull();
+    expect(popoverContent?.className).toContain('max-w-[calc(100vw-1rem)]');
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByText('Filter Visits')).not.toBeInTheDocument();
+  });
 });

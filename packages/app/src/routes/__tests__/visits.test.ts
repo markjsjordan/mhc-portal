@@ -8,6 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createVisitRouter } from '../visits';
+import { ScheduleRepository } from '@folkcare/scheduling-visits';
 import type { Database } from '@folkcare/core';
 import type { Request, Response, NextFunction } from 'express';
 import type { Pool } from 'pg';
@@ -1203,6 +1204,97 @@ describe('Visit Routes', () => {
           error: expect.stringContaining('Missing required fields'),
         })
       );
+    });
+  });
+
+  describe('PUT /:id', () => {
+    it('returns mapped camelCase Visit from ScheduleRepository.getVisitById', async () => {
+      const visitId = '11111111-1111-4111-8111-111111111111';
+      const existingRow = {
+        id: visitId,
+        organization_id: 'org-123',
+        branch_id: 'branch-123',
+        client_id: 'client-1',
+        visit_number: 'V2026-0001',
+        scheduled_date: '2026-10-25',
+        scheduled_start_time: '09:00',
+        scheduled_end_time: '11:00',
+        scheduled_duration: 120,
+        visit_type: 'REGULAR',
+        status: 'SCHEDULED',
+        assigned_caregiver_id: null,
+        internal_notes: 'old note',
+        client_instructions: '',
+        version: 1,
+      };
+      const updatedRow = {
+        ...existingRow,
+        internal_notes: 'updated note',
+        version: 2,
+      };
+      const mappedVisit = {
+        id: visitId,
+        organizationId: 'org-123',
+        branchId: 'branch-123',
+        clientId: 'client-1',
+        visitNumber: 'V2026-0001',
+        scheduledDate: '2026-10-25',
+        scheduledStartTime: '09:00',
+        scheduledEndTime: '11:00',
+        scheduledDuration: 120,
+        visitType: 'REGULAR',
+        status: 'SCHEDULED',
+        assignedCaregiverId: null,
+        internalNotes: 'updated note',
+      };
+
+      const getVisitSpy = vi
+        .spyOn(ScheduleRepository.prototype, 'getVisitById')
+        .mockResolvedValueOnce(mappedVisit as any);
+
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({ rows: [existingRow] } as any)
+        .mockResolvedValueOnce({ rows: [updatedRow] } as any)
+        .mockResolvedValue({ rows: [] } as any);
+
+      const mockReq = {
+        params: { id: visitId },
+        body: { notes: 'updated note' },
+        ip: '127.0.0.1',
+        get: vi.fn().mockReturnValue('vitest'),
+        user: {
+          userId: 'u1',
+          organizationId: 'org-123',
+          branchIds: ['branch-123'],
+          roles: ['COORDINATOR'],
+          permissions: ['visits:write'],
+        },
+      } as unknown as Request;
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find(
+        (layer: any) => layer.route?.path === '/:id' && layer.route?.methods?.put
+      )?.route?.stack[0]?.handle;
+
+      expect(handler).toBeDefined();
+      await handler!(mockReq, mockResponse as Response, nextMock);
+
+      expect(getVisitSpy).toHaveBeenCalledWith(visitId);
+      expect(jsonMock).toHaveBeenCalledWith({
+        success: true,
+        data: expect.objectContaining({
+          id: visitId,
+          visitNumber: 'V2026-0001',
+          scheduledDate: '2026-10-25',
+          scheduledStartTime: '09:00',
+          scheduledEndTime: '11:00',
+          internalNotes: 'updated note',
+        }),
+      });
+      const payload = jsonMock.mock.calls[0]?.[0];
+      expect(payload?.data?.scheduled_date).toBeUndefined();
+
+      getVisitSpy.mockRestore();
     });
   });
 });

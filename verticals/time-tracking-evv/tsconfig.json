@@ -5,7 +5,16 @@
     "rootDir": "./src",
     "composite": true,
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@folkcare/core": [
+        "../../packages/core/dist/index.d.ts"
+      ],
+      "@folkcare/core/*": [
+        "../../packages/core/dist/*"
+      ]
+    }
   },
   "include": [
     "src/**/*"

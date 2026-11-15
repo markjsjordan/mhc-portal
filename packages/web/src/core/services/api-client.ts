@@ -143,8 +143,11 @@ class ApiClientImpl implements ApiClient {
                 initialDelayMs: 1000,
                 maxDelayMs: 10000,
                 maxJitterMs: 1000,
-                // Don't retry 401 for auth endpoints - user should see immediate feedback
-                retryableStatuses: url.includes('/auth/') ? [500, 502, 503, 504] : [429, 500, 502, 503, 504],
+                // Do not retry 500 on non-GET mutations (e.g. PUT/POST/PATCH/DELETE) so deterministic
+                // server errors fail fast instead of stalling the UI for ~8s.
+                retryableStatuses: method === 'GET'
+                  ? (url.includes('/auth/') ? [500, 502, 503, 504] : [429, 500, 502, 503, 504])
+                  : (url.includes('/auth/') ? [502, 503, 504] : [429, 502, 503, 504]),
                 onRetry: (attempt, delayMs, error) => {
                   console.warn(
                     'Request failed, retrying...',

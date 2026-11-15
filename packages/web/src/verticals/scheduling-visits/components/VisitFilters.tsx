@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Filter, X, Calendar, Check, RotateCcw } from 'lucide-react';
 import type { VisitSearchFilters, VisitStatus, VisitType } from '../types/index.js';
 import { VISIT_TYPES } from '../config/visitTypeConfig.js';
@@ -6,6 +6,11 @@ import { Button } from '@/components/ui/button.js';
 import { Input } from '@/components/ui/input.js';
 import { Label } from '@/components/ui/label.js';
 import { Badge } from '@/components/ui/badge.js';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover.js';
 
 export interface VisitFiltersProps {
   filters: VisitSearchFilters;
@@ -27,22 +32,6 @@ export const VisitFilters: React.FC<VisitFiltersProps> = ({
   activeCount,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Close on outside click
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
 
   const toggleStatus = (status: VisitStatus) => {
     const current = filters.status ?? [];
@@ -92,25 +81,29 @@ export const VisitFilters: React.FC<VisitFiltersProps> = ({
   };
 
   return (
-    <div className="relative" ref={containerRef}>
-      <Button
-        type="button"
-        variant={isOpen || activeCount > 0 ? 'secondary' : 'outline'}
-        onClick={() => setIsOpen(!isOpen)}
-        aria-expanded={isOpen}
-        className="gap-2"
-      >
-        <Filter className="w-4 h-4" />
-        <span>Filters</span>
-        {activeCount > 0 && (
-          <Badge variant="default" className="px-1.5 py-0 text-xs rounded-full min-w-5 h-5 flex items-center justify-center">
-            {activeCount}
-          </Badge>
-        )}
-      </Button>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant={isOpen || activeCount > 0 ? 'secondary' : 'outline'}
+          aria-expanded={isOpen}
+          className="gap-2"
+        >
+          <Filter className="w-4 h-4" />
+          <span>Filters</span>
+          {activeCount > 0 && (
+            <Badge variant="default" className="px-1.5 py-0 text-xs rounded-full min-w-5 h-5 flex items-center justify-center">
+              {activeCount}
+            </Badge>
+          )}
+        </Button>
+      </PopoverTrigger>
 
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-card text-card-foreground rounded-xl shadow-xl border border-border p-5 z-30">
+      <PopoverContent
+        align="end"
+        collisionPadding={8}
+        className="w-80 sm:w-96 max-w-[calc(100vw-1rem)] rounded-xl shadow-xl p-5"
+      >
           <div className="flex items-center justify-between pb-3 border-b border-border">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-primary" />
@@ -266,8 +259,7 @@ export const VisitFilters: React.FC<VisitFiltersProps> = ({
               Apply
             </Button>
           </div>
-        </div>
-      )}
-    </div>
+      </PopoverContent>
+    </Popover>
   );
 };
