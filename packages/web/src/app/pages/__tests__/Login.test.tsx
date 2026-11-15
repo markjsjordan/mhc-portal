@@ -66,7 +66,11 @@ describe('Login Page', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText('Marquette Home Care')).toBeInTheDocument();
+    const logo = screen.getByRole('img', { name: 'Marquette Home Care' });
+    expect(logo).toBeInTheDocument();
+    expect(logo).toHaveAttribute('data-testid', 'login-logo');
+    // The brand is the logo image, not heading text.
+    expect(screen.queryByText('Marquette Home Care')).not.toBeInTheDocument();
     expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
