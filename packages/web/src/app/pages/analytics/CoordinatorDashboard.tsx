@@ -12,7 +12,6 @@ import {
   Clock,
   AlertCircle,
   CheckCircle,
-  MapPin,
   Activity,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -23,17 +22,10 @@ import { AlertsList } from './components/charts/AlertsList';
 import {
   useDashboardStats,
   useComplianceAlerts,
-  useEVVExceptions,
 } from '@/verticals/analytics-reporting/hooks/useAnalytics';
 import { useClients } from '@/verticals/client-demographics/hooks/useClients';
 
 const REAL_TIME_REFRESH_INTERVAL = 60000; // 60 seconds
-
-function getExceptionBadgeClass(status: string): string {
-  if (status === 'PENDING') return 'bg-amber-100 text-amber-800 border-amber-200';
-  if (status === 'APPROVED') return 'bg-green-100 text-green-800 border-green-200';
-  return 'bg-red-100 text-red-800 border-red-200';
-}
 
 export function CoordinatorDashboard() {
   const navigate = useNavigate();
@@ -63,12 +55,6 @@ export function CoordinatorDashboard() {
     error: alertsError,
   } = useComplianceAlerts(todayFilter, { refetchInterval: REAL_TIME_REFRESH_INTERVAL });
 
-  const {
-    data: evvExceptions,
-    isLoading: exceptionsLoading,
-    error: exceptionsError,
-  } = useEVVExceptions(todayFilter, { refetchInterval: REAL_TIME_REFRESH_INTERVAL });
-
   // Active Clients count comes from the real GET /api/clients endpoint,
   // filtered to ACTIVE status. pageSize=1 since only the `total` count is
   // needed here, not the item list. (Ported from the now-deleted orphan
@@ -80,8 +66,8 @@ export function CoordinatorDashboard() {
   });
   const activeClientsCount = activeClientsResult?.total;
 
-  const isLoading = statsLoading || alertsLoading || exceptionsLoading;
-  const error = statsError ?? alertsError ?? exceptionsError;
+  const isLoading = statsLoading || alertsLoading;
+  const error = statsError ?? alertsError;
 
   if (error) {
     return (
@@ -148,67 +134,6 @@ export function CoordinatorDashboard() {
               icon={<AlertCircle className="h-8 w-8 text-red-600" />}
             />
           </div>
-
-          {/* EVV Issues */}
-          <Card className="mb-6">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <div>
-                <CardTitle className="text-lg font-semibold text-gray-900">EVV Issues</CardTitle>
-                <CardDescription className="text-sm text-gray-600">Electronic Visit Verification exceptions</CardDescription>
-              </div>
-              <Badge
-                variant="outline"
-                className={
-                  evvExceptions && evvExceptions.length > 0
-                    ? 'bg-amber-100 text-amber-800 border-amber-200'
-                    : 'bg-green-100 text-green-800 border-green-200'
-                }
-              >
-                {evvExceptions?.length ?? 0} Issues
-              </Badge>
-            </CardHeader>
-            <CardContent>
-              {evvExceptions && evvExceptions.length > 0 ? (
-                <div className="space-y-3">
-                  {evvExceptions.slice(0, 5).map((exception) => (
-                    <div
-                      key={exception.id}
-                      className="flex items-start justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
-                    >
-                      <div className="flex items-start gap-3">
-                        <MapPin className="h-5 w-5 text-red-600 mt-0.5" />
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {exception.caregiverName} - {exception.clientName}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {exception.description}
-                          </div>
-                          <div className="mt-1 flex items-center gap-2">
-                            <Badge variant="destructive">{exception.exceptionType}</Badge>
-                            <span className="text-xs text-gray-500">
-                              {new Date(exception.visitDate).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className={getExceptionBadgeClass(exception.status)}
-                      >
-                        {exception.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <CheckCircle className="h-12 w-12 mx-auto mb-2 text-green-400" />
-                  <p>No EVV issues at this time</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
           {/* Caregiver Status (Mock Data) */}
           <Card className="mb-6">

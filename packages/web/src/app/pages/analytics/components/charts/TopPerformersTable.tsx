@@ -5,7 +5,6 @@
 
 import { Award, TrendingUp } from 'lucide-react';
 import type { CaregiverPerformance } from '@/types/analytics-types';
-import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table.js';
 
 interface TopPerformersTableProps {
@@ -14,12 +13,6 @@ interface TopPerformersTableProps {
   className?: string;
   onCaregiverClick?: (caregiverId: string) => void;
 }
-
-const getEvvBadgeClass = (rate: number) => {
-  if (rate >= 95) return 'bg-green-50 text-green-700 border-green-200';
-  if (rate >= 85) return 'bg-amber-50 text-amber-700 border-amber-200';
-  return 'bg-red-50 text-red-700 border-red-200';
-};
 
 export function TopPerformersTable({
   caregivers,
@@ -41,7 +34,6 @@ export function TopPerformersTable({
             <TableHead>Caregiver</TableHead>
             <TableHead>Visits</TableHead>
             <TableHead>On-Time %</TableHead>
-            <TableHead>EVV Compliance</TableHead>
             <TableHead>Score</TableHead>
           </TableRow>
         </TableHeader>
@@ -83,14 +75,6 @@ export function TopPerformersTable({
                     <TrendingUp className="h-4 w-4 text-green-500 ml-1" />
                   )}
                 </div>
-              </TableCell>
-              <TableCell>
-                <Badge
-                  variant="outline"
-                  className={getEvvBadgeClass(caregiver.evvComplianceRate)}
-                >
-                  {caregiver.evvComplianceRate.toFixed(1)}%
-                </Badge>
               </TableCell>
               <TableCell>
                 <div className="flex items-center">
