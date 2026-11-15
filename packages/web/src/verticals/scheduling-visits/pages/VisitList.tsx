@@ -24,6 +24,11 @@ import { Button } from '@/components/ui/button.js';
 import { Input } from '@/components/ui/input.js';
 import { Label } from '@/components/ui/label.js';
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover.js';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -307,58 +312,57 @@ export const VisitList: React.FC = () => {
         </div>
 
         <div className="flex gap-3 items-center">
-          <div className="relative inline-flex rounded-md shadow-sm">
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => handleOpenCreateModal('REGULAR')}
-              className="rounded-r-none"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Schedule Visit
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              size="icon-sm"
-              onClick={() => setIsDropdownOpen((prev) => !prev)}
-              className="rounded-l-none border-l border-primary-foreground/20"
-              aria-label="Select visit type to schedule"
-            >
-              <ChevronDown className="h-4 w-4" />
-            </Button>
+          <Popover open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+            <div className="relative inline-flex rounded-md shadow-sm">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => handleOpenCreateModal('REGULAR')}
+                className="rounded-r-none"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Schedule Visit
+              </Button>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="default"
+                  size="icon-sm"
+                  className="rounded-l-none border-l border-primary-foreground/20"
+                  aria-label="Select visit type to schedule"
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+            </div>
 
-            {isDropdownOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setIsDropdownOpen(false)}
-                />
-                <div className="absolute right-0 top-full mt-1 w-64 rounded-md shadow-lg bg-card text-card-foreground border border-border z-20 py-1 max-h-80 overflow-y-auto">
-                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">
-                    Schedule by Visit Type
-                  </div>
-                  {Object.entries(VISIT_TYPES).map(([typeKey, config]) => {
-                    const type = typeKey as VisitType;
-                    const Icon = config.icon;
-                    return (
-                      <Button
-                        key={type}
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleOpenCreateModal(type)}
-                        className="w-full justify-start h-auto px-3 py-2 text-sm font-normal text-left"
-                      >
-                        <Icon className={`h-4 w-4 flex-shrink-0 ${config.colorClass}`} />
-                        <span className="truncate">{config.label}</span>
-                      </Button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
+            <PopoverContent
+              align="end"
+              collisionPadding={8}
+              className="w-64 max-w-[calc(100vw-1rem)] p-0 py-1 max-h-80 overflow-y-auto"
+            >
+              <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">
+                Schedule by Visit Type
+              </div>
+              {Object.entries(VISIT_TYPES).map(([typeKey, config]) => {
+                const type = typeKey as VisitType;
+                const Icon = config.icon;
+                return (
+                  <Button
+                    key={type}
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleOpenCreateModal(type)}
+                    className="w-full justify-start h-auto px-3 py-2 text-sm font-normal text-left"
+                  >
+                    <Icon className={`h-4 w-4 flex-shrink-0 ${config.colorClass}`} />
+                    <span className="truncate">{config.label}</span>
+                  </Button>
+                );
+              })}
+            </PopoverContent>
+          </Popover>
 
           <Link to="/scheduling/patterns">
             <Button
