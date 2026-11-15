@@ -289,6 +289,21 @@ export interface Client extends Entity, SoftDeletable {
   notes?: string;
   customFields?: Record<string, unknown>;
   isDemoData?: boolean; // Indicates if this is demo/sample data
+  consents?: ClientConsents;
+}
+
+/**
+ * Client intake consents & signature (Step 6)
+ */
+export interface ClientConsents {
+  careAgreement: boolean;
+  hipaa: boolean;
+  financialResponsibility: boolean;
+  evv: boolean;
+  signature: string;
+  signedDate: string;
+  recordedAt?: Date;
+  recordedBy?: UUID;
 }
 
 export type Gender = 'MALE' | 'FEMALE' | 'NON_BINARY' | 'OTHER' | 'PREFER_NOT_TO_SAY';
@@ -517,6 +532,7 @@ export interface CreateClientInput {
   referralSource?: string;
   intakeDate?: Date;
   status?: ClientStatus;
+  consents?: ClientConsents;
 }
 
 /**
@@ -538,6 +554,7 @@ export interface UpdateClientInput {
   riskFlags?: RiskFlag[];
   status?: ClientStatus;
   notes?: string;
+  consents?: ClientConsents;
 }
 
 /**

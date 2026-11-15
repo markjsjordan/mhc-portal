@@ -487,6 +487,14 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
           emergencyContacts: emergencyContactsInput,
+          consents: {
+            careAgreement: intakeData.consents?.careAgreement ?? false,
+            hipaa: intakeData.consents?.hipaa ?? false,
+            financialResponsibility: intakeData.consents?.financialResponsibility ?? false,
+            evv: (intakeData.consents as { evv?: boolean } | undefined)?.evv ?? false,
+            signature: intakeData.signature ?? '',
+            signedDate: intakeData.signedDate ?? '',
+          },
         };
 
         const activate = shouldActivateOnEdit(currentStatus, {
@@ -524,14 +532,19 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
           emergencyContacts: emergencyContactsInput,
+          consents: {
+            careAgreement: intakeData.consents?.careAgreement ?? false,
+            hipaa: intakeData.consents?.hipaa ?? false,
+            financialResponsibility: intakeData.consents?.financialResponsibility ?? false,
+            evv: (intakeData.consents as { evv?: boolean } | undefined)?.evv ?? false,
+            signature: intakeData.signature ?? '',
+            signedDate: intakeData.signedDate ?? '',
+          },
           status: 'ACTIVE',
         };
 
         const newClient = await createClient.mutateAsync(createInput);
-        toast.success(
-          'Client intake submitted. NOTE: consent/signature capture is not yet persisted — see FC-AUDIT-CLIENTS follow-up.',
-          { duration: 6000 }
-        );
+        toast.success('Client intake submitted.');
 
         if (onSuccess) {
           onSuccess(newClient);

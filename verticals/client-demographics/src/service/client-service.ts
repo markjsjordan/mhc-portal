@@ -164,6 +164,27 @@ export class ClientService {
     // Create in database
     const created = await this.repository.create(client, context);
 
+    if (input.consents && created.id) {
+      created.consents = await this.repository.upsertConsents(
+        created.id,
+        created.organizationId,
+        input.consents,
+        context.userId
+      );
+      if (this.auditService) {
+        try {
+          await this.auditService.logAccess({
+            clientId: created.id,
+            accessedBy: context.userId,
+            accessType: 'UPDATE',
+            accessTimestamp: new Date(),
+          });
+        } catch (error) {
+          console.error('Failed to write client consent audit log:', error);
+        }
+      }
+    }
+
     // Invalidate organization's client list cache
     if (created.id) {
       const cache = getCacheService();
@@ -197,6 +218,7 @@ export class ClientService {
         if (!result) {
           throw new NotFoundError(`Client not found: ${id}`);
         }
+        result.consents = await this.repository.getConsentsByClientId(id);
         return result;
       },
       CacheTTL.MEDIUM
@@ -313,7 +335,29 @@ export class ClientService {
     }
 
     // Apply updates
-    const updated = await this.repository.update(id, updates, context);
+    const { consents, ...clientUpdates } = updates;
+    const updated = await this.repository.update(id, clientUpdates, context);
+
+    if (consents) {
+      updated.consents = await this.repository.upsertConsents(
+        id,
+        existing.organizationId,
+        consents,
+        context.userId
+      );
+      if (this.auditService) {
+        try {
+          await this.auditService.logAccess({
+            clientId: id,
+            accessedBy: context.userId,
+            accessType: 'UPDATE',
+            accessTimestamp: new Date(),
+          });
+        } catch (error) {
+          console.error('Failed to write client consent audit log:', error);
+        }
+      }
+    }
 
     if (
       updates.status &&

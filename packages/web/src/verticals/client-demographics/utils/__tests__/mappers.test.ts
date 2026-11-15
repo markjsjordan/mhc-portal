@@ -96,4 +96,28 @@ describe('mapClientToIntakeData', () => {
     expect(data).not.toHaveProperty('phoneType');
     expect(data).not.toHaveProperty('phoneCanReceiveSMS');
   });
+
+  it('maps saved consents and signature back into the intake form', () => {
+    const data = mapClientToIntakeData(
+      makeClient({
+        consents: {
+          careAgreement: true,
+          hipaa: true,
+          financialResponsibility: false,
+          evv: true,
+          signature: 'Jane Doe',
+          signedDate: '2026-11-15',
+        },
+      })
+    );
+
+    expect(data.consents).toEqual({
+      careAgreement: true,
+      hipaa: true,
+      financialResponsibility: false,
+      evv: true,
+    });
+    expect(data.signature).toBe('Jane Doe');
+    expect(data.signedDate).toBe('2026-11-15');
+  });
 });

@@ -53,8 +53,20 @@ export interface Client {
   intakeDate?: string;
   dischargeDate?: string;
   isDemoData?: boolean;
+  consents?: ClientConsents;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ClientConsents {
+  careAgreement: boolean;
+  hipaa: boolean;
+  financialResponsibility: boolean;
+  evv: boolean;
+  signature: string;
+  signedDate: string;
+  recordedAt?: string;
+  recordedBy?: string;
 }
 
 export interface CreateClientInput {
@@ -71,6 +83,7 @@ export interface CreateClientInput {
   primaryAddress?: Address;
   emergencyContacts?: EmergencyContact[];
   status?: ClientStatus;
+  consents?: ClientConsents;
 }
 
 export interface UpdateClientInput {
@@ -86,6 +99,7 @@ export interface UpdateClientInput {
   primaryAddress?: Address;
   emergencyContacts?: EmergencyContact[];
   status?: ClientStatus;
+  consents?: ClientConsents;
 }
 
 export interface ClientSearchFilters {

@@ -61,6 +61,16 @@ const createClientSchema = z.object({
   emergencyContacts: z.array(emergencyContactSchema).optional(),
   referralSource: z.string().max(200).optional(),
   intakeDate: z.coerce.date().optional(),
+  consents: z
+    .object({
+      careAgreement: z.boolean(),
+      hipaa: z.boolean(),
+      financialResponsibility: z.boolean(),
+      evv: z.boolean(),
+      signature: z.string().max(500).default(''),
+      signedDate: z.string().max(32).default(''),
+    })
+    .optional(),
   status: z
     .enum([
       'INQUIRY',
@@ -87,6 +97,16 @@ const updateClientSchema = z
     email: z.string().email().optional(),
     primaryAddress: addressSchema.optional(),
     emergencyContacts: z.array(emergencyContactSchema).optional(),
+    consents: z
+      .object({
+        careAgreement: z.boolean(),
+        hipaa: z.boolean(),
+        financialResponsibility: z.boolean(),
+        evv: z.boolean(),
+        signature: z.string().max(500).default(''),
+        signedDate: z.string().max(32).default(''),
+      })
+      .optional(),
     status: z
       .enum([
         'INQUIRY',

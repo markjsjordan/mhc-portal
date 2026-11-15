@@ -226,12 +226,12 @@ export function mapClientToIntakeData(client: Client | ClientWire): Partial<Inta
     scheduleStartDate: '',
     visitSchedule: [],
     consents: {
-      careAgreement: false,
-      hipaa: false,
-      financialResponsibility: false,
-      evv: false,
+      careAgreement: client.consents?.careAgreement ?? false,
+      hipaa: client.consents?.hipaa ?? false,
+      financialResponsibility: client.consents?.financialResponsibility ?? false,
+      evv: client.consents?.evv ?? false,
     },
-    signature: '',
-    signedDate: '',
+    signature: client.consents?.signature ?? '',
+    signedDate: client.consents?.signedDate ?? '',
   };
 }
