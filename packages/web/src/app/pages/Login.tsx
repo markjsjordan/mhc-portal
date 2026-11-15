@@ -1,5 +1,6 @@
 import React from 'react';
 import { CustomLoginForm } from '@/app/components/CustomLoginForm';
+import mqtLogoRetina from '@/assets/mqt-logo-retina.png';
 
 export const Login: React.FC = () => {
   return (
@@ -7,8 +8,13 @@ export const Login: React.FC = () => {
       <div className="max-w-4xl w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-3">
-            Marquette Home Care
+          <h1 className="mb-3 flex justify-center">
+            <img
+              src={mqtLogoRetina}
+              alt="Marquette Home Care"
+              data-testid="login-logo"
+              className="h-16 sm:h-20 w-auto max-w-full object-contain"
+            />
           </h1>
         </div>
 
