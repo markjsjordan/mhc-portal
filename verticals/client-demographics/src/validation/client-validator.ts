@@ -40,6 +40,15 @@ const emergencyContactSchema = z.object({
   notes: z.string().optional(),
 });
 
+const clientConsentSchema = z.object({
+  careAgreement: z.boolean(),
+  hipaa: z.boolean(),
+  financialResponsibility: z.boolean(),
+  evv: z.boolean(),
+  signature: z.string().max(500),
+  signedDate: z.string().max(100).optional(),
+});
+
 const createClientSchema = z.object({
   organizationId: uuidSchema,
   branchId: uuidSchema.optional(),
@@ -59,6 +68,7 @@ const createClientSchema = z.object({
   email: z.string().email().optional(),
   primaryAddress: addressSchema.optional(),
   emergencyContacts: z.array(emergencyContactSchema).optional(),
+  consents: clientConsentSchema.optional(),
   referralSource: z.string().max(200).optional(),
   intakeDate: z.coerce.date().optional(),
   status: z
@@ -87,6 +97,7 @@ const updateClientSchema = z
     email: z.string().email().optional(),
     primaryAddress: addressSchema.optional(),
     emergencyContacts: z.array(emergencyContactSchema).optional(),
+    consents: clientConsentSchema.optional(),
     status: z
       .enum([
         'INQUIRY',

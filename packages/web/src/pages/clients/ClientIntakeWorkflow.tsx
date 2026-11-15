@@ -476,6 +476,15 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         ...(c.notes !== undefined && { notes: c.notes }),
       }));
 
+    const consentsInput = {
+      careAgreement: Boolean(intakeData.consents?.careAgreement),
+      hipaa: Boolean(intakeData.consents?.hipaa),
+      financialResponsibility: Boolean(intakeData.consents?.financialResponsibility),
+      evv: Boolean((intakeData.consents as { evv?: boolean } | undefined)?.evv),
+      signature: (intakeData.signature ?? '').trim(),
+      ...(intakeData.signedDate ? { signedDate: intakeData.signedDate } : {}),
+    };
+
     try {
       if (isEditMode && clientId) {
         // Update mode
@@ -487,6 +496,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
           emergencyContacts: emergencyContactsInput,
+          consents: consentsInput,
         };
 
         const activate = shouldActivateOnEdit(currentStatus, {
@@ -524,14 +534,12 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
           emergencyContacts: emergencyContactsInput,
+          consents: consentsInput,
           status: 'ACTIVE',
         };
 
         const newClient = await createClient.mutateAsync(createInput);
-        toast.success(
-          'Client intake submitted. NOTE: consent/signature capture is not yet persisted — see FC-AUDIT-CLIENTS follow-up.',
-          { duration: 6000 }
-        );
+        toast.success('Client intake submitted successfully.');
 
         if (onSuccess) {
           onSuccess(newClient);

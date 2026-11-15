@@ -3,7 +3,7 @@
  */
 
 import { Repository, Database, PaginatedResult } from '@folkcare/core';
-import { Client, ClientSearchFilters, Gender, ContactMethod, MaritalStatus, ClientStatus } from '../types/client';
+import { Client, ClientConsent, ClientSearchFilters, Gender, ContactMethod, MaritalStatus, ClientStatus } from '../types/client';
 
 export class ClientRepository extends Repository<Client> {
   constructor(database: Database) {
@@ -643,6 +643,86 @@ export class ClientRepository extends Repository<Client> {
     `;
     const result = await this.database.query(query, [organizationId, mrn]);
     return result.rows[0] ? this.hydrate(result.rows[0] as Record<string, unknown>) : null;
+  }
+
+  /**
+   * Persist or update intake consents and signature for a client (wdvf3acxnt Lane B1).
+   */
+  async upsertConsents(
+    clientId: string,
+    organizationId: string,
+    consents: ClientConsent,
+    recordedBy?: string
+  ): Promise<ClientConsent> {
+    const signedDate = consents.signedDate ? new Date(consents.signedDate) : null;
+    const query = `
+      INSERT INTO client_consents (
+        client_id, organization_id, care_agreement, hipaa,
+        financial_responsibility, evv, signature, signed_date,
+        recorded_by, recorded_at, updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+      ON CONFLICT (client_id) DO UPDATE SET
+        care_agreement = EXCLUDED.care_agreement,
+        hipaa = EXCLUDED.hipaa,
+        financial_responsibility = EXCLUDED.financial_responsibility,
+        evv = EXCLUDED.evv,
+        signature = EXCLUDED.signature,
+        signed_date = EXCLUDED.signed_date,
+        recorded_by = EXCLUDED.recorded_by,
+        recorded_at = NOW(),
+        updated_at = NOW()
+      RETURNING care_agreement, hipaa, financial_responsibility, evv, signature,
+                signed_date, recorded_by, recorded_at
+    `;
+    const result = await this.database.query(query, [
+      clientId,
+      organizationId,
+      consents.careAgreement,
+      consents.hipaa,
+      consents.financialResponsibility,
+      consents.evv,
+      consents.signature,
+      signedDate,
+      recordedBy ?? null,
+    ]);
+    const row = result.rows[0] as Record<string, unknown>;
+    return {
+      careAgreement: Boolean(row.care_agreement),
+      hipaa: Boolean(row.hipaa),
+      financialResponsibility: Boolean(row.financial_responsibility),
+      evv: Boolean(row.evv),
+      signature: String(row.signature ?? ''),
+      ...(row.signed_date ? { signedDate: new Date(row.signed_date as string).toISOString() } : {}),
+      ...(row.recorded_by ? { recordedBy: String(row.recorded_by) } : {}),
+      ...(row.recorded_at ? { recordedAt: new Date(row.recorded_at as string).toISOString() } : {}),
+    };
+  }
+
+  /**
+   * Fetch persisted intake consents and signature for a client, if any.
+   */
+  async getConsentsByClientId(clientId: string): Promise<ClientConsent | undefined> {
+    const query = `
+      SELECT care_agreement, hipaa, financial_responsibility, evv, signature,
+             signed_date, recorded_by, recorded_at
+      FROM client_consents
+      WHERE client_id = $1
+      LIMIT 1
+    `;
+    const result = await this.database.query(query, [clientId]);
+    const row = result?.rows?.[0] as Record<string, unknown> | undefined;
+    if (!row) return undefined;
+    return {
+      careAgreement: Boolean(row.care_agreement),
+      hipaa: Boolean(row.hipaa),
+      financialResponsibility: Boolean(row.financial_responsibility),
+      evv: Boolean(row.evv),
+      signature: String(row.signature ?? ''),
+      ...(row.signed_date ? { signedDate: new Date(row.signed_date as string).toISOString() } : {}),
+      ...(row.recorded_by ? { recordedBy: String(row.recorded_by) } : {}),
+      ...(row.recorded_at ? { recordedAt: new Date(row.recorded_at as string).toISOString() } : {}),
+    };
   }
 
 }

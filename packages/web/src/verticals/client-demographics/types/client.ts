@@ -32,6 +32,17 @@ export interface EmergencyContact {
   notes?: string;
 }
 
+export interface ClientConsent {
+  careAgreement: boolean;
+  hipaa: boolean;
+  financialResponsibility: boolean;
+  evv: boolean;
+  signature: string;
+  signedDate?: string;
+  recordedBy?: string;
+  recordedAt?: string;
+}
+
 export interface Client {
   id: string;
   organizationId: string;
@@ -49,6 +60,7 @@ export interface Client {
   preferredContactMethod?: ContactMethod;
   primaryAddress: Address;
   emergencyContacts: EmergencyContact[];
+  consents?: ClientConsent;
   status: ClientStatus;
   intakeDate?: string;
   dischargeDate?: string;
@@ -70,6 +82,7 @@ export interface CreateClientInput {
   email?: string;
   primaryAddress?: Address;
   emergencyContacts?: EmergencyContact[];
+  consents?: ClientConsent;
   status?: ClientStatus;
 }
 
@@ -85,6 +98,7 @@ export interface UpdateClientInput {
   email?: string;
   primaryAddress?: Address;
   emergencyContacts?: EmergencyContact[];
+  consents?: ClientConsent;
   status?: ClientStatus;
 }
 

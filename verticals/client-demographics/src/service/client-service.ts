@@ -164,6 +164,28 @@ export class ClientService {
     // Create in database
     const created = await this.repository.create(client, context);
 
+    // Persist intake consents & signature if provided (wdvf3acxnt Lane B1)
+    if (input.consents && created.id) {
+      created.consents = await this.repository.upsertConsents(
+        created.id,
+        created.organizationId,
+        input.consents,
+        context.userId
+      );
+      if (this.auditService) {
+        try {
+          await this.auditService.logAccess({
+            clientId: created.id,
+            accessedBy: context.userId,
+            accessType: 'CREATE',
+            accessTimestamp: new Date(),
+          });
+        } catch (error) {
+          console.error('Failed to write client consent audit log:', error);
+        }
+      }
+    }
+
     // Invalidate organization's client list cache
     if (created.id) {
       const cache = getCacheService();
@@ -196,6 +218,10 @@ export class ClientService {
         const result = await this.repository.findById(id);
         if (!result) {
           throw new NotFoundError(`Client not found: ${id}`);
+        }
+        const consents = await this.repository.getConsentsByClientId?.(id);
+        if (consents) {
+          result.consents = consents;
         }
         return result;
       },
@@ -312,8 +338,35 @@ export class ClientService {
       }
     }
 
-    // Apply updates
-    const updated = await this.repository.update(id, updates, context);
+    // Apply updates (consents live in client_consents, not clients)
+    const { consents, ...clientUpdates } = updates;
+    const updated = await this.repository.update(id, clientUpdates, context);
+
+    if (consents) {
+      updated.consents = await this.repository.upsertConsents(
+        id,
+        existing.organizationId,
+        consents,
+        context.userId
+      );
+      if (this.auditService) {
+        try {
+          await this.auditService.logAccess({
+            clientId: id,
+            accessedBy: context.userId,
+            accessType: 'UPDATE',
+            accessTimestamp: new Date(),
+          });
+        } catch (error) {
+          console.error('Failed to write client consent audit log:', error);
+        }
+      }
+    } else {
+      const existingConsents = await this.repository.getConsentsByClientId?.(id);
+      if (existingConsents) {
+        updated.consents = existingConsents;
+      }
+    }
 
     if (
       updates.status &&

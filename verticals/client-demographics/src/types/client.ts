@@ -269,6 +269,9 @@ export interface Client extends Entity, SoftDeletable {
   serviceEligibility: ServiceEligibility;
   fundingSources?: FundingSource[];
 
+  // Intake consents & signature
+  consents?: ClientConsent;
+
   // Risk and safety
   riskFlags: RiskFlag[];
   allergies?: Allergy[];
@@ -501,6 +504,17 @@ export interface Allergy {
 /**
  * Client creation input (subset of full Client)
  */
+export interface ClientConsent {
+  careAgreement: boolean;
+  hipaa: boolean;
+  financialResponsibility: boolean;
+  evv: boolean;
+  signature: string;
+  signedDate?: string;
+  recordedBy?: string;
+  recordedAt?: string;
+}
+
 export interface CreateClientInput {
   organizationId: UUID;
   branchId?: UUID;
@@ -517,6 +531,7 @@ export interface CreateClientInput {
   referralSource?: string;
   intakeDate?: Date;
   status?: ClientStatus;
+  consents?: ClientConsent;
 }
 
 /**
@@ -538,6 +553,7 @@ export interface UpdateClientInput {
   riskFlags?: RiskFlag[];
   status?: ClientStatus;
   notes?: string;
+  consents?: ClientConsent;
 }
 
 /**
