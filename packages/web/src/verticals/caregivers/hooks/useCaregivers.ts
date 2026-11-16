@@ -54,10 +54,12 @@ export function useInviteCaregiverPortal(caregiverId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => caregiverApi.invitePortal(caregiverId!),
-    onSuccess: () => {
+    mutationFn: (options?: { sendEmail?: boolean }) => caregiverApi.invitePortal(caregiverId!, options),
+    onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: ['caregiver-portal-access', caregiverId] });
-      toast.success('Invitation sent successfully');
+      if (variables?.sendEmail !== false) {
+        toast.success('Invitation sent successfully');
+      }
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to send invitation');
