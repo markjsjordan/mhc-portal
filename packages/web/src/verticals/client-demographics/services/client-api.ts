@@ -75,7 +75,10 @@ export interface ClientApiService {
   getBranches(): Promise<Array<{ id: string; name: string; code?: string; status?: string }>>;
   getFamilyPortalAccess(clientId: string): Promise<FamilyPortalAccessRow[]>;
   createFamilyMember(clientId: string, input: CreateFamilyMemberPortalInput): Promise<FamilyPortalAccessRow>;
-  inviteFamilyPortal(familyMemberId: string): Promise<FamilyPortalAccessRow>;
+  inviteFamilyPortal(
+    familyMemberId: string,
+    options?: { sendEmail?: boolean }
+  ): Promise<FamilyPortalAccessRow & { inviteUrl?: string }>;
   revokeFamilyPortal(familyMemberId: string, reason: string): Promise<FamilyPortalAccessRow>;
   getClientPortalAccess(clientId: string): Promise<ClientPortalAccess>;
   inviteClientPortal(clientId: string): Promise<void>;
@@ -198,14 +201,21 @@ export const createClientApiService = (apiClient: ApiClient): ClientApiService =
       return response as FamilyPortalAccessRow;
     },
 
-    async inviteFamilyPortal(familyMemberId: string): Promise<FamilyPortalAccessRow> {
-      const response = await apiClient.post<{ success?: boolean; data?: FamilyPortalAccessRow } | FamilyPortalAccessRow>(
-        `/api/family-members/${familyMemberId}/portal-invite`
-      );
+    async inviteFamilyPortal(
+      familyMemberId: string,
+      options?: { sendEmail?: boolean }
+    ): Promise<FamilyPortalAccessRow & { inviteUrl?: string }> {
+      const response = options
+        ? await apiClient.post<
+            { success?: boolean; data?: FamilyPortalAccessRow & { inviteUrl?: string } } | (FamilyPortalAccessRow & { inviteUrl?: string })
+          >(`/api/family-members/${familyMemberId}/portal-invite`, options)
+        : await apiClient.post<
+            { success?: boolean; data?: FamilyPortalAccessRow & { inviteUrl?: string } } | (FamilyPortalAccessRow & { inviteUrl?: string })
+          >(`/api/family-members/${familyMemberId}/portal-invite`);
       if ('data' in response && response.data) {
         return response.data;
       }
-      return response as FamilyPortalAccessRow;
+      return response as FamilyPortalAccessRow & { inviteUrl?: string };
     },
 
     async revokeFamilyPortal(familyMemberId: string, reason: string): Promise<FamilyPortalAccessRow> {

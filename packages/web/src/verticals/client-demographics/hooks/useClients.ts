@@ -132,10 +132,17 @@ export const useInviteFamilyPortal = (clientId: string | undefined) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (familyMemberId: string) => clientApi.inviteFamilyPortal(familyMemberId),
-    onSuccess: () => {
+    mutationFn: (input: string | { familyMemberId: string; sendEmail?: boolean }) => {
+      const familyMemberId = typeof input === 'string' ? input : input.familyMemberId;
+      const options = typeof input === 'string' ? undefined : { sendEmail: input.sendEmail };
+      return clientApi.inviteFamilyPortal(familyMemberId, options);
+    },
+    onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: ['family-portal-access', clientId] });
-      toast.success('Invitation sent successfully');
+      const sendEmail = typeof variables === 'string' ? true : variables.sendEmail !== false;
+      if (sendEmail) {
+        toast.success('Invitation sent successfully');
+      }
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to send invitation');
