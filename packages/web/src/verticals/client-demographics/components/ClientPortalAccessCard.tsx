@@ -63,7 +63,7 @@ export const ClientPortalAccessCard: React.FC<ClientPortalAccessCardProps> = ({ 
   const handleGenerateInvite = async () => {
     try {
       const res = await inviteMutation.mutateAsync();
-      if (res?.inviteUrl) {
+      if (res.inviteUrl) {
         setGeneratedInvite({
           inviteUrl: res.inviteUrl,
           inviteExpiresAt: res.inviteExpiresAt ?? null,

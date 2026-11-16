@@ -84,10 +84,10 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({ 
   const handleGenerateInvite = async (familyMemberId: string) => {
     try {
       const res = await inviteMutation.mutateAsync(familyMemberId);
-      if (res?.inviteUrl) {
+      if (res.inviteUrl) {
         setActiveInvite({
           inviteUrl: res.inviteUrl,
-          inviteExpiresAt: res.inviteExpiresAt ?? null,
+          inviteExpiresAt: res.inviteExpiresAt,
         });
       }
     } catch {
