@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.j
 import { Button } from '@/components/ui/button.js';
 import { Badge } from '@/components/ui/badge.js';
 import { LoadingSpinner, ErrorMessage } from '@/core/components';
-import { formatDate, formatTime } from '@/core/utils';
+import { formatCalendarDate, formatTime } from '@/core/utils';
 import { useApiClient } from '@/core/hooks/api';
 import { createClientApiService } from '../services/client-api';
 
@@ -15,10 +15,7 @@ interface VisitHistoryCardProps {
 }
 
 /** Format a calendar date (YYYY-MM-DD or ISO) without timezone day-shift. */
-const formatVisitDate = (value: string): string => {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
-  return m ? formatDate(new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))) : formatDate(value);
-};
+const formatVisitDate = (value: string): string => formatCalendarDate(value);
 
 /** Format a wall-clock time string ("HH:MM[:SS]"). */
 const formatClockTime = (value: string): string => {

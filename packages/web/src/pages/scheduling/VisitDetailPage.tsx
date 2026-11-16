@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { formatCalendarDate } from '@/core/utils';
 import {
   ArrowLeft,
   Clock,
@@ -354,17 +355,13 @@ export const VisitDetailPage: React.FC = () => {
   const totalCount = tasks.length;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
-  const formatDate = (date: Date | string | undefined | null) => {
-    if (!date) return '—';
-    const d = typeof date === 'string' ? new Date(date) : date;
-    if (!(d instanceof Date) || Number.isNaN(d.getTime())) return '—';
-    return d.toLocaleDateString('en-US', {
+  const formatDate = (date: Date | string | undefined | null) =>
+    formatCalendarDate(date, {
       weekday: 'long',
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     });
-  };
 
   const statusBadges: Record<string, { badge: string; dot: string; label: string }> = {
     SCHEDULED: { badge: 'bg-blue-100 text-blue-800 border-blue-200', dot: 'bg-blue-600', label: 'Scheduled' },

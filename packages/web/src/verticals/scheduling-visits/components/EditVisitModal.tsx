@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { toDateKey } from '@/core/utils';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -58,12 +59,7 @@ const EditVisitModalContent: React.FC<EditVisitModalContentProps> = ({
   // Helper to extract YYYY-MM-DD from visit scheduledDate
   const initialDateStr = useMemo(() => {
     if (!visit.scheduledDate) return new Date().toISOString().split('T')[0]!;
-    if (typeof visit.scheduledDate === 'string') {
-      return visit.scheduledDate.includes('T')
-        ? visit.scheduledDate.split('T')[0]!
-        : visit.scheduledDate;
-    }
-    return new Date(visit.scheduledDate).toISOString().split('T')[0]!;
+    return toDateKey(visit.scheduledDate);
   }, [visit.scheduledDate]);
 
   // Initial duration

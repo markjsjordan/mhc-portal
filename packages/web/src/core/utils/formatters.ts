@@ -1,5 +1,54 @@
+export const parseDateOnly = (value: string | Date): Date => {
+  if (typeof value === 'string') {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/);
+    if (match) {
+      return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    }
+    return new Date(value);
+  }
+  if (
+    value instanceof Date &&
+    value.getUTCHours() === 0 &&
+    value.getUTCMinutes() === 0 &&
+    value.getUTCSeconds() === 0 &&
+    value.getUTCMilliseconds() === 0
+  ) {
+    return new Date(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate());
+  }
+  return value;
+};
+
+export const formatCalendarDate = (
+  date: string | Date | undefined | null,
+  options?: Intl.DateTimeFormatOptions
+): string => {
+  if (!date) return '—';
+  const d = parseDateOnly(date);
+  return new Intl.DateTimeFormat(
+    'en-US',
+    options ?? {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }
+  ).format(d);
+};
+
+export const toDateKey = (date: string | Date): string => {
+  if (typeof date === 'string') return date.slice(0, 10);
+  return date.toISOString().slice(0, 10);
+};
+
 export const formatDate = (date: string | Date, options?: Intl.DateTimeFormatOptions): string => {
-  const d = typeof date === 'string' ? new Date(date) : date;
+  let d: Date;
+  if (typeof date === 'string') {
+    const plainMatch = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    d = plainMatch
+      ? new Date(Number(plainMatch[1]), Number(plainMatch[2]) - 1, Number(plainMatch[3]))
+      : new Date(date);
+  } else {
+    d = date;
+  }
   return new Intl.DateTimeFormat('en-US', options ?? { 
     year: 'numeric', 
     month: 'short', 
