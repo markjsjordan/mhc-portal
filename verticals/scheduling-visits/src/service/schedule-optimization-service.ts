@@ -189,7 +189,7 @@ export class ScheduleOptimizationService {
     const availableCaregivers = await this.caregiverProvider.getAvailableCaregivers(
       visit.organizationId,
       visit.branchId,
-      visit.scheduledDate
+      typeof visit.scheduledDate === 'string' ? new Date(visit.scheduledDate) : visit.scheduledDate
     );
 
     if (availableCaregivers.length === 0) {
@@ -422,10 +422,12 @@ export class ScheduleOptimizationService {
     const conflicts: ConflictDetail[] = [];
 
     // Get all visits for this caregiver on the same date
+    const visitDate =
+      typeof visit.scheduledDate === 'string' ? new Date(visit.scheduledDate) : visit.scheduledDate;
     const filters: VisitSearchFilters = {
       caregiverId,
-      dateFrom: visit.scheduledDate,
-      dateTo: visit.scheduledDate,
+      dateFrom: visitDate,
+      dateTo: visitDate,
       status: ['ASSIGNED', 'CONFIRMED', 'EN_ROUTE', 'IN_PROGRESS'],
     };
 

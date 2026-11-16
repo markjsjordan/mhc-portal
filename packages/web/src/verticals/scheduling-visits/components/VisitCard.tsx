@@ -4,6 +4,7 @@ import { Calendar, Clock, MapPin, User, AlertCircle, ChevronRight } from 'lucide
 import type { Visit } from '../types';
 import { VISIT_STATUS_LABELS, VISIT_STATUS_COLORS } from '../types';
 import { getVisitTypeConfig } from '../config/visitTypeConfig';
+import { formatCalendarDate } from '@/core/utils';
 
 interface VisitCardProps {
   visit: Visit;
@@ -27,15 +28,13 @@ export const VisitCard: React.FC<VisitCardProps> = ({ visit, compact = false, on
     }
   };
 
-  const formatDate = (date: Date | string) => {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString('en-US', {
+  const formatDate = (date: Date | string) =>
+    formatCalendarDate(date, {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     });
-  };
 
   const getClientName = () => {
     if (visit.clientFirstName && visit.clientLastName) {

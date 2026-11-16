@@ -86,7 +86,8 @@ export class VisitProvider implements IVisitProvider {
       serviceTypeId: visit.serviceTypeId,
       serviceTypeCode: carePlanData?.serviceTypeCode ?? 'PERSONAL_CARE', // Default to personal care
       serviceTypeName: visit.serviceTypeName,
-      serviceDate: visit.scheduledDate,
+      serviceDate:
+        typeof visit.scheduledDate === 'string' ? new Date(visit.scheduledDate) : visit.scheduledDate,
       scheduledStartTime: visit.scheduledStartTime,
       scheduledEndTime: visit.scheduledEndTime,
       scheduledDuration: visit.scheduledDuration,
