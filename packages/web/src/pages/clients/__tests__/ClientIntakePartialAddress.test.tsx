@@ -66,47 +66,56 @@ describe('ClientIntakeWorkflow partial address safety (wdvf3acxnq)', () => {
     toastError.mockReset();
   });
 
-  it('create mode: address with only Apt/Suite submits without TypeError and omits primaryAddress', async () => {
-    const unhandled = vi.fn();
-    process.on('unhandledRejection', unhandled);
-    renderAtReview({ initialData: { ...base, address: { line2: 'Apt 2' } } });
-    submit();
-    await waitFor(() => expect(createMutateAsync).toHaveBeenCalledTimes(1));
-    const payload = createMutateAsync.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(payload['primaryAddress']).toBeUndefined();
-    expect(JSON.stringify(payload)).not.toContain('Apt 2');
-    expect(unhandled).not.toHaveBeenCalled();
-    process.off('unhandledRejection', unhandled);
-  });
-
-  it.each(['line1', 'city', 'state', 'postalCode'] as const)(
-    'create mode: address missing %s omits primaryAddress and does not throw',
-    async (missing) => {
+  it.each([
+    ['line1', 'Street address is required'],
+    ['city', 'City is required'],
+    ['state', 'State is required'],
+    ['postalCode', 'ZIP code is required'],
+  ] as const)(
+    'create mode: Next on step 1 is blocked with toast when %s is missing',
+    (missing, expectedToast) => {
       const address: Record<string, string> = { ...fullAddress };
       delete address[missing];
-      renderAtReview({ initialData: { ...base, address } });
-      submit();
-      await waitFor(() => expect(createMutateAsync).toHaveBeenCalledTimes(1));
-      const payload = createMutateAsync.mock.calls[0]?.[0] as Record<string, unknown>;
-      expect(payload['primaryAddress']).toBeUndefined();
+      renderWithQueryClient(
+        <BrowserRouter>
+          <ClientIntakeWorkflow initialData={{ ...base, address }} />
+        </BrowserRouter>
+      );
+      fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
+      expect(toastError).toHaveBeenCalledWith(expectedToast);
+      expect(screen.queryByText('Assessment')).toBeInTheDocument();
+      expect(screen.queryByText('Review & Submit')).not.toBeInTheDocument();
     }
   );
 
-  it('edit mode: partial initialData.address updates without TypeError', async () => {
-    renderAtReview({
-      isEditMode: true,
-      clientId: 'client-1',
-      initialData: { ...base, address: { line2: 'Apt 2' } },
-    });
-    submit();
-    await waitFor(() => expect(updateMutateAsync).toHaveBeenCalledTimes(1));
-    const input = (updateMutateAsync.mock.calls[0]?.[0] as { input: Record<string, unknown> }).input;
-    expect(input['primaryAddress']).toBeUndefined();
+  it('create mode: Next on step 1 advances when all 4 required address fields are present and line2 is blank', () => {
+    const { line2: _line2, ...addressWithoutLine2 } = fullAddress;
+    renderWithQueryClient(
+      <BrowserRouter>
+        <ClientIntakeWorkflow initialData={{ ...base, address: addressWithoutLine2 }} />
+      </BrowserRouter>
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it('edit mode: partial initialData.address is blocked on step 1 with toast', () => {
+    renderWithQueryClient(
+      <BrowserRouter>
+        <ClientIntakeWorkflow
+          isEditMode
+          clientId="client-1"
+          initialData={{ ...base, address: { line2: 'Apt 2' } }}
+        />
+      </BrowserRouter>
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
+    expect(toastError).toHaveBeenCalledWith('Street address is required');
   });
 
   it('partial emergency contact (missing fields) does not throw', async () => {
     renderAtReview({
-      initialData: { ...base, emergencyContacts: [{ name: 'Bob' }, { phone: '5125550100' }] },
+      initialData: { ...base, address: fullAddress, emergencyContacts: [{ name: 'Bob' }, { phone: '5125550100' }] },
     });
     submit();
     await waitFor(() => expect(createMutateAsync).toHaveBeenCalledTimes(1));
@@ -129,8 +138,8 @@ describe('ClientIntakeWorkflow partial address safety (wdvf3acxnq)', () => {
     process.off('unhandledRejection', unhandled);
   });
 
-  it('payload for a partial address passes the real server createClient schema', async () => {
-    renderAtReview({ initialData: { ...base, address: { line2: 'Apt 2' } } });
+  it('payload for a full address passes the real server createClient schema', async () => {
+    renderAtReview({ initialData: { ...base, address: fullAddress } });
     submit();
     await waitFor(() => expect(createMutateAsync).toHaveBeenCalledTimes(1));
     const payload = createMutateAsync.mock.calls[0]?.[0] as Record<string, unknown>;

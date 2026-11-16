@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
 import { Badge } from '@/components/ui/badge.js';
 import { Button } from '@/components/ui/button.js';
@@ -110,7 +111,7 @@ const addFamilyMemberFormSchema = z
       'HEALTHCARE_PROXY',
       'OTHER',
     ]),
-    email: z.string().trim().toLowerCase().email('Valid email is required').max(255),
+    email: z.email('Valid email is required').trim().toLowerCase().max(255),
     phoneNumber: z.string().trim().max(50).optional(),
     isPrimaryContact: z.boolean(),
     portalAccessLevel: z.enum([
@@ -134,7 +135,7 @@ const addFamilyMemberFormSchema = z
       !data.confirmElevatedAccess
     ) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         path: ['confirmElevatedAccess'],
         message: 'Explicit confirmation is required for Medical or Full PHI access',
       });
@@ -197,7 +198,7 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({ 
     },
   });
 
-  const watchedAccessLevel = addForm.watch('portalAccessLevel');
+  const watchedAccessLevel = useWatch({ control: addForm.control, name: 'portalAccessLevel' });
   const isElevatedSelected = watchedAccessLevel === 'VIEW_MEDICAL' || watchedAccessLevel === 'FULL_ACCESS';
 
   const handleOpenAdd = () => {
@@ -212,7 +213,7 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({ 
         lastName: values.lastName,
         relationship: values.relationship,
         email: values.email,
-        phoneNumber: values.phoneNumber || '',
+        phoneNumber: values.phoneNumber ?? '',
         isPrimaryContact: values.isPrimaryContact,
         portalAccessLevel: values.portalAccessLevel,
         confirmElevatedAccess: values.confirmElevatedAccess,
@@ -393,6 +394,25 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({ 
                               disabled={inviteMutation.isPending}
                             >
                               {isInvitingThis ? 'Resending...' : 'Resend invite'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                void (async () => {
+                                  const res = await inviteMutation.mutateAsync({
+                                    familyMemberId: member.familyMemberId,
+                                    sendEmail: false,
+                                  });
+                                  if (res.inviteUrl) {
+                                    await navigator.clipboard.writeText(res.inviteUrl);
+                                    toast.success('Invite link copied to clipboard');
+                                  }
+                                })();
+                              }}
+                              disabled={inviteMutation.isPending}
+                            >
+                              Copy invite link
                             </Button>
                             <Button
                               variant="destructive"

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button.js';
 import { useVisit } from '../hooks/useVisits';
 import { useCaregiver } from '@/verticals/caregivers';
 import { VisitTypeBadge } from './VisitTypeBadge';
+import { formatCalendarDate } from '@/core/utils';
 
 export interface VisitDetailsPanelProps {
   /** Visit to display. The full record is fetched lazily when this is set. */
@@ -20,7 +21,13 @@ export interface VisitDetailsPanelProps {
   positionLabel?: string;
 }
 
-const formatDate = (value: Date | string): string => moment(value).format('dddd, MMM D, YYYY');
+const formatDate = (value: Date | string): string =>
+  formatCalendarDate(value, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 const formatTimestamp = (value: Date | string | undefined): string =>
   value ? moment(value).format('h:mm A') : '—';
 

@@ -40,6 +40,117 @@ const emergencyContactSchema = z.object({
   notes: z.string().optional(),
 });
 
+const consentsSchema = z.object({
+  careAgreement: z.boolean(),
+  hipaa: z.boolean(),
+  financialResponsibility: z.boolean(),
+  evv: z.boolean(),
+  signature: z.string(),
+  signedDate: z.string(),
+});
+
+const primaryPhysicianSchema = z.object({
+  name: z.string(),
+  phone: z.union([
+    phoneSchema,
+    z.object({
+      number: z.string(),
+      type: z.enum(['MOBILE', 'HOME', 'WORK', 'OTHER']).optional(),
+      isPrimary: z.boolean().optional(),
+    }),
+  ]).optional(),
+  npi: z.string().optional(),
+  specialty: z.string().optional(),
+  clinicName: z.string().optional(),
+  email: z.string().optional(),
+});
+
+const insuranceSchema = z.object({
+  id: z.string().optional(),
+  type: z.enum(['MEDICAID', 'MEDICARE', 'PRIVATE', 'VA', 'LONG_TERM_CARE', 'SELF_PAY', 'OTHER']),
+  payerName: z.string().optional(),
+  policyNumber: z.string().optional(),
+  groupNumber: z.string().optional(),
+  isPrimary: z.boolean().optional(),
+});
+
+const authorizationInfoSchema = z.object({
+  number: z.string().optional(),
+  approvedHours: z.number().nonnegative().optional(),
+  validFrom: z.string().optional(),
+  validTo: z.string().optional(),
+});
+
+const adlLevelSchema = z.enum(['independent', 'assistance', 'dependent']);
+
+const assessmentDataSchema = z.object({
+  adls: z
+    .object({
+      bathing: adlLevelSchema.optional(),
+      dressing: adlLevelSchema.optional(),
+      toileting: adlLevelSchema.optional(),
+      transferring: adlLevelSchema.optional(),
+      feeding: adlLevelSchema.optional(),
+    })
+    .optional(),
+  iadls: z
+    .object({
+      housekeeping: adlLevelSchema.optional(),
+      laundry: adlLevelSchema.optional(),
+      mealPrep: adlLevelSchema.optional(),
+      medication: adlLevelSchema.optional(),
+      transportation: adlLevelSchema.optional(),
+    })
+    .optional(),
+  mobility: z.enum(['ambulatory', 'walker', 'wheelchair', 'bedbound']).optional(),
+  cognitive: z.enum(['normal', 'mild', 'moderate', 'severe']).optional(),
+  conditions: z.array(z.string()).optional(),
+  medications: z
+    .array(
+      z.object({
+        name: z.string(),
+        dosage: z.string(),
+        frequency: z.string(),
+      })
+    )
+    .optional(),
+  allergies: z.array(z.string()).optional(),
+  dietaryNeeds: z.string().optional(),
+});
+
+const carePlanSummarySchema = z.object({
+  serviceTypes: z.array(z.string()).optional(),
+  visitFrequency: z.enum(['daily', '3xweek', '2xweek', 'weekly']).optional(),
+  visitDuration: z.number().nonnegative().optional(),
+  preferredTimes: z.array(z.string()).optional(),
+  tasks: z.array(z.string()).optional(),
+  goals: z.string().optional(),
+});
+
+const visitScheduleSchema = z.object({
+  scheduleStartDate: z.string().optional(),
+  visitSchedule: z
+    .array(
+      z.object({
+        dayOfWeek: z.number().int().min(0).max(6),
+        time: z.string(),
+        duration: z.number().nonnegative(),
+      })
+    )
+    .optional(),
+});
+
+const caregiverAssignmentSchema = z.object({
+  primaryCaregiver: z.string().optional(),
+  backupCaregivers: z.array(z.string()).optional(),
+  preferences: z
+    .object({
+      gender: z.enum(['no-preference', 'female', 'male']).optional(),
+      language: z.array(z.string()).optional(),
+    })
+    .optional(),
+});
+
 const createClientSchema = z.object({
   organizationId: uuidSchema,
   branchId: uuidSchema.optional(),
@@ -57,7 +168,7 @@ const createClientSchema = z.object({
   gender: z.enum(['MALE', 'FEMALE', 'NON_BINARY', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
   primaryPhone: phoneSchema.optional(),
   email: z.string().email().optional(),
-  primaryAddress: addressSchema.optional(),
+  primaryAddress: addressSchema,
   emergencyContacts: z.array(emergencyContactSchema).optional(),
   referralSource: z.string().max(200).optional(),
   intakeDate: z.coerce.date().optional(),
@@ -72,6 +183,14 @@ const createClientSchema = z.object({
       'DECEASED',
     ])
     .optional(),
+  primaryPhysician: primaryPhysicianSchema.optional(),
+  insurance: z.array(insuranceSchema).optional(),
+  consents: consentsSchema.optional(),
+  authorizationInfo: authorizationInfoSchema.optional(),
+  assessmentData: assessmentDataSchema.optional(),
+  carePlanSummary: carePlanSummarySchema.optional(),
+  visitSchedule: visitScheduleSchema.optional(),
+  caregiverAssignment: caregiverAssignmentSchema.optional(),
 });
 
 const updateClientSchema = z
@@ -98,6 +217,14 @@ const updateClientSchema = z
         'DECEASED',
       ])
       .optional(),
+    primaryPhysician: primaryPhysicianSchema.optional(),
+    insurance: z.array(insuranceSchema).optional(),
+    consents: consentsSchema.optional(),
+    authorizationInfo: authorizationInfoSchema.optional(),
+    assessmentData: assessmentDataSchema.optional(),
+    carePlanSummary: carePlanSummarySchema.optional(),
+    visitSchedule: visitScheduleSchema.optional(),
+    caregiverAssignment: caregiverAssignmentSchema.optional(),
     notes: z.string().optional(),
   })
   .partial();

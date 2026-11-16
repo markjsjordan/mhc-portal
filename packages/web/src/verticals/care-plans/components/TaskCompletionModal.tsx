@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button.js';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
 import { Textarea } from '@/components/ui/textarea.js';
 import { Label } from '@/components/ui/label.js';
-import { formatDate, formatTime } from '@/core/utils';
+import { formatCalendarDate, formatTime } from '@/core/utils';
 import { useAuth } from '@/core/hooks';
 import { useCompleteTask } from '../hooks';
 import { SignaturePad } from './SignaturePad.js';
@@ -139,7 +139,7 @@ export const TaskCompletionModal: React.FC<TaskCompletionModalProps> = ({
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Clock className="h-4 w-4" />
-                    {formatDate(task.scheduledDate)} {task.scheduledTime && formatTime(task.scheduledTime)}
+                    {formatCalendarDate(task.scheduledDate)} {task.scheduledTime && formatTime(task.scheduledTime)}
                   </span>
                   <span>{task.category.replace(/_/g, ' ')}</span>
                 </div>

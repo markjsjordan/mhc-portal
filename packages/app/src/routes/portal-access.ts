@@ -16,7 +16,50 @@ import {
   ValidationError,
   ConflictError,
   PermissionError,
+  buildInvitationUrl,
 } from '@folkcare/core';
+
+const portalInviteBodySchema = z.object({
+  sendEmail: z.boolean().optional().default(true),
+});
+
+async function sendPortalInviteEmail(
+  db: Database,
+  organizationId: string,
+  userId: string,
+  recipientEmail: string,
+  recipientName: string,
+  token: string,
+  expiresAt: Date
+): Promise<void> {
+  try {
+    const orgRes = await db.query<{ name: string }>(
+      `SELECT name FROM organizations WHERE id = $1`,
+      [organizationId]
+    );
+    const orgName = orgRes.rows[0]?.name ?? 'MHC Portal';
+    const inviterRes = await db.query<{ first_name: string | null; last_name: string | null }>(
+      `SELECT first_name, last_name FROM users WHERE id = $1`,
+      [userId]
+    );
+    const inviter = inviterRes.rows[0];
+    const inviterName = inviter
+      ? `${inviter.first_name ?? ''} ${inviter.last_name ?? ''}`.trim() || 'Administrator'
+      : 'Administrator';
+
+    const emailService = createEmailService();
+    await emailService.sendInvitation({
+      recipientEmail,
+      recipientName,
+      inviterName,
+      organizationName: orgName,
+      invitationToken: token,
+      expiresAt,
+    });
+  } catch (err) {
+    console.warn('[PortalAccess] Failed to send invitation email:', err);
+  }
+}
 
 export type PortalAccessStatus = 'NONE' | 'INVITED' | 'ACTIVE' | 'SUSPENDED' | 'REVOKED';
 
@@ -414,16 +457,19 @@ export function createPortalAccessRouter(db: Database): Router {
     familyMemberId: string,
     fmDetails: { email: string; firstName: string; lastName: string },
     context: UserContext,
-    permissionService: PermissionService
-  ): Promise<{ emailSent: boolean; emailError: string | null }> {
+    permissionService: PermissionService,
+    sendEmail = true
+  ): Promise<{ emailSent: boolean; emailError: string | null; inviteUrl: string }> {
     const auditService = new AuditService(db);
     const portalAccessService = new PortalAccessService(db, permissionService, auditService);
 
     const inviteResult = await portalAccessService.inviteFamilyMember(familyMemberId, context);
+    const inviteUrl = buildInvitationUrl(inviteResult.token);
 
     let emailSent = false;
     let emailError: string | null = null;
-    try {
+    if (sendEmail) {
+      try {
       const orgRes = await db.query<{ name: string }>(
         `SELECT name FROM organizations WHERE id = $1`,
         [context.organizationId]
@@ -448,12 +494,13 @@ export function createPortalAccessRouter(db: Database): Router {
         expiresAt: inviteResult.expiresAt,
       });
       emailSent = true;
-    } catch (err) {
-      emailError = err instanceof Error ? err.message : 'Failed to send invitation email';
-      console.warn('[PortalAccess] Failed to send family invitation email:', err);
+      } catch (err) {
+        emailError = err instanceof Error ? err.message : 'Failed to send invitation email';
+        console.warn('[PortalAccess] Failed to send family invitation email:', err);
+      }
     }
 
-    return { emailSent, emailError };
+    return { emailSent, emailError, inviteUrl };
   }
 
   /**
@@ -864,7 +911,8 @@ export function createPortalAccessRouter(db: Database): Router {
         return;
       }
 
-      const { emailSent, emailError } = await sendFamilyPortalInvite(
+      const { sendEmail } = portalInviteBodySchema.parse(req.body ?? {});
+      const { emailSent, emailError, inviteUrl } = await sendFamilyPortalInvite(
         familyMemberId,
         {
           email: trimmedEmail,
@@ -872,11 +920,13 @@ export function createPortalAccessRouter(db: Database): Router {
           lastName: fmCheck.last_name ?? '',
         },
         context,
-        permissionService
+        permissionService,
+        sendEmail
       );
 
       const row = await getFamilyMemberPortalRow(familyMemberId, true);
-      res.json({ success: true, data: { ...row, emailSent, emailError } });
+      res.setHeader('Cache-Control', 'no-store');
+      res.json({ success: true, data: { ...row, emailSent, emailError, inviteUrl } });
     } catch (error) {
       if (error instanceof NotFoundError) {
         res.status(404).json({ success: false, error: error.message });
@@ -998,41 +1048,29 @@ export function createPortalAccessRouter(db: Database): Router {
         return;
       }
 
+      const { sendEmail } = portalInviteBodySchema.parse(req.body ?? {});
       const auditService = new AuditService(db);
       const portalAccessService = new PortalAccessService(db, permissionService, auditService);
 
       const inviteResult = await portalAccessService.inviteClient(clientId, context);
 
-      // Attempt email send
-      try {
-        const orgRes = await db.query<{ name: string }>(
-          `SELECT name FROM organizations WHERE id = $1`,
-          [context.organizationId]
+      // Attempt email send when requested
+      if (sendEmail) {
+        const recipientName = `${clientCheck.first_name ?? ''} ${clientCheck.last_name ?? ''}`.trim() || trimmedEmail;
+        await sendPortalInviteEmail(
+          db,
+          context.organizationId,
+          context.userId,
+          trimmedEmail,
+          recipientName,
+          inviteResult.token,
+          inviteResult.expiresAt
         );
-        const orgName = orgRes.rows[0]?.name ?? 'MHC Portal';
-        const inviterRes = await db.query<{ first_name: string | null; last_name: string | null }>(
-          `SELECT first_name, last_name FROM users WHERE id = $1`,
-          [context.userId]
-        );
-        const inviter = inviterRes.rows[0];
-        const inviterName = inviter
-          ? `${inviter.first_name ?? ''} ${inviter.last_name ?? ''}`.trim() || 'Administrator'
-          : 'Administrator';
-
-        const emailService = createEmailService();
-        await emailService.sendInvitation({
-          recipientEmail: trimmedEmail,
-          recipientName: `${clientCheck.first_name ?? ''} ${clientCheck.last_name ?? ''}`.trim() || trimmedEmail,
-          inviterName,
-          organizationName: orgName,
-          invitationToken: inviteResult.token,
-          expiresAt: inviteResult.expiresAt,
-        });
-      } catch (err) {
-        console.warn('[PortalAccess] Failed to send client invitation email:', err);
       }
 
-      res.json({ success: true, data: inviteResult });
+      const inviteUrl = buildInvitationUrl(inviteResult.token);
+      res.setHeader('Cache-Control', 'no-store');
+      res.json({ success: true, data: { ...inviteResult, inviteUrl } });
     } catch (error) {
       if (error instanceof NotFoundError) {
         res.status(404).json({ success: false, error: error.message });
