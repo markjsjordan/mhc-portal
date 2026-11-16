@@ -32,6 +32,7 @@ import { Label } from '@/components/ui/label.js';
 import {
   blankToUndefined,
   findIntakeFormatError,
+  findMissingRequiredAddressField,
   shouldActivateOnEdit,
 } from './intake-payload.js';
 
@@ -345,6 +346,11 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         toast.error('Date of birth is required');
         return;
       }
+      const missingAddress = findMissingRequiredAddressField(intakeData.address);
+      if (missingAddress) {
+        toast.error(missingAddress.message);
+        return;
+      }
     }
     if (currentStep < 7) {
       setCurrentStep(currentStep + 1);
@@ -392,6 +398,12 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
     }
     if (!intakeData.dateOfBirth) {
       toast.error('Date of birth is required');
+      setCurrentStep(1);
+      return;
+    }
+    const missingAddress = findMissingRequiredAddressField(intakeData.address);
+    if (missingAddress) {
+      toast.error(missingAddress.message);
       setCurrentStep(1);
       return;
     }
@@ -729,10 +741,13 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 Address
               </h3>
               <div className="flex-1 min-w-0 flex flex-col mb-4 md:mb-5">
-                <Label htmlFor="address-line1" className="block text-sm font-medium text-gray-700 mb-1.5">Street Address</Label>
+                <Label htmlFor="address-line1" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Street Address <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="address-line1"
                   type="text"
+                  aria-required="true"
                   className="w-full min-h-[44px]"
                   value={intakeData.address?.line1 ?? ''}
                   onChange={(e) => updateNestedData('address', 'line1', e.target.value)}
@@ -752,10 +767,13 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </div>
               <div className="flex flex-col sm:flex-row gap-4 md:gap-5 mb-4 md:mb-5">
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <Label htmlFor="address-city" className="block text-sm font-medium text-gray-700 mb-1.5">City</Label>
+                  <Label htmlFor="address-city" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    City <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="address-city"
                     type="text"
+                    aria-required="true"
                     className="w-full min-h-[44px]"
                     value={intakeData.address?.city ?? ''}
                     onChange={(e) => updateNestedData('address', 'city', e.target.value)}
@@ -763,12 +781,14 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   />
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <Label htmlFor="address-state" className="block text-sm font-medium text-gray-700 mb-1.5">State</Label>
+                  <Label htmlFor="address-state" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    State <span className="text-destructive">*</span>
+                  </Label>
                   <Select
                     value={intakeData.address?.state ?? undefined}
                     onValueChange={(val) => updateNestedData('address', 'state', val)}
                   >
-                    <SelectTrigger id="address-state" className="w-full min-h-[44px]">
+                    <SelectTrigger id="address-state" aria-required="true" className="w-full min-h-[44px]">
                       <SelectValue placeholder="Select State" />
                     </SelectTrigger>
                     <SelectContent>
@@ -781,10 +801,13 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   </Select>
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <Label htmlFor="address-postal" className="block text-sm font-medium text-gray-700 mb-1.5">ZIP Code</Label>
+                  <Label htmlFor="address-postal" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    ZIP Code <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="address-postal"
                     type="text"
+                    aria-required="true"
                     className="w-full min-h-[44px]"
                     value={intakeData.address?.postalCode ?? ''}
                     onChange={(e) => updateNestedData('address', 'postalCode', e.target.value)}
