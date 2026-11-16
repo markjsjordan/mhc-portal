@@ -476,6 +476,91 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         ...(c.notes !== undefined && { notes: c.notes }),
       }));
 
+    const insuranceTypeMap: Record<
+      string,
+      'MEDICAID' | 'MEDICARE' | 'PRIVATE' | 'OTHER'
+    > = {
+      medicaid: 'MEDICAID',
+      medicare: 'MEDICARE',
+      private: 'PRIVATE',
+      other: 'OTHER',
+    };
+
+    const sig = intakeData.signature ?? '';
+    const effectiveSignedDate =
+      sig.trim() && !intakeData.signedDate
+        ? new Date().toISOString().slice(0, 10)
+        : (intakeData.signedDate ?? '');
+
+    const intakePartBFields = {
+      primaryPhysician: intakeData.physician?.name?.trim()
+        ? {
+            name: intakeData.physician.name.trim(),
+            ...(intakeData.physician.phone?.trim() && {
+              phone: {
+                number: intakeData.physician.phone.trim(),
+                type: 'WORK' as const,
+                isPrimary: true,
+              },
+            }),
+          }
+        : undefined,
+      insurance:
+        intakeData.insurance?.memberId?.trim() ||
+        intakeData.insurance?.groupNumber?.trim() ||
+        (intakeData.insurance?.type && intakeData.insurance.type !== 'private')
+          ? [
+              {
+                type: insuranceTypeMap[intakeData.insurance?.type ?? 'private'] || 'PRIVATE',
+                policyNumber: intakeData.insurance?.memberId?.trim() || undefined,
+                groupNumber: intakeData.insurance?.groupNumber?.trim() || undefined,
+                isPrimary: true,
+              },
+            ]
+          : undefined,
+      authorizationInfo: {
+        number: intakeData.authorization?.number?.trim() || undefined,
+        approvedHours: intakeData.authorization?.approvedHours,
+        validFrom: intakeData.authorization?.validFrom || undefined,
+        validTo: intakeData.authorization?.validTo || undefined,
+      },
+      assessmentData: {
+        adls: intakeData.adls,
+        iadls: intakeData.iadls,
+        mobility: intakeData.mobility,
+        cognitive: intakeData.cognitive,
+        conditions: intakeData.conditions,
+        medications: intakeData.medications,
+        allergies: intakeData.allergies,
+        dietaryNeeds: intakeData.dietaryNeeds,
+      },
+      carePlanSummary: {
+        serviceTypes: intakeData.serviceTypes,
+        visitFrequency: intakeData.visitFrequency,
+        visitDuration: intakeData.visitDuration,
+        preferredTimes: intakeData.preferredTimes,
+        tasks: intakeData.tasks,
+        goals: intakeData.goals,
+      },
+      visitSchedule: {
+        scheduleStartDate: intakeData.scheduleStartDate,
+        visitSchedule: intakeData.visitSchedule,
+      },
+      caregiverAssignment: {
+        primaryCaregiver: intakeData.primaryCaregiver,
+        backupCaregivers: intakeData.backupCaregivers,
+        preferences: intakeData.preferences,
+      },
+      consents: {
+        careAgreement: intakeData.consents?.careAgreement ?? false,
+        hipaa: intakeData.consents?.hipaa ?? false,
+        financialResponsibility: intakeData.consents?.financialResponsibility ?? false,
+        evv: (intakeData.consents as { evv?: boolean } | undefined)?.evv ?? false,
+        signature: sig,
+        signedDate: effectiveSignedDate,
+      },
+    };
+
     try {
       if (isEditMode && clientId) {
         // Update mode
@@ -487,6 +572,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
           emergencyContacts: emergencyContactsInput,
+          ...intakePartBFields,
         };
 
         const activate = shouldActivateOnEdit(currentStatus, {
@@ -525,13 +611,11 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           primaryAddress: addressInput,
           emergencyContacts: emergencyContactsInput,
           status: 'ACTIVE',
+          ...intakePartBFields,
         };
 
         const newClient = await createClient.mutateAsync(createInput);
-        toast.success(
-          'Client intake submitted. NOTE: consent/signature capture is not yet persisted — see FC-AUDIT-CLIENTS follow-up.',
-          { duration: 6000 }
-        );
+        toast.success('Client intake submitted.');
 
         if (onSuccess) {
           onSuccess(newClient);
@@ -897,6 +981,93 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                     value={intakeData.insurance?.memberId ?? ''}
                     onChange={(e) => updateNestedData('insurance', 'memberId', e.target.value)}
                     placeholder="Member ID"
+                  />
+                </div>
+                <div className="flex-1 min-w-0 flex flex-col">
+                  <Label htmlFor="insurance-group-number" className="block text-sm font-medium text-gray-700 mb-1.5">Group Number</Label>
+                  <Input
+                    id="insurance-group-number"
+                    type="text"
+                    className="w-full min-h-[44px]"
+                    value={intakeData.insurance?.groupNumber ?? ''}
+                    onChange={(e) => updateNestedData('insurance', 'groupNumber', e.target.value)}
+                    placeholder="Group Number"
+                  />
+                </div>
+              </div>
+
+              <h3 className="text-base font-semibold text-gray-800 mt-6 mb-3">
+                Primary Physician
+              </h3>
+              <div className="flex flex-col sm:flex-row gap-4 md:gap-5 mb-4 md:mb-5">
+                <div className="flex-1 min-w-0 flex flex-col">
+                  <Label htmlFor="physician-name" className="block text-sm font-medium text-gray-700 mb-1.5">Physician Name</Label>
+                  <Input
+                    id="physician-name"
+                    type="text"
+                    className="w-full min-h-[44px]"
+                    value={intakeData.physician?.name ?? ''}
+                    onChange={(e) => updateNestedData('physician', 'name', e.target.value)}
+                    placeholder="Dr. Jane Smith"
+                  />
+                </div>
+                <div className="flex-1 min-w-0 flex flex-col">
+                  <Label htmlFor="physician-phone" className="block text-sm font-medium text-gray-700 mb-1.5">Physician Phone</Label>
+                  <Input
+                    id="physician-phone"
+                    type="tel"
+                    className="w-full min-h-[44px]"
+                    value={intakeData.physician?.phone ?? ''}
+                    onChange={(e) => updateNestedData('physician', 'phone', e.target.value)}
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
+              </div>
+
+              <h3 className="text-base font-semibold text-gray-800 mt-6 mb-3">
+                Service Authorization
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mb-4 md:mb-5">
+                <div className="flex flex-col">
+                  <Label htmlFor="auth-number" className="block text-sm font-medium text-gray-700 mb-1.5">Authorization Number</Label>
+                  <Input
+                    id="auth-number"
+                    type="text"
+                    className="w-full min-h-[44px]"
+                    value={intakeData.authorization?.number ?? ''}
+                    onChange={(e) => updateNestedData('authorization', 'number', e.target.value)}
+                    placeholder="AUTH-12345"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <Label htmlFor="auth-hours" className="block text-sm font-medium text-gray-700 mb-1.5">Approved Hours</Label>
+                  <Input
+                    id="auth-hours"
+                    type="number"
+                    min={0}
+                    className="w-full min-h-[44px]"
+                    value={intakeData.authorization?.approvedHours ?? 0}
+                    onChange={(e) => updateNestedData('authorization', 'approvedHours', Number(e.target.value) || 0)}
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <Label htmlFor="auth-valid-from" className="block text-sm font-medium text-gray-700 mb-1.5">Valid From</Label>
+                  <Input
+                    id="auth-valid-from"
+                    type="date"
+                    className="w-full min-h-[44px]"
+                    value={intakeData.authorization?.validFrom ?? ''}
+                    onChange={(e) => updateNestedData('authorization', 'validFrom', e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <Label htmlFor="auth-valid-to" className="block text-sm font-medium text-gray-700 mb-1.5">Valid To</Label>
+                  <Input
+                    id="auth-valid-to"
+                    type="date"
+                    className="w-full min-h-[44px]"
+                    value={intakeData.authorization?.validTo ?? ''}
+                    onChange={(e) => updateNestedData('authorization', 'validTo', e.target.value)}
                   />
                 </div>
               </div>
