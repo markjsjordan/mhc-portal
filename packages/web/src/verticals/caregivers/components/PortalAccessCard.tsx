@@ -161,12 +161,14 @@ export const PortalAccessCard: React.FC<PortalAccessCardProps> = ({ caregiverId 
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={async () => {
-                    const res = await inviteMutation.mutateAsync({ sendEmail: false });
-                    if (res.inviteUrl) {
-                      await navigator.clipboard.writeText(res.inviteUrl);
-                      toast.success('Invite link copied to clipboard');
-                    }
+                  onClick={() => {
+                    void (async () => {
+                      const res = await inviteMutation.mutateAsync({ sendEmail: false });
+                      if (res.inviteUrl) {
+                        await navigator.clipboard.writeText(res.inviteUrl);
+                        toast.success('Invite link copied to clipboard');
+                      }
+                    })();
                   }}
                   disabled={inviteMutation.isPending}
                 >
