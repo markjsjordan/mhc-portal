@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
 import { Badge } from '@/components/ui/badge.js';
 import { Button } from '@/components/ui/button.js';
@@ -188,6 +189,23 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({ 
                               disabled={inviteMutation.isPending}
                             >
                               {isInvitingThis ? 'Resending...' : 'Resend invite'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                const res = await inviteMutation.mutateAsync({
+                                  familyMemberId: member.familyMemberId,
+                                  sendEmail: false,
+                                });
+                                if (res.inviteUrl) {
+                                  await navigator.clipboard.writeText(res.inviteUrl);
+                                  toast.success('Invite link copied to clipboard');
+                                }
+                              }}
+                              disabled={inviteMutation.isPending}
+                            >
+                              Copy invite link
                             </Button>
                             <Button
                               variant="destructive"

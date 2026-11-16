@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { toDateKey } from '@/core/utils';
 import { Link } from 'react-router-dom';
 import {
   Calendar,
@@ -130,8 +131,11 @@ export const VisitList: React.FC = () => {
   const visitList: Visit[] = useMemo(() => visits ?? [], [visits]);
   const totalVisits = visitList.length;
 
-  // Compute today's date string YYYY-MM-DD
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0]!, []);
+  // Compute today's date string YYYY-MM-DD in local calendar time
+  const todayStr = useMemo(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  }, []);
 
   // Compute summary metrics across all visits
   const metrics = useMemo(() => {
@@ -140,22 +144,14 @@ export const VisitList: React.FC = () => {
     let unassignedCount = 0;
     let completedCount = 0;
 
-    const now = new Date();
-
     for (const v of visitList) {
-      const scheduledDateStr =
-        v.scheduledDate instanceof Date
-          ? v.scheduledDate.toISOString().split('T')[0]!
-          : String(v.scheduledDate).split('T')[0]!;
-
-      const scheduledDateObj =
-        v.scheduledDate instanceof Date ? v.scheduledDate : new Date(v.scheduledDate);
+      const scheduledDateStr = toDateKey(v.scheduledDate);
 
       if (scheduledDateStr === todayStr) {
         todayCount++;
       }
       if (
-        scheduledDateObj >= now &&
+        scheduledDateStr >= todayStr &&
         v.status !== 'COMPLETED' &&
         v.status !== 'CANCELLED'
       ) {

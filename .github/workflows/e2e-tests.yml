@@ -4,6 +4,8 @@ name: E2E Tests
 # nightly schedule. Trigger them with the /mhc-e2e-testing skill (which calls
 # workflow_dispatch) or `gh workflow run e2e-tests.yml`.
 on:
+  schedule:
+    - cron: '0 4 * * *'
   workflow_dispatch:
     inputs:
       browser:
@@ -169,8 +171,8 @@ jobs:
   e2e-mobile:
     name: E2E Tests (Mobile)
     runs-on: ubuntu-latest
-    # Only run mobile tests on manual dispatch with 'mobile' or 'all' option
-    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.browser == 'mobile' || github.event.inputs.browser == 'all')
+    # Run mobile tests on nightly schedule or manual dispatch with 'mobile' or 'all'
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.browser == 'mobile' || github.event.inputs.browser == 'all'))
     timeout-minutes: 15  # 15 min max
 
     services:
