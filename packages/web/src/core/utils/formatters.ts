@@ -1,6 +1,6 @@
 export const parseDateOnly = (value: string | Date): Date => {
   if (typeof value === 'string') {
-    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/);
+    const match = /^(\d{4})-(\d{2})-(\d{2})(?:$|[\sT])/.exec(value);
     if (match) {
       return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
     }
@@ -42,7 +42,7 @@ export const toDateKey = (date: string | Date): string => {
 export const formatDate = (date: string | Date, options?: Intl.DateTimeFormatOptions): string => {
   let d: Date;
   if (typeof date === 'string') {
-    const plainMatch = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const plainMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
     d = plainMatch
       ? new Date(Number(plainMatch[1]), Number(plainMatch[2]) - 1, Number(plainMatch[3]))
       : new Date(date);
