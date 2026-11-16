@@ -269,6 +269,14 @@ export interface Client extends Entity, SoftDeletable {
   serviceEligibility: ServiceEligibility;
   fundingSources?: FundingSource[];
 
+  // Intake Part B fields
+  consents?: ClientConsents;
+  authorizationInfo?: ClientAuthorizationInfo;
+  assessmentData?: ClientAssessmentData;
+  carePlanSummary?: ClientCarePlanSummary;
+  visitSchedule?: ClientVisitSchedule;
+  caregiverAssignment?: ClientCaregiverAssignment;
+
   // Risk and safety
   riskFlags: RiskFlag[];
   allergies?: Allergy[];
@@ -498,6 +506,70 @@ export interface Allergy {
   notes?: string;
 }
 
+export interface ClientConsents {
+  careAgreement: boolean;
+  hipaa: boolean;
+  financialResponsibility: boolean;
+  evv: boolean;
+  signature: string;
+  signedDate: string;
+  recordedAt?: Date;
+  recordedBy?: UUID;
+}
+
+export interface ClientAuthorizationInfo {
+  number?: string;
+  approvedHours?: number;
+  validFrom?: string;
+  validTo?: string;
+}
+
+export interface ClientAssessmentData {
+  adls?: {
+    bathing?: 'independent' | 'assistance' | 'dependent';
+    dressing?: 'independent' | 'assistance' | 'dependent';
+    toileting?: 'independent' | 'assistance' | 'dependent';
+    transferring?: 'independent' | 'assistance' | 'dependent';
+    feeding?: 'independent' | 'assistance' | 'dependent';
+  };
+  iadls?: {
+    housekeeping?: 'independent' | 'assistance' | 'dependent';
+    laundry?: 'independent' | 'assistance' | 'dependent';
+    mealPrep?: 'independent' | 'assistance' | 'dependent';
+    medication?: 'independent' | 'assistance' | 'dependent';
+    transportation?: 'independent' | 'assistance' | 'dependent';
+  };
+  mobility?: 'ambulatory' | 'walker' | 'wheelchair' | 'bedbound';
+  cognitive?: 'normal' | 'mild' | 'moderate' | 'severe';
+  conditions?: string[];
+  medications?: Array<{ name: string; dosage: string; frequency: string }>;
+  allergies?: string[];
+  dietaryNeeds?: string;
+}
+
+export interface ClientCarePlanSummary {
+  serviceTypes?: string[];
+  visitFrequency?: 'daily' | '3xweek' | '2xweek' | 'weekly';
+  visitDuration?: number;
+  preferredTimes?: string[];
+  tasks?: string[];
+  goals?: string;
+}
+
+export interface ClientVisitSchedule {
+  scheduleStartDate?: string;
+  visitSchedule?: Array<{ dayOfWeek: number; time: string; duration: number }>;
+}
+
+export interface ClientCaregiverAssignment {
+  primaryCaregiver?: string;
+  backupCaregivers?: string[];
+  preferences?: {
+    gender?: 'no-preference' | 'female' | 'male';
+    language?: string[];
+  };
+}
+
 /**
  * Client creation input (subset of full Client)
  */
@@ -517,6 +589,14 @@ export interface CreateClientInput {
   referralSource?: string;
   intakeDate?: Date;
   status?: ClientStatus;
+  primaryPhysician?: HealthcareProvider;
+  insurance?: Insurance[];
+  consents?: ClientConsents;
+  authorizationInfo?: ClientAuthorizationInfo;
+  assessmentData?: ClientAssessmentData;
+  carePlanSummary?: ClientCarePlanSummary;
+  visitSchedule?: ClientVisitSchedule;
+  caregiverAssignment?: ClientCaregiverAssignment;
 }
 
 /**
@@ -538,6 +618,14 @@ export interface UpdateClientInput {
   riskFlags?: RiskFlag[];
   status?: ClientStatus;
   notes?: string;
+  primaryPhysician?: HealthcareProvider;
+  insurance?: Insurance[];
+  consents?: ClientConsents;
+  authorizationInfo?: ClientAuthorizationInfo;
+  assessmentData?: ClientAssessmentData;
+  carePlanSummary?: ClientCarePlanSummary;
+  visitSchedule?: ClientVisitSchedule;
+  caregiverAssignment?: ClientCaregiverAssignment;
 }
 
 /**

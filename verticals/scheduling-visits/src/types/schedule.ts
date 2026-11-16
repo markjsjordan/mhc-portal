@@ -189,7 +189,7 @@ export interface Visit extends Entity, SoftDeletable {
   serviceTypeName: string;
 
   // Timing
-  scheduledDate: Date;
+  scheduledDate: Date | string;
   scheduledStartTime: string; // HH:MM format
   scheduledEndTime: string; // HH:MM format
   scheduledDuration: number; // Minutes

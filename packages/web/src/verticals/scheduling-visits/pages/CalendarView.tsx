@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { Calendar, momentLocalizer, View, SlotInfo, EventProps } from 'react-big-calendar';
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import moment from 'moment';
+import { parseDateOnly, toDateKey } from '@/core/utils';
 import { toast } from 'sonner';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -227,10 +228,7 @@ const mapVisitsToEvents = (
   caregiverColorMap: Map<string, string>
 ): CalendarEvent[] => {
   return visits.map((visit: Visit) => {
-    const scheduledDate =
-      typeof visit.scheduledDate === 'string'
-        ? new Date(visit.scheduledDate)
-        : visit.scheduledDate;
+    const scheduledDate = parseDateOnly(visit.scheduledDate);
 
     const normalizedStart = normalizeTimeFormat(visit.scheduledStartTime);
     const normalizedEnd = normalizeTimeFormat(visit.scheduledEndTime);
@@ -466,12 +464,12 @@ const buildDistinctClients = (visits: Visit[]) => {
 };
 
 const computeWeeklyVisits = (visits: Visit[], currentDate: Date) => {
-  const weekStart = moment(currentDate).startOf('week');
-  const weekEnd = moment(currentDate).endOf('week');
+  const weekStartKey = moment(currentDate).startOf('week').format('YYYY-MM-DD');
+  const weekEndKey = moment(currentDate).endOf('week').format('YYYY-MM-DD');
 
   return visits.filter((visit: Visit) => {
-    const visitDate = moment(visit.scheduledDate);
-    return visitDate.isSameOrAfter(weekStart) && visitDate.isSameOrBefore(weekEnd);
+    const visitKey = toDateKey(visit.scheduledDate);
+    return visitKey >= weekStartKey && visitKey <= weekEndKey;
   }).length;
 };
 
@@ -1032,8 +1030,7 @@ export const CalendarView: React.FC = () => {
   const daysWithVisits = useMemo(() => {
     const days = new Set<string>();
     for (const visit of visits) {
-      const dateKey = moment(visit.scheduledDate).format('YYYY-MM-DD');
-      days.add(dateKey);
+      days.add(toDateKey(visit.scheduledDate));
     }
     return days;
   }, [visits]);
