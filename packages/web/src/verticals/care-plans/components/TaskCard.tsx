@@ -4,7 +4,7 @@ import { CheckCircle, Clock, AlertTriangle, User, Calendar } from 'lucide-react'
 import { StatusBadge } from '@/core/components';
 import { Button } from '@/components/ui/button.js';
 import { Card } from '@/components/ui/card.js';
-import { formatDate, formatTime } from '@/core/utils';
+import { formatCalendarDate, formatDate, formatTime } from '@/core/utils';
 import { useCompleteTask } from '../hooks';
 import type { TaskInstance } from '../types';
 
@@ -79,7 +79,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       <div className="mt-4 space-y-2">
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <Calendar className="h-4 w-4" />
-          {formatDate(task.scheduledDate)}
+          {formatCalendarDate(task.scheduledDate)}
           {task.scheduledTime && (
             <span>at {formatTime(task.scheduledTime)}</span>
           )}
