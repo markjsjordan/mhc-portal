@@ -99,6 +99,7 @@ export type Role =
   | 'SUPER_ADMIN'
   | 'ORG_ADMIN'
   | 'BRANCH_ADMIN'
+  | 'ADMIN'
   | 'COORDINATOR'
   | 'SCHEDULER'
   | 'CAREGIVER'
@@ -112,6 +113,12 @@ export type Role =
   | 'CLINICAL'
   | 'NURSE_RN'
   | 'NURSE_LPN';
+
+/**
+ * Admin roles allowed to manage organization team & settings
+ */
+export const ADMIN_ROLES = ['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN'] as const;
+export type AdminRole = (typeof ADMIN_ROLES)[number];
 
 /**
  * Fine-grained permissions

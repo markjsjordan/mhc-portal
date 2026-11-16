@@ -243,6 +243,12 @@ export function resolveRequest(
     return { kind: 'exempt' };
   }
 
+  // Narrow staff-picker endpoint is permission-checked in OrganizationService.getStaffOptions
+  // for care-plans & messaging consumers (not an admin-settings route).
+  if (/^organizations\/[^/]+\/staff-options$/.test(path)) {
+    return { kind: 'exempt' };
+  }
+
   const entityResolution = resolveEntityRoute(path, query, level);
   if (entityResolution !== null) {
     return entityResolution;

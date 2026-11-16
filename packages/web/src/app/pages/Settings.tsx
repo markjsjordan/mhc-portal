@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,11 +10,12 @@ import { Checkbox } from '@/components/ui/checkbox.js';
 import { NativeSelect } from '@/components/ui/select.js';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs.js';
 import { FormField } from '@/components/forms/FormField';
-import { useApiClient } from '@/core/hooks';
+import { useApiClient, useAuth } from '@/core/hooks';
+import { ADMIN_ROLES } from '@/core/types/auth';
 import { SectionAccessEditor } from './settings/SectionAccessEditor';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { User, Lock, Bell, Users, UserPlus, Mail, Clock, CheckCircle, XCircle, Trash2, Copy, Pencil } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 type SettingsTab = 'profile' | 'account' | 'preferences' | 'team';
 
@@ -51,7 +52,14 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 type PasswordFormData = z.infer<typeof passwordSchema>;
 type PreferencesFormData = z.infer<typeof preferencesSchema>;
 
-export function Settings() {
+export interface SettingsProps {
+  initialTab?: SettingsTab;
+}
+
+export function Settings({ initialTab }: SettingsProps = {}) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user: authUser } = useAuth();
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -66,11 +74,26 @@ export function Settings() {
     },
   });
 
+  const effectiveRoles = userProfile?.roles ?? authUser?.roles ?? [];
+  const isAdmin = effectiveRoles.some((r) => (ADMIN_ROLES as readonly string[]).includes(r));
+
+  useEffect(() => {
+    const wantsTeam = initialTab === 'team' || location.pathname.endsWith('/team');
+    if (wantsTeam && isAdmin) {
+      setActiveTab('team');
+    } else if (!isAdmin && (activeTab === 'team' || location.pathname.endsWith('/team'))) {
+      setActiveTab('profile');
+      if (location.pathname.endsWith('/team')) {
+        navigate('/settings', { replace: true });
+      }
+    }
+  }, [initialTab, location.pathname, isAdmin, activeTab, navigate]);
+
   const tabs = [
     { id: 'profile' as const, label: 'Profile', icon: User },
     { id: 'account' as const, label: 'Account', icon: Lock },
     { id: 'preferences' as const, label: 'Preferences', icon: Bell },
-    { id: 'team' as const, label: 'Team', icon: Users },
+    ...(isAdmin ? [{ id: 'team' as const, label: 'Team', icon: Users }] : []),
   ];
 
   const showMessage = (type: 'success' | 'error', message: string) => {
@@ -154,15 +177,15 @@ export function Settings() {
             onError={(message) => showMessage('error', message)}
           />
         </TabsContent>
-        <TabsContent value="team" className="mt-6">
-          {userProfile && (
+        {isAdmin && userProfile && (
+          <TabsContent value="team" className="mt-6">
             <TeamSettings
               organizationId={userProfile.organizationId}
               onSuccess={(message) => showMessage('success', message)}
               onError={(message) => showMessage('error', message)}
             />
-          )}
-        </TabsContent>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

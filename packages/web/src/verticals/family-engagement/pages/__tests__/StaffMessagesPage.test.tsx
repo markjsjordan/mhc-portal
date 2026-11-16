@@ -13,17 +13,11 @@ const mockStaffMembers = [
     id: 'staff-1',
     firstName: 'Alice',
     lastName: 'Coordinator',
-    email: 'alice@example.com',
-    roles: ['COORDINATOR'],
-    status: 'ACTIVE' as const,
   },
   {
     id: 'staff-2',
     firstName: 'Bob',
     lastName: 'Caregiver',
-    email: 'bob@example.com',
-    roles: ['CAREGIVER'],
-    status: 'ACTIVE' as const,
   },
 ];
 

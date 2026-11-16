@@ -137,12 +137,12 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
 
   const organizationId = (initialData?.organizationId ?? user?.organizationId) ?? '00000000-0000-0000-0000-000000000001';
 
-  // Fetch organization team members for coordinator selection
+  // Fetch organization staff options for coordinator selection
   const { data: teamMembers = [] } = useQuery({
-    queryKey: ['organization-users', organizationId],
+    queryKey: ['organization-staff-options', organizationId],
     queryFn: async () => {
       if (!organizationId) return [];
-      const res = await apiClient.get<Array<{ id: string; firstName: string; lastName: string; email: string; roles: string[] }> | { data?: Array<{ id: string; firstName: string; lastName: string; email: string; roles: string[] }> }>(`/api/organizations/${organizationId}/users`);
+      const res = await apiClient.get<Array<{ id: string; firstName: string; lastName: string }> | { data?: Array<{ id: string; firstName: string; lastName: string }> }>(`/api/organizations/${organizationId}/staff-options`);
       return Array.isArray(res) ? res : (res.data ?? []);
     },
     enabled: !!organizationId,
@@ -223,12 +223,10 @@ export const CarePlanForm: React.FC<CarePlanFormProps> = ({
     ];
 
     // Coordinator select options
-    const coordinatorOptions = teamMembers
-      .filter((m) => m.roles.some((r) => ['COORDINATOR', 'ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'SUPER_ADMIN'].includes(r)))
-      .map((m) => ({
-        value: m.id,
-        label: `${m.firstName} ${m.lastName} (${m.email})`,
-      }));
+    const coordinatorOptions = teamMembers.map((m) => ({
+      value: m.id,
+      label: `${m.firstName} ${m.lastName}`.trim(),
+    }));
 
     return (
       <div className="space-y-6">
