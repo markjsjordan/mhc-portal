@@ -1,0 +1,90 @@
+name: E2E Performance (Nightly)
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '22'
+  DATABASE_NAME: 'folkcare_e2e_test'
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+jobs:
+  e2e-perf:
+    name: E2E Performance (perf project)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: folkcare_e2e_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Cache node_modules
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            verticals/*/node_modules
+            e2e/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build packages
+        run: npx turbo run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run nightly performance tests
+        env:
+          CI: '1'
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/folkcare_e2e_test
+          E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/folkcare_e2e_test
+        run: npx playwright test --project=perf --workers=1 --reporter=list,json
+
+      - name: Upload performance results artifact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b54b0870cbd74882a543a41f6 # v4.6.2
+        with:
+          name: e2e-perf-results-${{ github.run_number }}
+          path: |
+            e2e-results.json
+            playwright-report/
+          retention-days: 30

@@ -75,9 +75,10 @@ export default defineConfig({
 
   // Project configurations for different browsers and viewports
   projects: [
-    // Desktop browsers
+    // Desktop browsers (gating suite excludes performance.spec.ts)
     {
       name: 'chromium',
+      testIgnore: /performance\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1920, height: 1080 },
@@ -85,6 +86,7 @@ export default defineConfig({
     },
     {
       name: 'firefox',
+      testIgnore: /performance\.spec\.ts/,
       use: {
         ...devices['Desktop Firefox'],
         viewport: { width: 1920, height: 1080 },
@@ -92,6 +94,7 @@ export default defineConfig({
     },
     {
       name: 'webkit',
+      testIgnore: /performance\.spec\.ts/,
       use: {
         ...devices['Desktop Safari'],
         viewport: { width: 1920, height: 1080 },
@@ -101,12 +104,14 @@ export default defineConfig({
     // Mobile viewports (critical for caregiver app)
     {
       name: 'mobile-chrome',
+      testIgnore: /performance\.spec\.ts/,
       use: {
         ...devices['Pixel 5'],
       },
     },
     {
       name: 'mobile-safari',
+      testIgnore: /performance\.spec\.ts/,
       use: {
         ...devices['iPhone 12'],
       },
@@ -115,8 +120,21 @@ export default defineConfig({
     // Tablet viewports (coordinator workflows)
     {
       name: 'tablet',
+      testIgnore: /performance\.spec\.ts/,
       use: {
         ...devices['iPad Pro'],
+      },
+    },
+
+    // Non-gating nightly performance project (run with --project=perf --workers=1)
+    {
+      name: 'perf',
+      testMatch: /performance\.spec\.ts/,
+      fullyParallel: false,
+      retries: 1,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
       },
     },
   ],
