@@ -52,14 +52,16 @@ vi.mock('@/verticals/scheduling-visits/hooks/useVisits', () => ({
 const { mockCreatePattern, mockClientsReturn } = vi.hoisted(() => ({
   mockCreatePattern: vi.fn().mockResolvedValue({ generatedVisitsCount: 4 }),
   mockClientsReturn: vi.fn(() => ({
-    clients: [
-      {
-        id: 'client-1',
-        firstName: 'John',
-        lastName: 'Doe',
-        primaryAddress: { state: 'FL' },
-      },
-    ],
+    data: {
+      items: [
+        {
+          id: 'client-1',
+          firstName: 'John',
+          lastName: 'Doe',
+          primaryAddress: { state: 'FL' },
+        },
+      ],
+    },
     isLoading: false,
   })),
 }));
@@ -206,19 +208,21 @@ describe('ScheduleBuilderPage responsive header (wdvf3abp4v)', () => {
       mockUseIsMobile.mockReturnValue(false);
       mockCreatePattern.mockClear();
       mockClientsReturn.mockReturnValue({
-        clients: [
-          {
-            id: 'client-1',
-            firstName: 'John',
-            lastName: 'Doe',
-            primaryAddress: { state: 'FL' },
-          },
-        ],
+        data: {
+          items: [
+            {
+              id: 'client-1',
+              firstName: 'John',
+              lastName: 'Doe',
+              primaryAddress: { state: 'FL' },
+            },
+          ],
+        },
       });
     });
 
     it('shows validation error and sends no request when submitted without a client', async () => {
-      mockClientsReturn.mockReturnValue({ clients: [] });
+      mockClientsReturn.mockReturnValue({ data: { items: [] } });
       renderComponent();
 
       fireEvent.click(screen.getByRole('button', { name: /\+ Recurring Schedule/i }));
