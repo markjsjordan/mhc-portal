@@ -257,12 +257,6 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({ 
     }
   };
 
-  const handleOpenRevoke = (member: FamilyPortalAccessRow) => {
-    setSelectedMember(member);
-    setRevokeReason('');
-    setIsRevokeDialogOpen(true);
-  };
-
   const handleCopyInviteLink = async (familyMemberId: string) => {
     const res = await inviteMutation.mutateAsync({
       familyMemberId,
@@ -272,6 +266,12 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({ 
       await navigator.clipboard.writeText(res.inviteUrl);
       toast.success('Invite link copied to clipboard');
     }
+  };
+
+  const handleOpenRevoke = (member: FamilyPortalAccessRow) => {
+    setSelectedMember(member);
+    setRevokeReason('');
+    setIsRevokeDialogOpen(true);
   };
 
   const handleConfirmRevoke = async () => {
