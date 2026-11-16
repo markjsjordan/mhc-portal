@@ -278,7 +278,11 @@ export class ScheduleService {
       const eventType = eventTypeMap[newStatus];
       if (eventType === undefined) return;
 
-      const scheduledTime = `${visit.scheduledDate.toLocaleDateString('en-US')} ${visit.scheduledStartTime}`;
+      const dateStr =
+        typeof visit.scheduledDate === 'string'
+          ? visit.scheduledDate
+          : visit.scheduledDate.toLocaleDateString('en-US');
+      const scheduledTime = `${dateStr} ${visit.scheduledStartTime}`;
 
       const template = NS.getTemplate(eventType, {
         clientName: 'Client', // Future: Get from client provider
@@ -300,7 +304,7 @@ export class ScheduleService {
           caregiverId: visit.assignedCaregiverId ?? '',
           newStatus,
           reason: reason ?? '',
-          scheduledStartTime: `${visit.scheduledDate.toISOString()} ${visit.scheduledStartTime}`,
+          scheduledStartTime: `${typeof visit.scheduledDate === 'string' ? visit.scheduledDate : visit.scheduledDate.toISOString()} ${visit.scheduledStartTime}`,
         },
         organizationId: visit.organizationId,
         relatedEntityType: 'visit',
@@ -367,9 +371,11 @@ export class ScheduleService {
     // with expired credentials, failed background checks, or exclusion list
     // findings must not be assigned to provide services.
     if (this.credentialProvider) {
+      const scheduleDate =
+        typeof visit.scheduledDate === 'string' ? new Date(visit.scheduledDate) : visit.scheduledDate;
       const complianceCheck = await this.credentialProvider.canBeScheduled(
         input.caregiverId,
-        visit.scheduledDate,
+        scheduleDate,
         context
       );
 
@@ -388,7 +394,7 @@ export class ScheduleService {
     // Check caregiver availability
     const isAvailable = await this.checkCaregiverAvailability({
       caregiverId: input.caregiverId,
-      date: visit.scheduledDate,
+      date: typeof visit.scheduledDate === 'string' ? new Date(visit.scheduledDate) : visit.scheduledDate,
       startTime: visit.scheduledStartTime,
       endTime: visit.scheduledEndTime,
       includeTravel: true,
