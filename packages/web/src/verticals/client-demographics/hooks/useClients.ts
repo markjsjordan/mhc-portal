@@ -118,10 +118,10 @@ export const useInviteFamilyPortal = (clientId: string | undefined) => {
     mutationFn: (familyMemberId: string) => clientApi.inviteFamilyPortal(familyMemberId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['family-portal-access', clientId] });
-      toast.success('Invitation sent successfully');
+      toast.success('Invite link generated');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to send invitation');
+      toast.error(error.message || 'Failed to generate invite link');
     },
   });
 };
@@ -161,10 +161,10 @@ export const useInviteClientPortal = (clientId: string | undefined) => {
     mutationFn: () => clientApi.inviteClientPortal(clientId!),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['client-portal-access', clientId] });
-      toast.success('Invitation sent successfully');
+      toast.success('Invite link generated');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to send invitation');
+      toast.error(error.message || 'Failed to generate invite link');
     },
   });
 };

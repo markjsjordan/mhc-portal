@@ -19,6 +19,8 @@ import {
   useInviteCaregiverPortal,
   useRevokeCaregiverPortal,
 } from '../hooks/index.js';
+import { useCaregiverApi } from '../services/caregiver-api.js';
+import { InviteLinkBox } from '../../../components/InviteLinkBox.js';
 import type { PortalAccessStatus } from '../types/index.js';
 
 export interface PortalAccessCardProps {
@@ -43,9 +45,44 @@ export const PortalAccessCard: React.FC<PortalAccessCardProps> = ({ caregiverId 
   const { data: portalAccess, isLoading, error } = useCaregiverPortalAccess(caregiverId);
   const inviteMutation = useInviteCaregiverPortal(caregiverId);
   const revokeMutation = useRevokeCaregiverPortal(caregiverId);
+  const caregiverApi = useCaregiverApi();
 
   const [isRevokeDialogOpen, setIsRevokeDialogOpen] = useState(false);
   const [revokeReason, setRevokeReason] = useState('');
+  const [generatedInvite, setGeneratedInvite] = useState<{
+    inviteUrl: string;
+    inviteExpiresAt?: string | null;
+  } | null>(null);
+  const [isLoadingLink, setIsLoadingLink] = useState(false);
+
+  const handleGenerateInvite = async () => {
+    try {
+      const res = await inviteMutation.mutateAsync();
+      if (res?.inviteUrl) {
+        setGeneratedInvite({
+          inviteUrl: res.inviteUrl,
+          inviteExpiresAt: res.inviteExpiresAt ?? null,
+        });
+      }
+    } catch {
+      // Handled by mutation onError toast
+    }
+  };
+
+  const handleFetchInviteLink = async () => {
+    setIsLoadingLink(true);
+    try {
+      const res = await caregiverApi.getPortalInviteLink(caregiverId);
+      setGeneratedInvite({
+        inviteUrl: res.inviteUrl,
+        inviteExpiresAt: res.inviteExpiresAt ?? null,
+      });
+    } catch {
+      // Ignore if no active pending invite
+    } finally {
+      setIsLoadingLink(false);
+    }
+  };
 
   const status: PortalAccessStatus = portalAccess?.status ?? 'NONE';
   const badgeConfig = statusBadgeConfig[status];
@@ -92,7 +129,7 @@ export const PortalAccessCard: React.FC<PortalAccessCardProps> = ({ caregiverId 
           {status === 'INVITED' && (
             <>
               <p className="text-gray-600">
-                An invitation has been sent to this caregiver.
+                An invite link has been generated. Share it with this caregiver.
               </p>
               {portalAccess?.inviteExpiresAt && (
                 <p className="text-xs text-gray-500">
@@ -134,16 +171,23 @@ export const PortalAccessCard: React.FC<PortalAccessCardProps> = ({ caregiverId 
           )}
         </div>
 
+        {generatedInvite && (
+          <InviteLinkBox
+            inviteUrl={generatedInvite.inviteUrl}
+            inviteExpiresAt={generatedInvite.inviteExpiresAt}
+          />
+        )}
+
         {hasUpdatePermission && (
           <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100">
             {(status === 'NONE' || status === 'REVOKED') && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => inviteMutation.mutate()}
+                onClick={() => void handleGenerateInvite()}
                 disabled={inviteMutation.isPending}
               >
-                {inviteMutation.isPending ? 'Sending invite...' : 'Invite to portal'}
+                {inviteMutation.isPending ? 'Generating link...' : 'Generate invite link'}
               </Button>
             )}
 
@@ -152,10 +196,18 @@ export const PortalAccessCard: React.FC<PortalAccessCardProps> = ({ caregiverId 
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => inviteMutation.mutate()}
+                  onClick={() => void handleFetchInviteLink()}
+                  disabled={isLoadingLink}
+                >
+                  {isLoadingLink ? 'Loading link...' : 'Copy invite link'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void handleGenerateInvite()}
                   disabled={inviteMutation.isPending}
                 >
-                  {inviteMutation.isPending ? 'Resending...' : 'Resend invite'}
+                  {inviteMutation.isPending ? 'Regenerating...' : 'Regenerate link'}
                 </Button>
                 <Button
                   variant="destructive"

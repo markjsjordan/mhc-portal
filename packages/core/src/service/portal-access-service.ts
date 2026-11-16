@@ -1294,4 +1294,33 @@ export class PortalAccessService {
 
     return deactivated;
   }
+
+  /**
+   * Load the latest PENDING, unexpired invite token for a portal target.
+   * Returns null if no active pending invite exists.
+   */
+  async getLatestPendingInvite(
+    targetType: 'CAREGIVER' | 'FAMILY' | 'CLIENT',
+    targetId: UUID
+  ): Promise<PortalInviteResult | null> {
+    const res = await this.db.query<{ token: string; expires_at: Date }>(
+      `SELECT token, expires_at
+       FROM invite_tokens
+       WHERE target_type = $1
+         AND target_id = $2
+         AND status = 'PENDING'
+         AND expires_at > NOW()
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [targetType, targetId]
+    );
+    const row = res.rows[0];
+    if (row === undefined) {
+      return null;
+    }
+    return {
+      token: row.token,
+      expiresAt: new Date(row.expires_at),
+    };
+  }
 }

@@ -19,6 +19,8 @@ import {
   useInviteClientPortal,
   useRevokeClientPortal,
 } from '../hooks';
+import { useClientApi } from '../services/client-api.js';
+import { InviteLinkBox } from '../../../components/InviteLinkBox.js';
 import type { PortalAccessStatus } from '../types';
 
 export interface ClientPortalAccessCardProps {
@@ -48,9 +50,44 @@ export const ClientPortalAccessCard: React.FC<ClientPortalAccessCardProps> = ({ 
   const { data, isLoading, error } = useClientPortalAccess(clientId, hasUpdatePermission);
   const inviteMutation = useInviteClientPortal(clientId);
   const revokeMutation = useRevokeClientPortal(clientId);
+  const clientApi = useClientApi();
 
   const [mode, setMode] = useState<DialogMode | null>(null);
   const [reason, setReason] = useState('');
+  const [generatedInvite, setGeneratedInvite] = useState<{
+    inviteUrl: string;
+    inviteExpiresAt?: string | null;
+  } | null>(null);
+  const [isLoadingLink, setIsLoadingLink] = useState(false);
+
+  const handleGenerateInvite = async () => {
+    try {
+      const res = await inviteMutation.mutateAsync();
+      if (res?.inviteUrl) {
+        setGeneratedInvite({
+          inviteUrl: res.inviteUrl,
+          inviteExpiresAt: res.inviteExpiresAt ?? null,
+        });
+      }
+    } catch {
+      // Handled by mutation onError toast
+    }
+  };
+
+  const handleFetchInviteLink = async () => {
+    setIsLoadingLink(true);
+    try {
+      const res = await clientApi.getClientPortalInviteLink(clientId);
+      setGeneratedInvite({
+        inviteUrl: res.inviteUrl,
+        inviteExpiresAt: res.inviteExpiresAt ?? null,
+      });
+    } catch {
+      // Ignore if no active pending invite
+    } finally {
+      setIsLoadingLink(false);
+    }
+  };
 
   if (!hasUpdatePermission) {
     return null;
@@ -90,14 +127,15 @@ export const ClientPortalAccessCard: React.FC<ClientPortalAccessCardProps> = ({ 
     const status = data.status;
     const badge = statusBadgeConfig[status];
     const hasEmail = data.email.trim() !== '';
-    let inviteLabel = 'Invite to portal';
+    let inviteLabel = 'Generate invite link';
     if (inviteMutation.isPending) {
-      inviteLabel = 'Sending...';
+      inviteLabel = 'Generating...';
     } else if (status === 'INVITED') {
-      inviteLabel = 'Resend invite';
+      inviteLabel = 'Regenerate link';
     }
     return (
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Badge variant={badge.variant} data-testid="client-portal-status">{badge.label}</Badge>
           <div className="text-xs text-gray-500 mt-1">{hasEmail ? data.email : 'No email on file'}</div>
@@ -117,11 +155,21 @@ export const ClientPortalAccessCard: React.FC<ClientPortalAccessCardProps> = ({ 
           )}
         </div>
         <div className="flex items-center gap-1.5">
+          {status === 'INVITED' && !closed && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void handleFetchInviteLink()}
+              disabled={isLoadingLink}
+            >
+              {isLoadingLink ? 'Loading...' : 'Copy invite link'}
+            </Button>
+          )}
           {(status === 'NONE' || status === 'REVOKED' || status === 'INVITED') && !closed && (
             <Button
               variant="outline"
               size="sm"
-              onClick={() => inviteMutation.mutate()}
+              onClick={() => void handleGenerateInvite()}
               disabled={inviteMutation.isPending || !hasEmail}
             >
               {inviteLabel}
@@ -139,6 +187,13 @@ export const ClientPortalAccessCard: React.FC<ClientPortalAccessCardProps> = ({ 
           )}
         </div>
       </div>
+      {generatedInvite && (
+        <InviteLinkBox
+          inviteUrl={generatedInvite.inviteUrl}
+          inviteExpiresAt={generatedInvite.inviteExpiresAt}
+        />
+      )}
+    </div>
     );
   };
 

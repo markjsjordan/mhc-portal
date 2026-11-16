@@ -19,7 +19,8 @@ export interface CaregiverApiService {
    */
   getMyCaregiverProfile(): Promise<Caregiver>;
   getPortalAccess(id: string): Promise<PortalAccessSummary>;
-  invitePortal(id: string): Promise<PortalAccessSummary>;
+  invitePortal(id: string): Promise<PortalAccessSummary & { inviteUrl?: string; inviteExpiresAt?: string }>;
+  getPortalInviteLink(id: string): Promise<{ inviteUrl: string; inviteExpiresAt?: string }>;
   revokePortal(id: string, reason: string): Promise<PortalAccessSummary>;
 }
 
@@ -77,14 +78,24 @@ export const createCaregiverApiService = (apiClient: ApiClient): CaregiverApiSer
       return response as PortalAccessSummary;
     },
 
-    async invitePortal(id: string): Promise<PortalAccessSummary> {
-      const response = await apiClient.post<{ success?: boolean; data?: PortalAccessSummary } | PortalAccessSummary>(
+    async invitePortal(id: string): Promise<PortalAccessSummary & { inviteUrl?: string; inviteExpiresAt?: string }> {
+      const response = await apiClient.post<{ success?: boolean; data?: PortalAccessSummary & { inviteUrl?: string; inviteExpiresAt?: string } } | (PortalAccessSummary & { inviteUrl?: string; inviteExpiresAt?: string })>(
         `/api/caregivers/${id}/portal-invite`
       );
       if ('data' in response && response.data) {
         return response.data;
       }
-      return response as PortalAccessSummary;
+      return response as PortalAccessSummary & { inviteUrl?: string; inviteExpiresAt?: string };
+    },
+
+    async getPortalInviteLink(id: string): Promise<{ inviteUrl: string; inviteExpiresAt?: string }> {
+      const response = await apiClient.get<{ success?: boolean; data?: { inviteUrl: string; inviteExpiresAt?: string } } | { inviteUrl: string; inviteExpiresAt?: string }>(
+        `/api/caregivers/${id}/portal-invite-link`
+      );
+      if ('data' in response && response.data) {
+        return response.data;
+      }
+      return response as { inviteUrl: string; inviteExpiresAt?: string };
     },
 
     async revokePortal(id: string, reason: string): Promise<PortalAccessSummary> {

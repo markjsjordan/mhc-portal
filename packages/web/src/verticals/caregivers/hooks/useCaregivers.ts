@@ -57,10 +57,10 @@ export function useInviteCaregiverPortal(caregiverId: string | undefined) {
     mutationFn: () => caregiverApi.invitePortal(caregiverId!),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['caregiver-portal-access', caregiverId] });
-      toast.success('Invitation sent successfully');
+      toast.success('Invite link generated');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to send invitation');
+      toast.error(error.message || 'Failed to generate invite link');
     },
   });
 }

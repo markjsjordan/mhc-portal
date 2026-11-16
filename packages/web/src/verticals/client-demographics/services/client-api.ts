@@ -74,10 +74,12 @@ export interface ClientApiService {
   deleteClient(id: string): Promise<void>;
   getBranches(): Promise<Array<{ id: string; name: string; code?: string; status?: string }>>;
   getFamilyPortalAccess(clientId: string): Promise<FamilyPortalAccessRow[]>;
-  inviteFamilyPortal(familyMemberId: string): Promise<FamilyPortalAccessRow>;
+  inviteFamilyPortal(familyMemberId: string): Promise<FamilyPortalAccessRow & { inviteUrl?: string; inviteExpiresAt?: string }>;
+  getFamilyPortalInviteLink(familyMemberId: string): Promise<{ inviteUrl: string; inviteExpiresAt?: string }>;
   revokeFamilyPortal(familyMemberId: string, reason: string): Promise<FamilyPortalAccessRow>;
   getClientPortalAccess(clientId: string): Promise<ClientPortalAccess>;
-  inviteClientPortal(clientId: string): Promise<void>;
+  inviteClientPortal(clientId: string): Promise<{ inviteUrl: string; inviteExpiresAt?: string }>;
+  getClientPortalInviteLink(clientId: string): Promise<{ inviteUrl: string; inviteExpiresAt?: string }>;
   revokeClientPortal(clientId: string, reason: string): Promise<void>;
   suspendClientPortal(clientId: string, reason: string): Promise<void>;
 }
@@ -186,14 +188,24 @@ export const createClientApiService = (apiClient: ApiClient): ClientApiService =
       return [];
     },
 
-    async inviteFamilyPortal(familyMemberId: string): Promise<FamilyPortalAccessRow> {
-      const response = await apiClient.post<{ success?: boolean; data?: FamilyPortalAccessRow } | FamilyPortalAccessRow>(
+    async inviteFamilyPortal(familyMemberId: string): Promise<FamilyPortalAccessRow & { inviteUrl?: string; inviteExpiresAt?: string }> {
+      const response = await apiClient.post<{ success?: boolean; data?: FamilyPortalAccessRow & { inviteUrl?: string; inviteExpiresAt?: string } } | (FamilyPortalAccessRow & { inviteUrl?: string; inviteExpiresAt?: string })>(
         `/api/family-members/${familyMemberId}/portal-invite`
       );
       if ('data' in response && response.data) {
         return response.data;
       }
-      return response as FamilyPortalAccessRow;
+      return response as FamilyPortalAccessRow & { inviteUrl?: string; inviteExpiresAt?: string };
+    },
+
+    async getFamilyPortalInviteLink(familyMemberId: string): Promise<{ inviteUrl: string; inviteExpiresAt?: string }> {
+      const response = await apiClient.get<{ success?: boolean; data?: { inviteUrl: string; inviteExpiresAt?: string } } | { inviteUrl: string; inviteExpiresAt?: string }>(
+        `/api/family-members/${familyMemberId}/portal-invite-link`
+      );
+      if ('data' in response && response.data) {
+        return response.data;
+      }
+      return response as { inviteUrl: string; inviteExpiresAt?: string };
     },
 
     async revokeFamilyPortal(familyMemberId: string, reason: string): Promise<FamilyPortalAccessRow> {
@@ -217,8 +229,24 @@ export const createClientApiService = (apiClient: ApiClient): ClientApiService =
       return response as ClientPortalAccess;
     },
 
-    async inviteClientPortal(clientId: string): Promise<void> {
-      await apiClient.post(`/api/clients/${clientId}/portal-invite`);
+    async inviteClientPortal(clientId: string): Promise<{ inviteUrl: string; inviteExpiresAt?: string }> {
+      const response = await apiClient.post<{ success?: boolean; data?: { inviteUrl: string; inviteExpiresAt?: string } } | { inviteUrl: string; inviteExpiresAt?: string }>(
+        `/api/clients/${clientId}/portal-invite`
+      );
+      if ('data' in response && response.data) {
+        return response.data;
+      }
+      return response as { inviteUrl: string; inviteExpiresAt?: string };
+    },
+
+    async getClientPortalInviteLink(clientId: string): Promise<{ inviteUrl: string; inviteExpiresAt?: string }> {
+      const response = await apiClient.get<{ success?: boolean; data?: { inviteUrl: string; inviteExpiresAt?: string } } | { inviteUrl: string; inviteExpiresAt?: string }>(
+        `/api/clients/${clientId}/portal-invite-link`
+      );
+      if ('data' in response && response.data) {
+        return response.data;
+      }
+      return response as { inviteUrl: string; inviteExpiresAt?: string };
     },
 
     async revokeClientPortal(clientId: string, reason: string): Promise<void> {

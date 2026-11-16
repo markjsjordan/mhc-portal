@@ -67,7 +67,7 @@ describe('Client portal access routes', () => {
   });
 
   describe('POST /api/clients/:id/portal-invite', () => {
-    it('invites and emails a client with a valid email (200)', async () => {
+    it('invites a client with a valid email and returns inviteUrl without emailing (200)', async () => {
       mockDb.query
         .mockResolvedValueOnce({ rows: [clientRow()] }) // route client check
         .mockResolvedValueOnce({ rows: [clientRow()] }) // service client check
@@ -75,8 +75,9 @@ describe('Client portal access routes', () => {
       const res = await request(app).post('/api/clients/c-1/portal-invite');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.token).toBeTruthy();
-      expect(sendInvitation).toHaveBeenCalledWith(expect.objectContaining({ recipientEmail: 'client@example.com' }));
+      expect(res.body.data.inviteUrl).toMatch(/\/accept-invite\//);
+      expect(res.body.data.inviteExpiresAt).toBeTruthy();
+      expect(sendInvitation).not.toHaveBeenCalled();
     });
 
     it('requires clients:update (403, no DB access)', async () => {

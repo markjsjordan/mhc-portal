@@ -14,6 +14,12 @@ vi.mock('@/core/hooks/index.js', () => ({
   usePermissions: vi.fn(),
 }));
 
+vi.mock('../../services/caregiver-api', () => ({
+  useCaregiverApi: () => ({
+    getPortalInviteLink: vi.fn().mockResolvedValue({ inviteUrl: 'https://example.com/accept-invite/tok' }),
+  }),
+}));
+
 vi.mock('../../hooks/index.js', () => ({
   useCaregiverPortalAccess: vi.fn(),
   useInviteCaregiverPortal: vi.fn(),
@@ -43,6 +49,7 @@ describe('PortalAccessCard', () => {
 
     vi.mocked(useInviteCaregiverPortal).mockReturnValue({
       mutate: mockInviteMutate,
+      mutateAsync: mockInviteMutate,
       isPending: false,
     } as unknown as ReturnType<typeof useInviteCaregiverPortal>);
 
@@ -72,7 +79,7 @@ describe('PortalAccessCard', () => {
     renderWithQueryClient(<PortalAccessCard caregiverId="cg-1" />);
 
     expect(screen.getByTestId('portal-access-status-badge')).toHaveTextContent('No portal access');
-    const inviteBtn = screen.getByRole('button', { name: /invite to portal/i });
+    const inviteBtn = screen.getByRole('button', { name: /generate invite link/i });
     expect(inviteBtn).toBeInTheDocument();
 
     fireEvent.click(inviteBtn);
@@ -99,7 +106,7 @@ describe('PortalAccessCard', () => {
     renderWithQueryClient(<PortalAccessCard caregiverId="cg-1" />);
 
     expect(screen.getByTestId('portal-access-status-badge')).toHaveTextContent('Invitation pending');
-    expect(screen.getByRole('button', { name: /resend invite/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /regenerate link/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /revoke access/i })).toBeInTheDocument();
   });
 
@@ -125,7 +132,7 @@ describe('PortalAccessCard', () => {
     expect(screen.getByTestId('portal-access-status-badge')).toHaveTextContent('Portal active');
     expect(screen.getByText(/last login:/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /revoke access/i })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /invite to portal/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /generate invite link/i })).not.toBeInTheDocument();
   });
 
   it('renders SUSPENDED status badge and explanation with no action buttons', () => {
@@ -149,8 +156,8 @@ describe('PortalAccessCard', () => {
 
     expect(screen.getByTestId('portal-access-status-badge')).toHaveTextContent('Suspended');
     expect(screen.getByText(/access will automatically return when the caregiver is reinstated/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /invite to portal/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /resend invite/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /generate invite link/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /regenerate link/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /revoke access/i })).not.toBeInTheDocument();
   });
 
@@ -175,7 +182,7 @@ describe('PortalAccessCard', () => {
 
     expect(screen.getByTestId('portal-access-status-badge')).toHaveTextContent('Access revoked');
     expect(screen.getByText(/disciplinary review/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /invite to portal/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /generate invite link/i })).toBeInTheDocument();
   });
 
   it('requires a reason when confirming revocation', async () => {
@@ -246,7 +253,7 @@ describe('PortalAccessCard', () => {
 
     renderWithQueryClient(<PortalAccessCard caregiverId="cg-1" />);
 
-    expect(screen.queryByRole('button', { name: /resend invite/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /regenerate link/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /revoke access/i })).not.toBeInTheDocument();
   });
 });

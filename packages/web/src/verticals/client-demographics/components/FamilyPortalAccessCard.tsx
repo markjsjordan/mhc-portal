@@ -27,6 +27,8 @@ import {
   useInviteFamilyPortal,
   useRevokeFamilyPortal,
 } from '../hooks';
+import { useClientApi } from '../services/client-api.js';
+import { InviteLinkBox } from '../../../components/InviteLinkBox.js';
 import type { FamilyPortalAccessRow, PortalAccessStatus } from '../types';
 
 export interface FamilyPortalAccessCardProps {
@@ -68,10 +70,45 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({ 
   const { data: familyMembers, isLoading, error } = useFamilyPortalAccess(clientId);
   const inviteMutation = useInviteFamilyPortal(clientId);
   const revokeMutation = useRevokeFamilyPortal(clientId);
+  const clientApi = useClientApi();
 
   const [selectedMember, setSelectedMember] = useState<FamilyPortalAccessRow | null>(null);
   const [revokeReason, setRevokeReason] = useState('');
   const [isRevokeDialogOpen, setIsRevokeDialogOpen] = useState(false);
+  const [activeInvite, setActiveInvite] = useState<{
+    inviteUrl: string;
+    inviteExpiresAt?: string | null;
+  } | null>(null);
+  const [loadingLinkFor, setLoadingLinkFor] = useState<string | null>(null);
+
+  const handleGenerateInvite = async (familyMemberId: string) => {
+    try {
+      const res = await inviteMutation.mutateAsync(familyMemberId);
+      if (res?.inviteUrl) {
+        setActiveInvite({
+          inviteUrl: res.inviteUrl,
+          inviteExpiresAt: res.inviteExpiresAt ?? null,
+        });
+      }
+    } catch {
+      // Handled by mutation onError toast
+    }
+  };
+
+  const handleFetchInviteLink = async (familyMemberId: string) => {
+    setLoadingLinkFor(familyMemberId);
+    try {
+      const res = await clientApi.getFamilyPortalInviteLink(familyMemberId);
+      setActiveInvite({
+        inviteUrl: res.inviteUrl,
+        inviteExpiresAt: res.inviteExpiresAt ?? null,
+      });
+    } catch {
+      // Ignore if no active pending invite
+    } finally {
+      setLoadingLinkFor(null);
+    }
+  };
 
   const handleOpenRevoke = (member: FamilyPortalAccessRow) => {
     setSelectedMember(member);
@@ -173,10 +210,10 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({ 
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => inviteMutation.mutate(member.familyMemberId)}
+                            onClick={() => void handleGenerateInvite(member.familyMemberId)}
                             disabled={inviteMutation.isPending}
                           >
-                            {isInvitingThis ? 'Sending...' : 'Invite to portal'}
+                            {isInvitingThis ? 'Generating...' : 'Generate invite link'}
                           </Button>
                         )}
                         {status === 'INVITED' && (
@@ -184,10 +221,18 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({ 
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => inviteMutation.mutate(member.familyMemberId)}
+                              onClick={() => void handleFetchInviteLink(member.familyMemberId)}
+                              disabled={loadingLinkFor === member.familyMemberId}
+                            >
+                              {loadingLinkFor === member.familyMemberId ? 'Loading...' : 'Copy invite link'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => void handleGenerateInvite(member.familyMemberId)}
                               disabled={inviteMutation.isPending}
                             >
-                              {isInvitingThis ? 'Resending...' : 'Resend invite'}
+                              {isInvitingThis ? 'Regenerating...' : 'Regenerate link'}
                             </Button>
                             <Button
                               variant="destructive"
@@ -217,6 +262,12 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({ 
             })}
           </TableBody>
         </Table>
+        {activeInvite && (
+          <InviteLinkBox
+            inviteUrl={activeInvite.inviteUrl}
+            inviteExpiresAt={activeInvite.inviteExpiresAt}
+          />
+        )}
       </div>
     );
   };

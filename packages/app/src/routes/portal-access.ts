@@ -11,7 +11,7 @@ import {
   PermissionService,
   AuditService,
   PortalAccessService,
-  createEmailService,
+  buildInviteUrl,
   NotFoundError,
   ValidationError,
   ConflictError,
@@ -289,37 +289,22 @@ export function createPortalAccessRouter(db: Database): Router {
 
       const inviteResult = await portalAccessService.inviteFamilyMember(familyMemberId, context);
 
-      // Attempt email send
-      try {
-        const orgRes = await db.query<{ name: string }>(
-          `SELECT name FROM organizations WHERE id = $1`,
-          [context.organizationId]
-        );
-        const orgName = orgRes.rows[0]?.name ?? 'MHC Portal';
-        const inviterRes = await db.query<{ first_name: string | null; last_name: string | null }>(
-          `SELECT first_name, last_name FROM users WHERE id = $1`,
-          [context.userId]
-        );
-        const inviter = inviterRes.rows[0];
-        const inviterName = inviter
-          ? `${inviter.first_name ?? ''} ${inviter.last_name ?? ''}`.trim() || 'Administrator'
-          : 'Administrator';
-
-        const emailService = createEmailService();
-        await emailService.sendInvitation({
-          recipientEmail: trimmedEmail,
-          recipientName: `${fmCheck.first_name ?? ''} ${fmCheck.last_name ?? ''}`.trim() || trimmedEmail,
-          inviterName,
-          organizationName: orgName,
-          invitationToken: inviteResult.token,
-          expiresAt: inviteResult.expiresAt,
-        });
-      } catch (err) {
-        console.warn('[PortalAccess] Failed to send family invitation email:', err);
-      }
+      const baseUrl =
+        process.env['FRONTEND_URL'] ??
+        process.env['APP_URL'] ??
+        'https://mhc-family-portal.vercel.app';
+      const inviteUrl = buildInviteUrl(baseUrl, inviteResult.token);
 
       const row = await getFamilyMemberPortalRow(familyMemberId, true);
-      res.json({ success: true, data: row });
+      res.setHeader('Cache-Control', 'no-store');
+      res.json({
+        success: true,
+        data: {
+          ...row,
+          inviteUrl,
+          inviteExpiresAt: inviteResult.expiresAt.toISOString(),
+        },
+      });
     } catch (error) {
       if (error instanceof NotFoundError) {
         res.status(404).json({ success: false, error: error.message });
@@ -337,6 +322,58 @@ export function createPortalAccessRouter(db: Database): Router {
         res.status(403).json({ success: false, error: error.message });
         return;
       }
+      next(error);
+    }
+  });
+
+  /**
+   * GET /api/family-members/:id/portal-invite-link
+   * Return the current PENDING unexpired invite link for a family member without re-issuing.
+   */
+  router.get('/family-members/:id/portal-invite-link', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const context = getUserContext(req);
+      const permissionService = new PermissionService();
+      if (!permissionService.hasPermission(context, 'clients:update')) {
+        res.status(403).json({ success: false, error: 'Permission denied: requires clients:update' });
+        return;
+      }
+
+      const familyMemberId = req.params['id']!;
+      const fmRes = await db.query<{ client_organization_id: string }>(
+        `SELECT c.organization_id as client_organization_id
+         FROM family_members fm
+         JOIN clients c ON c.id = fm.client_id AND c.deleted_at IS NULL
+         WHERE fm.id = $1`,
+        [familyMemberId]
+      );
+      const fm = fmRes.rows[0];
+      if (fm === undefined || fm.client_organization_id !== context.organizationId) {
+        res.status(404).json({ success: false, error: `Family member not found: ${familyMemberId}` });
+        return;
+      }
+
+      const auditService = new AuditService(db);
+      const portalAccessService = new PortalAccessService(db, permissionService, auditService);
+      const pending = await portalAccessService.getLatestPendingInvite('FAMILY', familyMemberId);
+      if (pending === null) {
+        res.status(404).json({ success: false, error: 'No active pending invite found' });
+        return;
+      }
+
+      const baseUrl =
+        process.env['FRONTEND_URL'] ??
+        process.env['APP_URL'] ??
+        'https://mhc-family-portal.vercel.app';
+      res.setHeader('Cache-Control', 'no-store');
+      res.json({
+        success: true,
+        data: {
+          inviteUrl: buildInviteUrl(baseUrl, pending.token),
+          inviteExpiresAt: pending.expiresAt.toISOString(),
+        },
+      });
+    } catch (error) {
       next(error);
     }
   });
@@ -446,36 +483,20 @@ export function createPortalAccessRouter(db: Database): Router {
 
       const inviteResult = await portalAccessService.inviteClient(clientId, context);
 
-      // Attempt email send
-      try {
-        const orgRes = await db.query<{ name: string }>(
-          `SELECT name FROM organizations WHERE id = $1`,
-          [context.organizationId]
-        );
-        const orgName = orgRes.rows[0]?.name ?? 'MHC Portal';
-        const inviterRes = await db.query<{ first_name: string | null; last_name: string | null }>(
-          `SELECT first_name, last_name FROM users WHERE id = $1`,
-          [context.userId]
-        );
-        const inviter = inviterRes.rows[0];
-        const inviterName = inviter
-          ? `${inviter.first_name ?? ''} ${inviter.last_name ?? ''}`.trim() || 'Administrator'
-          : 'Administrator';
+      const baseUrl =
+        process.env['FRONTEND_URL'] ??
+        process.env['APP_URL'] ??
+        'https://mhc-family-portal.vercel.app';
+      const inviteUrl = buildInviteUrl(baseUrl, inviteResult.token);
 
-        const emailService = createEmailService();
-        await emailService.sendInvitation({
-          recipientEmail: trimmedEmail,
-          recipientName: `${clientCheck.first_name ?? ''} ${clientCheck.last_name ?? ''}`.trim() || trimmedEmail,
-          inviterName,
-          organizationName: orgName,
-          invitationToken: inviteResult.token,
-          expiresAt: inviteResult.expiresAt,
-        });
-      } catch (err) {
-        console.warn('[PortalAccess] Failed to send client invitation email:', err);
-      }
-
-      res.json({ success: true, data: inviteResult });
+      res.setHeader('Cache-Control', 'no-store');
+      res.json({
+        success: true,
+        data: {
+          inviteUrl,
+          inviteExpiresAt: inviteResult.expiresAt.toISOString(),
+        },
+      });
     } catch (error) {
       if (error instanceof NotFoundError) {
         res.status(404).json({ success: false, error: error.message });
@@ -493,6 +514,55 @@ export function createPortalAccessRouter(db: Database): Router {
         res.status(403).json({ success: false, error: error.message });
         return;
       }
+      next(error);
+    }
+  });
+
+  /**
+   * GET /api/clients/:id/portal-invite-link
+   * Return the current PENDING unexpired invite link for a client without re-issuing.
+   */
+  router.get('/clients/:id/portal-invite-link', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const context = getUserContext(req);
+      const permissionService = new PermissionService();
+      if (!permissionService.hasPermission(context, 'clients:update')) {
+        res.status(403).json({ success: false, error: 'Permission denied: requires clients:update' });
+        return;
+      }
+
+      const clientId = req.params['id']!;
+      const clientRes = await db.query<{ organization_id: string }>(
+        `SELECT organization_id FROM clients WHERE id = $1 AND deleted_at IS NULL`,
+        [clientId]
+      );
+      const client = clientRes.rows[0];
+      if (client === undefined || client.organization_id !== context.organizationId) {
+        res.status(404).json({ success: false, error: `Client not found: ${clientId}` });
+        return;
+      }
+
+      const auditService = new AuditService(db);
+      const portalAccessService = new PortalAccessService(db, permissionService, auditService);
+      const pending = await portalAccessService.getLatestPendingInvite('CLIENT', clientId);
+      if (pending === null) {
+        res.status(404).json({ success: false, error: 'No active pending invite found' });
+        return;
+      }
+
+      const baseUrl =
+        process.env['FRONTEND_URL'] ??
+        process.env['APP_URL'] ??
+        'https://mhc-family-portal.vercel.app';
+      res.setHeader('Cache-Control', 'no-store');
+      res.json({
+        success: true,
+        data: {
+          inviteUrl: buildInviteUrl(baseUrl, pending.token),
+          inviteExpiresAt: pending.expiresAt.toISOString(),
+        },
+      });
+    } catch (error) {
       next(error);
     }
   });

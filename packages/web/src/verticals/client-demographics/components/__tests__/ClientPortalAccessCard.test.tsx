@@ -7,6 +7,12 @@ import { useClientPortalAccess, useInviteClientPortal, useRevokeClientPortal } f
 import type { ClientPortalAccess } from '../../types';
 
 vi.mock('@/core/hooks', () => ({ usePermissions: vi.fn() }));
+vi.mock('../../services/client-api.js', () => ({
+  useClientApi: () => ({
+    getClientPortalInviteLink: vi.fn().mockResolvedValue({ inviteUrl: 'https://example.com/accept-invite/tok' }),
+  }),
+}));
+
 vi.mock('../../hooks', () => ({
   useClientPortalAccess: vi.fn(),
   useInviteClientPortal: vi.fn(),
@@ -49,7 +55,7 @@ describe('ClientPortalAccessCard', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useInviteClientPortal).mockReturnValue({ mutate: invite, isPending: false } as unknown as ReturnType<typeof useInviteClientPortal>);
+    vi.mocked(useInviteClientPortal).mockReturnValue({ mutate: invite, mutateAsync: invite, isPending: false } as unknown as ReturnType<typeof useInviteClientPortal>);
     vi.mocked(useRevokeClientPortal).mockReturnValue({ mutateAsync: revokeAsync, isPending: false } as unknown as ReturnType<typeof useRevokeClientPortal>);
   });
 
@@ -60,19 +66,19 @@ describe('ClientPortalAccessCard', () => {
 
   it('invites when no access', () => {
     setup({});
-    fireEvent.click(screen.getByRole('button', { name: 'Invite to portal' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Generate invite link' }));
     expect(invite).toHaveBeenCalled();
   });
 
   it('disables invite without a client email', () => {
     setup({ email: '' });
-    expect(screen.getByRole('button', { name: 'Invite to portal' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Generate invite link' })).toBeDisabled();
     expect(screen.getByText('Add a client email to enable an invitation.')).toBeInTheDocument();
   });
 
   it('hides invite for discharged clients', () => {
     setup({ clientStatus: 'DISCHARGED' });
-    expect(screen.queryByRole('button', { name: 'Invite to portal' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Generate invite link' })).toBeNull();
   });
 
   it('requires a reason to revoke an active client, then calls revoke', async () => {

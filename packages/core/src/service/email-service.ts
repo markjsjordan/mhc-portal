@@ -71,6 +71,14 @@ export interface IEmailService {
   sendSubscriptionNotification(request: SendSubscriptionNotificationRequest): Promise<void>;
 }
 
+export function buildInviteUrl(baseUrl: string, token: string): string {
+  let normalizedBase = baseUrl;
+  while (normalizedBase.endsWith('/')) {
+    normalizedBase = normalizedBase.slice(0, -1);
+  }
+  return `${normalizedBase}/accept-invite/${token}`;
+}
+
 export class EmailService implements IEmailService {
   private resend: Resend | null;
   private fromAddress: string;
@@ -92,7 +100,7 @@ export class EmailService implements IEmailService {
   }
 
   async sendInvitation(request: SendInvitationEmailRequest): Promise<void> {
-    const invitationUrl = `${this.baseUrl}/accept-invitation?token=${request.invitationToken}`;
+    const invitationUrl = buildInviteUrl(this.baseUrl, request.invitationToken);
     const expiresInHours = Math.ceil((request.expiresAt.getTime() - Date.now()) / (1000 * 60 * 60));
 
     const html = this.generateInvitationEmail({

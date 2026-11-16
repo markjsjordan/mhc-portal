@@ -11,7 +11,7 @@ import {
   PermissionService,
   AuditService,
   PortalAccessService,
-  createEmailService,
+  buildInviteUrl,
   NotFoundError,
   ValidationError,
   ConflictError,
@@ -746,37 +746,22 @@ export function createCaregiverRouter(db: Database): Router {
 
       const inviteResult = await portalAccessService.inviteCaregiver(caregiverId, context);
 
-      // Attempt to send email
-      try {
-        const orgRes = await db.query<{ name: string }>(
-          `SELECT name FROM organizations WHERE id = $1`,
-          [context.organizationId]
-        );
-        const orgName = orgRes.rows[0]?.name ?? 'MHC Portal';
-        const inviterRes = await db.query<{ first_name: string | null; last_name: string | null }>(
-          `SELECT first_name, last_name FROM users WHERE id = $1`,
-          [context.userId]
-        );
-        const inviter = inviterRes.rows[0];
-        const inviterName = inviter
-          ? `${inviter.first_name ?? ''} ${inviter.last_name ?? ''}`.trim() || 'Administrator'
-          : 'Administrator';
-
-        const emailService = createEmailService();
-        await emailService.sendInvitation({
-          recipientEmail: trimmedEmail,
-          recipientName: `${cgCheck.first_name ?? ''} ${cgCheck.last_name ?? ''}`.trim() || trimmedEmail,
-          inviterName,
-          organizationName: orgName,
-          invitationToken: inviteResult.token,
-          expiresAt: inviteResult.expiresAt,
-        });
-      } catch (err) {
-        console.warn('[PortalAccess] Failed to send invitation email:', err);
-      }
+      const baseUrl =
+        process.env['FRONTEND_URL'] ??
+        process.env['APP_URL'] ??
+        'https://mhc-family-portal.vercel.app';
+      const inviteUrl = buildInviteUrl(baseUrl, inviteResult.token);
 
       const summary = await getCaregiverPortalSummary(caregiverId, true);
-      res.json({ success: true, data: summary });
+      res.setHeader('Cache-Control', 'no-store');
+      res.json({
+        success: true,
+        data: {
+          ...summary,
+          inviteUrl,
+          inviteExpiresAt: inviteResult.expiresAt.toISOString(),
+        },
+      });
     } catch (error) {
       if (error instanceof NotFoundError) {
         res.status(404).json({ success: false, error: error.message });
@@ -794,6 +779,54 @@ export function createCaregiverRouter(db: Database): Router {
         res.status(403).json({ success: false, error: error.message });
         return;
       }
+      next(error);
+    }
+  });
+
+  /**
+   * GET /api/caregivers/:id/portal-invite-link
+   * Return the current PENDING unexpired invite link for a caregiver without re-issuing.
+   */
+  router.get('/:id/portal-invite-link', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const context = getUserContext(req);
+      const permissionService = new PermissionService();
+      if (!permissionService.hasPermission(context, 'caregivers:update')) {
+        res.status(403).json({ success: false, error: 'Permission denied: requires caregivers:update' });
+        return;
+      }
+
+      const caregiverId = req.params['id']!;
+      const cgRes = await db.query<{ id: string }>(
+        `SELECT id FROM caregivers WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL`,
+        [caregiverId, context.organizationId]
+      );
+      if (cgRes.rows[0] === undefined) {
+        res.status(404).json({ success: false, error: `Caregiver not found: ${caregiverId}` });
+        return;
+      }
+
+      const auditService = new AuditService(db);
+      const portalAccessService = new PortalAccessService(db, permissionService, auditService);
+      const pending = await portalAccessService.getLatestPendingInvite('CAREGIVER', caregiverId);
+      if (pending === null) {
+        res.status(404).json({ success: false, error: 'No active pending invite found' });
+        return;
+      }
+
+      const baseUrl =
+        process.env['FRONTEND_URL'] ??
+        process.env['APP_URL'] ??
+        'https://mhc-family-portal.vercel.app';
+      res.setHeader('Cache-Control', 'no-store');
+      res.json({
+        success: true,
+        data: {
+          inviteUrl: buildInviteUrl(baseUrl, pending.token),
+          inviteExpiresAt: pending.expiresAt.toISOString(),
+        },
+      });
+    } catch (error) {
       next(error);
     }
   });

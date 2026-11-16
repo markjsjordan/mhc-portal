@@ -14,6 +14,12 @@ vi.mock('@/core/hooks', () => ({
   usePermissions: vi.fn(),
 }));
 
+vi.mock('../../services/client-api.js', () => ({
+  useClientApi: () => ({
+    getFamilyPortalInviteLink: vi.fn().mockResolvedValue({ inviteUrl: 'https://example.com/accept-invite/tok' }),
+  }),
+}));
+
 vi.mock('../../hooks', () => ({
   useFamilyPortalAccess: vi.fn(),
   useInviteFamilyPortal: vi.fn(),
@@ -128,8 +134,8 @@ describe('FamilyPortalAccessCard', () => {
     expect(screen.getByTestId('family-status-fm-invited')).toHaveTextContent('Invitation pending');
     expect(screen.getByTestId('family-status-fm-active')).toHaveTextContent('Portal active');
 
-    expect(screen.getByRole('button', { name: /invite to portal/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /resend invite/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /generate invite link/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /regenerate link/i })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /revoke access/i })).toHaveLength(2);
   });
 
@@ -223,7 +229,7 @@ describe('FamilyPortalAccessCard', () => {
     renderWithQueryClient(<FamilyPortalAccessCard clientId="c-1" />);
 
     expect(screen.queryByRole('button', { name: /revoke access/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /invite to portal/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /resend invite/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /generate invite link/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /regenerate link/i })).not.toBeInTheDocument();
   });
 });
