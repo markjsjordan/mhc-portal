@@ -18,7 +18,50 @@ import {
   PermissionError,
   UUID,
   isValidUUID,
+  buildInvitationUrl,
 } from '@folkcare/core';
+
+const portalInviteBodySchema = z.object({
+  sendEmail: z.boolean().optional().default(true),
+});
+
+async function sendCaregiverInviteEmail(
+  db: Database,
+  organizationId: string | undefined,
+  userId: string,
+  recipientEmail: string,
+  recipientName: string,
+  token: string,
+  expiresAt: Date
+): Promise<void> {
+  try {
+    const orgRes = await db.query<{ name: string }>(
+      `SELECT name FROM organizations WHERE id = $1`,
+      [organizationId]
+    );
+    const orgName = orgRes.rows[0]?.name ?? 'MHC Portal';
+    const inviterRes = await db.query<{ first_name: string | null; last_name: string | null }>(
+      `SELECT first_name, last_name FROM users WHERE id = $1`,
+      [userId]
+    );
+    const inviter = inviterRes.rows[0];
+    const inviterName = inviter
+      ? `${inviter.first_name ?? ''} ${inviter.last_name ?? ''}`.trim() || 'Administrator'
+      : 'Administrator';
+
+    const emailService = createEmailService();
+    await emailService.sendInvitation({
+      recipientEmail,
+      recipientName,
+      inviterName,
+      organizationName: orgName,
+      invitationToken: token,
+      expiresAt,
+    });
+  } catch (err) {
+    console.warn('[PortalAccess] Failed to send invitation email:', err);
+  }
+}
 import { 
   CaregiverService,
   CaregiverAvailabilityService,
@@ -754,27 +797,37 @@ export function createCaregiverRouter(db: Database): Router {
         return;
       }
 
+      const { sendEmail } = portalInviteBodySchema.parse(req.body ?? {});
       const auditService = new AuditService(db);
       const portalAccessService = new PortalAccessService(db, permissionService, auditService);
 
       const inviteResult = await portalAccessService.inviteCaregiver(caregiverId, context);
 
-      const emailDelivery = await portalAccessService.sendPortalInvitationEmail({
-        targetType: 'CAREGIVER',
-        targetId: caregiverId,
-        recipientEmail: trimmedEmail,
-        recipientName: `${cgCheck.first_name ?? ''} ${cgCheck.last_name ?? ''}`.trim() || trimmedEmail,
-        invitationToken: inviteResult.token,
-        expiresAt: inviteResult.expiresAt,
-        context,
-        emailService: createEmailService(),
-      });
+      const emailDelivery = sendEmail
+        ? await portalAccessService.sendPortalInvitationEmail({
+            targetType: 'CAREGIVER',
+            targetId: caregiverId,
+            recipientEmail: trimmedEmail,
+            recipientName: `${cgCheck.first_name ?? ''} ${cgCheck.last_name ?? ''}`.trim() || trimmedEmail,
+            invitationToken: inviteResult.token,
+            expiresAt: inviteResult.expiresAt,
+            context,
+            emailService: createEmailService(),
+          })
+        : {
+            emailStatus: 'SKIPPED' as const,
+            emailError: null,
+            emailAttemptedAt: null,
+          };
 
+      const inviteUrl = buildInvitationUrl(inviteResult.token);
       const summary = await getCaregiverPortalSummary(caregiverId, true);
+      res.setHeader('Cache-Control', 'no-store');
       res.json({
         success: true,
         data: {
           ...summary,
+          inviteUrl,
           emailStatus: emailDelivery.emailStatus,
           emailError: emailDelivery.emailError,
           emailAttemptedAt: emailDelivery.emailAttemptedAt,

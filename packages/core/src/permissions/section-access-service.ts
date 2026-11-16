@@ -113,6 +113,15 @@ export class SectionAccessService {
   }
 
   /**
+   * Return true if the override would grant more access than the role default.
+   */
+  exceedsDefault(def: SectionPermission, override: SectionAccessOverride): boolean {
+    if (override === 'NONE') return false;
+    if (override === 'READ') return !def.read;
+    return !(def.read && def.write);
+  }
+
+  /**
    * Calculate effective section permissions combining defaults and overrides.
    */
   async getEffective(ctx: UserContext): Promise<EffectiveSectionAccess> {
@@ -131,17 +140,13 @@ export class SectionAccessService {
       if (override !== undefined) {
         overrideList.push({ section, access: override });
       }
+      const def = defaultsMap.get(section) ?? { read: false, write: false };
       if (override === 'NONE') {
         effectiveEntries.push([section, { read: false, write: false }]);
       } else if (override === 'READ') {
-        effectiveEntries.push([section, { read: true, write: false }]);
-      } else if (override === 'WRITE') {
-        effectiveEntries.push([section, { read: true, write: true }]);
+        effectiveEntries.push([section, { read: def.read, write: false }]);
       } else {
-        effectiveEntries.push([
-          section,
-          defaultsMap.get(section) ?? { read: false, write: false },
-        ]);
+        effectiveEntries.push([section, def]);
       }
     }
 

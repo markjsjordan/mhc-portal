@@ -724,6 +724,12 @@ export class ScheduleRepository {
     return row as ServicePattern;
   }
 
+  private toDateOnlyString(val: unknown): string {
+    if (typeof val === 'string') return val.slice(0, 10);
+    if (val instanceof Date && !Number.isNaN(val.getTime())) return val.toISOString().slice(0, 10);
+    return String(val ?? '').slice(0, 10);
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private mapRowToVisit(row: any): Visit {
     return {
@@ -737,7 +743,7 @@ export class ScheduleRepository {
       visitType: row.visit_type,
       serviceTypeId: row.service_type_id,
       serviceTypeName: row.service_type_name,
-      scheduledDate: row.scheduled_date,
+      scheduledDate: this.toDateOnlyString(row.scheduled_date),
       scheduledStartTime: row.scheduled_start_time,
       scheduledEndTime: row.scheduled_end_time,
       scheduledDuration: row.scheduled_duration,

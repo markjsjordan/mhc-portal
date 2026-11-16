@@ -586,7 +586,12 @@ export class VisitPatternRepository {
       visitType: row.visit_type,
       serviceTypeId: row.service_type_id,
       serviceTypeName: row.service_type_name,
-      scheduledDate: new Date(row.scheduled_date),
+      scheduledDate:
+        typeof row.scheduled_date === 'string'
+          ? row.scheduled_date.slice(0, 10)
+          : row.scheduled_date instanceof Date && !Number.isNaN(row.scheduled_date.getTime())
+            ? row.scheduled_date.toISOString().slice(0, 10)
+            : String(row.scheduled_date ?? '').slice(0, 10),
       scheduledStartTime: row.scheduled_start_time,
       scheduledEndTime: row.scheduled_end_time,
       scheduledDuration: Number(row.scheduled_duration),

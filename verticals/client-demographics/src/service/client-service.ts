@@ -160,9 +160,39 @@ export class ClientService {
     if (input.primaryPhone !== undefined) client.primaryPhone = input.primaryPhone;
     if (input.email !== undefined) client.email = input.email;
     if (input.referralSource !== undefined) client.referralSource = input.referralSource;
+    if (input.primaryPhysician !== undefined) client.primaryPhysician = input.primaryPhysician;
+    if (input.insurance !== undefined) client.insurance = input.insurance;
+    if (input.authorizationInfo !== undefined) client.authorizationInfo = input.authorizationInfo;
+    if (input.assessmentData !== undefined) client.assessmentData = input.assessmentData;
+    if (input.carePlanSummary !== undefined) client.carePlanSummary = input.carePlanSummary;
+    if (input.visitSchedule !== undefined) client.visitSchedule = input.visitSchedule;
+    if (input.caregiverAssignment !== undefined) client.caregiverAssignment = input.caregiverAssignment;
 
     // Create in database
     const created = await this.repository.create(client, context);
+
+    // Persist consents & signature if provided (Lane B1 compliance)
+    if (input.consents !== undefined && created.id) {
+      created.consents = await this.repository.upsertConsents(
+        created.id,
+        created.organizationId,
+        input.consents,
+        context.userId
+      );
+      if (this.auditService) {
+        try {
+          await this.auditService.logAccess({
+            clientId: created.id,
+            accessedBy: context.userId,
+            accessType: 'UPDATE',
+            accessTimestamp: new Date(),
+            accessReason: 'Client intake consents recorded',
+          });
+        } catch (error) {
+          console.error('Failed to write consent audit log:', error);
+        }
+      }
+    }
 
     // Invalidate organization's client list cache
     if (created.id) {
@@ -197,6 +227,7 @@ export class ClientService {
         if (!result) {
           throw new NotFoundError(`Client not found: ${id}`);
         }
+        result.consents = await this.repository.getConsentsByClientId?.(id);
         return result;
       },
       CacheTTL.MEDIUM
@@ -312,8 +343,33 @@ export class ClientService {
       }
     }
 
-    // Apply updates
-    const updated = await this.repository.update(id, updates, context);
+    // Apply updates (consents are stored in client_consents, not clients table)
+    const { consents, ...clientUpdates } = updates;
+    const updated = await this.repository.update(id, clientUpdates, context);
+
+    if (consents !== undefined) {
+      updated.consents = await this.repository.upsertConsents(
+        id,
+        existing.organizationId,
+        consents,
+        context.userId
+      );
+      if (this.auditService) {
+        try {
+          await this.auditService.logAccess({
+            clientId: id,
+            accessedBy: context.userId,
+            accessType: 'UPDATE',
+            accessTimestamp: new Date(),
+            accessReason: 'Client intake consents recorded',
+          });
+        } catch (error) {
+          console.error('Failed to write consent audit log:', error);
+        }
+      }
+    } else {
+      updated.consents = await this.repository.getConsentsByClientId?.(id);
+    }
 
     if (
       updates.status &&

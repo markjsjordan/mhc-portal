@@ -54,17 +54,19 @@ export function useInviteCaregiverPortal(caregiverId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => caregiverApi.invitePortal(caregiverId!),
-    onSuccess: (data) => {
+    mutationFn: (options?: { sendEmail?: boolean }) => caregiverApi.invitePortal(caregiverId!, options),
+    onSuccess: (data, variables) => {
       void queryClient.invalidateQueries({ queryKey: ['caregiver-portal-access', caregiverId] });
-      if (data?.emailStatus === 'FAILED' || data?.emailStatus === 'SKIPPED') {
-        if (typeof toast.warning === 'function') {
-          toast.warning('Invitation created, but the email could not be sent.');
+      if (variables?.sendEmail !== false) {
+        if (data?.emailStatus === 'FAILED' || data?.emailStatus === 'SKIPPED') {
+          if (typeof toast.warning === 'function') {
+            toast.warning('Invitation created, but the email could not be sent.');
+          } else {
+            toast.error('Invitation created, but the email could not be sent.');
+          }
         } else {
-          toast.error('Invitation created, but the email could not be sent.');
+          toast.success('Invitation sent successfully');
         }
-      } else {
-        toast.success('Invitation sent successfully');
       }
     },
     onError: (error: Error) => {

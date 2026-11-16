@@ -115,17 +115,24 @@ export const useInviteFamilyPortal = (clientId: string | undefined) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (familyMemberId: string) => clientApi.inviteFamilyPortal(familyMemberId),
-    onSuccess: (data) => {
+    mutationFn: (input: string | { familyMemberId: string; sendEmail?: boolean }) => {
+      const familyMemberId = typeof input === 'string' ? input : input.familyMemberId;
+      const options = typeof input === 'string' ? undefined : { sendEmail: input.sendEmail };
+      return clientApi.inviteFamilyPortal(familyMemberId, options);
+    },
+    onSuccess: (data, variables) => {
       void queryClient.invalidateQueries({ queryKey: ['family-portal-access', clientId] });
-      if (data?.emailStatus === 'FAILED' || data?.emailStatus === 'SKIPPED') {
-        if (typeof toast.warning === 'function') {
-          toast.warning('Invitation created, but the email could not be sent.');
+      const sendEmail = typeof variables === 'string' ? true : variables.sendEmail !== false;
+      if (sendEmail) {
+        if (data?.emailStatus === 'FAILED' || data?.emailStatus === 'SKIPPED') {
+          if (typeof toast.warning === 'function') {
+            toast.warning('Invitation created, but the email could not be sent.');
+          } else {
+            toast.error('Invitation created, but the email could not be sent.');
+          }
         } else {
-          toast.error('Invitation created, but the email could not be sent.');
+          toast.success('Invitation sent successfully');
         }
-      } else {
-        toast.success('Invitation sent successfully');
       }
     },
     onError: (error: Error) => {
