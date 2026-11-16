@@ -263,6 +263,17 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({ 
     setIsRevokeDialogOpen(true);
   };
 
+  const handleCopyInviteLink = async (familyMemberId: string) => {
+    const res = await inviteMutation.mutateAsync({
+      familyMemberId,
+      sendEmail: false,
+    });
+    if (res.inviteUrl) {
+      await navigator.clipboard.writeText(res.inviteUrl);
+      toast.success('Invite link copied to clipboard');
+    }
+  };
+
   const handleConfirmRevoke = async () => {
     if (!selectedMember) return;
     const trimmed = revokeReason.trim();
@@ -399,16 +410,7 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({ 
                               variant="outline"
                               size="sm"
                               onClick={() => {
-                                void (async () => {
-                                  const res = await inviteMutation.mutateAsync({
-                                    familyMemberId: member.familyMemberId,
-                                    sendEmail: false,
-                                  });
-                                  if (res.inviteUrl) {
-                                    await navigator.clipboard.writeText(res.inviteUrl);
-                                    toast.success('Invite link copied to clipboard');
-                                  }
-                                })();
+                                void handleCopyInviteLink(member.familyMemberId);
                               }}
                               disabled={inviteMutation.isPending}
                             >
