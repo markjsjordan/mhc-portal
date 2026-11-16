@@ -24,44 +24,6 @@ import {
 const portalInviteBodySchema = z.object({
   sendEmail: z.boolean().optional().default(true),
 });
-
-async function sendCaregiverInviteEmail(
-  db: Database,
-  organizationId: string | undefined,
-  userId: string,
-  recipientEmail: string,
-  recipientName: string,
-  token: string,
-  expiresAt: Date
-): Promise<void> {
-  try {
-    const orgRes = await db.query<{ name: string }>(
-      `SELECT name FROM organizations WHERE id = $1`,
-      [organizationId]
-    );
-    const orgName = orgRes.rows[0]?.name ?? 'MHC Portal';
-    const inviterRes = await db.query<{ first_name: string | null; last_name: string | null }>(
-      `SELECT first_name, last_name FROM users WHERE id = $1`,
-      [userId]
-    );
-    const inviter = inviterRes.rows[0];
-    const inviterName = inviter
-      ? `${inviter.first_name ?? ''} ${inviter.last_name ?? ''}`.trim() || 'Administrator'
-      : 'Administrator';
-
-    const emailService = createEmailService();
-    await emailService.sendInvitation({
-      recipientEmail,
-      recipientName,
-      inviterName,
-      organizationName: orgName,
-      invitationToken: token,
-      expiresAt,
-    });
-  } catch (err) {
-    console.warn('[PortalAccess] Failed to send invitation email:', err);
-  }
-}
 import { 
   CaregiverService,
   CaregiverAvailabilityService,

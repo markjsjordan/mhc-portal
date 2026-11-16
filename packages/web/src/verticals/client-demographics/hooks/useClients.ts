@@ -124,7 +124,7 @@ export const useInviteFamilyPortal = (clientId: string | undefined) => {
       void queryClient.invalidateQueries({ queryKey: ['family-portal-access', clientId] });
       const sendEmail = typeof variables === 'string' ? true : variables.sendEmail !== false;
       if (sendEmail) {
-        if (data?.emailStatus === 'FAILED' || data?.emailStatus === 'SKIPPED') {
+        if (data.emailStatus === 'FAILED' || data.emailStatus === 'SKIPPED') {
           if (typeof toast.warning === 'function') {
             toast.warning('Invitation created, but the email could not be sent.');
           } else {

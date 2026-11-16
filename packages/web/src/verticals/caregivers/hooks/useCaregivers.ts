@@ -58,7 +58,7 @@ export function useInviteCaregiverPortal(caregiverId: string | undefined) {
     onSuccess: (data, variables) => {
       void queryClient.invalidateQueries({ queryKey: ['caregiver-portal-access', caregiverId] });
       if (variables?.sendEmail !== false) {
-        if (data?.emailStatus === 'FAILED' || data?.emailStatus === 'SKIPPED') {
+        if (data.emailStatus === 'FAILED' || data.emailStatus === 'SKIPPED') {
           if (typeof toast.warning === 'function') {
             toast.warning('Invitation created, but the email could not be sent.');
           } else {
