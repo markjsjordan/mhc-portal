@@ -1,6 +1,15 @@
 import type { ApiClient } from '@/core/services';
 import type { PaginatedResult, SearchParams } from '@/core/types';
-import type { Client, CreateClientInput, UpdateClientInput, ClientSearchFilters, FamilyPortalAccessRow, ClientPortalAccess } from '../types';
+import type {
+  Client,
+  CreateClientInput,
+  UpdateClientInput,
+  ClientSearchFilters,
+  FamilyPortalAccessRow,
+  ClientPortalAccess,
+  CreateFamilyMemberInput,
+  UpdateFamilyMemberInput,
+} from '../types';
 
 export interface DashboardClient {
   id: string;
@@ -74,6 +83,9 @@ export interface ClientApiService {
   deleteClient(id: string): Promise<void>;
   getBranches(): Promise<Array<{ id: string; name: string; code?: string; status?: string }>>;
   getFamilyPortalAccess(clientId: string): Promise<FamilyPortalAccessRow[]>;
+  createFamilyMember(clientId: string, input: CreateFamilyMemberInput): Promise<FamilyPortalAccessRow>;
+  updateFamilyMember(familyMemberId: string, input: UpdateFamilyMemberInput): Promise<FamilyPortalAccessRow>;
+  deleteFamilyMember(familyMemberId: string): Promise<void>;
   inviteFamilyPortal(familyMemberId: string): Promise<FamilyPortalAccessRow>;
   revokeFamilyPortal(familyMemberId: string, reason: string): Promise<FamilyPortalAccessRow>;
   getClientPortalAccess(clientId: string): Promise<ClientPortalAccess>;
@@ -184,6 +196,32 @@ export const createClientApiService = (apiClient: ApiClient): ClientApiService =
         return response;
       }
       return [];
+    },
+
+    async createFamilyMember(clientId: string, input: CreateFamilyMemberInput): Promise<FamilyPortalAccessRow> {
+      const response = await apiClient.post<{ success?: boolean; data?: FamilyPortalAccessRow } | FamilyPortalAccessRow>(
+        `/api/clients/${clientId}/family-members`,
+        input
+      );
+      if (response && typeof response === 'object' && 'data' in response && response.data) {
+        return response.data;
+      }
+      return response as FamilyPortalAccessRow;
+    },
+
+    async updateFamilyMember(familyMemberId: string, input: UpdateFamilyMemberInput): Promise<FamilyPortalAccessRow> {
+      const response = await apiClient.patch<{ success?: boolean; data?: FamilyPortalAccessRow } | FamilyPortalAccessRow>(
+        `/api/family-members/${familyMemberId}`,
+        input
+      );
+      if (response && typeof response === 'object' && 'data' in response && response.data) {
+        return response.data;
+      }
+      return response as FamilyPortalAccessRow;
+    },
+
+    async deleteFamilyMember(familyMemberId: string): Promise<void> {
+      await apiClient.delete(`/api/family-members/${familyMemberId}`);
     },
 
     async inviteFamilyPortal(familyMemberId: string): Promise<FamilyPortalAccessRow> {

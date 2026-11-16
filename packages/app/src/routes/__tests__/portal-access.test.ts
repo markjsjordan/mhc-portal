@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import express, { Express } from 'express';
 import request from 'supertest';
 import type { Database } from '@folkcare/core';
+import { AuditService } from '@folkcare/core';
 import { createCaregiverRouter } from '../caregivers.js';
 import { createPortalAccessRouter } from '../portal-access.js';
 import { createOrganizationRouter } from '../organizations.js';
@@ -51,6 +52,7 @@ describe('Portal Access API Routes', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(AuditService.prototype, 'logEvent').mockResolvedValue(undefined as never);
     mockUserContext = {
       userId: 'user-admin-1',
       organizationId: 'org-1',
@@ -289,6 +291,240 @@ describe('Portal Access API Routes', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
+    });
+
+    it('POST /api/clients/:clientId/family-members creates family member with default VIEW_BASIC and consent', async () => {
+      mockDb.query
+        // 1. client lookup
+        .mockResolvedValueOnce({
+          rows: [{ id: 'client-1', organization_id: 'org-1', branch_id: 'branch-1', status: 'ACTIVE' }],
+        })
+        // 2. duplicate check
+        .mockResolvedValueOnce({ rows: [] })
+        // 3. insert family_members
+        .mockResolvedValueOnce({ rows: [{ id: 'fm-new-1' }] })
+        // 4. insert family_consent
+        .mockResolvedValueOnce({ rows: [{ id: 'consent-1' }] })
+        // 5. getFamilyMemberPortalRow
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'fm-new-1',
+              first_name: 'Bob',
+              last_name: 'Smith',
+              relationship: 'SPOUSE',
+              relationship_note: null,
+              email: 'bob@example.com',
+              phone_number: '',
+              is_primary_contact: false,
+              portal_access_level: 'VIEW_BASIC',
+              portal_access_status: 'NONE',
+              portal_invited_at: null,
+              portal_activated_at: null,
+              portal_revoked_at: null,
+              portal_revoked_reason: null,
+              user_id: null,
+              last_login_at: null,
+            },
+          ],
+        })
+        // 8. getLatestPendingInviteExpiresAt
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValue({ rows: [] });
+
+      const res = await request(app)
+        .post('/api/clients/client-1/family-members')
+        .send({
+          firstName: 'Bob',
+          lastName: 'Smith',
+          relationship: 'SPOUSE',
+          email: 'BOB@EXAMPLE.COM',
+          consent: {
+            consentGiven: true,
+            authorizedBy: 'CLIENT',
+            authorizerName: 'John Smith',
+          },
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toMatchObject({
+        familyMemberId: 'fm-new-1',
+        firstName: 'Bob',
+        lastName: 'Smith',
+        relationship: 'SPOUSE',
+        email: 'bob@example.com',
+        portalAccessLevel: 'VIEW_BASIC',
+        status: 'NONE',
+      });
+    });
+
+    it('POST /api/clients/:clientId/family-members returns 400 for invalid email, missing consent, or unconfirmed elevated access', async () => {
+      const badEmail = await request(app)
+        .post('/api/clients/client-1/family-members')
+        .send({
+          firstName: 'Bob',
+          lastName: 'Smith',
+          relationship: 'SPOUSE',
+          email: 'not-an-email',
+          consent: { consentGiven: true, authorizedBy: 'CLIENT', authorizerName: 'John Smith' },
+        });
+      expect(badEmail.status).toBe(400);
+
+      const noConsent = await request(app)
+        .post('/api/clients/client-1/family-members')
+        .send({
+          firstName: 'Bob',
+          lastName: 'Smith',
+          relationship: 'SPOUSE',
+          email: 'bob@example.com',
+          consent: { consentGiven: false, authorizedBy: 'CLIENT', authorizerName: 'John Smith' },
+        });
+      expect(noConsent.status).toBe(400);
+
+      const unconfirmedElevated = await request(app)
+        .post('/api/clients/client-1/family-members')
+        .send({
+          firstName: 'Bob',
+          lastName: 'Smith',
+          relationship: 'SPOUSE',
+          email: 'bob@example.com',
+          portalAccessLevel: 'VIEW_MEDICAL',
+          confirmElevatedAccess: false,
+          consent: { consentGiven: true, authorizedBy: 'CLIENT', authorizerName: 'John Smith' },
+        });
+      expect(unconfirmedElevated.status).toBe(400);
+    });
+
+    it('POST /api/clients/:clientId/family-members returns 403 when lacking clients:update', async () => {
+      mockUserContext.roles = [];
+      mockUserContext.permissions = ['clients:read'];
+      const res = await request(app)
+        .post('/api/clients/client-1/family-members')
+        .send({});
+      expect(res.status).toBe(403);
+    });
+
+    it('POST /api/clients/:clientId/family-members returns 404 for wrong-org client', async () => {
+      mockDb.query.mockResolvedValueOnce({
+        rows: [{ id: 'client-1', organization_id: 'other-org', branch_id: 'b-1', status: 'ACTIVE' }],
+      });
+      const res = await request(app)
+        .post('/api/clients/client-1/family-members')
+        .send({
+          firstName: 'Bob',
+          lastName: 'Smith',
+          relationship: 'SPOUSE',
+          email: 'bob@example.com',
+          consent: { consentGiven: true, authorizedBy: 'CLIENT', authorizerName: 'John Smith' },
+        });
+      expect(res.status).toBe(404);
+    });
+
+    it('POST /api/clients/:clientId/family-members returns 409 for DISCHARGED client', async () => {
+      mockDb.query.mockResolvedValueOnce({
+        rows: [{ id: 'client-1', organization_id: 'org-1', branch_id: 'b-1', status: 'DISCHARGED' }],
+      });
+      const res = await request(app)
+        .post('/api/clients/client-1/family-members')
+        .send({
+          firstName: 'Bob',
+          lastName: 'Smith',
+          relationship: 'SPOUSE',
+          email: 'bob@example.com',
+          consent: { consentGiven: true, authorizedBy: 'CLIENT', authorizerName: 'John Smith' },
+        });
+      expect(res.status).toBe(409);
+    });
+
+    it('POST /api/clients/:clientId/family-members returns 409 for duplicate email on same client', async () => {
+      mockDb.query
+        .mockResolvedValueOnce({
+          rows: [{ id: 'client-1', organization_id: 'org-1', branch_id: 'b-1', status: 'ACTIVE' }],
+        })
+        .mockResolvedValueOnce({ rows: [{ id: 'existing-fm', status: 'ACTIVE' }] });
+      const res = await request(app)
+        .post('/api/clients/client-1/family-members')
+        .send({
+          firstName: 'Bob',
+          lastName: 'Smith',
+          relationship: 'SPOUSE',
+          email: 'bob@example.com',
+          consent: { consentGiven: true, authorizedBy: 'CLIENT', authorizerName: 'John Smith' },
+        });
+      expect(res.status).toBe(409);
+    });
+
+    it('PATCH /api/family-members/:id updates portalAccessLevel and returns 400 for unconfirmed elevated access', async () => {
+      const badRes = await request(app)
+        .patch('/api/family-members/fm-1')
+        .send({ portalAccessLevel: 'FULL_ACCESS', confirmElevatedAccess: false });
+      expect(badRes.status).toBe(400);
+
+      mockDb.query
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'fm-1',
+              client_id: 'client-1',
+              portal_access_level: 'VIEW_BASIC',
+              client_organization_id: 'org-1',
+              client_status: 'ACTIVE',
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [] }) // UPDATE
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'fm-1',
+              first_name: 'Jane',
+              last_name: 'Doe',
+              relationship: 'CHILD',
+              relationship_note: null,
+              email: 'jane@example.com',
+              phone_number: '',
+              is_primary_contact: false,
+              portal_access_level: 'VIEW_DETAILED',
+              portal_access_status: 'ACTIVE',
+              portal_invited_at: null,
+              portal_activated_at: null,
+              portal_revoked_at: null,
+              portal_revoked_reason: null,
+              user_id: null,
+              last_login_at: null,
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValue({ rows: [] });
+
+      const okRes = await request(app)
+        .patch('/api/family-members/fm-1')
+        .send({ portalAccessLevel: 'VIEW_DETAILED' });
+      expect(okRes.status).toBe(200);
+      expect(okRes.body.data.portalAccessLevel).toBe('VIEW_DETAILED');
+    });
+
+    it('DELETE /api/family-members/:id soft-deletes family member and revokes consent', async () => {
+      mockDb.query
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'fm-1',
+              client_id: 'client-1',
+              portal_access_status: 'NONE',
+              client_organization_id: 'org-1',
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [] }) // UPDATE family_members status = INACTIVE
+        .mockResolvedValueOnce({ rows: [] }) // UPDATE family_consent revoked_at
+        .mockResolvedValue({ rows: [] });
+
+      const res = await request(app).delete('/api/family-members/fm-1');
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
     });
   });
 
