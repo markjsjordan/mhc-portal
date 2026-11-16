@@ -150,8 +150,19 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({ 
                   </TableCell>
                   <TableCell>
                     <Badge variant={badge.variant} data-testid={`family-status-${member.familyMemberId}`}>
-                      {badge.label}
+                      {status === 'INVITED' && (member.emailStatus === 'FAILED' || member.emailStatus === 'SKIPPED')
+                        ? 'Email not sent'
+                        : badge.label}
                     </Badge>
+                    {status === 'INVITED' && (member.emailStatus === 'FAILED' || member.emailStatus === 'SKIPPED') && (
+                      <div
+                        role="alert"
+                        data-testid="portal-invite-email-warning"
+                        className="mt-1 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-900"
+                      >
+                        Invitation created but the email could not be sent. Resend or copy the link.
+                      </div>
+                    )}
                     {status === 'INVITED' && member.inviteExpiresAt && (
                       <div className="text-[10px] text-gray-400 mt-0.5">
                         Exp: {formatDate(member.inviteExpiresAt)}

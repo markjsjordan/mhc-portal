@@ -55,20 +55,43 @@ export interface SendSubscriptionNotificationRequest {
   details: Record<string, unknown>;
 }
 
+export type EmailErrorCode =
+  | 'EMAIL_NOT_CONFIGURED'
+  | 'INVALID_RECIPIENT'
+  | 'DOMAIN_NOT_VERIFIED'
+  | 'RATE_LIMITED'
+  | 'PROVIDER_TRANSIENT_ERROR'
+  | 'PROVIDER_REJECTED'
+  | 'EMAIL_BOUNCED'
+  | 'EMAIL_COMPLAINED'
+  | 'UNKNOWN_EMAIL_ERROR';
+
+export type InviteEmailStatus = 'SENT' | 'FAILED' | 'SKIPPED' | 'BOUNCED' | 'COMPLAINED';
+
+export interface SendEmailResult {
+  sent: boolean;
+  status: 'SENT' | 'FAILED' | 'SKIPPED';
+  messageId?: string;
+  reason?: EmailErrorCode;
+  error?: EmailErrorCode;
+}
+
 export interface EmailServiceConfig {
   apiKey: string;
   fromAddress?: string;
   fromName?: string;
   replyTo?: string;
   baseUrl?: string;
+  retryDelayMs?: number;
+  sleepFn?: (ms: number) => Promise<void>;
 }
 
 export interface IEmailService {
-  sendInvitation(request: SendInvitationEmailRequest): Promise<void>;
-  sendWelcome(request: SendWelcomeEmailRequest): Promise<void>;
-  sendPasswordReset(request: SendPasswordResetEmailRequest): Promise<void>;
-  sendEmailVerification(request: SendEmailVerificationRequest): Promise<void>;
-  sendSubscriptionNotification(request: SendSubscriptionNotificationRequest): Promise<void>;
+  sendInvitation(request: SendInvitationEmailRequest): Promise<SendEmailResult>;
+  sendWelcome(request: SendWelcomeEmailRequest): Promise<SendEmailResult>;
+  sendPasswordReset(request: SendPasswordResetEmailRequest): Promise<SendEmailResult>;
+  sendEmailVerification(request: SendEmailVerificationRequest): Promise<SendEmailResult>;
+  sendSubscriptionNotification(request: SendSubscriptionNotificationRequest): Promise<SendEmailResult>;
 }
 
 export class EmailService implements IEmailService {
@@ -77,6 +100,8 @@ export class EmailService implements IEmailService {
   private fromName: string;
   private replyTo: string;
   private baseUrl: string;
+  private retryDelayMs: number;
+  private sleepFn: (ms: number) => Promise<void>;
 
   constructor(config: EmailServiceConfig) {
     // Initialize Resend client if API key is provided
@@ -85,13 +110,15 @@ export class EmailService implements IEmailService {
     this.fromName = config.fromName ?? 'MHC Portal';
     this.replyTo = config.replyTo ?? 'support@mhc-family-portal.vercel.app';
     this.baseUrl = config.baseUrl ?? 'https://mhc-family-portal.vercel.app';
+    this.retryDelayMs = config.retryDelayMs ?? 500;
+    this.sleepFn = config.sleepFn ?? ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)));
 
     if (this.resend === null) {
-      console.warn('[EmailService] No RESEND_API_KEY provided. Emails will be logged but not sent.');
+      console.warn('[EmailService] No RESEND_API_KEY provided. Emails will not be sent.');
     }
   }
 
-  async sendInvitation(request: SendInvitationEmailRequest): Promise<void> {
+  async sendInvitation(request: SendInvitationEmailRequest): Promise<SendEmailResult> {
     const invitationUrl = `${this.baseUrl}/accept-invitation?token=${request.invitationToken}`;
     const expiresInHours = Math.ceil((request.expiresAt.getTime() - Date.now()) / (1000 * 60 * 60));
 
@@ -103,28 +130,28 @@ export class EmailService implements IEmailService {
       expiresInHours,
     });
 
-    await this.sendEmail({
+    return this.sendEmail({
       to: request.recipientEmail,
       subject: `You've been invited to join ${request.organizationName} on MHC Portal`,
       html,
     });
   }
 
-  async sendWelcome(request: SendWelcomeEmailRequest): Promise<void> {
+  async sendWelcome(request: SendWelcomeEmailRequest): Promise<SendEmailResult> {
     const html = this.generateWelcomeEmail({
       recipientName: request.recipientName,
       organizationName: request.organizationName,
       loginUrl: `${this.baseUrl}/login`,
     });
 
-    await this.sendEmail({
+    return this.sendEmail({
       to: request.recipientEmail,
       subject: `Welcome to ${request.organizationName} on MHC Portal!`,
       html,
     });
   }
 
-  async sendPasswordReset(request: SendPasswordResetEmailRequest): Promise<void> {
+  async sendPasswordReset(request: SendPasswordResetEmailRequest): Promise<SendEmailResult> {
     const resetUrl = `${this.baseUrl}/reset-password?token=${request.resetToken}`;
     const expiresInMinutes = Math.ceil((request.expiresAt.getTime() - Date.now()) / (1000 * 60));
 
@@ -134,14 +161,14 @@ export class EmailService implements IEmailService {
       expiresInMinutes,
     });
 
-    await this.sendEmail({
+    return this.sendEmail({
       to: request.recipientEmail,
       subject: 'Reset your MHC Portal password',
       html,
     });
   }
 
-  async sendEmailVerification(request: SendEmailVerificationRequest): Promise<void> {
+  async sendEmailVerification(request: SendEmailVerificationRequest): Promise<SendEmailResult> {
     const verificationUrl = `${this.baseUrl}/verify-email?token=${request.verificationToken}`;
     const expiresInHours = Math.ceil((request.expiresAt.getTime() - Date.now()) / (1000 * 60 * 60));
 
@@ -151,14 +178,14 @@ export class EmailService implements IEmailService {
       expiresInHours,
     });
 
-    await this.sendEmail({
+    return this.sendEmail({
       to: request.recipientEmail,
       subject: 'Verify your email address for MHC Portal',
       html,
     });
   }
 
-  async sendSubscriptionNotification(request: SendSubscriptionNotificationRequest): Promise<void> {
+  async sendSubscriptionNotification(request: SendSubscriptionNotificationRequest): Promise<SendEmailResult> {
     let html: string;
     let subject: string;
 
@@ -222,25 +249,43 @@ export class EmailService implements IEmailService {
         throw new Error(`Unknown notification type: ${request.notificationType}`);
     }
 
-    await this.sendEmail({
+    return this.sendEmail({
       to: request.recipientEmail,
       subject,
       html,
     });
   }
 
-  private async sendEmail(params: { to: string; subject: string; html: string }): Promise<void> {
-    if (this.resend === null) {
-      console.log('[EmailService] Email would be sent:', {
-        to: params.to,
-        subject: params.subject,
-        from: `${this.fromName} <${this.fromAddress}>`,
-      });
-      return;
-    }
+  private classifyError(err: unknown): { code: EmailErrorCode; retryable: boolean } {
+    const obj = (typeof err === 'object' && err !== null ? err : {}) as Record<string, unknown>;
+    const statusCode = typeof obj.statusCode === 'number' ? obj.statusCode : undefined;
+    const name = typeof obj.name === 'string' ? obj.name : '';
+    const msg = typeof obj.message === 'string' ? obj.message.toLowerCase() : '';
 
+    if (statusCode === 429 || name === 'rate_limit_exceeded') {
+      return { code: 'RATE_LIMITED', retryable: true };
+    }
+    if ((statusCode !== undefined && statusCode >= 500) || name === 'application_error' || name === 'internal_server_error') {
+      return { code: 'PROVIDER_TRANSIENT_ERROR', retryable: true };
+    }
+    if (statusCode === 403 && (name === 'validation_error' || name === 'not_verified' || msg.includes('not verified'))) {
+      return { code: 'DOMAIN_NOT_VERIFIED', retryable: false };
+    }
+    if ((statusCode === 400 || statusCode === 422) && (name === 'invalid_to_address' || msg.includes('recipient'))) {
+      return { code: 'INVALID_RECIPIENT', retryable: false };
+    }
+    if (statusCode !== undefined && statusCode >= 400 && statusCode < 500) {
+      return { code: 'PROVIDER_REJECTED', retryable: false };
+    }
+    return { code: 'PROVIDER_TRANSIENT_ERROR', retryable: true };
+  }
+
+  private async attemptSend(params: { to: string; subject: string; html: string }): Promise<{
+    result?: SendEmailResult;
+    retryableError?: EmailErrorCode;
+  }> {
     try {
-      const result = await this.resend.emails.send({
+      const res = await this.resend!.emails.send({
         from: `${this.fromName} <${this.fromAddress}>`,
         to: params.to,
         subject: params.subject,
@@ -248,19 +293,62 @@ export class EmailService implements IEmailService {
         replyTo: this.replyTo,
       });
 
-      console.log('[EmailService] Email sent successfully:', {
-        to: params.to,
-        subject: params.subject,
-        messageId: result.data?.id,
-      });
-    } catch (error) {
-      console.error('[EmailService] Failed to send email:', {
-        to: params.to,
-        subject: params.subject,
-        error,
-      });
-      throw error;
+      if (res.error != null) {
+        const classified = this.classifyError(res.error);
+        return classified.retryable
+          ? { retryableError: classified.code }
+          : { result: { sent: false, status: 'FAILED', reason: classified.code, error: classified.code } };
+      }
+
+      const messageId = res.data?.id;
+      return {
+        result: {
+          sent: true,
+          status: 'SENT',
+          ...(typeof messageId === 'string' ? { messageId } : {}),
+        },
+      };
+    } catch (err) {
+      const classified = this.classifyError(err);
+      return classified.retryable
+        ? { retryableError: classified.code }
+        : { result: { sent: false, status: 'FAILED', reason: classified.code, error: classified.code } };
     }
+  }
+
+  async sendEmail(params: { to: string; subject: string; html: string }): Promise<SendEmailResult> {
+    if (this.resend === null) {
+      console.warn('[EmailService] Email skipped: RESEND_API_KEY is not configured');
+      return {
+        sent: false,
+        status: 'SKIPPED',
+        reason: 'EMAIL_NOT_CONFIGURED',
+        error: 'EMAIL_NOT_CONFIGURED',
+      };
+    }
+
+    const first = await this.attemptSend(params);
+    if (first.result !== undefined) {
+      return first.result;
+    }
+
+    if (this.retryDelayMs > 0) {
+      await this.sleepFn(this.retryDelayMs);
+    }
+
+    const second = await this.attemptSend(params);
+    if (second.result !== undefined) {
+      return second.result;
+    }
+
+    const errorCode = second.retryableError ?? first.retryableError ?? 'UNKNOWN_EMAIL_ERROR';
+    console.error('[EmailService] Failed to send email after retry:', { errorCode });
+    return {
+      sent: false,
+      status: 'FAILED',
+      reason: errorCode,
+      error: errorCode,
+    };
   }
 
   // Email template generators

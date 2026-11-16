@@ -99,7 +99,20 @@ export const ClientPortalAccessCard: React.FC<ClientPortalAccessCardProps> = ({ 
     return (
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <Badge variant={badge.variant} data-testid="client-portal-status">{badge.label}</Badge>
+          <Badge variant={badge.variant} data-testid="client-portal-status">
+            {status === 'INVITED' && (data.emailStatus === 'FAILED' || data.emailStatus === 'SKIPPED')
+              ? 'Email not sent'
+              : badge.label}
+          </Badge>
+          {status === 'INVITED' && (data.emailStatus === 'FAILED' || data.emailStatus === 'SKIPPED') && (
+            <div
+              role="alert"
+              data-testid="portal-invite-email-warning"
+              className="mt-1.5 rounded border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900"
+            >
+              Invitation created but the email could not be sent. Resend or copy the link.
+            </div>
+          )}
           <div className="text-xs text-gray-500 mt-1">{hasEmail ? data.email : 'No email on file'}</div>
           {status === 'INVITED' && data.inviteExpiresAt && (
             <div className="text-[10px] text-gray-400 mt-0.5">Exp: {formatDate(data.inviteExpiresAt)}</div>

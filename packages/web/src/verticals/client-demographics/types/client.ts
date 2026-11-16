@@ -112,6 +112,9 @@ export interface PortalAccessSummary {
   inviteExpiresAt: string | null; // the latest PENDING invite_tokens.expires_at
   lastLoginAt: string | null;    // users.last_login_at of the linked user
   linked: boolean;               // user_id IS NOT NULL
+  emailStatus?: 'SENT' | 'FAILED' | 'SKIPPED' | 'BOUNCED' | 'COMPLAINED' | null;
+  emailError?: string | null;
+  emailAttemptedAt?: string | null;
 }
 
 export interface FamilyPortalAccessRow extends PortalAccessSummary {
@@ -135,4 +138,7 @@ export interface ClientPortalAccess {
   revokedReason: string | null;
   inviteExpiresAt: string | null;
   linked: boolean;
+  emailStatus?: 'SENT' | 'FAILED' | 'SKIPPED' | 'BOUNCED' | 'COMPLAINED' | null;
+  emailError?: string | null;
+  emailAttemptedAt?: string | null;
 }

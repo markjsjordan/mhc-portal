@@ -90,6 +90,21 @@ function getDiskStatus(percentUsed: number, isServerless = false): 'ok' | 'warni
   return 'critical';
 }
 
+function getEmailHealthCheck(): {
+  status: 'ok' | 'warning';
+  configured: boolean;
+  provider: 'resend';
+  reason?: string;
+} {
+  const configured = Boolean(process.env.RESEND_API_KEY && process.env.RESEND_API_KEY.trim() !== '');
+  return {
+    status: configured ? 'ok' : 'warning',
+    configured,
+    provider: 'resend',
+    ...(configured ? {} : { reason: 'EMAIL_NOT_CONFIGURED' }),
+  };
+}
+
 export function createHealthRouter(db: Database): Router {
   const router = Router();
 
@@ -133,6 +148,7 @@ export function createHealthRouter(db: Database): Router {
 
       // Calculate disk status
       const diskStatus = getDiskStatus(disk.percentUsed, isServerless);
+      const emailCheck = getEmailHealthCheck();
 
       res.json({
         status: isHealthy ? 'healthy' : 'degraded',
@@ -173,6 +189,7 @@ export function createHealthRouter(db: Database): Router {
             total: disk.total,
             percentUsed: disk.percentUsed,
           },
+          email: emailCheck,
         },
       });
     } catch (error) {

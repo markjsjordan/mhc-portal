@@ -102,6 +102,9 @@ describe('Portal Access API Routes', () => {
         inviteExpiresAt: null,
         lastLoginAt: '2026-11-05T00:00:00.000Z',
         linked: true,
+        emailStatus: null,
+        emailError: null,
+        emailAttemptedAt: null,
       });
       expect(res.body.data.token).toBeUndefined();
     });

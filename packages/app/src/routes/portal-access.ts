@@ -35,7 +35,12 @@ export interface FamilyPortalAccessRow {
   inviteExpiresAt: string | null;
   lastLoginAt: string | null;
   linked: boolean;
+  emailStatus?: InviteEmailStatus | null;
+  emailError?: string | null;
+  emailAttemptedAt?: string | null;
 }
+
+type InviteEmailStatus = 'SENT' | 'FAILED' | 'SKIPPED' | 'BOUNCED' | 'COMPLAINED';
 
 function getUserContext(req: Request): UserContext {
   const user = req.user!;
@@ -93,6 +98,9 @@ export function createPortalAccessRouter(db: Database): Router {
       portal_activated_at: Date | null;
       portal_revoked_at: Date | null;
       portal_revoked_reason: string | null;
+      portal_invite_email_status?: InviteEmailStatus | null;
+      portal_invite_email_error?: string | null;
+      portal_invite_email_attempted_at?: Date | null;
       user_id: string | null;
       last_login_at: Date | null;
     },
@@ -115,6 +123,12 @@ export function createPortalAccessRouter(db: Database): Router {
       inviteExpiresAt,
       lastLoginAt: fm.last_login_at != null ? new Date(fm.last_login_at).toISOString() : null,
       linked: fm.user_id != null && fm.user_id !== '',
+      emailStatus: fm.portal_invite_email_status ?? null,
+      emailError: fm.portal_invite_email_error ?? null,
+      emailAttemptedAt:
+        fm.portal_invite_email_attempted_at != null
+          ? new Date(fm.portal_invite_email_attempted_at).toISOString()
+          : null,
     };
   }
 
@@ -137,12 +151,16 @@ export function createPortalAccessRouter(db: Database): Router {
       portal_activated_at: Date | null;
       portal_revoked_at: Date | null;
       portal_revoked_reason: string | null;
+      portal_invite_email_status: 'SENT' | 'FAILED' | 'SKIPPED' | 'BOUNCED' | 'COMPLAINED' | null;
+      portal_invite_email_error: string | null;
+      portal_invite_email_attempted_at: Date | null;
       user_id: string | null;
       last_login_at: Date | null;
     }>(
       `SELECT fm.id, fm.first_name, fm.last_name, fm.relationship, fm.email,
               fm.portal_access_level, fm.portal_access_status, fm.portal_invited_at,
               fm.portal_activated_at, fm.portal_revoked_at, fm.portal_revoked_reason,
+              fm.portal_invite_email_status, fm.portal_invite_email_error, fm.portal_invite_email_attempted_at,
               fm.user_id, u.last_login_at
        FROM family_members fm
        LEFT JOIN users u ON u.id = fm.user_id AND u.deleted_at IS NULL
@@ -289,37 +307,27 @@ export function createPortalAccessRouter(db: Database): Router {
 
       const inviteResult = await portalAccessService.inviteFamilyMember(familyMemberId, context);
 
-      // Attempt email send
-      try {
-        const orgRes = await db.query<{ name: string }>(
-          `SELECT name FROM organizations WHERE id = $1`,
-          [context.organizationId]
-        );
-        const orgName = orgRes.rows[0]?.name ?? 'MHC Portal';
-        const inviterRes = await db.query<{ first_name: string | null; last_name: string | null }>(
-          `SELECT first_name, last_name FROM users WHERE id = $1`,
-          [context.userId]
-        );
-        const inviter = inviterRes.rows[0];
-        const inviterName = inviter
-          ? `${inviter.first_name ?? ''} ${inviter.last_name ?? ''}`.trim() || 'Administrator'
-          : 'Administrator';
-
-        const emailService = createEmailService();
-        await emailService.sendInvitation({
-          recipientEmail: trimmedEmail,
-          recipientName: `${fmCheck.first_name ?? ''} ${fmCheck.last_name ?? ''}`.trim() || trimmedEmail,
-          inviterName,
-          organizationName: orgName,
-          invitationToken: inviteResult.token,
-          expiresAt: inviteResult.expiresAt,
-        });
-      } catch (err) {
-        console.warn('[PortalAccess] Failed to send family invitation email:', err);
-      }
+      const emailDelivery = await portalAccessService.sendPortalInvitationEmail({
+        targetType: 'FAMILY',
+        targetId: familyMemberId,
+        recipientEmail: trimmedEmail,
+        recipientName: `${fmCheck.first_name ?? ''} ${fmCheck.last_name ?? ''}`.trim() || trimmedEmail,
+        invitationToken: inviteResult.token,
+        expiresAt: inviteResult.expiresAt,
+        context,
+        emailService: createEmailService(),
+      });
 
       const row = await getFamilyMemberPortalRow(familyMemberId, true);
-      res.json({ success: true, data: row });
+      res.json({
+        success: true,
+        data: {
+          ...row,
+          emailStatus: emailDelivery.emailStatus,
+          emailError: emailDelivery.emailError,
+          emailAttemptedAt: emailDelivery.emailAttemptedAt,
+        },
+      });
     } catch (error) {
       if (error instanceof NotFoundError) {
         res.status(404).json({ success: false, error: error.message });
@@ -446,36 +454,26 @@ export function createPortalAccessRouter(db: Database): Router {
 
       const inviteResult = await portalAccessService.inviteClient(clientId, context);
 
-      // Attempt email send
-      try {
-        const orgRes = await db.query<{ name: string }>(
-          `SELECT name FROM organizations WHERE id = $1`,
-          [context.organizationId]
-        );
-        const orgName = orgRes.rows[0]?.name ?? 'MHC Portal';
-        const inviterRes = await db.query<{ first_name: string | null; last_name: string | null }>(
-          `SELECT first_name, last_name FROM users WHERE id = $1`,
-          [context.userId]
-        );
-        const inviter = inviterRes.rows[0];
-        const inviterName = inviter
-          ? `${inviter.first_name ?? ''} ${inviter.last_name ?? ''}`.trim() || 'Administrator'
-          : 'Administrator';
+      const emailDelivery = await portalAccessService.sendPortalInvitationEmail({
+        targetType: 'CLIENT',
+        targetId: clientId,
+        recipientEmail: trimmedEmail,
+        recipientName: `${clientCheck.first_name ?? ''} ${clientCheck.last_name ?? ''}`.trim() || trimmedEmail,
+        invitationToken: inviteResult.token,
+        expiresAt: inviteResult.expiresAt,
+        context,
+        emailService: createEmailService(),
+      });
 
-        const emailService = createEmailService();
-        await emailService.sendInvitation({
-          recipientEmail: trimmedEmail,
-          recipientName: `${clientCheck.first_name ?? ''} ${clientCheck.last_name ?? ''}`.trim() || trimmedEmail,
-          inviterName,
-          organizationName: orgName,
-          invitationToken: inviteResult.token,
-          expiresAt: inviteResult.expiresAt,
-        });
-      } catch (err) {
-        console.warn('[PortalAccess] Failed to send client invitation email:', err);
-      }
-
-      res.json({ success: true, data: inviteResult });
+      res.json({
+        success: true,
+        data: {
+          ...inviteResult,
+          emailStatus: emailDelivery.emailStatus,
+          emailError: emailDelivery.emailError,
+          emailAttemptedAt: emailDelivery.emailAttemptedAt,
+        },
+      });
     } catch (error) {
       if (error instanceof NotFoundError) {
         res.status(404).json({ success: false, error: error.message });
@@ -571,9 +569,13 @@ export function createPortalAccessRouter(db: Database): Router {
         portal_activated_at: Date | null;
         portal_revoked_at: Date | null;
         portal_revoked_reason: string | null;
+        portal_invite_email_status: 'SENT' | 'FAILED' | 'SKIPPED' | 'BOUNCED' | 'COMPLAINED' | null;
+        portal_invite_email_error: string | null;
+        portal_invite_email_attempted_at: Date | null;
       }>(
         `SELECT id, organization_id, email, status, user_id, portal_access_status, portal_invited_at,
-                portal_activated_at, portal_revoked_at, portal_revoked_reason
+                portal_activated_at, portal_revoked_at, portal_revoked_reason,
+                portal_invite_email_status, portal_invite_email_error, portal_invite_email_attempted_at
          FROM clients WHERE id = $1 AND deleted_at IS NULL`,
         [clientId]
       );
@@ -596,6 +598,12 @@ export function createPortalAccessRouter(db: Database): Router {
           revokedReason: row.portal_revoked_reason,
           inviteExpiresAt: expiresAt,
           linked: row.user_id != null && row.user_id !== '',
+          emailStatus: row.portal_invite_email_status ?? null,
+          emailError: row.portal_invite_email_error ?? null,
+          emailAttemptedAt:
+            row.portal_invite_email_attempted_at != null
+              ? new Date(row.portal_invite_email_attempted_at).toISOString()
+              : null,
         },
       });
     } catch (error) {

@@ -612,6 +612,9 @@ export function createCaregiverRouter(db: Database): Router {
     inviteExpiresAt: string | null;
     lastLoginAt: string | null;
     linked: boolean;
+    emailStatus: 'SENT' | 'FAILED' | 'SKIPPED' | 'BOUNCED' | 'COMPLAINED' | null;
+    emailError: string | null;
+    emailAttemptedAt: string | null;
   }> {
     const cgRes = await db.query<{
       user_id: string | null;
@@ -620,10 +623,14 @@ export function createCaregiverRouter(db: Database): Router {
       portal_activated_at: Date | null;
       portal_revoked_at: Date | null;
       portal_revoked_reason: string | null;
+      portal_invite_email_status: 'SENT' | 'FAILED' | 'SKIPPED' | 'BOUNCED' | 'COMPLAINED' | null;
+      portal_invite_email_error: string | null;
+      portal_invite_email_attempted_at: Date | null;
       last_login_at: Date | null;
     }>(
       `SELECT c.user_id, c.portal_access_status, c.portal_invited_at,
               c.portal_activated_at, c.portal_revoked_at, c.portal_revoked_reason,
+              c.portal_invite_email_status, c.portal_invite_email_error, c.portal_invite_email_attempted_at,
               u.last_login_at
        FROM caregivers c
        LEFT JOIN users u ON u.id = c.user_id AND u.deleted_at IS NULL
@@ -653,6 +660,12 @@ export function createCaregiverRouter(db: Database): Router {
       revokedAt: cg.portal_revoked_at != null ? new Date(cg.portal_revoked_at).toISOString() : null,
       revokedReason: hasUpdatePermission ? (cg.portal_revoked_reason ?? null) : null,
       inviteExpiresAt: latestToken != null ? new Date(latestToken.expires_at).toISOString() : null,
+      emailStatus: cg.portal_invite_email_status ?? null,
+      emailError: cg.portal_invite_email_error ?? null,
+      emailAttemptedAt:
+        cg.portal_invite_email_attempted_at != null
+          ? new Date(cg.portal_invite_email_attempted_at).toISOString()
+          : null,
       lastLoginAt: cg.last_login_at != null ? new Date(cg.last_login_at).toISOString() : null,
       linked: cg.user_id != null && cg.user_id !== '',
     };
@@ -746,37 +759,27 @@ export function createCaregiverRouter(db: Database): Router {
 
       const inviteResult = await portalAccessService.inviteCaregiver(caregiverId, context);
 
-      // Attempt to send email
-      try {
-        const orgRes = await db.query<{ name: string }>(
-          `SELECT name FROM organizations WHERE id = $1`,
-          [context.organizationId]
-        );
-        const orgName = orgRes.rows[0]?.name ?? 'MHC Portal';
-        const inviterRes = await db.query<{ first_name: string | null; last_name: string | null }>(
-          `SELECT first_name, last_name FROM users WHERE id = $1`,
-          [context.userId]
-        );
-        const inviter = inviterRes.rows[0];
-        const inviterName = inviter
-          ? `${inviter.first_name ?? ''} ${inviter.last_name ?? ''}`.trim() || 'Administrator'
-          : 'Administrator';
-
-        const emailService = createEmailService();
-        await emailService.sendInvitation({
-          recipientEmail: trimmedEmail,
-          recipientName: `${cgCheck.first_name ?? ''} ${cgCheck.last_name ?? ''}`.trim() || trimmedEmail,
-          inviterName,
-          organizationName: orgName,
-          invitationToken: inviteResult.token,
-          expiresAt: inviteResult.expiresAt,
-        });
-      } catch (err) {
-        console.warn('[PortalAccess] Failed to send invitation email:', err);
-      }
+      const emailDelivery = await portalAccessService.sendPortalInvitationEmail({
+        targetType: 'CAREGIVER',
+        targetId: caregiverId,
+        recipientEmail: trimmedEmail,
+        recipientName: `${cgCheck.first_name ?? ''} ${cgCheck.last_name ?? ''}`.trim() || trimmedEmail,
+        invitationToken: inviteResult.token,
+        expiresAt: inviteResult.expiresAt,
+        context,
+        emailService: createEmailService(),
+      });
 
       const summary = await getCaregiverPortalSummary(caregiverId, true);
-      res.json({ success: true, data: summary });
+      res.json({
+        success: true,
+        data: {
+          ...summary,
+          emailStatus: emailDelivery.emailStatus,
+          emailError: emailDelivery.emailError,
+          emailAttemptedAt: emailDelivery.emailAttemptedAt,
+        },
+      });
     } catch (error) {
       if (error instanceof NotFoundError) {
         res.status(404).json({ success: false, error: error.message });

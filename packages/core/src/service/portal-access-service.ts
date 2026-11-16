@@ -19,6 +19,7 @@ import {
   PermissionError,
 } from '../types/base.js';
 import { randomBytes } from '../utils/crypto.js';
+import type { IEmailService, SendEmailResult } from './email-service.js';
 
 export interface PortalInviteResult {
   token: string;
@@ -1293,5 +1294,160 @@ export class PortalAccessService {
     }
 
     return deactivated;
+  }
+
+  /**
+   * Persist portal invitation email delivery state on the target record and emit
+   * an audit event when delivery failed or was skipped.
+   */
+  async recordInviteEmailAttempt(
+    targetType: 'CAREGIVER' | 'FAMILY' | 'CLIENT',
+    targetId: UUID,
+    result: { status: 'SENT' | 'FAILED' | 'SKIPPED'; error?: string | null; attemptedAt?: Date },
+    context: UserContext
+  ): Promise<void> {
+    const errorCode = result.status === 'SENT' ? null : (result.error ?? 'UNKNOWN_EMAIL_ERROR');
+    const queryParams = [targetId, result.status, errorCode, result.attemptedAt ?? null, context.userId];
+
+    if (targetType === 'CAREGIVER') {
+      await this.db.query(
+        `UPDATE caregivers
+         SET portal_invite_email_status = $2,
+             portal_invite_email_error = $3,
+             portal_invite_email_attempted_at = COALESCE($4, NOW()),
+             updated_at = NOW(),
+             updated_by = $5
+         WHERE id = $1`,
+        queryParams
+      );
+    } else if (targetType === 'FAMILY') {
+      await this.db.query(
+        `UPDATE family_members
+         SET portal_invite_email_status = $2,
+             portal_invite_email_error = $3,
+             portal_invite_email_attempted_at = COALESCE($4, NOW()),
+             updated_at = NOW(),
+             updated_by = $5
+         WHERE id = $1`,
+        queryParams
+      );
+    } else {
+      await this.db.query(
+        `UPDATE clients
+         SET portal_invite_email_status = $2,
+             portal_invite_email_error = $3,
+             portal_invite_email_attempted_at = COALESCE($4, NOW()),
+             updated_at = NOW(),
+             updated_by = $5
+         WHERE id = $1`,
+        queryParams
+      );
+    }
+
+    if (result.status !== 'SENT') {
+      let resource: 'caregiver' | 'family_member' | 'client' = 'client';
+      if (targetType === 'CAREGIVER') {
+        resource = 'caregiver';
+      } else if (targetType === 'FAMILY') {
+        resource = 'family_member';
+      }
+      await this.audit.logEvent(context, {
+        eventType: 'PORTAL_INVITATION_EMAIL_FAILED',
+        resource,
+        resourceId: targetId,
+        action: 'INVITE_EMAIL_SEND',
+        result: 'FAILURE',
+        metadata: {
+          targetType,
+          targetId,
+          emailStatus: result.status,
+          errorCode: errorCode ?? 'UNKNOWN_EMAIL_ERROR',
+        },
+      });
+    }
+  }
+
+  /**
+   * Send a portal invitation email, normalize legacy/void mock returns,
+   * persist the delivery state, and emit an audit event on failure/skip.
+   */
+  async sendPortalInvitationEmail(params: {
+    targetType: 'CAREGIVER' | 'FAMILY' | 'CLIENT';
+    targetId: UUID;
+    recipientEmail: string;
+    recipientName: string;
+    invitationToken: string;
+    expiresAt: Date;
+    context: UserContext;
+    emailService?: IEmailService;
+  }): Promise<{ emailStatus: 'SENT' | 'FAILED' | 'SKIPPED'; emailError: string | null; emailAttemptedAt: string }> {
+    const attemptedAt = new Date();
+    let sendResult: SendEmailResult;
+
+    if (params.emailService === undefined) {
+      sendResult = {
+        sent: false,
+        status: 'SKIPPED',
+        reason: 'EMAIL_NOT_CONFIGURED',
+        error: 'EMAIL_NOT_CONFIGURED',
+      };
+    } else {
+      try {
+        const orgRes = await this.db.query<{ name: string }>(
+          `SELECT name FROM organizations WHERE id = $1`,
+          [params.context.organizationId]
+        );
+        const inviterRes = await this.db.query<{ first_name: string | null; last_name: string | null }>(
+          `SELECT first_name, last_name FROM users WHERE id = $1`,
+          [params.context.userId]
+        );
+
+        const organizationName = orgRes.rows[0]?.name ?? 'MHC Portal';
+        const inviterRow = inviterRes.rows[0];
+        const inviterName =
+          inviterRow !== undefined &&
+          ((inviterRow.first_name !== null && inviterRow.first_name !== '') ||
+            (inviterRow.last_name !== null && inviterRow.last_name !== ''))
+            ? `${inviterRow.first_name ?? ''} ${inviterRow.last_name ?? ''}`.trim()
+            : 'Administrator';
+
+        const rawResult = await params.emailService.sendInvitation({
+          recipientEmail: params.recipientEmail,
+          recipientName: params.recipientName,
+          inviterName,
+          organizationName,
+          invitationToken: params.invitationToken,
+          expiresAt: params.expiresAt,
+        });
+
+        // Normalize legacy/void mock returns without sent: false as SENT
+        if (typeof rawResult === 'object' && 'status' in rawResult) {
+          sendResult = rawResult;
+        } else {
+          sendResult = { sent: true, status: 'SENT' };
+        }
+      } catch {
+        sendResult = {
+          sent: false,
+          status: 'FAILED',
+          reason: 'UNKNOWN_EMAIL_ERROR',
+          error: 'UNKNOWN_EMAIL_ERROR',
+        };
+      }
+    }
+
+    const emailError = sendResult.status === 'SENT' ? null : (sendResult.error ?? sendResult.reason ?? 'UNKNOWN_EMAIL_ERROR');
+    await this.recordInviteEmailAttempt(
+      params.targetType,
+      params.targetId,
+      { status: sendResult.status, error: emailError, attemptedAt },
+      params.context
+    );
+
+    return {
+      emailStatus: sendResult.status,
+      emailError,
+      emailAttemptedAt: attemptedAt.toISOString(),
+    };
   }
 }

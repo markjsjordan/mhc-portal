@@ -89,18 +89,37 @@ export const PortalAccessCard: React.FC<PortalAccessCardProps> = ({ caregiverId 
             </p>
           )}
 
-          {status === 'INVITED' && (
-            <>
-              <p className="text-gray-600">
-                An invitation has been sent to this caregiver.
-              </p>
-              {portalAccess?.inviteExpiresAt && (
-                <p className="text-xs text-gray-500">
-                  Expires: {formatDate(portalAccess.inviteExpiresAt)}
-                </p>
-              )}
-            </>
-          )}
+          {status === 'INVITED' && (() => {
+            const emailFailed =
+              portalAccess?.emailStatus === 'FAILED' || portalAccess?.emailStatus === 'SKIPPED';
+            return (
+              <>
+                {emailFailed ? (
+                  <>
+                    <div
+                      role="alert"
+                      data-testid="portal-invite-email-warning"
+                      className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+                    >
+                      Invitation created but the email could not be sent. Resend or copy the link.
+                    </div>
+                    <p className="text-amber-700 font-medium">
+                      Invitation created (email not sent)
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-gray-600">
+                    An invitation has been sent to this caregiver.
+                  </p>
+                )}
+                {portalAccess?.inviteExpiresAt && (
+                  <p className="text-xs text-gray-500">
+                    Expires: {formatDate(portalAccess.inviteExpiresAt)}
+                  </p>
+                )}
+              </>
+            );
+          })()}
 
           {status === 'ACTIVE' && (
             <>

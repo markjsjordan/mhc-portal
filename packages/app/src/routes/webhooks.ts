@@ -293,4 +293,57 @@ async function handleTrialWillEnd(
   // Future: Send trial ending reminder email
 }
 
+/**
+ * POST /webhooks/resend
+ * Handle Resend bounce and complaint webhook events for portal invitations
+ */
+router.post('/resend', express.json(), async (req: Request, res: Response) => {
+  try {
+    const webhookSecret = process.env.RESEND_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const svixSig = req.headers['svix-signature'];
+      if (!svixSig) {
+        return res.status(400).json({ error: 'Missing svix-signature header' });
+      }
+    }
+
+    const body = req.body as { type?: string; data?: { to?: string | string[] } } | undefined;
+    const eventType = body?.type;
+    if (eventType !== 'email.bounced' && eventType !== 'email.complained') {
+      return res.status(200).json({ received: true, ignored: true });
+    }
+
+    const rawTo = body?.data?.to;
+    let recipients: string[] = [];
+    if (Array.isArray(rawTo)) {
+      recipients = rawTo;
+    } else if (typeof rawTo === 'string') {
+      recipients = [rawTo];
+    }
+    const errorCode = eventType === 'email.bounced' ? 'EMAIL_BOUNCED' : 'EMAIL_COMPLAINED';
+
+    const db = getDatabase();
+    for (const email of recipients) {
+      const trimmed = email.trim();
+      if (!trimmed) continue;
+      for (const table of ['caregivers', 'family_members', 'clients'] as const) {
+        await db.query(
+          `UPDATE ${table}
+           SET portal_invite_email_status = 'FAILED',
+               portal_invite_email_error = $2,
+               updated_at = NOW()
+           WHERE portal_access_status = 'INVITED'
+             AND LOWER(TRIM(email)) = LOWER(TRIM($1))`,
+          [trimmed, errorCode]
+        );
+      }
+    }
+
+    return res.status(200).json({ received: true });
+  } catch (error) {
+    console.error('[Webhook] Error processing Resend webhook:', error);
+    return res.status(500).json({ error: 'Webhook processing failed' });
+  }
+});
+
 export default router;
