@@ -195,7 +195,7 @@ export const createClientApiService = (apiClient: ApiClient): ClientApiService =
         `/api/clients/${clientId}/family-portal-access`,
         input
       );
-      if (response && typeof response === 'object' && 'data' in response && response.data) {
+      if ('data' in response && response.data) {
         return response.data;
       }
       return response as FamilyPortalAccessRow;

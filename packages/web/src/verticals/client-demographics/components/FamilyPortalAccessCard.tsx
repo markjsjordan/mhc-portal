@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
 import { Badge } from '@/components/ui/badge.js';
@@ -158,7 +158,9 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({
     setFormError(null);
   };
 
-  useEffect(() => {
+  const [prevPrefillContact, setPrevPrefillContact] = useState(prefillContact);
+  if (prefillContact !== prevPrefillContact) {
+    setPrevPrefillContact(prefillContact);
     if (prefillContact) {
       setFirstName(prefillContact.firstName);
       setLastName(prefillContact.lastName);
@@ -173,7 +175,7 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({
       setFormError(null);
       setIsAddDialogOpen(true);
     }
-  }, [prefillContact, isClientInactive]);
+  }
 
   const handleOpenAdd = () => {
     resetAddForm();
@@ -342,15 +344,8 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={async () => {
-                                const res = await inviteMutation.mutateAsync({
-                                  familyMemberId: member.familyMemberId,
-                                  sendEmail: false,
-                                });
-                                if (res.inviteUrl) {
-                                  await navigator.clipboard.writeText(res.inviteUrl);
-                                  toast.success('Invite link copied to clipboard');
-                                }
+                              onClick={() => {
+                                void handleCopyInviteLink(member.familyMemberId);
                               }}
                               disabled={inviteMutation.isPending}
                             >
@@ -387,6 +382,24 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({
       </div>
     );
   };
+
+  const handleCopyInviteLink = async (familyMemberId: string) => {
+    const res = await inviteMutation.mutateAsync({
+      familyMemberId,
+      sendEmail: false,
+    });
+    if (res.inviteUrl) {
+      await navigator.clipboard.writeText(res.inviteUrl);
+      toast.success('Invite link copied to clipboard');
+    }
+  };
+
+  let submitLabel = 'Add Family Member';
+  if (createMutation.isPending || inviteMutation.isPending) {
+    submitLabel = 'Saving...';
+  } else if (sendInviteImmediately && !isClientInactive) {
+    submitLabel = 'Add & Send Invite';
+  }
 
   return (
     <>
@@ -592,11 +605,7 @@ export const FamilyPortalAccessCard: React.FC<FamilyPortalAccessCardProps> = ({
                 type="submit"
                 disabled={createMutation.isPending || inviteMutation.isPending}
               >
-                {createMutation.isPending || inviteMutation.isPending
-                  ? 'Saving...'
-                  : sendInviteImmediately && !isClientInactive
-                    ? 'Add & Send Invite'
-                    : 'Add Family Member'}
+                {submitLabel}
               </Button>
             </DialogFooter>
           </form>
