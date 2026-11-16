@@ -555,3 +555,18 @@ expect(text).toBe('COMPLETED'); // No auto-retry
 
 **Folk Care** - Shared care software, community owned
 Brought to you by [Neighborhood Lab](https://neighborhoodlab.org)
+
+## Visual Regression Baselines
+
+Visual regression tests use `playwright.visual.config.ts` (`npm run test:visual` / `npm run test:visual:update`) with `maxDiffPixelRatio: 0.005`, `animations: 'disabled'`, frozen `page.clock`, and dynamic content masked.
+
+### Why Linux CI Baselines?
+Playwright snapshot filenames include the OS platform, and macOS font rendering differs from Ubuntu. Baselines **must** be generated in the pinned Linux container (`mcr.microsoft.com/playwright:v1.57.0-jammy`, matching `@playwright/test@1.57.0` in `package-lock.json`).
+
+### Updating Baselines
+1. Trigger the **E2E Tests** workflow manually (`workflow_dispatch`) with `update_visual_baselines: true`:
+   ```bash
+   gh workflow run e2e-tests.yml -f update_visual_baselines=true
+   ```
+2. The `update-visual-baselines` job runs `npm run test:visual:update` inside `mcr.microsoft.com/playwright:v1.57.0-jammy` and opens a PR (`chore/update-visual-baselines`).
+3. **Human review required:** Inspect the changed PNGs in the PR diff before merging. Baselines are never auto-merged.

@@ -11,7 +11,7 @@ import { Database } from '../../../packages/core/src/db/connection.js';
  * same ticket operate (evv-clock-persistence.spec.ts itself, plus
  * billing-invoice-lifecycle.spec.ts / payroll-period-and-run.spec.ts): they
  * log in as the real admin@folkcare.example account via the UI against the
- * already-running dev servers (per playwright.dev-shared.config.ts), not
+ * already-running dev servers, not
  * against an isolated ephemeral test DB. Seeding into the ephemeral stack
  * would be invisible to that spec.
  *

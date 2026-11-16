@@ -76,21 +76,16 @@ test.describe('Visual Regression Tests', () => {
     await page.goto('/visits');
     await waitForUIStable(page);
 
-    // Compare specific element (if it exists)
+    // Compare specific element (must be visible)
     const visitListContainer = page.locator('[data-testid="visit-list"]');
-
-    const exists = await visitListContainer.count();
-    if (exists > 0) {
-      await compareElementSnapshot(
-        visitListContainer,
-        'visit-list-container',
-        {
-          maxDiffPixelRatio: 0.005, // More strict for components
-        }
-      );
-    } else {
-      test.skip();
-    }
+    await expect(visitListContainer).toBeVisible();
+    await compareElementSnapshot(
+      visitListContainer,
+      'visit-list-container',
+      {
+        maxDiffPixelRatio: 0.005, // More strict for components
+      }
+    );
   });
 
   test('login form with dynamic content masked', async ({ page }) => {
@@ -149,32 +144,22 @@ test.describe('Visual Regression Tests', () => {
       await page.goto('/');
       await waitForUIStable(page);
 
-      const header = page.locator('header, [role="banner"]');
-      const exists = await header.count();
-
-      if (exists > 0) {
-        await compareElementSnapshot(header.first(), 'navigation-header', {
-          maxDiffPixelRatio: 0.005,
-        });
-      } else {
-        test.skip();
-      }
+      const header = page.locator('header, [role="banner"]').first();
+      await expect(header).toBeVisible();
+      await compareElementSnapshot(header, 'navigation-header', {
+        maxDiffPixelRatio: 0.005,
+      });
     });
 
     test('login form', async ({ page }) => {
       await page.goto('/login');
       await waitForUIStable(page);
 
-      const form = page.locator('form, [data-testid="login-form"]');
-      const exists = await form.count();
-
-      if (exists > 0) {
-        await compareElementSnapshot(form.first(), 'login-form-component', {
-          maxDiffPixelRatio: 0.005,
-        });
-      } else {
-        test.skip();
-      }
+      const form = page.locator('form, [data-testid="login-form"]').first();
+      await expect(form).toBeVisible();
+      await compareElementSnapshot(form, 'login-form-component', {
+        maxDiffPixelRatio: 0.005,
+      });
     });
   });
 });
