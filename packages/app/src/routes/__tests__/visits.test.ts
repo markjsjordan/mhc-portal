@@ -439,10 +439,14 @@ describe('Visit Routes', () => {
           }],
         } as any);
 
-      const handler = getRouteHandler(router, 'put', '/:id/assign');
-      await handler(mockRequest as Request, mockResponse as Response, mockNext);
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find((layer: any) => layer.route?.path === '/:id/assign')?.route?.stack.find((s: any) => s.method === 'put')?.handle;
+      if (!handler) {
+        throw new Error('Handler not found');
+      }
+      await handler(mockRequest as Request, mockResponse as Response, nextMock);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(jsonMock).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
       const auditCall = vi.mocked(mockDb.query).mock.calls.find(([sql]) =>
         typeof sql === 'string' && sql.includes('INSERT INTO audit_events')
       );

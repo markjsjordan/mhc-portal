@@ -1,13 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { VisitList } from '../VisitList';
 
-vi.mock('@/core/api/visits', () => ({
-  visitsApi: {
-    list: vi.fn().mockResolvedValue({ data: [], total: 0 }),
-    getStats: vi.fn().mockResolvedValue({ total: 0, scheduled: 0, inProgress: 0, completed: 0, cancelled: 0 }),
-  },
+vi.mock('../../hooks/useVisits', () => ({
+  useVisitApi: () => ({}),
+  useVisits: () => ({
+    data: [],
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
 }));
 
 vi.mock('@/core/hooks/useAuth', () => ({
@@ -31,10 +35,15 @@ describe('VisitList (wdvf3ad4h8)', () => {
   });
 
   it('renders Schedule Visit split-button popover with mobile viewport clamping and opens CreateVisitModal on selection', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     render(
-      <MemoryRouter>
-        <VisitList />
-      </MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <VisitList />
+        </MemoryRouter>
+      </QueryClientProvider>
     );
 
     const trigger = await screen.findByRole('button', { name: /select visit type to schedule/i });
