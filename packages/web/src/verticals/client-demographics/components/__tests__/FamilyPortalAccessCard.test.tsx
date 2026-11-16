@@ -5,6 +5,7 @@ import { FamilyPortalAccessCard } from '../FamilyPortalAccessCard';
 import { usePermissions } from '@/core/hooks';
 import {
   useFamilyPortalAccess,
+  useCreateFamilyMember,
   useInviteFamilyPortal,
   useRevokeFamilyPortal,
 } from '../../hooks';
@@ -16,6 +17,7 @@ vi.mock('@/core/hooks', () => ({
 
 vi.mock('../../hooks', () => ({
   useFamilyPortalAccess: vi.fn(),
+  useCreateFamilyMember: vi.fn(),
   useInviteFamilyPortal: vi.fn(),
   useRevokeFamilyPortal: vi.fn(),
 }));
@@ -28,7 +30,9 @@ vi.mock('sonner', () => ({
 }));
 
 describe('FamilyPortalAccessCard', () => {
+  const mockCreateMutateAsync = vi.fn();
   const mockInviteMutate = vi.fn();
+  const mockInviteMutateAsync = vi.fn();
   const mockRevokeMutateAsync = vi.fn();
 
   beforeEach(() => {
@@ -41,8 +45,14 @@ describe('FamilyPortalAccessCard', () => {
       hasAnyRole: vi.fn().mockReturnValue(true),
     });
 
+    vi.mocked(useCreateFamilyMember).mockReturnValue({
+      mutateAsync: mockCreateMutateAsync,
+      isPending: false,
+    } as unknown as ReturnType<typeof useCreateFamilyMember>);
+
     vi.mocked(useInviteFamilyPortal).mockReturnValue({
       mutate: mockInviteMutate,
+      mutateAsync: mockInviteMutateAsync,
       isPending: false,
     } as unknown as ReturnType<typeof useInviteFamilyPortal>);
 
@@ -225,5 +235,60 @@ describe('FamilyPortalAccessCard', () => {
     expect(screen.queryByRole('button', { name: /revoke access/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /invite to portal/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /resend invite/i })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('add-family-member-btn')).not.toBeInTheDocument();
+  });
+
+  it('renders Add family member button in empty state when permitted and submits create + invite', async () => {
+    vi.mocked(useFamilyPortalAccess).mockReturnValue({
+      data: [],
+      isLoading: false,
+      error: null,
+    } as unknown as ReturnType<typeof useFamilyPortalAccess>);
+
+    mockCreateMutateAsync.mockResolvedValueOnce({
+      familyMemberId: 'fm-new-1',
+      firstName: 'Jane',
+      lastName: 'Doe',
+      relationship: 'CHILD',
+      email: 'jane@example.com',
+      portalAccessLevel: 'VIEW_BASIC',
+      status: 'NONE',
+      invitedAt: null,
+      activatedAt: null,
+      revokedAt: null,
+      revokedReason: null,
+      inviteExpiresAt: null,
+      lastLoginAt: null,
+      linked: false,
+    });
+    mockInviteMutateAsync.mockResolvedValueOnce({});
+
+    renderWithQueryClient(<FamilyPortalAccessCard clientId="c-1" clientStatus="ACTIVE" />);
+
+    const addBtn = screen.getByTestId('add-family-member-btn');
+    expect(addBtn).toBeInTheDocument();
+    fireEvent.click(addBtn);
+
+    fireEvent.change(screen.getByLabelText(/first name/i), { target: { value: 'Jane' } });
+    fireEvent.change(screen.getByLabelText(/last name/i), { target: { value: 'Doe' } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'jane@example.com' } });
+    fireEvent.change(screen.getByLabelText(/phone number/i), { target: { value: '555-0100' } });
+    fireEvent.click(screen.getByLabelText(/i confirm client or legal representative authorization/i));
+
+    fireEvent.click(screen.getByRole('button', { name: /add & send invite/i }));
+
+    await waitFor(() => {
+      expect(mockCreateMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          firstName: 'Jane',
+          lastName: 'Doe',
+          relationship: 'CHILD',
+          email: 'jane@example.com',
+          phoneNumber: '555-0100',
+          portalAccessLevel: 'VIEW_BASIC',
+        })
+      );
+      expect(mockInviteMutateAsync).toHaveBeenCalledWith('fm-new-1');
+    });
   });
 });

@@ -114,13 +114,43 @@ export interface PortalAccessSummary {
   linked: boolean;               // user_id IS NOT NULL
 }
 
+export type FamilyRelationship =
+  | 'SPOUSE'
+  | 'PARENT'
+  | 'CHILD'
+  | 'SIBLING'
+  | 'GRANDPARENT'
+  | 'GRANDCHILD'
+  | 'GUARDIAN'
+  | 'POWER_OF_ATTORNEY'
+  | 'HEALTHCARE_PROXY'
+  | 'OTHER';
+
+export type PortalAccessLevel =
+  | 'VIEW_BASIC'
+  | 'VIEW_DETAILED'
+  | 'VIEW_MEDICAL'
+  | 'VIEW_FINANCIAL'
+  | 'FULL_ACCESS';
+
+export interface CreateFamilyMemberPortalInput {
+  firstName: string;
+  lastName: string;
+  relationship: FamilyRelationship;
+  relationshipNote?: string;
+  email: string;
+  phoneNumber: string;
+  isPrimaryContact?: boolean;
+  portalAccessLevel?: PortalAccessLevel;
+}
+
 export interface FamilyPortalAccessRow extends PortalAccessSummary {
   familyMemberId: string;
   firstName: string;
   lastName: string;
   relationship: string;          // family_members.relationship
   email: string;
-  portalAccessLevel: 'VIEW_BASIC' | 'VIEW_DETAILED' | 'VIEW_MEDICAL' | 'VIEW_FINANCIAL' | 'FULL_ACCESS';
+  portalAccessLevel: PortalAccessLevel;
 }
 
 

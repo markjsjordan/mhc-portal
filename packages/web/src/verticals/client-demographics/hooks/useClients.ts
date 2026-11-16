@@ -110,6 +110,23 @@ export const useFamilyPortalAccess = (clientId: string | undefined) => {
   });
 };
 
+export const useCreateFamilyMember = (clientId: string | undefined) => {
+  const clientApi = useClientApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: import('../types').CreateFamilyMemberPortalInput) =>
+      clientApi.createFamilyMember(clientId!, input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['family-portal-access', clientId] });
+      toast.success('Family member added');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to add family member');
+    },
+  });
+};
+
 export const useInviteFamilyPortal = (clientId: string | undefined) => {
   const clientApi = useClientApi();
   const queryClient = useQueryClient();

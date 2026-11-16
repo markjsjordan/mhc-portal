@@ -25,6 +25,18 @@ export interface PortalInviteResult {
   expiresAt: Date;
 }
 
+export interface CreateFamilyMemberPortalInput {
+  clientId: UUID;
+  firstName: string;
+  lastName: string;
+  relationship: string;
+  relationshipNote?: string | null;
+  email: string;
+  phoneNumber: string;
+  isPrimaryContact?: boolean;
+  portalAccessLevel?: 'VIEW_BASIC' | 'VIEW_DETAILED' | 'VIEW_MEDICAL' | 'VIEW_FINANCIAL' | 'FULL_ACCESS';
+}
+
 export type CaregiverEmploymentStatus =
   | 'ACTIVE'
   | 'ON_LEAVE'
@@ -163,6 +175,105 @@ export class PortalAccessService {
     });
 
     return { token, expiresAt };
+  }
+
+  /**
+   * Create a family member record for a client (portal_access_status = 'NONE').
+   * Enforces clients:update permission and resolves real organization_id / branch_id from the client.
+   */
+  async createFamilyMember(
+    input: CreateFamilyMemberPortalInput,
+    context: UserContext
+  ): Promise<{ id: UUID }> {
+    this.permissions.requirePermission(context, 'clients:update');
+
+    const orgId = context.organizationId;
+    if (orgId === undefined || orgId === '') {
+      throw new ValidationError('Organization ID is required in user context');
+    }
+
+    const clientRes = await this.db.query<{
+      id: string;
+      organization_id: string;
+      branch_id: string;
+      status: string;
+    }>(
+      `SELECT id, organization_id, branch_id, status
+       FROM clients
+       WHERE id = $1 AND deleted_at IS NULL`,
+      [input.clientId]
+    );
+
+    const client = clientRes.rows[0];
+    if (client?.organization_id !== orgId) {
+      throw new NotFoundError(`Client not found: ${input.clientId}`);
+    }
+
+    const normalizedEmail = input.email.trim().toLowerCase();
+    const dupRes = await this.db.query<{ id: string }>(
+      `SELECT id
+       FROM family_members
+       WHERE client_id = $1 AND LOWER(TRIM(email)) = $2`,
+      [client.id, normalizedEmail]
+    );
+
+    if (dupRes.rows.length > 0) {
+      throw new ConflictError('A family member with this email already exists for this client');
+    }
+
+    const portalAccessLevel = input.portalAccessLevel ?? 'VIEW_BASIC';
+
+    const insertRes = await this.db.query<{ id: string }>(
+      `INSERT INTO family_members (
+        id, client_id, organization_id, branch_id,
+        first_name, last_name, relationship, relationship_note,
+        is_primary_contact, email, phone_number, preferred_contact_method,
+        portal_access_level, portal_access_status, status, invitation_status,
+        access_granted_by, access_granted_at,
+        created_by, updated_by, created_at, updated_at, version
+      ) VALUES (
+        gen_random_uuid(), $1, $2, $3,
+        $4, $5, $6, $7,
+        $8, $9, $10, 'EMAIL',
+        $11, 'NONE', 'ACTIVE', 'PENDING',
+        $12, NOW(),
+        $12, $12, NOW(), NOW(), 1
+      )
+      RETURNING id`,
+      [
+        client.id,
+        client.organization_id,
+        client.branch_id,
+        input.firstName.trim(),
+        input.lastName.trim(),
+        input.relationship,
+        input.relationshipNote != null && input.relationshipNote.trim() !== ''
+          ? input.relationshipNote.trim()
+          : null,
+        Boolean(input.isPrimaryContact),
+        normalizedEmail,
+        input.phoneNumber.trim(),
+        portalAccessLevel,
+        context.userId,
+      ]
+    );
+
+    const newId = insertRes.rows[0]!.id;
+
+    await this.audit.logEvent(context, {
+      eventType: 'DATA_MODIFICATION',
+      resource: 'family_member',
+      resourceId: newId,
+      action: 'CREATE_FAMILY_MEMBER',
+      result: 'SUCCESS',
+      metadata: {
+        clientId: client.id,
+        relationship: input.relationship,
+        portalAccessLevel,
+      },
+    });
+
+    return { id: newId };
   }
 
   /**

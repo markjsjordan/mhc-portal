@@ -105,9 +105,14 @@ export class FamilyEngagementService {
       throw new Error('Family member with this email already has portal access for this client') as ValidationError;
     }
 
+    // Resolve tenant IDs from client record (fallback to context for unit tests)
+    const client = await this.clientService.getClientById(input.clientId, context);
+
     // Create family member
     const familyMember = await this.familyMemberRepo.createFamilyMember({
       ...input,
+      organizationId: client?.organizationId ?? context.organizationId,
+      branchId: client?.branchId ?? context.branchIds?.[0],
       createdBy: context.userId
     });
 

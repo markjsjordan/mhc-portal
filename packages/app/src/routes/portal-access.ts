@@ -232,6 +232,86 @@ export function createPortalAccessRouter(db: Database): Router {
     }
   });
 
+  const createFamilyMemberSchema = z.object({
+    firstName: z.string().trim().min(1).max(100),
+    lastName: z.string().trim().min(1).max(100),
+    relationship: z.enum([
+      'SPOUSE',
+      'PARENT',
+      'CHILD',
+      'SIBLING',
+      'GRANDPARENT',
+      'GRANDCHILD',
+      'GUARDIAN',
+      'POWER_OF_ATTORNEY',
+      'HEALTHCARE_PROXY',
+      'OTHER',
+    ]),
+    relationshipNote: z.string().trim().max(500).optional(),
+    email: z.string().trim().email().max(255),
+    phoneNumber: z.string().trim().min(1).max(50),
+    isPrimaryContact: z.boolean().optional().default(false),
+    portalAccessLevel: z
+      .enum(['VIEW_BASIC', 'VIEW_DETAILED', 'VIEW_MEDICAL', 'VIEW_FINANCIAL', 'FULL_ACCESS'])
+      .optional()
+      .default('VIEW_BASIC'),
+  });
+
+  /**
+   * POST /api/clients/:clientId/family-portal-access
+   * Create a family member record for a client (portal_access_status = 'NONE')
+   */
+  router.post(
+    '/clients/:clientId/family-portal-access',
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+      try {
+        const context = getUserContext(req);
+        const parseResult = createFamilyMemberSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          res.status(400).json({
+            success: false,
+            error: 'Invalid family member data',
+            details: parseResult.error.flatten().fieldErrors,
+          });
+          return;
+        }
+
+        const permissionService = new PermissionService();
+        const auditService = new AuditService(db);
+        const portalAccessService = new PortalAccessService(db, permissionService, auditService);
+
+        const { id } = await portalAccessService.createFamilyMember(
+          {
+            clientId: req.params['clientId']!,
+            ...parseResult.data,
+          },
+          context
+        );
+
+        const row = await getFamilyMemberPortalRow(id, true);
+        res.status(201).json({ success: true, data: row });
+      } catch (error) {
+        if (error instanceof PermissionError) {
+          res.status(403).json({ success: false, error: error.message });
+          return;
+        }
+        if (error instanceof NotFoundError) {
+          res.status(404).json({ success: false, error: error.message });
+          return;
+        }
+        if (error instanceof ConflictError) {
+          res.status(409).json({ success: false, error: error.message });
+          return;
+        }
+        if (error instanceof ValidationError) {
+          res.status(400).json({ success: false, error: error.message });
+          return;
+        }
+        next(error);
+      }
+    }
+  );
+
   /**
    * POST /api/family-members/:id/portal-invite
    * Invite or re-invite a family member to the portal

@@ -106,4 +106,46 @@ describe('clientApi family portal access (wdvf3acun8)', () => {
     });
     expect(result).toEqual(mockRow);
   });
+
+  it('createFamilyMember calls POST /api/clients/:clientId/family-portal-access with input payload', async () => {
+    const mockRow: FamilyPortalAccessRow = {
+      familyMemberId: 'fm-2',
+      firstName: 'John',
+      lastName: 'Doe',
+      relationship: 'CHILD',
+      email: 'john@example.com',
+      portalAccessLevel: 'VIEW_BASIC',
+      status: 'NONE',
+      invitedAt: null,
+      activatedAt: null,
+      revokedAt: null,
+      revokedReason: null,
+      inviteExpiresAt: null,
+      lastLoginAt: null,
+      linked: false,
+    };
+
+    const mockApiClient: ApiClient = {
+      get: vi.fn(),
+      post: vi.fn().mockResolvedValue({ success: true, data: mockRow }),
+      put: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn(),
+    };
+
+    const service = createClientApiService(mockApiClient);
+    const input = {
+      firstName: 'John',
+      lastName: 'Doe',
+      relationship: 'CHILD' as const,
+      email: 'john@example.com',
+      phoneNumber: '555-0100',
+      isPrimaryContact: false,
+      portalAccessLevel: 'VIEW_BASIC' as const,
+    };
+    const result = await service.createFamilyMember('client-1', input);
+
+    expect(mockApiClient.post).toHaveBeenCalledWith('/api/clients/client-1/family-portal-access', input);
+    expect(result).toEqual(mockRow);
+  });
 });

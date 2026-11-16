@@ -8,7 +8,7 @@ import { PortalAccessService } from '../portal-access-service.js';
 import { Database } from '../../db/connection.js';
 import { PermissionService } from '../../permissions/permission-service.js';
 import { AuditService } from '../../audit/audit-service.js';
-import { UserContext, PermissionError, ValidationError, ConflictError } from '../../types/base.js';
+import { UserContext, PermissionError, ValidationError, ConflictError, NotFoundError } from '../../types/base.js';
 
 describe('PortalAccessService', () => {
   let service: PortalAccessService;
@@ -1106,6 +1106,127 @@ describe('PortalAccessService', () => {
           expect(isUuid || isEnum).toBe(true);
         }
       }
+    });
+  });
+
+  describe('createFamilyMember', () => {
+    const validInput = {
+      clientId: 'client-1',
+      firstName: 'Jane',
+      lastName: 'Doe',
+      relationship: 'CHILD',
+      email: 'Jane.Doe@Example.com',
+      phoneNumber: '555-123-4567',
+      isPrimaryContact: true,
+    };
+
+    it('creates family member with client real organization_id and branch_id, NONE status, VIEW_BASIC default, and audit log', async () => {
+      const orgId = adminContext.organizationId!;
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [{ id: 'client-1', organization_id: orgId, branch_id: 'branch-real-9', status: 'ACTIVE' }],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({
+          rows: [],
+          command: 'SELECT',
+          rowCount: 0,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({
+          rows: [{ id: 'fm-created-1' }],
+          command: 'INSERT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        });
+
+      const result = await service.createFamilyMember(validInput, adminContext);
+
+      expect(result).toEqual({ id: 'fm-created-1' });
+      const insertCall = vi.mocked(mockDb.query).mock.calls[2]!;
+      expect(insertCall[1]).toContain(orgId);
+      expect(insertCall[1]).toContain('branch-real-9');
+      expect(insertCall[1]).toContain('jane.doe@example.com');
+      expect(insertCall[1]).toContain('VIEW_BASIC');
+      expect(mockAudit.logEvent).toHaveBeenCalledWith(
+        adminContext,
+        expect.objectContaining({
+          eventType: 'DATA_MODIFICATION',
+          resource: 'family_member',
+          resourceId: 'fm-created-1',
+          action: 'CREATE_FAMILY_MEMBER',
+          result: 'SUCCESS',
+        })
+      );
+    });
+
+    it('rejects users without clients:update (including FAMILY role) with PermissionError, while clients:* succeeds', async () => {
+      const familyContext = {
+        ...adminContext,
+        role: 'FAMILY',
+        permissions: ['portal:read'],
+      } as typeof adminContext;
+
+      vi.mocked(mockPermissions.requirePermission).mockImplementationOnce(() => {
+        throw new PermissionError('Missing permission: clients:update');
+      });
+
+      await expect(service.createFamilyMember(validInput, familyContext)).rejects.toThrow(PermissionError);
+
+      const wildcardContext = {
+        ...adminContext,
+        permissions: ['clients:*'],
+      };
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [{ id: 'client-1', organization_id: adminContext.organizationId!, branch_id: 'branch-1', status: 'ACTIVE' }],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({ rows: [], command: 'SELECT', rowCount: 0, oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [{ id: 'fm-2' }], command: 'INSERT', rowCount: 1, oid: 0, fields: [] });
+
+      const res = await service.createFamilyMember(validInput, wildcardContext);
+      expect(res).toEqual({ id: 'fm-2' });
+    });
+
+    it('throws ConflictError when email already exists for the client', async () => {
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [{ id: 'client-1', organization_id: adminContext.organizationId!, branch_id: 'branch-1', status: 'ACTIVE' }],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({
+          rows: [{ id: 'existing-fm' }],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        });
+
+      await expect(service.createFamilyMember(validInput, adminContext)).rejects.toThrow(ConflictError);
+    });
+
+    it('throws NotFoundError for non-existent or cross-org client', async () => {
+      vi.mocked(mockDb.query).mockResolvedValueOnce({
+        rows: [{ id: 'client-1', organization_id: 'other-org', branch_id: 'branch-1', status: 'ACTIVE' }],
+        command: 'SELECT',
+        rowCount: 1,
+        oid: 0,
+        fields: [],
+      });
+
+      await expect(service.createFamilyMember(validInput, adminContext)).rejects.toThrow(NotFoundError);
     });
   });
 });

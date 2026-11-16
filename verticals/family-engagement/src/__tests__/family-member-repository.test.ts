@@ -95,4 +95,65 @@ describe('FamilyMemberRepository', () => {
       expect(members).toEqual([]);
     });
   });
+
+  describe('createFamilyMember', () => {
+    it('queries client organization_id and branch_id and writes them into family_members', async () => {
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [{ organization_id: 'org-real-1', branch_id: 'branch-real-1' }],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'fm-new-1',
+              client_id: 'client-1',
+              organization_id: 'org-real-1',
+              branch_id: 'branch-real-1',
+              relationship: 'CHILD',
+              relationship_note: null,
+              is_primary_contact: true,
+              first_name: 'Jane',
+              last_name: 'Doe',
+              email: 'jane@example.com',
+              phone_number: '555-1234',
+              portal_access_level: 'VIEW_BASIC',
+              portal_access_status: 'NONE',
+              status: 'ACTIVE',
+              invitation_status: 'PENDING',
+              created_at: new Date('2026-01-01T00:00:00Z'),
+              updated_at: new Date('2026-01-01T00:00:00Z'),
+              version: 1,
+            },
+          ],
+          command: 'INSERT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        });
+
+      const created = await repository.createFamilyMember({
+        clientId: 'client-1',
+        relationship: 'CHILD',
+        isPrimaryContact: true,
+        firstName: 'Jane',
+        lastName: 'Doe',
+        email: 'jane@example.com',
+        phoneNumber: '555-1234',
+        portalAccessLevel: 'VIEW_BASIC',
+        createdBy: 'staff-1',
+      });
+
+      expect(created.organizationId).toBe('org-real-1');
+      expect(created.branchId).toBe('branch-real-1');
+      const insertCall = vi.mocked(mockDb.query).mock.calls[1]!;
+      expect(insertCall[1]).toContain('org-real-1');
+      expect(insertCall[1]).toContain('branch-real-1');
+      expect(insertCall[1]![12]).toBe('org-real-1');
+      expect(insertCall[1]![13]).toBe('branch-real-1');
+    });
+  });
 });

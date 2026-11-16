@@ -343,4 +343,110 @@ describe('Portal Access API Routes', () => {
       expect(res.body.success).toBe(false);
     });
   });
+
+  describe('POST /api/clients/:clientId/family-portal-access', () => {
+    const validPayload = {
+      firstName: 'Jane',
+      lastName: 'Doe',
+      relationship: 'CHILD',
+      email: 'jane@example.com',
+      phoneNumber: '555-123-4567',
+      isPrimaryContact: true,
+      portalAccessLevel: 'VIEW_BASIC',
+    };
+
+    it('returns 201 with hydrated FamilyPortalAccessRow for authorized staff', async () => {
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [{ id: 'client-1', organization_id: 'org-1', branch_id: 'branch-1', status: 'ACTIVE' }],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({ rows: [], command: 'SELECT', rowCount: 0, oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [{ id: 'fm-new-1' }], command: 'INSERT', rowCount: 1, oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [], command: 'INSERT', rowCount: 1, oid: 0, fields: [] })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'fm-new-1',
+              first_name: 'Jane',
+              last_name: 'Doe',
+              relationship: 'CHILD',
+              email: 'jane@example.com',
+              portal_access_level: 'VIEW_BASIC',
+              portal_access_status: 'NONE',
+              portal_invited_at: null,
+              portal_activated_at: null,
+              portal_revoked_at: null,
+              portal_revoked_reason: null,
+              user_id: null,
+              last_login_at: null,
+            },
+          ],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({ rows: [], command: 'SELECT', rowCount: 0, oid: 0, fields: [] });
+
+      const res = await request(app)
+        .post('/api/clients/client-1/family-portal-access')
+        .send(validPayload);
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.familyMemberId).toBe('fm-new-1');
+      expect(res.body.data.status).toBe('NONE');
+    });
+
+    it('returns 400 on invalid payload', async () => {
+      const res = await request(app)
+        .post('/api/clients/client-1/family-portal-access')
+        .send({ firstName: '', relationship: 'INVALID_ENUM' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('returns 403 when caller lacks clients:update', async () => {
+      const { PermissionService, PermissionError } = await import('@folkcare/core');
+      vi.spyOn(PermissionService.prototype, 'requirePermission').mockImplementationOnce(() => {
+        throw new PermissionError('Permission denied: requires clients:update');
+      });
+      const res = await request(app)
+        .post('/api/clients/client-1/family-portal-access')
+        .send(validPayload);
+
+      expect(res.status).toBe(403);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('returns 409 when email already exists for the client', async () => {
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [{ id: 'client-1', organization_id: 'org-1', branch_id: 'branch-1', status: 'ACTIVE' }],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        })
+        .mockResolvedValueOnce({
+          rows: [{ id: 'existing-fm' }],
+          command: 'SELECT',
+          rowCount: 1,
+          oid: 0,
+          fields: [],
+        });
+
+      const res = await request(app)
+        .post('/api/clients/client-1/family-portal-access')
+        .send(validPayload);
+
+      expect(res.status).toBe(409);
+      expect(res.body.success).toBe(false);
+    });
+  });
 });

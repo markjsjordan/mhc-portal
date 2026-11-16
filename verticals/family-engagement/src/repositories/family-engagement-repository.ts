@@ -117,16 +117,38 @@ export class FamilyMemberRepository extends Repository<FamilyMember> {
    * Create family member and send invitation
    */
   async createFamilyMember(
-    input: InviteFamilyMemberInput & { createdBy: UUID }
+    input: InviteFamilyMemberInput & {
+      createdBy: UUID;
+      organizationId?: UUID;
+      branchId?: UUID;
+    }
   ): Promise<FamilyMember> {
+    let organizationId = input.organizationId;
+    let branchId = input.branchId;
+
+    if (!organizationId || !branchId) {
+      const clientResult = await this.database.query<{
+        organization_id: UUID;
+        branch_id: UUID;
+      }>(
+        'SELECT organization_id, branch_id FROM clients WHERE id = $1 AND deleted_at IS NULL',
+        [input.clientId]
+      );
+      if (!clientResult.rows[0]) {
+        throw new Error(`Client not found: ${input.clientId}`);
+      }
+      organizationId = organizationId ?? clientResult.rows[0].organization_id;
+      branchId = branchId ?? clientResult.rows[0].branch_id;
+    }
+
     const query = `
       INSERT INTO family_members (
         id, client_id, relationship, relationship_note, is_primary_contact,
         first_name, last_name, email, phone_number, portal_access_level,
-        access_granted_by, access_expires_at, notification_preferences,
+        portal_access_status, access_granted_by, access_expires_at, notification_preferences,
         organization_id, branch_id, created_by, updated_by, created_at, updated_at, version
       ) VALUES (
-        gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $15,
+        gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, 'NONE', $10, $11, $12, $13, $14, $15, $15,
         NOW(), NOW(), 1
       )
       RETURNING *
@@ -145,9 +167,8 @@ export class FamilyMemberRepository extends Repository<FamilyMember> {
       input.createdBy,
       input.accessExpiresAt || null,
       JSON.stringify(input.notificationPreferences || {}),
-      // Note: organizationId and branchId would come from userContext
-      input.clientId, // Placeholder - would need to fetch from client
-      input.clientId, // Placeholder - would need to fetch from client
+      organizationId,
+      branchId,
       input.createdBy
     ]);
 

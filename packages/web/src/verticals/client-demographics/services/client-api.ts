@@ -1,6 +1,6 @@
 import type { ApiClient } from '@/core/services';
 import type { PaginatedResult, SearchParams } from '@/core/types';
-import type { Client, CreateClientInput, UpdateClientInput, ClientSearchFilters, FamilyPortalAccessRow, ClientPortalAccess } from '../types';
+import type { Client, CreateClientInput, UpdateClientInput, ClientSearchFilters, FamilyPortalAccessRow, ClientPortalAccess, CreateFamilyMemberPortalInput } from '../types';
 
 export interface DashboardClient {
   id: string;
@@ -74,6 +74,7 @@ export interface ClientApiService {
   deleteClient(id: string): Promise<void>;
   getBranches(): Promise<Array<{ id: string; name: string; code?: string; status?: string }>>;
   getFamilyPortalAccess(clientId: string): Promise<FamilyPortalAccessRow[]>;
+  createFamilyMember(clientId: string, input: CreateFamilyMemberPortalInput): Promise<FamilyPortalAccessRow>;
   inviteFamilyPortal(familyMemberId: string): Promise<FamilyPortalAccessRow>;
   revokeFamilyPortal(familyMemberId: string, reason: string): Promise<FamilyPortalAccessRow>;
   getClientPortalAccess(clientId: string): Promise<ClientPortalAccess>;
@@ -184,6 +185,17 @@ export const createClientApiService = (apiClient: ApiClient): ClientApiService =
         return response;
       }
       return [];
+    },
+
+    async createFamilyMember(clientId: string, input: CreateFamilyMemberPortalInput): Promise<FamilyPortalAccessRow> {
+      const response = await apiClient.post<{ success?: boolean; data?: FamilyPortalAccessRow } | FamilyPortalAccessRow>(
+        `/api/clients/${clientId}/family-portal-access`,
+        input
+      );
+      if (response && typeof response === 'object' && 'data' in response && response.data) {
+        return response.data;
+      }
+      return response as FamilyPortalAccessRow;
     },
 
     async inviteFamilyPortal(familyMemberId: string): Promise<FamilyPortalAccessRow> {

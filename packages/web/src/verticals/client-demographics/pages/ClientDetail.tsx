@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Edit, Trash2, Phone, Mail, MapPin, Calendar, User, Pill, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button.js';
@@ -10,10 +10,28 @@ import { formatDate, formatPhone } from '@/core/utils';
 import { useClient, useDeleteClient } from '../hooks';
 import {
   FamilyPortalAccessCard,
+  type PrefillFamilyMemberContact,
   ClientPortalAccessCard,
   VisitHistoryCard,
   ClientTimelineCard,
 } from '../components';
+import type { FamilyRelationship } from '../types';
+
+const mapEmergencyRelationship = (
+  raw: string
+): { relationship: FamilyRelationship; relationshipNote?: string } => {
+  const norm = raw.trim().toLowerCase();
+  if (['daughter', 'son', 'child'].includes(norm)) return { relationship: 'CHILD' };
+  if (['mother', 'father', 'mom', 'dad', 'parent'].includes(norm)) return { relationship: 'PARENT' };
+  if (['wife', 'husband', 'spouse', 'partner'].includes(norm)) return { relationship: 'SPOUSE' };
+  if (['sister', 'brother', 'sibling'].includes(norm)) return { relationship: 'SIBLING' };
+  if (['grandmother', 'grandfather', 'grandparent'].includes(norm)) return { relationship: 'GRANDPARENT' };
+  if (['granddaughter', 'grandson', 'grandchild'].includes(norm)) return { relationship: 'GRANDCHILD' };
+  if (['guardian'].includes(norm)) return { relationship: 'GUARDIAN' };
+  if (['power of attorney', 'poa'].includes(norm)) return { relationship: 'POWER_OF_ATTORNEY' };
+  if (['healthcare proxy', 'proxy'].includes(norm)) return { relationship: 'HEALTHCARE_PROXY' };
+  return { relationship: 'OTHER', relationshipNote: raw.trim() || undefined };
+};
 
 export const ClientDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +40,7 @@ export const ClientDetail: React.FC = () => {
   const { canWrite, readOnly } = useSectionAccess('clients');
   const { data: client, isLoading, error, refetch } = useClient(id);
   const deleteClient = useDeleteClient();
+  const [prefillContact, setPrefillContact] = useState<PrefillFamilyMemberContact | null>(null);
 
   const handleDelete = async () => {
     if (!client || !window.confirm('Are you sure you want to delete this client?')) {
@@ -221,6 +240,31 @@ export const ClientDetail: React.FC = () => {
                           </p>
                         )}
                       </div>
+                      {can('clients:update') && !['DISCHARGED', 'DECEASED'].includes(client.status) && (
+                        <div className="mt-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const parts = contact.name.trim().split(/\s+/);
+                              const firstName = parts[0] ?? '';
+                              const lastName = parts.slice(1).join(' ') || firstName;
+                              const mapped = mapEmergencyRelationship(contact.relationship);
+                              setPrefillContact({
+                                firstName,
+                                lastName,
+                                relationship: mapped.relationship,
+                                relationshipNote: mapped.relationshipNote,
+                                email: contact.email ?? '',
+                                phoneNumber: contact.phone.number,
+                                isPrimaryContact: Boolean(contact.isPrimary),
+                              });
+                            }}
+                          >
+                            Invite to portal
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -230,7 +274,12 @@ export const ClientDetail: React.FC = () => {
 
           {/* Portal Access (client + family) */}
           <ClientPortalAccessCard clientId={client.id} />
-          <FamilyPortalAccessCard clientId={client.id} />
+          <FamilyPortalAccessCard
+            clientId={client.id}
+            clientStatus={client.status}
+            prefillContact={prefillContact}
+            onClearPrefill={() => setPrefillContact(null)}
+          />
 
           {/* Visit History */}
           <div id="visit-history">
