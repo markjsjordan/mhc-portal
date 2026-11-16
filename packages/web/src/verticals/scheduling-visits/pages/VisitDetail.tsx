@@ -18,6 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { LoadingSpinner, ErrorMessage } from '@/core/components';
+import { formatCalendarDate, parseDateOnly } from '@/core/utils';
 import { Button } from '@/components/ui/button.js';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card.js';
 import { Badge } from '@/components/ui/badge.js';
@@ -208,7 +209,7 @@ export const VisitDetail: React.FC = () => {
       clientId: visit?.clientId ?? client?.id,
       state,
       serviceType,
-      initialVisitDate: visit?.scheduledDate ? new Date(visit.scheduledDate) : new Date(),
+      initialVisitDate: visit?.scheduledDate ? parseDateOnly(visit.scheduledDate) : new Date(),
       referenceDate: new Date(),
     });
   }, [client, visit]);
@@ -427,7 +428,7 @@ export const VisitDetail: React.FC = () => {
             <div>
               <p className="text-xs text-gray-500 font-medium">Scheduled Date</p>
               <p className="text-sm font-semibold text-gray-900">
-                {formatDate(visit.scheduledDate)}
+                {formatCalendarDate(visit.scheduledDate)}
               </p>
             </div>
           </div>

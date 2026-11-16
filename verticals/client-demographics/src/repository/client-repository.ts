@@ -3,7 +3,7 @@
  */
 
 import { Repository, Database, PaginatedResult } from '@folkcare/core';
-import { Client, ClientSearchFilters, Gender, ContactMethod, MaritalStatus, ClientStatus } from '../types/client';
+import { Client, ClientConsents, ClientSearchFilters, Gender, ContactMethod, MaritalStatus, ClientStatus } from '../types/client';
 
 export class ClientRepository extends Repository<Client> {
   constructor(database: Database) {
@@ -202,6 +202,31 @@ export class ClientRepository extends Repository<Client> {
 
     const specialInstructions = row['special_instructions'] as string | undefined;
     if (specialInstructions !== undefined) entity.specialInstructions = specialInstructions;
+
+    const authorizationInfo = row['authorization_info'];
+    if (authorizationInfo !== undefined && authorizationInfo !== null) {
+      entity.authorizationInfo = this.parseJsonField(authorizationInfo) as typeof entity.authorizationInfo;
+    }
+
+    const assessmentData = row['assessment_data'];
+    if (assessmentData !== undefined && assessmentData !== null) {
+      entity.assessmentData = this.parseJsonField(assessmentData) as typeof entity.assessmentData;
+    }
+
+    const carePlanSummary = row['care_plan_summary'];
+    if (carePlanSummary !== undefined && carePlanSummary !== null) {
+      entity.carePlanSummary = this.parseJsonField(carePlanSummary) as typeof entity.carePlanSummary;
+    }
+
+    const visitSchedule = row['visit_schedule'];
+    if (visitSchedule !== undefined && visitSchedule !== null) {
+      entity.visitSchedule = this.parseJsonField(visitSchedule) as typeof entity.visitSchedule;
+    }
+
+    const caregiverAssignment = row['caregiver_assignment'];
+    if (caregiverAssignment !== undefined && caregiverAssignment !== null) {
+      entity.caregiverAssignment = this.parseJsonField(caregiverAssignment) as typeof entity.caregiverAssignment;
+    }
   }
 
   /**
@@ -242,8 +267,30 @@ export class ClientRepository extends Repository<Client> {
     this.mapMedicalFields(entity, row);
     this.mapProgramFields(entity, row);
     this.mapStatusFields(entity, row);
+    this.mapIntakeFields(entity, row);
 
     return row;
+  }
+
+  /**
+   * Map intake Part B JSONB fields
+   */
+  private mapIntakeFields(entity: Partial<Client>, row: Record<string, unknown>): void {
+    if (entity.authorizationInfo !== undefined) {
+      row['authorization_info'] = JSON.stringify(entity.authorizationInfo);
+    }
+    if (entity.assessmentData !== undefined) {
+      row['assessment_data'] = JSON.stringify(entity.assessmentData);
+    }
+    if (entity.carePlanSummary !== undefined) {
+      row['care_plan_summary'] = JSON.stringify(entity.carePlanSummary);
+    }
+    if (entity.visitSchedule !== undefined) {
+      row['visit_schedule'] = JSON.stringify(entity.visitSchedule);
+    }
+    if (entity.caregiverAssignment !== undefined) {
+      row['caregiver_assignment'] = JSON.stringify(entity.caregiverAssignment);
+    }
   }
 
   /**
@@ -645,4 +692,84 @@ export class ClientRepository extends Repository<Client> {
     return result.rows[0] ? this.hydrate(result.rows[0] as Record<string, unknown>) : null;
   }
 
+  /**
+   * Upsert client consents & signature (Lane B1 compliance)
+   */
+  async upsertConsents(
+    clientId: string,
+    organizationId: string,
+    consents: ClientConsents,
+    actorId: string
+  ): Promise<ClientConsents> {
+    const query = `
+      INSERT INTO client_consents (
+        client_id, organization_id, care_agreement, hipaa,
+        financial_responsibility, evv, signature, signed_date,
+        recorded_by, recorded_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+      ON CONFLICT (client_id) DO UPDATE SET
+        care_agreement = EXCLUDED.care_agreement,
+        hipaa = EXCLUDED.hipaa,
+        financial_responsibility = EXCLUDED.financial_responsibility,
+        evv = EXCLUDED.evv,
+        signature = EXCLUDED.signature,
+        signed_date = EXCLUDED.signed_date,
+        recorded_by = EXCLUDED.recorded_by,
+        recorded_at = NOW(),
+        updated_at = NOW()
+      RETURNING care_agreement, hipaa, financial_responsibility, evv,
+                signature, signed_date, recorded_by, recorded_at
+    `;
+    const result = await this.database.query(query, [
+      clientId,
+      organizationId,
+      consents.careAgreement,
+      consents.hipaa,
+      consents.financialResponsibility,
+      consents.evv,
+      consents.signature ?? '',
+      consents.signedDate ?? '',
+      actorId,
+    ]);
+    const row = result.rows[0] as Record<string, unknown>;
+    return {
+      careAgreement: Boolean(row['care_agreement']),
+      hipaa: Boolean(row['hipaa']),
+      financialResponsibility: Boolean(row['financial_responsibility']),
+      evv: Boolean(row['evv']),
+      signature: String(row['signature'] ?? ''),
+      signedDate: String(row['signed_date'] ?? ''),
+      recordedBy: row['recorded_by'] ? String(row['recorded_by']) : undefined,
+      recordedAt: row['recorded_at'] ? new Date(row['recorded_at'] as string) : undefined,
+    };
+  }
+
+  /**
+   * Fetch client consents & signature by client ID
+   */
+  async getConsentsByClientId(clientId: string): Promise<ClientConsents | undefined> {
+    const query = `
+      SELECT care_agreement, hipaa, financial_responsibility, evv,
+             signature, signed_date, recorded_by, recorded_at
+      FROM client_consents
+      WHERE client_id = $1
+      LIMIT 1
+    `;
+    const result = await this.database.query(query, [clientId]);
+    if (!result?.rows || result.rows.length === 0) {
+      return undefined;
+    }
+    const row = result.rows[0] as Record<string, unknown>;
+    return {
+      careAgreement: Boolean(row['care_agreement']),
+      hipaa: Boolean(row['hipaa']),
+      financialResponsibility: Boolean(row['financial_responsibility']),
+      evv: Boolean(row['evv']),
+      signature: String(row['signature'] ?? ''),
+      signedDate: String(row['signed_date'] ?? ''),
+      recordedBy: row['recorded_by'] ? String(row['recorded_by']) : undefined,
+      recordedAt: row['recorded_at'] ? new Date(row['recorded_at'] as string) : undefined,
+    };
+  }
 }

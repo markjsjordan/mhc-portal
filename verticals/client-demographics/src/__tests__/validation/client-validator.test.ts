@@ -42,6 +42,14 @@ describe('ClientValidator', () => {
         firstName: 'Jane',
         lastName: 'Doe',
         dateOfBirth: new Date('1985-05-15'),
+        primaryAddress: {
+          type: 'HOME',
+          line1: '123 Main St',
+          city: 'Austin',
+          state: 'TX',
+          postalCode: '78701',
+          country: 'US',
+        },
       };
 
       const result = validator.validateCreate(inputWithoutBranch);
@@ -55,10 +63,31 @@ describe('ClientValidator', () => {
         firstName: 'Demo',
         lastName: 'Client',
         dateOfBirth: new Date('1990-01-01'),
+        primaryAddress: {
+          type: 'HOME',
+          line1: '123 Main St',
+          city: 'Austin',
+          state: 'TX',
+          postalCode: '78701',
+          country: 'US',
+        },
       };
 
       const result = validator.validateCreate(demoInput);
       expect(result.success).toBe(true);
+    });
+
+    it('should return a field error when primaryAddress is missing on create', () => {
+      const inputWithoutAddress = {
+        organizationId: '123e4567-e89b-12d3-a456-426614174000',
+        firstName: 'Jane',
+        lastName: 'Doe',
+        dateOfBirth: new Date('1985-05-15'),
+      } as CreateClientInput;
+
+      const result = validator.validateCreate(inputWithoutAddress);
+      expect(result.success).toBe(false);
+      expect(result.errors?.length).toBeGreaterThan(0);
     });
 
     it('should return errors for invalid create input', () => {
