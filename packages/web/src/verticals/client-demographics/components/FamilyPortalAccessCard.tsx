@@ -25,9 +25,9 @@ import { formatDate } from '@/core/utils';
 import {
   useFamilyPortalAccess,
   useInviteFamilyPortal,
+  useClientApi,
   useRevokeFamilyPortal,
 } from '../hooks';
-import { useClientApi } from '../services/client-api.js';
 import { InviteLinkBox } from '../../../components/InviteLinkBox.js';
 import type { FamilyPortalAccessRow, PortalAccessStatus } from '../types';
 

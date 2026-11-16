@@ -15,11 +15,11 @@ import { LoadingSpinner } from '@/core/components/index.js';
 import { usePermissions } from '@/core/hooks/index.js';
 import { formatDate } from '@/core/utils/index.js';
 import {
+  useCaregiverApi,
   useCaregiverPortalAccess,
   useInviteCaregiverPortal,
   useRevokeCaregiverPortal,
 } from '../hooks/index.js';
-import { useCaregiverApi } from '../services/caregiver-api.js';
 import { InviteLinkBox } from '../../../components/InviteLinkBox.js';
 import type { PortalAccessStatus } from '../types/index.js';
 

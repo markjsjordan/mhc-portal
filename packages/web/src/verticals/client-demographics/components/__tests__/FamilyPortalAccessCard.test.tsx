@@ -14,13 +14,10 @@ vi.mock('@/core/hooks', () => ({
   usePermissions: vi.fn(),
 }));
 
-vi.mock('../../services/client-api.js', () => ({
+vi.mock('../../hooks', () => ({
   useClientApi: () => ({
     getFamilyPortalInviteLink: vi.fn().mockResolvedValue({ inviteUrl: 'https://example.com/accept-invite/tok' }),
   }),
-}));
-
-vi.mock('../../hooks', () => ({
   useFamilyPortalAccess: vi.fn(),
   useInviteFamilyPortal: vi.fn(),
   useRevokeFamilyPortal: vi.fn(),

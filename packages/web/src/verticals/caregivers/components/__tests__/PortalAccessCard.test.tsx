@@ -14,13 +14,10 @@ vi.mock('@/core/hooks/index.js', () => ({
   usePermissions: vi.fn(),
 }));
 
-vi.mock('../../services/caregiver-api', () => ({
+vi.mock('../../hooks/index.js', () => ({
   useCaregiverApi: () => ({
     getPortalInviteLink: vi.fn().mockResolvedValue({ inviteUrl: 'https://example.com/accept-invite/tok' }),
   }),
-}));
-
-vi.mock('../../hooks/index.js', () => ({
   useCaregiverPortalAccess: vi.fn(),
   useInviteCaregiverPortal: vi.fn(),
   useRevokeCaregiverPortal: vi.fn(),

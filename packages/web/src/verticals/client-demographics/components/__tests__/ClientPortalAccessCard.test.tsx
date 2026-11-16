@@ -7,13 +7,10 @@ import { useClientPortalAccess, useInviteClientPortal, useRevokeClientPortal } f
 import type { ClientPortalAccess } from '../../types';
 
 vi.mock('@/core/hooks', () => ({ usePermissions: vi.fn() }));
-vi.mock('../../services/client-api.js', () => ({
+vi.mock('../../hooks', () => ({
   useClientApi: () => ({
     getClientPortalInviteLink: vi.fn().mockResolvedValue({ inviteUrl: 'https://example.com/accept-invite/tok' }),
   }),
-}));
-
-vi.mock('../../hooks', () => ({
   useClientPortalAccess: vi.fn(),
   useInviteClientPortal: vi.fn(),
   useRevokeClientPortal: vi.fn(),

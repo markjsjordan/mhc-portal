@@ -17,9 +17,9 @@ import { formatDate } from '@/core/utils';
 import {
   useClientPortalAccess,
   useInviteClientPortal,
+  useClientApi,
   useRevokeClientPortal,
 } from '../hooks';
-import { useClientApi } from '../services/client-api.js';
 import { InviteLinkBox } from '../../../components/InviteLinkBox.js';
 import type { PortalAccessStatus } from '../types';
 
