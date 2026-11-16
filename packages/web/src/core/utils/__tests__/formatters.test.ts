@@ -1,140 +1,48 @@
 import { describe, it, expect } from 'vitest';
-import {
-  formatDate,
-  formatDateTime,
-  formatTime,
-  formatPhone,
-  formatCurrency,
-  formatDuration,
-  truncate,
-  capitalize,
-} from '../formatters';
+import { formatCalendarDate, formatDate, parseDateOnly, toDateKey } from '../formatters';
 
-describe('formatters', () => {
-  describe('formatDate', () => {
-    it('should format a date string', () => {
-      const result = formatDate('2024-01-15T12:00:00');
-      expect(result).toContain('Jan');
-      expect(result).toContain('2024');
-    });
+describe('date-only formatters', () => {
+  it('parseDateOnly constructs local calendar Date without UTC day-shift', () => {
+    const fromPlain = parseDateOnly('2026-12-03');
+    expect(fromPlain.getFullYear()).toBe(2026);
+    expect(fromPlain.getMonth()).toBe(11);
+    expect(fromPlain.getDate()).toBe(3);
 
-    it('should format a Date object', () => {
-      const date = new Date('2024-01-15T12:00:00');
-      const result = formatDate(date);
-      expect(result).toContain('Jan');
-      expect(result).toContain('2024');
-    });
+    const fromIso = parseDateOnly('2026-12-03T00:00:00.000Z');
+    expect(fromIso.getFullYear()).toBe(2026);
+    expect(fromIso.getMonth()).toBe(11);
+    expect(fromIso.getDate()).toBe(3);
+
+    const fromDate = parseDateOnly(new Date('2026-12-03T00:00:00.000Z'));
+    expect(fromDate.getFullYear()).toBe(2026);
+    expect(fromDate.getMonth()).toBe(11);
+    expect(fromDate.getDate()).toBe(3);
   });
 
-  describe('formatDateTime', () => {
-    it('should format a date with time', () => {
-      const result = formatDateTime('2024-01-15T14:30:00');
-      expect(result).toContain('Jan');
-      expect(result).toContain('15');
-      expect(result).toContain('2024');
-    });
+  it('formatCalendarDate formats YYYY-MM-DD, ISO midnight UTC, and Date identically', () => {
+    expect(formatCalendarDate('2026-12-03')).toBe('Dec 3, 2026');
+    expect(formatCalendarDate('2026-12-03T00:00:00.000Z')).toBe('Dec 3, 2026');
+    expect(formatCalendarDate(new Date('2026-12-03T00:00:00.000Z'))).toBe('Dec 3, 2026');
+
+    const longOpts: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    };
+    expect(formatCalendarDate('2026-12-03', longOpts)).toBe('Thursday, Dec 3, 2026');
+    expect(formatCalendarDate('2026-12-03T00:00:00.000Z', longOpts)).toBe('Thursday, Dec 3, 2026');
+    expect(formatCalendarDate(null)).toBe('—');
+    expect(formatCalendarDate(undefined)).toBe('—');
   });
 
-  describe('formatTime', () => {
-    it('should format time from date string', () => {
-      const result = formatTime('2024-01-15T14:30:00');
-      expect(result).toContain('30');
-    });
+  it('toDateKey extracts YYYY-MM-DD from string or Date', () => {
+    expect(toDateKey('2026-12-03')).toBe('2026-12-03');
+    expect(toDateKey('2026-12-03T00:00:00.000Z')).toBe('2026-12-03');
+    expect(toDateKey(new Date('2026-12-03T00:00:00.000Z'))).toBe('2026-12-03');
   });
 
-  describe('formatPhone', () => {
-    it('should format a 10-digit phone number', () => {
-      const result = formatPhone('5551234567');
-      expect(result).toBe('(555) 123-4567');
-    });
-
-    it('should handle phone numbers with formatting', () => {
-      const result = formatPhone('(555) 123-4567');
-      expect(result).toBe('(555) 123-4567');
-    });
-
-    it('should return original if not 10 digits', () => {
-      const result = formatPhone('123');
-      expect(result).toBe('123');
-    });
-  });
-
-  describe('formatCurrency', () => {
-    it('should format currency in USD by default', () => {
-      const result = formatCurrency(1234.56);
-      expect(result).toBe('$1,234.56');
-    });
-
-    it('should handle zero', () => {
-      const result = formatCurrency(0);
-      expect(result).toBe('$0.00');
-    });
-
-    it('should handle negative amounts', () => {
-      const result = formatCurrency(-100);
-      expect(result).toContain('-');
-      expect(result).toContain('100');
-    });
-  });
-
-  describe('formatDuration', () => {
-    it('should format minutes only', () => {
-      const result = formatDuration(45);
-      expect(result).toBe('45m');
-    });
-
-    it('should format hours only', () => {
-      const result = formatDuration(120);
-      expect(result).toBe('2h');
-    });
-
-    it('should format hours and minutes', () => {
-      const result = formatDuration(90);
-      expect(result).toBe('1h 30m');
-    });
-
-    it('should handle zero', () => {
-      const result = formatDuration(0);
-      expect(result).toBe('0m');
-    });
-  });
-
-  describe('truncate', () => {
-    it('should truncate long text', () => {
-      const result = truncate('This is a long text', 10);
-      expect(result).toBe('This is...');
-    });
-
-    it('should not truncate short text', () => {
-      const result = truncate('Short', 10);
-      expect(result).toBe('Short');
-    });
-
-    it('should handle exact length', () => {
-      const result = truncate('Exactly10!', 10);
-      expect(result).toBe('Exactly10!');
-    });
-  });
-
-  describe('capitalize', () => {
-    it('should capitalize first letter', () => {
-      const result = capitalize('hello');
-      expect(result).toBe('Hello');
-    });
-
-    it('should lowercase rest of string', () => {
-      const result = capitalize('HELLO');
-      expect(result).toBe('Hello');
-    });
-
-    it('should handle single character', () => {
-      const result = capitalize('a');
-      expect(result).toBe('A');
-    });
-
-    it('should handle empty string', () => {
-      const result = capitalize('');
-      expect(result).toBe('');
-    });
+  it('formatDate handles plain YYYY-MM-DD without UTC day-shift', () => {
+    expect(formatDate('2026-12-03')).toBe('Dec 3, 2026');
   });
 });

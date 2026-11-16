@@ -18,6 +18,19 @@
 
 import { Resend } from 'resend';
 
+const DEFAULT_BASE_URL = 'https://mhc-family-portal.vercel.app';
+
+/**
+ * Build the public invitation acceptance URL for a given invite token.
+ */
+export function buildInvitationUrl(token: string, baseUrl?: string): string {
+  let resolvedBaseUrl = baseUrl ?? process.env.BASE_URL ?? DEFAULT_BASE_URL;
+  while (resolvedBaseUrl.endsWith('/')) {
+    resolvedBaseUrl = resolvedBaseUrl.slice(0, -1);
+  }
+  return `${resolvedBaseUrl}/accept-invite/${encodeURIComponent(token)}`;
+}
+
 export interface SendInvitationEmailRequest {
   recipientEmail: string;
   recipientName?: string;
@@ -92,7 +105,7 @@ export class EmailService implements IEmailService {
   }
 
   async sendInvitation(request: SendInvitationEmailRequest): Promise<void> {
-    const invitationUrl = `${this.baseUrl}/accept-invitation?token=${request.invitationToken}`;
+    const invitationUrl = buildInvitationUrl(request.invitationToken, this.baseUrl);
     const expiresInHours = Math.ceil((request.expiresAt.getTime() - Date.now()) / (1000 * 60 * 60));
 
     const html = this.generateInvitationEmail({

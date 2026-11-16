@@ -169,7 +169,7 @@ describe('sectionAccessMiddleware & requireSection', () => {
     const ctx: UserContext = {
       userId: USER_ID,
       organizationId: ORG_ID,
-      roles: ['READ_ONLY'],
+      roles: ['SUPER_ADMIN'],
       permissions: [],
       branchIds: [],
     };
@@ -180,6 +180,32 @@ describe('sectionAccessMiddleware & requireSection', () => {
 
     const postRes = await request(app).post('/api/clients').send({});
     expect(postRes.status).toBe(200);
+  });
+
+  it('a granting override on a NONE-default section is clamped and returns 403 SECTION_ACCESS_DENIED in enforce mode', async () => {
+    vi.spyOn(db, 'query').mockResolvedValue({
+      rows: [{ section: 'billing', access: 'WRITE' }],
+      command: 'SELECT',
+      rowCount: 1,
+      oid: 0,
+      fields: [],
+    });
+
+    const ctx: UserContext = {
+      userId: USER_ID,
+      organizationId: ORG_ID,
+      roles: ['READ_ONLY'], // billing default is NONE
+      permissions: [],
+      branchIds: [],
+    };
+    const app = buildApp(db, ctx);
+
+    const getRes = await request(app).get('/api/billing');
+    expect(getRes.status).toBe(403);
+    expect(getRes.body).toMatchObject({
+      success: false,
+      code: 'SECTION_ACCESS_DENIED',
+    });
   });
 
   it('a wildcard role with no override is unaffected', async () => {

@@ -96,4 +96,91 @@ describe('mapClientToIntakeData', () => {
     expect(data).not.toHaveProperty('phoneType');
     expect(data).not.toHaveProperty('phoneCanReceiveSMS');
   });
+
+  it('maps all 5 intake Part B lanes from saved Client', () => {
+    const data = mapClientToIntakeData(
+      makeClient({
+        consents: {
+          careAgreement: true,
+          hipaa: true,
+          financialResponsibility: true,
+          evv: true,
+          signature: 'Jane Doe',
+          signedDate: '2026-11-15',
+        },
+        primaryPhysician: {
+          name: 'Dr. House',
+          phone: { number: '5125550000', type: 'WORK', isPrimary: true },
+        },
+        insurance: [
+          {
+            type: 'MEDICAID',
+            policyNumber: 'MEM-999',
+            groupNumber: 'GRP-111',
+            isPrimary: true,
+          },
+        ],
+        authorizationInfo: {
+          number: 'AUTH-123',
+          approvedHours: 20,
+          validFrom: '2026-01-01',
+          validTo: '2026-12-31',
+        },
+        assessmentData: {
+          mobility: 'walker',
+          cognitive: 'mild',
+          conditions: ['Diabetes'],
+          medications: [{ name: 'Metformin', dosage: '500mg', frequency: 'BID' }],
+          allergies: ['Penicillin'],
+          dietaryNeeds: 'Low sodium',
+        },
+        carePlanSummary: {
+          serviceTypes: ['Personal Care'],
+          visitFrequency: '3xweek',
+          visitDuration: 2,
+          preferredTimes: ['Morning'],
+          tasks: ['Bathing'],
+          goals: 'Maintain independence',
+        },
+        visitSchedule: {
+          scheduleStartDate: '2026-11-20',
+          visitSchedule: [{ dayOfWeek: 1, time: '09:00', duration: 2 }],
+        },
+        caregiverAssignment: {
+          primaryCaregiver: 'cg-1',
+          backupCaregivers: ['cg-2'],
+          preferences: { gender: 'female', language: ['English', 'Spanish'] },
+        },
+      })
+    );
+
+    expect(data.consents).toEqual({
+      careAgreement: true,
+      hipaa: true,
+      financialResponsibility: true,
+      evv: true,
+    });
+    expect(data.signature).toBe('Jane Doe');
+    expect(data.signedDate).toBe('2026-11-15');
+    expect(data.physician).toEqual({ name: 'Dr. House', phone: '5125550000' });
+    expect(data.insurance).toEqual({ type: 'medicaid', memberId: 'MEM-999', groupNumber: 'GRP-111' });
+    expect(data.authorization).toEqual({
+      number: 'AUTH-123',
+      approvedHours: 20,
+      validFrom: '2026-01-01',
+      validTo: '2026-12-31',
+    });
+    expect(data.mobility).toBe('walker');
+    expect(data.cognitive).toBe('mild');
+    expect(data.conditions).toEqual(['Diabetes']);
+    expect(data.allergies).toEqual(['Penicillin']);
+    expect(data.dietaryNeeds).toBe('Low sodium');
+    expect(data.serviceTypes).toEqual(['Personal Care']);
+    expect(data.visitFrequency).toBe('3xweek');
+    expect(data.scheduleStartDate).toBe('2026-11-20');
+    expect(data.visitSchedule).toEqual([{ dayOfWeek: 1, time: '09:00', duration: 2 }]);
+    expect(data.primaryCaregiver).toBe('cg-1');
+    expect(data.backupCaregivers).toEqual(['cg-2']);
+    expect(data.preferences).toEqual({ gender: 'female', language: ['English', 'Spanish'] });
+  });
 });
