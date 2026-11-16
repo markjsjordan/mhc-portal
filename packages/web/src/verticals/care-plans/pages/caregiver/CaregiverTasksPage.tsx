@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
+import { formatCalendarDate } from '@/core/utils';
 import { Calendar, Filter, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
 import { Button } from '@/components/ui/button.js';
@@ -74,7 +75,7 @@ export const CaregiverTasksPage: React.FC = () => {
             {shouldFilterToSelf ? 'My Tasks' : 'All Tasks'}
           </h1>
           <p className="text-gray-600 mt-1">
-            Tasks scheduled for {format(new Date(selectedDate), 'MMMM d, yyyy')}
+            Tasks scheduled for {formatCalendarDate(selectedDate, { month: 'long', day: 'numeric', year: 'numeric' })}
           </p>
         </div>
         {isCaregiverRole && (

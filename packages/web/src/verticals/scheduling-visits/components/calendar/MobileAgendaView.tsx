@@ -1,6 +1,7 @@
 import React from 'react';
 import moment from 'moment';
 import type { Visit } from '../../types';
+import { toDateKey } from '@/core/utils';
 
 export interface MobileAgendaViewProps {
   currentDate: Date;
@@ -20,11 +21,9 @@ export const MobileAgendaView: React.FC<MobileAgendaViewProps> = ({
   caregiverNameMap,
 }) => {
   // Sort visits for the current day chronologically
+  const targetKey = moment(currentDate).format('YYYY-MM-DD');
   const dayVisits = visits
-    .filter((visit) => {
-      const vDate = moment(visit.scheduledDate);
-      return vDate.isSame(moment(currentDate), 'day');
-    })
+    .filter((visit) => toDateKey(visit.scheduledDate) === targetKey)
     .sort((a, b) => {
       return (a.scheduledStartTime || '').localeCompare(b.scheduledStartTime || '');
     });

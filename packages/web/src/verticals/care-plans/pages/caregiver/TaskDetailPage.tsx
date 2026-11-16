@@ -13,7 +13,7 @@ import {
 import { LoadingSpinner, ErrorMessage } from '@/core/components';
 import { Button } from '@/components/ui/button.js';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
-import { formatDate, formatTime } from '@/core/utils';
+import { formatCalendarDate, formatDate, formatTime } from '@/core/utils';
 import { useTask } from '../../hooks';
 import {
   TaskCompletionModal,
@@ -106,7 +106,7 @@ export const TaskDetailPage: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-red-800">This task is overdue</p>
               <p className="text-sm text-red-600">
-                This task was scheduled for {formatDate(task.scheduledDate)}
+                This task was scheduled for {formatCalendarDate(task.scheduledDate)}
               </p>
             </div>
           </div>
@@ -126,7 +126,7 @@ export const TaskDetailPage: React.FC = () => {
                   <dt className="text-sm font-medium text-gray-500">Scheduled Date</dt>
                   <dd className="mt-1 flex items-center gap-2 text-sm text-gray-900">
                     <Calendar className="h-4 w-4" />
-                    {formatDate(task.scheduledDate)}
+                    {formatCalendarDate(task.scheduledDate)}
                   </dd>
                 </div>
 
