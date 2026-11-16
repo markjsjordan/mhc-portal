@@ -216,4 +216,53 @@ describe('PatternAuthorizationGuard', () => {
     expect(result.allowed).toBe(false);
     expect(result.message).toContain('exceeds authorized weekly visits limit');
   });
+
+  it('matches client with a real authorization by serviceTypeCode and rejects client without matching authorization', async () => {
+    const pcAuth = {
+      id: 'auth-pc-1',
+      clientId: CLIENT_ID,
+      organizationId: ORG_ID,
+      serviceCodes: ['PC', 'T1019'],
+      authorizedUnits: 40,
+      unitType: 'HOURS',
+      effectiveDate: '2026-01-01',
+      expirationDate: '2026-12-31',
+      unitsUsed: 0,
+      unitsRemaining: 40,
+      status: 'ACTIVE',
+    };
+
+    (mockAuthReader.findActiveByClientAndService as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce([pcAuth])
+      .mockResolvedValueOnce([]);
+    (mockFundingReader.getClientFundingSources as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { type: 'MEDICAID', name: 'Texas Medicaid' },
+    ]);
+
+    const guard = new PatternAuthorizationGuard(mockAuthReader, mockFundingReader, mockPatternSummaryReader);
+
+    const matchedResult = await guard.validatePattern({
+      organizationId: ORG_ID,
+      clientId: CLIENT_ID,
+      serviceTypeId: '00000000-0000-4000-8000-00000005ec01',
+      serviceTypeCode: 'PC',
+      dayOfWeek: ['MONDAY', 'WEDNESDAY'],
+      duration: 120,
+      startDate: '2026-10-15',
+    });
+    expect(matchedResult.allowed).toBe(true);
+
+    const unmatchedResult = await guard.validatePattern({
+      organizationId: ORG_ID,
+      clientId: CLIENT_ID,
+      serviceTypeId: '00000000-0000-4000-8000-00000005ec03',
+      serviceTypeCode: 'SN',
+      dayOfWeek: ['MONDAY'],
+      duration: 60,
+      startDate: '2026-10-15',
+    });
+    expect(unmatchedResult.allowed).toBe(false);
+    expect(unmatchedResult.code).toBe('AUTHORIZATION_LIMIT_EXCEEDED');
+    expect(unmatchedResult.details?.reason).toBe('NO_AUTHORIZATION_RECORD');
+  });
 });

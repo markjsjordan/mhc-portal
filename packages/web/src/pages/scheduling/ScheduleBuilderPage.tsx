@@ -118,6 +118,21 @@ function toDisplayVisit(v: ApiVisit, caregiverNameById: Map<string, string>): Vi
   };
 }
 
+interface ServiceTypeOption {
+  id: string;
+  code: string;
+  name: string;
+}
+
+const DEFAULT_SERVICE_TYPES: ServiceTypeOption[] = [
+  { id: '00000000-0000-4000-8000-00000005ec01', code: 'PC', name: 'Personal Care' },
+  { id: '00000000-0000-4000-8000-00000005ec02', code: 'HHA', name: 'Home Health Aide' },
+  { id: '00000000-0000-4000-8000-00000005ec03', code: 'SN', name: 'Skilled Nursing' },
+  { id: '00000000-0000-4000-8000-00000005ec04', code: 'PT', name: 'Physical Therapy' },
+  { id: '00000000-0000-4000-8000-00000005ec05', code: 'OT', name: 'Occupational Therapy' },
+  { id: '00000000-0000-4000-8000-00000005ec06', code: 'ST', name: 'Speech Therapy' },
+];
+
 export default function ScheduleBuilderPage() {
   const isMobile = useIsMobile();
   const { timezone } = useTimezone();
@@ -287,7 +302,7 @@ export default function ScheduleBuilderPage() {
       await visitApi.createVisit({
         clientId: createModalData.clientId,
         caregiverId: createModalData.caregiverId,
-        serviceTypeId: '00000000-0000-0000-0000-000000000002',
+        serviceTypeId: DEFAULT_SERVICE_TYPES[0]!.id,
         visitType: createModalData.visitType as import('@/verticals/scheduling-visits/types').VisitType,
         scheduledDate: createModalData.date,
         scheduledStartTime: createModalData.startTime,
@@ -1262,9 +1277,9 @@ function CreateRecurringPatternModal({
   const queryClient = useQueryClient();
   const visitApi = useVisitApi();
   const [clientId, setClientId] = useState<string>(clients[0]?.id ?? '');
-  const [customClientName, setCustomClientName] = useState<string>('');
+  const [clientError, setClientError] = useState<string>('');
   const [caregiverId, setCaregiverId] = useState<string>('');
-  const [serviceTypeName, setServiceTypeName] = useState<string>('Personal Care');
+  const [serviceTypeId, setServiceTypeId] = useState<string>(DEFAULT_SERVICE_TYPES[0]!.id);
   const [frequency, setFrequency] = useState<string>('WEEKLY');
   const [selectedDays, setSelectedDays] = useState<string[]>(['MONDAY', 'WEDNESDAY', 'FRIDAY']);
   const [startTime, setStartTime] = useState<string>('09:00');
@@ -1287,8 +1302,9 @@ function CreateRecurringPatternModal({
 
   const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
-    if (!clientId && !customClientName) {
-      toast.error('Please select or specify a client');
+    if (!clientId.trim()) {
+      setClientError('Please select a client');
+      toast.error('Please select a client');
       return;
     }
     if (frequency === 'WEEKLY' && selectedDays.length === 0) {
@@ -1296,13 +1312,17 @@ function CreateRecurringPatternModal({
       return;
     }
 
+    const selectedServiceType =
+      DEFAULT_SERVICE_TYPES.find((st) => st.id === serviceTypeId) ?? DEFAULT_SERVICE_TYPES[0]!;
+
     setSubmitting(true);
     try {
       const res = await visitApi.createPattern({
-        clientId: clientId || '00000000-0000-0000-0000-000000000001',
+        clientId,
         caregiverId: caregiverId || undefined,
-        serviceTypeId: '00000000-0000-0000-0000-000000000002',
-        serviceTypeName,
+        serviceTypeId: selectedServiceType.id,
+        serviceTypeCode: selectedServiceType.code,
+        serviceTypeName: selectedServiceType.name,
         frequency,
         startDate,
         endDate: endDate || undefined,
@@ -1361,31 +1381,28 @@ function CreateRecurringPatternModal({
           <div style={modalStyles.formGrid} className="modal-form-grid">
             <div style={modalStyles.formGroup}>
               <Label htmlFor="recurring-client">Client *</Label>
-              {clients.length > 0 ? (
-                <Select
-                  value={clientId || undefined}
-                  onValueChange={setClientId}
-                >
-                  <SelectTrigger id="recurring-client">
-                    <SelectValue placeholder="Select a client..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.firstName} {c.lastName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  id="recurring-client"
-                  type="text"
-                  placeholder="Client name or ID"
-                  value={customClientName}
-                  onChange={(e) => setCustomClientName(e.target.value)}
-                  required
-                />
+              <Select
+                value={clientId || undefined}
+                onValueChange={(val) => {
+                  setClientId(val);
+                  setClientError('');
+                }}
+              >
+                <SelectTrigger id="recurring-client">
+                  <SelectValue placeholder="Select a client..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.firstName} {c.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {clientError && (
+                <p role="alert" className="text-sm text-destructive">
+                  {clientError}
+                </p>
               )}
             </div>
 
@@ -1412,19 +1429,18 @@ function CreateRecurringPatternModal({
             <div style={modalStyles.formGroup}>
               <Label htmlFor="recurring-service-type">Service Type</Label>
               <Select
-                value={serviceTypeName}
-                onValueChange={setServiceTypeName}
+                value={serviceTypeId}
+                onValueChange={setServiceTypeId}
               >
                 <SelectTrigger id="recurring-service-type">
                   <SelectValue placeholder="Select service type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Personal Care">Personal Care</SelectItem>
-                  <SelectItem value="Home Health Aide">Home Health Aide</SelectItem>
-                  <SelectItem value="Skilled Nursing">Skilled Nursing</SelectItem>
-                  <SelectItem value="Physical Therapy">Physical Therapy</SelectItem>
-                  <SelectItem value="Companion Care">Companion Care</SelectItem>
-                  <SelectItem value="Respite Care">Respite Care</SelectItem>
+                  {DEFAULT_SERVICE_TYPES.map((st) => (
+                    <SelectItem key={st.id} value={st.id}>
+                      {st.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

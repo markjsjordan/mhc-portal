@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ScheduleBuilderPage from '../ScheduleBuilderPage.js';
@@ -42,14 +42,16 @@ vi.mock('@/verticals/scheduling-visits/hooks/useVisits', () => ({
   useVisitApi: () => ({
     assignCaregiver: vi.fn(),
     unassignCaregiver: vi.fn(),
+    createPattern: (...args: unknown[]) => mockCreatePattern(...args),
   }),
   useCaregiverAvailability: () => ({
     data: [{ caregiver_id: 'cg-1', available: true }],
   }),
 }));
 
-vi.mock('@/verticals/client-demographics/hooks/useClients', () => ({
-  useClients: () => ({
+const { mockCreatePattern, mockClientsReturn } = vi.hoisted(() => ({
+  mockCreatePattern: vi.fn().mockResolvedValue({ generatedVisitsCount: 4 }),
+  mockClientsReturn: vi.fn(() => ({
     clients: [
       {
         id: 'client-1',
@@ -59,7 +61,11 @@ vi.mock('@/verticals/client-demographics/hooks/useClients', () => ({
       },
     ],
     isLoading: false,
-  }),
+  })),
+}));
+
+vi.mock('@/verticals/client-demographics/hooks/useClients', () => ({
+  useClients: () => mockClientsReturn(),
 }));
 
 describe('ScheduleBuilderPage responsive header (wdvf3abp4v)', () => {
@@ -192,6 +198,60 @@ describe('ScheduleBuilderPage responsive header (wdvf3abp4v)', () => {
       // Recurring button does not have 100% width on desktop
       const recurringBtn = screen.getByRole('button', { name: /\+ Recurring Schedule/i });
       expect(recurringBtn.style.width).not.toBe('100%');
+    });
+  });
+
+  describe('CreateRecurringPatternModal', () => {
+    beforeEach(() => {
+      mockUseIsMobile.mockReturnValue(false);
+      mockCreatePattern.mockClear();
+      mockClientsReturn.mockReturnValue({
+        clients: [
+          {
+            id: 'client-1',
+            firstName: 'John',
+            lastName: 'Doe',
+            primaryAddress: { state: 'FL' },
+          },
+        ],
+      });
+    });
+
+    it('shows validation error and sends no request when submitted without a client', async () => {
+      mockClientsReturn.mockReturnValue({ clients: [] });
+      renderComponent();
+
+      fireEvent.click(screen.getByRole('button', { name: /\+ Recurring Schedule/i }));
+      const submitBtn = screen.getByRole('button', { name: /Generate Recurring Visits/i });
+      fireEvent.click(submitBtn);
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('Please select a client');
+      expect(mockCreatePattern).not.toHaveBeenCalled();
+    });
+
+    it('submits real clientId and serviceTypeId without hardcoded org/branch UUIDs', async () => {
+      renderComponent();
+
+      fireEvent.click(screen.getByRole('button', { name: /\+ Recurring Schedule/i }));
+      const submitBtn = screen.getByRole('button', { name: /Generate Recurring Visits/i });
+      fireEvent.click(submitBtn);
+
+      await vi.waitFor(() => {
+        expect(mockCreatePattern).toHaveBeenCalledTimes(1);
+      });
+
+      const payload = mockCreatePattern.mock.calls[0]![0] as {
+        clientId: string;
+        serviceTypeId: string;
+        serviceTypeCode?: string;
+        serviceTypeName?: string;
+      };
+      expect(payload.clientId).toBe('client-1');
+      expect(payload.clientId).not.toBe('00000000-0000-0000-0000-000000000001');
+      expect(payload.serviceTypeId).toBe('00000000-0000-4000-8000-00000005ec01');
+      expect(payload.serviceTypeId).not.toBe('00000000-0000-0000-0000-000000000002');
+      expect(payload.serviceTypeCode).toBe('PC');
+      expect(payload.serviceTypeName).toBe('Personal Care');
     });
   });
 });
