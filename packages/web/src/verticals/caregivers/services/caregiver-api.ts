@@ -19,7 +19,7 @@ export interface CaregiverApiService {
    */
   getMyCaregiverProfile(): Promise<Caregiver>;
   getPortalAccess(id: string): Promise<PortalAccessSummary>;
-  invitePortal(id: string): Promise<PortalAccessSummary>;
+  invitePortal(id: string, options?: { sendEmail?: boolean }): Promise<PortalAccessSummary & { inviteUrl?: string }>;
   revokePortal(id: string, reason: string): Promise<PortalAccessSummary>;
 }
 
@@ -77,14 +77,21 @@ export const createCaregiverApiService = (apiClient: ApiClient): CaregiverApiSer
       return response as PortalAccessSummary;
     },
 
-    async invitePortal(id: string): Promise<PortalAccessSummary> {
-      const response = await apiClient.post<{ success?: boolean; data?: PortalAccessSummary } | PortalAccessSummary>(
-        `/api/caregivers/${id}/portal-invite`
-      );
+    async invitePortal(
+      id: string,
+      options?: { sendEmail?: boolean }
+    ): Promise<PortalAccessSummary & { inviteUrl?: string }> {
+      const response = options
+        ? await apiClient.post<
+            { success?: boolean; data?: PortalAccessSummary & { inviteUrl?: string } } | (PortalAccessSummary & { inviteUrl?: string })
+          >(`/api/caregivers/${id}/portal-invite`, options)
+        : await apiClient.post<
+            { success?: boolean; data?: PortalAccessSummary & { inviteUrl?: string } } | (PortalAccessSummary & { inviteUrl?: string })
+          >(`/api/caregivers/${id}/portal-invite`);
       if ('data' in response && response.data) {
         return response.data;
       }
-      return response as PortalAccessSummary;
+      return response as PortalAccessSummary & { inviteUrl?: string };
     },
 
     async revokePortal(id: string, reason: string): Promise<PortalAccessSummary> {
