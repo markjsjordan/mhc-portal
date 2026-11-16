@@ -319,8 +319,14 @@ export class OrganizationService implements IOrganizationService {
         }
       }
 
-      // Mark invitation as accepted
-      await this.userRepo.acceptInviteToken(request.token, newUser.id);
+      // Mark invitation as accepted for non-portal invites; portal invites (CAREGIVER/FAMILY/CLIENT)
+      // are transitioned to ACCEPTED by PortalAccessService.acceptPortalInvite.
+      const isPortalInvite =
+        invite.targetType === 'CAREGIVER' ||
+        invite.targetType === 'FAMILY';
+      if (!isPortalInvite) {
+        await this.userRepo.acceptInviteToken(request.token, newUser.id);
+      }
 
       return newUser.id;
     });
