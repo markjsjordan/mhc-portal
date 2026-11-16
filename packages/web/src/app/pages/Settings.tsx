@@ -60,7 +60,6 @@ export function Settings({ initialTab }: SettingsProps = {}) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const apiClient = useApiClient();
@@ -77,17 +76,16 @@ export function Settings({ initialTab }: SettingsProps = {}) {
   const effectiveRoles = userProfile?.roles ?? authUser?.roles ?? [];
   const isAdmin = effectiveRoles.some((r) => (ADMIN_ROLES as readonly string[]).includes(r));
 
+  const [selectedTab, setActiveTab] = useState<SettingsTab>(() =>
+    (initialTab === 'team' || location.pathname.endsWith('/team')) && isAdmin ? 'team' : 'profile'
+  );
+  const activeTab: SettingsTab = !isAdmin && selectedTab === 'team' ? 'profile' : selectedTab;
+
   useEffect(() => {
-    const wantsTeam = initialTab === 'team' || location.pathname.endsWith('/team');
-    if (wantsTeam && isAdmin) {
-      setActiveTab('team');
-    } else if (!isAdmin && (activeTab === 'team' || location.pathname.endsWith('/team'))) {
-      setActiveTab('profile');
-      if (location.pathname.endsWith('/team')) {
-        navigate('/settings', { replace: true });
-      }
+    if (!isAdmin && location.pathname.endsWith('/team')) {
+      Promise.resolve(navigate('/settings', { replace: true })).catch(() => {});
     }
-  }, [initialTab, location.pathname, isAdmin, activeTab, navigate]);
+  }, [location.pathname, isAdmin, navigate]);
 
   const tabs = [
     { id: 'profile' as const, label: 'Profile', icon: User },
