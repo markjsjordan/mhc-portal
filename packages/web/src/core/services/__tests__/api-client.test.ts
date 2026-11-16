@@ -246,4 +246,16 @@ describe('api-client 401 refresh/retry interceptor', () => {
     expect(onAuthFailure).toHaveBeenCalledTimes(1);
     expect(mockFetch).toHaveBeenCalledTimes(2); // Initial + 1 retry
   });
+
+  it('does NOT retry HTTP 500 on non-GET mutations (PUT/POST/PATCH/DELETE) so deterministic server errors fail fast (wdvf3acxjh)', async () => {
+    mockFetch.mockResolvedValue(jsonResponse(500, { message: 'Internal Server Error' }));
+    const client = createApiClient('https://api.test', () => 'token');
+
+    await expect(client.put('/api/visits/123', { notes: 'test' })).rejects.toThrow('Internal Server Error');
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+
+    mockFetch.mockClear();
+    await expect(client.post('/api/visits', { notes: 'test' })).rejects.toThrow('Internal Server Error');
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
 });

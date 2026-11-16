@@ -9,7 +9,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createVisitRouter } from '../visits';
 import { ScheduleRepository } from '@folkcare/scheduling-visits';
-import type { Database } from '@folkcare/core';
+import { ComplianceAutopilotService, type Database } from '@folkcare/core';
 import type { Request, Response, NextFunction } from 'express';
 import type { Pool } from 'pg';
 
@@ -391,6 +391,79 @@ describe('Visit Routes', () => {
           permissions: ['visits:update'],
         },
       };
+    });
+
+    it('logs compliance override to audit_events using valid schema columns when supervisor forces assignment (wdvf3acxk9)', async () => {
+      vi.spyOn(
+        ComplianceAutopilotService.prototype,
+        'canCaregiverBeScheduled'
+      ).mockResolvedValueOnce({
+        canSchedule: false,
+        blockingIssues: ['Expired CPR certification'],
+        warnings: [],
+      } as any);
+
+      mockRequest.body = {
+        caregiverId: 'caregiver-456',
+        checkConflicts: false,
+        checkCompliance: true,
+        forceAssignment: true,
+        overrideReason: 'Urgent coverage approved by RN supervisor',
+      };
+
+      vi.mocked(mockDb.query)
+        // Mock visit lookup
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 'visit-123',
+            organization_id: '550e8400-e29b-41d4-a716-446655440000',
+            branch_id: 'branch-123',
+            scheduled_date: new Date('2025-01-15'),
+            scheduled_start_time: '09:00:00',
+            scheduled_end_time: '10:00:00',
+            status: 'UNASSIGNED',
+          }],
+        } as any)
+        // Mock caregiver lookup
+        .mockResolvedValueOnce({
+          rows: [{ id: 'caregiver-456', first_name: 'Jane', last_name: 'Doe', status: 'ACTIVE' }],
+        } as any)
+        // Mock audit_events insert
+        .mockResolvedValueOnce({ rows: [] } as any)
+        // Mock assignment update
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 'visit-123',
+            assigned_caregiver_id: 'caregiver-456',
+            status: 'ASSIGNED',
+          }],
+        } as any);
+
+      const handler = getRouteHandler(router, 'put', '/:id/assign');
+      await handler(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      const auditCall = vi.mocked(mockDb.query).mock.calls.find(([sql]) =>
+        typeof sql === 'string' && sql.includes('INSERT INTO audit_events')
+      );
+      expect(auditCall).toBeDefined();
+      const [auditSql, auditParams] = auditCall!;
+      expect(auditSql).toContain('event_id, timestamp, organization_id, user_id, event_type');
+      expect(auditSql).toContain('resource, resource_id, action, result, metadata');
+      expect(auditSql).not.toContain('entity_type');
+      expect(auditSql).not.toContain('entity_id');
+      expect(auditSql).not.toContain('details');
+      expect(auditSql).not.toContain('created_at');
+      expect(auditParams).toEqual([
+        '550e8400-e29b-41d4-a716-446655440000',
+        'user-123',
+        'DATA_MODIFICATION',
+        'VISIT',
+        'visit-123',
+        'COMPLIANCE_OVERRIDE',
+        'SUCCESS',
+        expect.any(String),
+      ]);
     });
 
     it('should assign caregiver to visit successfully', async () => {
