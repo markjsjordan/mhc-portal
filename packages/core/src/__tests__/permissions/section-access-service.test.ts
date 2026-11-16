@@ -42,7 +42,7 @@ describe('SectionAccessService', () => {
   });
 
   describe('getRoleDefaults and getEffective', () => {
-    it('an override beats the role default', async () => {
+    it('a restrictive override lowers the role default', async () => {
       const ctx: UserContext = {
         userId: targetUserId,
         organizationId: actorCtx.organizationId,
@@ -78,7 +78,7 @@ describe('SectionAccessService', () => {
       expect(effective.effective.billing).toEqual({ read: false, write: false });
     });
 
-    it('READ gives write=false', async () => {
+    it('READ restricts WRITE default to write=false', async () => {
       const ctx: UserContext = {
         userId: targetUserId,
         organizationId: actorCtx.organizationId,
@@ -95,7 +95,7 @@ describe('SectionAccessService', () => {
       expect(effective.effective.billing).toEqual({ read: true, write: false });
     });
 
-    it('WRITE gives both read and write', async () => {
+    it('WRITE override on NONE default stays NONE (clamped)', async () => {
       const ctx: UserContext = {
         userId: targetUserId,
         organizationId: actorCtx.organizationId,
@@ -109,7 +109,41 @@ describe('SectionAccessService', () => {
       });
 
       const effective = await service.getEffective(ctx);
-      expect(effective.effective.billing).toEqual({ read: true, write: true });
+      expect(effective.effective.billing).toEqual({ read: false, write: false });
+    });
+
+    it('READ override on NONE default stays NONE (clamped)', async () => {
+      const ctx: UserContext = {
+        userId: targetUserId,
+        organizationId: actorCtx.organizationId,
+        roles: ['READ_ONLY'], // default for billing is read=false, write=false
+        permissions: [],
+        branchIds: [],
+      };
+
+      mockDb.query.mockResolvedValueOnce({
+        rows: [{ section: 'billing', access: 'READ' }],
+      });
+
+      const effective = await service.getEffective(ctx);
+      expect(effective.effective.billing).toEqual({ read: false, write: false });
+    });
+
+    it('WRITE override on READ default stays READ (clamped)', async () => {
+      const ctx: UserContext = {
+        userId: targetUserId,
+        organizationId: actorCtx.organizationId,
+        roles: ['READ_ONLY'], // default for clients is read=true, write=false
+        permissions: [],
+        branchIds: [],
+      };
+
+      mockDb.query.mockResolvedValueOnce({
+        rows: [{ section: 'clients', access: 'WRITE' }],
+      });
+
+      const effective = await service.getEffective(ctx);
+      expect(effective.effective.clients).toEqual({ read: true, write: false });
     });
 
     it('a role with clients:* keeps read and write when no override exists', async () => {

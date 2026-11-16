@@ -1123,6 +1123,20 @@ export function createOrganizationRouter(db: Database): Router {
           return;
         }
 
+        const roleDefaults = sectionAccessService.getRoleDefaults(target);
+        const granting = parsed.data.overrides.find(
+          ({ section, access }) =>
+            access !== null && sectionAccessService.exceedsDefault(roleDefaults[section], access)
+        );
+        if (granting) {
+          res.status(400).json({
+            success: false,
+            error: `Override ${granting.access} for section ${granting.section} exceeds role default`,
+            code: 'SECTION_ACCESS_GRANT_NOT_ALLOWED',
+          });
+          return;
+        }
+
         const actorWithOrg: UserContext = { ...actor, organizationId };
         for (const { section, access } of parsed.data.overrides) {
           await sectionAccessService.setOverride(actorWithOrg, userId, section, access);

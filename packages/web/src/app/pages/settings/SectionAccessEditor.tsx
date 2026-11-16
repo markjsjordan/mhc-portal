@@ -137,26 +137,29 @@ const useSectionAccessEditorView: React.FC<SectionAccessEditorProps> = ({ orgId,
           </tr>
         </thead>
         <tbody>
-          {SECTIONS.map((section) => (
-            <tr key={section}>
-              <td className="py-1">{section}</td>
-              <td>{describeAccess(roleDefaults[section])}</td>
-              <td>
-                <NativeSelect
-                  aria-label={`Override for ${section}`}
-                  value={current(section)}
-                  onChange={(e) => setDraft((d) => ({ ...d, [section]: e.target.value }))}
-                  className="h-8 py-0"
-                >
-                  <option value="">Default</option>
-                  <option value="NONE">NONE</option>
-                  <option value="READ">READ</option>
-                  <option value="WRITE">WRITE</option>
-                </NativeSelect>
-              </td>
-              <td>{describeAccess(effective[section])}</td>
-            </tr>
-          ))}
+          {SECTIONS.map((section) => {
+            const def = roleDefaults[section] ?? { read: false, write: false };
+            return (
+              <tr key={section}>
+                <td className="py-1">{section}</td>
+                <td>{describeAccess(def)}</td>
+                <td>
+                  <NativeSelect
+                    aria-label={`Override for ${section}`}
+                    value={current(section)}
+                    onChange={(e) => setDraft((d) => ({ ...d, [section]: e.target.value }))}
+                    className="h-8 py-0"
+                  >
+                    <option value="">Default</option>
+                    <option value="NONE">NONE</option>
+                    <option value="READ" disabled={!def.read}>READ</option>
+                    <option value="WRITE" disabled={!(def.read && def.write)}>WRITE</option>
+                  </NativeSelect>
+                </td>
+                <td>{describeAccess(effective[section])}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       {mutation.isError && (
