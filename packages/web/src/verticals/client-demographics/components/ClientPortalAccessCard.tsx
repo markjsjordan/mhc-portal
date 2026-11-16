@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog.js';
 import { Textarea } from '@/components/ui/textarea.js';
+import { Checkbox } from '@/components/ui/checkbox.js';
 import { LoadingSpinner } from '@/core/components';
 import { usePermissions } from '@/core/hooks';
 import { formatDate } from '@/core/utils';
@@ -18,7 +19,10 @@ import {
   useClientPortalAccess,
   useInviteClientPortal,
   useRevokeClientPortal,
+  useUpdateClientPortalSelfAccess,
+  useGetClientPortalInviteLink,
 } from '../hooks';
+import { toast } from 'sonner';
 import type { PortalAccessStatus } from '../types';
 
 export interface ClientPortalAccessCardProps {
@@ -48,6 +52,8 @@ export const ClientPortalAccessCard: React.FC<ClientPortalAccessCardProps> = ({ 
   const { data, isLoading, error } = useClientPortalAccess(clientId, hasUpdatePermission);
   const inviteMutation = useInviteClientPortal(clientId);
   const revokeMutation = useRevokeClientPortal(clientId);
+  const selfAccessMutation = useUpdateClientPortalSelfAccess(clientId);
+  const inviteLinkMutation = useGetClientPortalInviteLink(clientId);
 
   const [mode, setMode] = useState<DialogMode | null>(null);
   const [reason, setReason] = useState('');
@@ -90,53 +96,104 @@ export const ClientPortalAccessCard: React.FC<ClientPortalAccessCardProps> = ({ 
     const status = data.status;
     const badge = statusBadgeConfig[status];
     const hasEmail = data.email.trim() !== '';
+    const selfAccessAllowed = data.portalSelfAccessAllowed;
     let inviteLabel = 'Invite to portal';
     if (inviteMutation.isPending) {
       inviteLabel = 'Sending...';
     } else if (status === 'INVITED') {
       inviteLabel = 'Resend invite';
     }
+
+    const handleCopyInviteLink = async () => {
+      try {
+        const res = await inviteLinkMutation.mutateAsync();
+        await navigator.clipboard.writeText(res.inviteUrl);
+        toast.success('Invite link copied to clipboard');
+      } catch {
+        toast.error('Failed to copy invite link');
+      }
+    };
+
     return (
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <Badge variant={badge.variant} data-testid="client-portal-status">{badge.label}</Badge>
-          <div className="text-xs text-gray-500 mt-1">{hasEmail ? data.email : 'No email on file'}</div>
-          {status === 'INVITED' && data.inviteExpiresAt && (
-            <div className="text-[10px] text-gray-400 mt-0.5">Exp: {formatDate(data.inviteExpiresAt)}</div>
-          )}
-          {(status === 'REVOKED' || status === 'SUSPENDED') && data.revokedReason && (
-            <div className="text-[10px] text-gray-500 mt-0.5">{data.revokedReason}</div>
-          )}
-          {!hasEmail && (status === 'NONE' || status === 'REVOKED') && (
-            <div className="text-[10px] text-gray-500 mt-0.5">Add a client email to enable an invitation.</div>
-          )}
-          {closed && (
-            <div className="text-[10px] text-gray-500 mt-0.5">
-              Portal access is not available for {data.clientStatus.toLowerCase()} clients.
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5">
-          {(status === 'NONE' || status === 'REVOKED' || status === 'INVITED') && !closed && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => inviteMutation.mutate()}
-              disabled={inviteMutation.isPending || !hasEmail}
+      <div className="space-y-3">
+        <div className="flex items-start gap-2 rounded-md border p-2.5 bg-muted/30">
+          <Checkbox
+            id={`client-self-access-${clientId}`}
+            data-testid="client-self-access-toggle"
+            className="mt-0.5"
+            checked={selfAccessAllowed}
+            disabled={selfAccessMutation.isPending || closed}
+            onCheckedChange={(checked) => selfAccessMutation.mutate(Boolean(checked))}
+          />
+          <div className="text-xs">
+            <label
+              htmlFor={`client-self-access-${clientId}`}
+              className="font-medium cursor-pointer"
             >
-              {inviteLabel}
-            </Button>
-          )}
-          {status === 'ACTIVE' && (
-            <Button variant="outline" size="sm" onClick={() => openDialog('suspend')} disabled={revokeMutation.isPending}>
-              Suspend access
-            </Button>
-          )}
-          {(status === 'ACTIVE' || status === 'INVITED' || status === 'SUSPENDED') && (
-            <Button variant="destructive" size="sm" onClick={() => openDialog('revoke')} disabled={revokeMutation.isPending}>
-              Revoke access
-            </Button>
-          )}
+              Client is able to manage their own portal access
+            </label>
+            {!selfAccessAllowed && (
+              <p className="text-[11px] text-gray-500 mt-0.5">
+                Where the client cannot manage their own access (cognitive impairment, minor, guardian),
+                invite the legal representative via Family Portal Access below with Full Access.
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <Badge variant={badge.variant} data-testid="client-portal-status">{badge.label}</Badge>
+            <div className="text-xs text-gray-500 mt-1">{hasEmail ? data.email : 'No email on file'}</div>
+            {status === 'ACTIVE' && data.lastLoginAt && (
+              <div className="text-[10px] text-gray-400 mt-0.5">Last login: {formatDate(data.lastLoginAt)}</div>
+            )}
+            {status === 'INVITED' && data.inviteExpiresAt && (
+              <div className="text-[10px] text-gray-400 mt-0.5">Exp: {formatDate(data.inviteExpiresAt)}</div>
+            )}
+            {(status === 'REVOKED' || status === 'SUSPENDED') && data.revokedReason && (
+              <div className="text-[10px] text-gray-500 mt-0.5">{data.revokedReason}</div>
+            )}
+            {!hasEmail && (status === 'NONE' || status === 'REVOKED') && (
+              <div className="text-[10px] text-gray-500 mt-0.5">Add a client email to enable an invitation.</div>
+            )}
+            {closed && (
+              <div className="text-[10px] text-gray-500 mt-0.5">
+                Portal access is not available for {data.clientStatus.toLowerCase()} clients.
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5">
+            {(status === 'NONE' || status === 'REVOKED' || status === 'INVITED') && !closed && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => inviteMutation.mutate()}
+                disabled={inviteMutation.isPending || !hasEmail || !selfAccessAllowed}
+              >
+                {inviteLabel}
+              </Button>
+            )}
+            {status === 'INVITED' && !closed && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyInviteLink}
+                disabled={inviteLinkMutation.isPending}
+              >
+                Copy invite link
+              </Button>
+            )}
+            {status === 'ACTIVE' && (
+              <Button variant="outline" size="sm" onClick={() => openDialog('suspend')} disabled={revokeMutation.isPending}>
+                Suspend access
+              </Button>
+            )}
+            {(status === 'ACTIVE' || status === 'INVITED' || status === 'SUSPENDED') && (
+              <Button variant="destructive" size="sm" onClick={() => openDialog('revoke')} disabled={revokeMutation.isPending}>
+                Revoke access
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     );

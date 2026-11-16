@@ -22,7 +22,14 @@ function getUserContext(req: Request): UserContext {
     roles: user.roles,
     permissions: user.permissions,
     familyClientIds: user.familyClientIds,
+    directClientId: user.directClientId,
   };
+}
+
+function isClientScopeViolation(context: UserContext, clientId: string): boolean {
+  const isClientOnly = context.roles.includes('CLIENT') && context.roles.every((r) => r === 'CLIENT');
+  if (!isClientOnly) return false;
+  return !context.directClientId || context.directClientId !== clientId;
 }
 
 export function createClientVisitHistoryRouter(db: Database): Router {
@@ -104,6 +111,16 @@ export function createClientVisitHistoryRouter(db: Database): Router {
             });
             return;
           }
+        }
+
+        // CLIENT self-scoping: can only access their own directClientId
+        if (isClientScopeViolation(context, clientId)) {
+          res.status(403).json({
+            success: false,
+            error: 'Access denied: You can only view your own visit history',
+            code: 'CLIENT_SCOPE_VIOLATION',
+          });
+          return;
         }
 
         // Validate organization context

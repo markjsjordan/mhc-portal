@@ -1307,7 +1307,11 @@ export function createOrganizationRouter(db: Database): Router {
 
       const userId = await organizationService.acceptInvitation(request);
 
-      if (inviteTokenRow?.target_type === 'CAREGIVER' || inviteTokenRow?.target_type === 'FAMILY') {
+      if (
+        inviteTokenRow?.target_type === 'CAREGIVER' ||
+        inviteTokenRow?.target_type === 'FAMILY' ||
+        inviteTokenRow?.target_type === 'CLIENT'
+      ) {
         const permissionService = new PermissionService();
         const portalAccessService = new PortalAccessService(db, permissionService, auditService);
         await portalAccessService.acceptPortalInvite(request.token, userId);
