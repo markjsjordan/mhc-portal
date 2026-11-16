@@ -67,6 +67,38 @@ export function findIntakeFormatError(
   return null;
 }
 
+export interface MissingAddressFieldError {
+  field: 'line1' | 'city' | 'state' | 'postalCode';
+  message: string;
+}
+
+/**
+ * Returns the first missing required address field (Street, City, State, ZIP)
+ * or null when all four are present. `line2` (Apt/Suite) is optional.
+ */
+export function findMissingRequiredAddressField(
+  address?: {
+    line1?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+  } | null
+): MissingAddressFieldError | null {
+  if (blankToUndefined(address?.line1) === undefined) {
+    return { field: 'line1', message: 'Street address is required' };
+  }
+  if (blankToUndefined(address?.city) === undefined) {
+    return { field: 'city', message: 'City is required' };
+  }
+  if (blankToUndefined(address?.state) === undefined) {
+    return { field: 'state', message: 'State is required' };
+  }
+  if (blankToUndefined(address?.postalCode) === undefined) {
+    return { field: 'postalCode', message: 'ZIP code is required' };
+  }
+  return null;
+}
+
 export interface IntakeCompletenessInput {
   firstName?: string | null;
   lastName?: string | null;

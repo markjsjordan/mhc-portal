@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   blankToUndefined,
   findIntakeFormatError,
+  findMissingRequiredAddressField,
   hasRequiredIntakeFields,
   shouldActivateOnEdit,
 } from '../intake-payload';
@@ -112,5 +113,41 @@ describe('hasRequiredIntakeFields / shouldActivateOnEdit', () => {
     for (const s of ['INQUIRY', 'ACTIVE', 'INACTIVE', 'ON_HOLD', 'DISCHARGED', 'DECEASED', undefined]) {
       expect(shouldActivateOnEdit(s, full)).toBe(false);
     }
+  });
+});
+
+describe('findMissingRequiredAddressField', () => {
+  const validAddress = {
+    line1: '123 Main St',
+    city: 'Austin',
+    state: 'TX',
+    postalCode: '78701',
+  };
+
+  it('returns null when all four required fields are present', () => {
+    expect(findMissingRequiredAddressField(validAddress)).toBeNull();
+  });
+
+  it('reports each missing field in order', () => {
+    expect(findMissingRequiredAddressField(undefined)).toEqual({
+      field: 'line1',
+      message: 'Street address is required',
+    });
+    expect(findMissingRequiredAddressField({ ...validAddress, line1: '  ' })).toEqual({
+      field: 'line1',
+      message: 'Street address is required',
+    });
+    expect(findMissingRequiredAddressField({ ...validAddress, city: '' })).toEqual({
+      field: 'city',
+      message: 'City is required',
+    });
+    expect(findMissingRequiredAddressField({ ...validAddress, state: '' })).toEqual({
+      field: 'state',
+      message: 'State is required',
+    });
+    expect(findMissingRequiredAddressField({ ...validAddress, postalCode: ' ' })).toEqual({
+      field: 'postalCode',
+      message: 'ZIP code is required',
+    });
   });
 });

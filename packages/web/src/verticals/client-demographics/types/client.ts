@@ -32,6 +32,86 @@ export interface EmergencyContact {
   notes?: string;
 }
 
+export interface ClientConsents {
+  careAgreement: boolean;
+  hipaa: boolean;
+  financialResponsibility: boolean;
+  evv: boolean;
+  signature: string;
+  signedDate: string;
+  recordedAt?: string;
+  recordedBy?: string;
+}
+
+export interface ClientPrimaryPhysician {
+  name: string;
+  phone?: Phone | { number: string; type?: 'MOBILE' | 'HOME' | 'WORK' | 'OTHER'; isPrimary?: boolean };
+}
+
+export interface ClientInsurance {
+  id?: string;
+  type: 'MEDICAID' | 'MEDICARE' | 'PRIVATE' | 'VA' | 'LONG_TERM_CARE' | 'SELF_PAY' | 'OTHER';
+  payerName?: string;
+  policyNumber?: string;
+  groupNumber?: string;
+  isPrimary?: boolean;
+}
+
+export interface ClientAuthorizationInfo {
+  number?: string;
+  approvedHours?: number;
+  validFrom?: string;
+  validTo?: string;
+}
+
+export type AdlLevel = 'independent' | 'assistance' | 'dependent';
+
+export interface ClientAssessmentData {
+  adls?: {
+    bathing?: AdlLevel;
+    dressing?: AdlLevel;
+    toileting?: AdlLevel;
+    transferring?: AdlLevel;
+    feeding?: AdlLevel;
+  };
+  iadls?: {
+    housekeeping?: AdlLevel;
+    laundry?: AdlLevel;
+    mealPrep?: AdlLevel;
+    medication?: AdlLevel;
+    transportation?: AdlLevel;
+  };
+  mobility?: 'ambulatory' | 'walker' | 'wheelchair' | 'bedbound';
+  cognitive?: 'normal' | 'mild' | 'moderate' | 'severe';
+  conditions?: string[];
+  medications?: Array<{ name: string; dosage: string; frequency: string }>;
+  allergies?: string[];
+  dietaryNeeds?: string;
+}
+
+export interface ClientCarePlanSummary {
+  serviceTypes?: string[];
+  visitFrequency?: 'daily' | '3xweek' | '2xweek' | 'weekly';
+  visitDuration?: number;
+  preferredTimes?: string[];
+  tasks?: string[];
+  goals?: string;
+}
+
+export interface ClientVisitSchedule {
+  scheduleStartDate?: string;
+  visitSchedule?: Array<{ dayOfWeek: number; time: string; duration: number }>;
+}
+
+export interface ClientCaregiverAssignment {
+  primaryCaregiver?: string;
+  backupCaregivers?: string[];
+  preferences?: {
+    gender?: 'no-preference' | 'female' | 'male';
+    language?: string[];
+  };
+}
+
 export interface Client {
   id: string;
   organizationId: string;
@@ -53,6 +133,14 @@ export interface Client {
   intakeDate?: string;
   dischargeDate?: string;
   isDemoData?: boolean;
+  primaryPhysician?: ClientPrimaryPhysician;
+  insurance?: ClientInsurance[];
+  consents?: ClientConsents;
+  authorizationInfo?: ClientAuthorizationInfo;
+  assessmentData?: ClientAssessmentData;
+  carePlanSummary?: ClientCarePlanSummary;
+  visitSchedule?: ClientVisitSchedule;
+  caregiverAssignment?: ClientCaregiverAssignment;
   createdAt: string;
   updatedAt: string;
 }
@@ -71,6 +159,14 @@ export interface CreateClientInput {
   primaryAddress?: Address;
   emergencyContacts?: EmergencyContact[];
   status?: ClientStatus;
+  primaryPhysician?: ClientPrimaryPhysician;
+  insurance?: ClientInsurance[];
+  consents?: ClientConsents;
+  authorizationInfo?: ClientAuthorizationInfo;
+  assessmentData?: ClientAssessmentData;
+  carePlanSummary?: ClientCarePlanSummary;
+  visitSchedule?: ClientVisitSchedule;
+  caregiverAssignment?: ClientCaregiverAssignment;
 }
 
 export interface UpdateClientInput {
@@ -86,6 +182,14 @@ export interface UpdateClientInput {
   primaryAddress?: Address;
   emergencyContacts?: EmergencyContact[];
   status?: ClientStatus;
+  primaryPhysician?: ClientPrimaryPhysician;
+  insurance?: ClientInsurance[];
+  consents?: ClientConsents;
+  authorizationInfo?: ClientAuthorizationInfo;
+  assessmentData?: ClientAssessmentData;
+  carePlanSummary?: ClientCarePlanSummary;
+  visitSchedule?: ClientVisitSchedule;
+  caregiverAssignment?: ClientCaregiverAssignment;
 }
 
 export interface ClientSearchFilters {
