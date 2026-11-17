@@ -327,12 +327,14 @@ export class OrganizationService implements IOrganizationService {
         }
       }
 
-      // Mark invitation as accepted for non-portal invites; portal invites (CAREGIVER/FAMILY/CLIENT)
-      // are transitioned to ACCEPTED by PortalAccessService.acceptPortalInvite.
-      const isPortalInvite =
-        invite.targetType === 'CAREGIVER' ||
-        invite.targetType === 'FAMILY';
-      if (!isPortalInvite) {
+      // Portal-targeted invites (CAREGIVER, FAMILY, CLIENT) are marked ACCEPTED
+      // atomically by PortalAccessService.acceptPortalInvite right after this.
+      const targetType = String(invite.targetType ?? '');
+      const isPortalTarget =
+        targetType === 'CAREGIVER' ||
+        targetType === 'FAMILY' ||
+        targetType === 'CLIENT';
+      if (!isPortalTarget) {
         await this.userRepo.acceptInviteToken(request.token, newUser.id);
       }
 

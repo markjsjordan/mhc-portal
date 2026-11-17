@@ -12,13 +12,20 @@ import { FamilyEngagementService } from '../services/family-engagement-service';
  * Extract user context from JWT payload
  */
 function getUserContext(req: Request): UserContext {
-  const user = req.user!;
+  const user = req.user! as typeof req.user & {
+    directClientId?: string;
+    familyMemberIds?: string[];
+    familyClientIds?: string[];
+  };
   return {
     userId: user.userId,
     organizationId: user.organizationId,
     branchIds: user.branchIds,
     roles: user.roles,
     permissions: user.permissions,
+    directClientId: user.directClientId,
+    familyMemberIds: user.familyMemberIds,
+    familyClientIds: user.familyClientIds,
   };
 }
 

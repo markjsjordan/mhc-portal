@@ -1162,14 +1162,21 @@ export function createPortalAccessRouter(db: Database): Router {
         status: string;
         user_id: string | null;
         portal_access_status: string | null;
+        portal_access_level: string | null;
+        portal_self_access_allowed: boolean | null;
         portal_invited_at: Date | null;
         portal_activated_at: Date | null;
         portal_revoked_at: Date | null;
         portal_revoked_reason: string | null;
+        last_login_at: Date | null;
       }>(
-        `SELECT id, organization_id, email, status, user_id, portal_access_status, portal_invited_at,
-                portal_activated_at, portal_revoked_at, portal_revoked_reason
-         FROM clients WHERE id = $1 AND deleted_at IS NULL`,
+        `SELECT c.id, c.organization_id, c.email, c.status, c.user_id,
+                c.portal_access_status, c.portal_access_level, c.portal_self_access_allowed,
+                c.portal_invited_at, c.portal_activated_at, c.portal_revoked_at,
+                c.portal_revoked_reason, u.last_login_at
+         FROM clients c
+         LEFT JOIN users u ON u.id = c.user_id AND u.deleted_at IS NULL
+         WHERE c.id = $1 AND c.deleted_at IS NULL`,
         [clientId]
       );
       const row = r.rows[0];
@@ -1185,12 +1192,139 @@ export function createPortalAccessRouter(db: Database): Router {
           email: row.email ?? '',
           clientStatus: row.status,
           status: row.portal_access_status ?? 'NONE',
+          portalAccessLevel: row.portal_access_level ?? 'FULL_ACCESS',
+          portalSelfAccessAllowed: Boolean(row.portal_self_access_allowed),
           invitedAt: row.portal_invited_at != null ? new Date(row.portal_invited_at).toISOString() : null,
           activatedAt: row.portal_activated_at != null ? new Date(row.portal_activated_at).toISOString() : null,
           revokedAt: row.portal_revoked_at != null ? new Date(row.portal_revoked_at).toISOString() : null,
           revokedReason: row.portal_revoked_reason,
+          lastLoginAt: row.last_login_at != null ? new Date(row.last_login_at).toISOString() : null,
           inviteExpiresAt: expiresAt,
           linked: row.user_id != null && row.user_id !== '',
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  /**
+   * PATCH /api/clients/:id/portal-access
+   * Toggle client self-portal access (capacity / legal representative gate).
+   */
+  router.patch('/clients/:id/portal-access', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const context = getUserContext(req);
+      const permissionService = new PermissionService();
+      if (!permissionService.hasPermission(context, 'clients:update')) {
+        res.status(403).json({ success: false, error: 'Permission denied: requires clients:update' });
+        return;
+      }
+
+      const bodySchema = z.object({
+        portalSelfAccessAllowed: z.boolean(),
+      });
+      const parsed = bodySchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ success: false, error: 'portalSelfAccessAllowed boolean is required' });
+        return;
+      }
+
+      const clientId = req.params['id']!;
+      const auditService = new AuditService(db);
+      const portalAccessService = new PortalAccessService(db, permissionService, auditService);
+      await portalAccessService.setClientSelfAccessAllowed(
+        clientId,
+        parsed.data.portalSelfAccessAllowed,
+        context
+      );
+
+      const r = await db.query<{
+        id: string;
+        email: string | null;
+        status: string;
+        user_id: string | null;
+        portal_access_status: string | null;
+        portal_access_level: string | null;
+        portal_self_access_allowed: boolean | null;
+        portal_invited_at: Date | null;
+        portal_activated_at: Date | null;
+        portal_revoked_at: Date | null;
+        portal_revoked_reason: string | null;
+        last_login_at: Date | null;
+      }>(
+        `SELECT c.id, c.email, c.status, c.user_id,
+                c.portal_access_status, c.portal_access_level, c.portal_self_access_allowed,
+                c.portal_invited_at, c.portal_activated_at, c.portal_revoked_at,
+                c.portal_revoked_reason, u.last_login_at
+         FROM clients c
+         LEFT JOIN users u ON u.id = c.user_id AND u.deleted_at IS NULL
+         WHERE c.id = $1 AND c.deleted_at IS NULL`,
+        [clientId]
+      );
+      const row = r.rows[0]!;
+      const expiresAt = await getLatestPendingInviteExpiresAt('CLIENT', clientId);
+      res.json({
+        success: true,
+        data: {
+          clientId: row.id,
+          email: row.email ?? '',
+          clientStatus: row.status,
+          status: row.portal_access_status ?? 'NONE',
+          portalAccessLevel: row.portal_access_level ?? 'FULL_ACCESS',
+          portalSelfAccessAllowed: Boolean(row.portal_self_access_allowed),
+          invitedAt: row.portal_invited_at != null ? new Date(row.portal_invited_at).toISOString() : null,
+          activatedAt: row.portal_activated_at != null ? new Date(row.portal_activated_at).toISOString() : null,
+          revokedAt: row.portal_revoked_at != null ? new Date(row.portal_revoked_at).toISOString() : null,
+          revokedReason: row.portal_revoked_reason,
+          lastLoginAt: row.last_login_at != null ? new Date(row.last_login_at).toISOString() : null,
+          inviteExpiresAt: expiresAt,
+          linked: row.user_id != null && row.user_id !== '',
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  /**
+   * GET /api/clients/:id/portal-invite-link
+   * Return the latest unexpired PENDING invite URL for a client.
+   */
+  router.get('/clients/:id/portal-invite-link', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const context = getUserContext(req);
+      const permissionService = new PermissionService();
+      if (!permissionService.hasPermission(context, 'clients:update')) {
+        res.status(403).json({ success: false, error: 'Permission denied: requires clients:update' });
+        return;
+      }
+
+      const clientId = req.params['id']!;
+      const clientRes = await db.query<{ organization_id: string }>(
+        `SELECT organization_id FROM clients WHERE id = $1 AND deleted_at IS NULL`,
+        [clientId]
+      );
+      const clientRow = clientRes.rows[0];
+      if (clientRow === undefined || clientRow.organization_id !== context.organizationId) {
+        res.status(404).json({ success: false, error: `Client not found: ${clientId}` });
+        return;
+      }
+
+      const auditService = new AuditService(db);
+      const portalAccessService = new PortalAccessService(db, permissionService, auditService);
+      const pending = await portalAccessService.getLatestPendingInvite('CLIENT', clientId);
+      if (pending === null) {
+        res.status(404).json({ success: false, error: 'No pending invite link found' });
+        return;
+      }
+
+      const baseUrl = process.env['FRONTEND_URL'] ?? `${req.protocol}://${req.get('host')}`;
+      res.json({
+        success: true,
+        data: {
+          inviteUrl: portalAccessService.buildInviteUrl(baseUrl, pending.token),
+          inviteExpiresAt: pending.expiresAt.toISOString(),
         },
       });
     } catch (error) {

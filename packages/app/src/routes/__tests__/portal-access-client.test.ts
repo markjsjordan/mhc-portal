@@ -63,6 +63,7 @@ describe('Client portal access routes', () => {
     last_name: 'Ent',
     organization_id: ORG,
     status: 'ACTIVE',
+    portal_self_access_allowed: true,
     ...over,
   });
 
@@ -111,6 +112,16 @@ describe('Client portal access routes', () => {
       const res = await request(app).post('/api/clients/c-1/portal-invite');
       expect(res.status).toBe(400);
       expect(res.body.error).toMatch(/valid email/);
+      expect(sendInvitation).not.toHaveBeenCalled();
+    });
+
+    it('returns 400 when portal_self_access_allowed is false', async () => {
+      mockDb.query
+        .mockResolvedValueOnce({ rows: [clientRow({ portal_self_access_allowed: false })] }) // route client check
+        .mockResolvedValueOnce({ rows: [clientRow({ portal_self_access_allowed: false })] }); // service client check
+      const res = await request(app).post('/api/clients/c-1/portal-invite');
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/self-portal access is not enabled/i);
       expect(sendInvitation).not.toHaveBeenCalled();
     });
   });

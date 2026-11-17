@@ -291,10 +291,14 @@ export interface ClientPortalAccess {
   email: string;
   clientStatus: string;
   status: PortalAccessStatus;
+  portalAccessLevel: string;
+  portalSelfAccessAllowed: boolean;
   invitedAt: string | null;
   activatedAt: string | null;
   revokedAt: string | null;
   revokedReason: string | null;
+  lastLoginAt: string | null;
   inviteExpiresAt: string | null;
+  inviteUrl?: string;
   linked: boolean;
 }

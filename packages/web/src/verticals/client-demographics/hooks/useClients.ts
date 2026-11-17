@@ -227,6 +227,30 @@ export const useClientPortalAccess = (clientId: string | undefined, enabled = tr
   });
 };
 
+export const useUpdateClientPortalSelfAccess = (clientId: string | undefined) => {
+  const clientApi = useClientApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (portalSelfAccessAllowed: boolean) =>
+      clientApi.updateClientPortalSelfAccess(clientId!, portalSelfAccessAllowed),
+    onSuccess: (_data, allowed) => {
+      void queryClient.invalidateQueries({ queryKey: ['client-portal-access', clientId] });
+      toast.success(
+        allowed ? 'Client self-portal access enabled' : 'Client self-portal access disabled'
+      );
+    },
+  });
+};
+
+export const useGetClientPortalInviteLink = (clientId: string | undefined) => {
+  const clientApi = useClientApi();
+
+  return useMutation({
+    mutationFn: () => clientApi.getClientPortalInviteLink(clientId!),
+  });
+};
+
 export const useInviteClientPortal = (clientId: string | undefined) => {
   const clientApi = useClientApi();
   const queryClient = useQueryClient();
