@@ -186,7 +186,26 @@ export class CarePlanService {
       throw new PermissionError('Cannot access care plan from another organization');
     }
 
+    this.enforceClientSelfScope(carePlan.clientId, context);
+
     return carePlan;
+  }
+
+  private isClientSelfScoped(context: UserContext): boolean {
+    return context.roles.includes('CLIENT') && context.roles.every((r) => r === 'CLIENT');
+  }
+
+  private enforceClientSelfScope(clientId: string, context: UserContext): void {
+    if (!this.isClientSelfScoped(context)) {
+      return;
+    }
+    if (
+      context.directClientId === undefined ||
+      context.directClientId === '' ||
+      context.directClientId !== clientId
+    ) {
+      throw new NotFoundError('Care plan not found', { clientId });
+    }
   }
 
   /**
@@ -327,6 +346,13 @@ export class CarePlanService {
       organizationId: context.organizationId!,
     };
 
+    if (this.isClientSelfScoped(context)) {
+      if (context.directClientId === undefined || context.directClientId === '') {
+        throw new PermissionError('Client portal user has no linked client record');
+      }
+      orgFilters.clientId = context.directClientId;
+    }
+
     return await this.repository.searchCarePlans(orgFilters, pagination);
   }
 
@@ -341,6 +367,8 @@ export class CarePlanService {
     if (!this.permissions.hasPermission(context, 'care-plans:read')) {
       throw new PermissionError('Insufficient permissions to read care plans');
     }
+
+    this.enforceClientSelfScope(clientId, context);
 
     const plans = await this.repository.getCarePlansByClientId(clientId);
 
@@ -359,6 +387,8 @@ export class CarePlanService {
     if (!this.permissions.hasPermission(context, 'care-plans:read')) {
       throw new PermissionError('Insufficient permissions to read care plans');
     }
+
+    this.enforceClientSelfScope(clientId, context);
 
     const plan = await this.repository.getActiveCarePlanForClient(clientId);
 
@@ -380,6 +410,10 @@ export class CarePlanService {
     // Validate permissions
     if (!this.permissions.hasPermission(context, 'care-plans:read')) {
       throw new PermissionError('Insufficient permissions to read care plans');
+    }
+
+    if (this.isClientSelfScoped(context)) {
+      throw new PermissionError('Clients cannot list expiring care plans');
     }
 
     return await this.repository.getExpiringCarePlans(

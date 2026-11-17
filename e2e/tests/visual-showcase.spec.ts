@@ -44,8 +44,15 @@ const SHOWCASE_PAGES = [
 // GitHub Pages showcase URL (or local dev server)
 const SHOWCASE_BASE_URL = process.env['SHOWCASE_URL'] || 'http://localhost:5174/folkcare';
 
+// Dynamic content locators to mask so timestamps/avatars/live charts don't cause false diffs
+const DYNAMIC_MASKS = (page: import('@playwright/test').Page) => [
+  page.locator('time, [data-testid="timestamp"], [data-testid="avatar"], .recharts-wrapper'),
+];
+
 test.describe('Visual Regression: Showcase', () => {
   test.beforeEach(async ({ page }) => {
+    // Freeze clock for deterministic dates/times
+    await page.clock.install({ time: new Date('2026-01-15T10:00:00Z') });
     // Configure page for consistent screenshots
     await configurePageForScreenshot(page);
   });
@@ -58,13 +65,9 @@ test.describe('Visual Regression: Showcase', () => {
       await page.goto(url, { waitUntil: 'networkidle' });
       await waitForUIStable(page);
 
-      // Use Playwright's built-in screenshot comparison
-      // On first run, this creates the baseline
-      // On subsequent runs, it compares against the baseline
+      // Inherits maxDiffPixelRatio (0.005), threshold (0.2), animations ('disabled') from playwright.visual.config.ts
       await expect(page).toHaveScreenshot(`showcase-${name}.png`, {
-        maxDiffPixelRatio: 0.02, // Allow 2% pixel difference
-        threshold: 0.2, // Color difference threshold
-        animations: 'disabled',
+        mask: DYNAMIC_MASKS(page),
         fullPage: false, // Viewport only (avoid very tall screenshots)
       });
     });
@@ -73,6 +76,7 @@ test.describe('Visual Regression: Showcase', () => {
 
 test.describe('Visual Regression: Showcase Responsive', () => {
   test.beforeEach(async ({ page }) => {
+    await page.clock.install({ time: new Date('2026-01-15T10:00:00Z') });
     await configurePageForScreenshot(page);
   });
 
@@ -92,9 +96,7 @@ test.describe('Visual Regression: Showcase Responsive', () => {
       await waitForUIStable(page);
 
       await expect(page).toHaveScreenshot(`showcase-mobile-${name}.png`, {
-        maxDiffPixelRatio: 0.02,
-        threshold: 0.2,
-        animations: 'disabled',
+        mask: DYNAMIC_MASKS(page),
         fullPage: false,
       });
     });

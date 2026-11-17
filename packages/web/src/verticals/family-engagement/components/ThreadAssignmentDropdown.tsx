@@ -25,15 +25,7 @@ export const ThreadAssignmentDropdown: React.FC<ThreadAssignmentDropdownProps> =
 }) => {
   const { data: staffMembers, isLoading } = useOrganizationStaff(organizationId ?? null);
 
-  const activeStaff = React.useMemo(() => {
-    const list = staffMembers ?? [];
-    // Filter to active staff roles (exclude family/client roles if any appear)
-    return list.filter(
-      (member) =>
-        member.status !== 'INACTIVE' &&
-        !member.roles.every((role) => role === 'FAMILY' || role === 'CLIENT')
-    );
-  }, [staffMembers]);
+  const activeStaff = React.useMemo(() => staffMembers ?? [], [staffMembers]);
 
   const assignedMember = React.useMemo(
     () => (assignedToUserId ? activeStaff.find((m) => m.id === assignedToUserId) : undefined),

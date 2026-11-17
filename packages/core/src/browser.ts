@@ -8,9 +8,11 @@
 // Types - safe for browser
 export type * from './types/base';
 export type * from './types/organization';
+export type { StaffOption } from './service/organization-service';
 
-// Export error classes as values (browser-safe, no server deps)
+// Export error classes and constants as values (browser-safe, no server deps)
 export {
+  ADMIN_ROLES,
   DomainError,
   ValidationError,
   PermissionError,

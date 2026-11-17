@@ -3,7 +3,13 @@ import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { renderWithQueryClient } from '@/test/renderWithQueryClient.js';
 import { ClientPortalAccessCard } from '../ClientPortalAccessCard';
 import { usePermissions } from '@/core/hooks';
-import { useClientPortalAccess, useInviteClientPortal, useRevokeClientPortal } from '../../hooks';
+import {
+  useClientPortalAccess,
+  useInviteClientPortal,
+  useRevokeClientPortal,
+  useUpdateClientPortalSelfAccess,
+  useGetClientPortalInviteLink,
+} from '../../hooks';
 import type { ClientPortalAccess } from '../../types';
 
 vi.mock('@/core/hooks', () => ({ usePermissions: vi.fn() }));
@@ -11,6 +17,8 @@ vi.mock('../../hooks', () => ({
   useClientPortalAccess: vi.fn(),
   useInviteClientPortal: vi.fn(),
   useRevokeClientPortal: vi.fn(),
+  useUpdateClientPortalSelfAccess: vi.fn(),
+  useGetClientPortalInviteLink: vi.fn(),
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -19,10 +27,13 @@ const base: ClientPortalAccess = {
   email: 'client@example.com',
   clientStatus: 'ACTIVE',
   status: 'NONE',
+  portalAccessLevel: 'FULL_ACCESS',
+  portalSelfAccessAllowed: true,
   invitedAt: null,
   activatedAt: null,
   revokedAt: null,
   revokedReason: null,
+  lastLoginAt: null,
   inviteExpiresAt: null,
   linked: false,
 };
@@ -44,6 +55,14 @@ describe('ClientPortalAccessCard', () => {
       isLoading: false,
       error: null,
     } as unknown as ReturnType<typeof useClientPortalAccess>);
+    vi.mocked(useUpdateClientPortalSelfAccess).mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+    } as unknown as ReturnType<typeof useUpdateClientPortalSelfAccess>);
+    vi.mocked(useGetClientPortalInviteLink).mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    } as unknown as ReturnType<typeof useGetClientPortalInviteLink>);
     return renderWithQueryClient(<ClientPortalAccessCard clientId="c-1" />);
   };
 

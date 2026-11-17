@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { useAuth, refreshAuthSession } from './core/hooks';
+import { ADMIN_ROLES } from './core/types/auth';
 import { ProtectedRoute, FamilyProtectedRoute, PublicRoute, LoadingSpinner, UpdatePrompt, OnlineStatus } from './core/components';
 import { AppShell } from './app/components';
 import { initAuthStorage } from './core/utils/auth-storage';
@@ -934,10 +935,23 @@ function AppRoutes() {
         path="/settings/branding"
         element={
           <ProtectedRoute
-            requiredRoles={['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']}
+            requiredRoles={[...ADMIN_ROLES]}
           >
             <AppShell>
               <BrandingSettings />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/team"
+        element={
+          <ProtectedRoute
+            requiredRoles={[...ADMIN_ROLES]}
+            fallbackPath="/settings"
+          >
+            <AppShell>
+              <Settings initialTab="team" />
             </AppShell>
           </ProtectedRoute>
         }

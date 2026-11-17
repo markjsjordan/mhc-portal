@@ -107,11 +107,7 @@ export const GoalSection: React.FC<GoalSectionProps> = ({
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className={`h-2 rounded-full ${
-                        goal.status === 'ACHIEVED' 
-                          ? 'bg-green-500' 
-                          : goal.status === 'AT_RISK'
-                          ? 'bg-orange-500'
-                          : 'bg-blue-500'
+                        ({ ACHIEVED: 'bg-green-500', AT_RISK: 'bg-orange-500' } as Record<string, string>)[goal.status] ?? 'bg-blue-500'
                       }`}
                       style={{ width: `${goal.progressPercentage}%` }}
                     />

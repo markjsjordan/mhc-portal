@@ -16,6 +16,7 @@ import {
   ValidationError,
   ConflictError,
   NotFoundError,
+  ADMIN_ROLES,
   AuthMiddleware,
   DemoDataService,
   SeedNotAllowedError,
@@ -573,7 +574,7 @@ export function createOrganizationRouter(db: Database): Router {
   router.post('/organizations/:id/invitations', 
     authMiddleware.requireAuth,
     authMiddleware.requireSameOrganization('id'),
-    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']),
+    authMiddleware.requireRole([...ADMIN_ROLES]),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const organizationId = req.params['id'];
@@ -659,6 +660,7 @@ export function createOrganizationRouter(db: Database): Router {
    */
   router.get('/organizations/:id/invitations', 
     authMiddleware.requireAuth,
+    authMiddleware.requireRole([...ADMIN_ROLES]),
     authMiddleware.requireSameOrganization('id'),
     async (req: Request, res: Response): Promise<void> => {
       try {
@@ -704,6 +706,7 @@ export function createOrganizationRouter(db: Database): Router {
    */
   router.get('/organizations/:id/users',
     authMiddleware.requireAuth,
+    authMiddleware.requireRole([...ADMIN_ROLES]),
     authMiddleware.requireSameOrganization('id'),
     async (req: Request, res: Response): Promise<void> => {
       try {
@@ -766,13 +769,75 @@ export function createOrganizationRouter(db: Database): Router {
   );
 
   /**
+   * GET /api/organizations/:id/staff-options
+   * Narrow staff picker list ({ id, firstName, lastName }) for care-plan & messaging consumers.
+   */
+  router.get('/organizations/:id/staff-options',
+    authMiddleware.requireAuth,
+    authMiddleware.requireSameOrganization('id'),
+    async (req: Request, res: Response): Promise<void> => {
+      try {
+        const organizationId = req.params['id'];
+        if (organizationId === undefined || organizationId.length === 0) {
+          res.status(400).json({
+            success: false,
+            error: 'Organization ID is required',
+          });
+          return;
+        }
+
+        const userContext = req.userContext ?? (req.user as UserContext | undefined);
+        if (!userContext) {
+          res.status(401).json({
+            success: false,
+            error: 'Authentication required',
+            code: 'AUTHENTICATION_REQUIRED',
+          });
+          return;
+        }
+
+        const options = await organizationService.getStaffOptions(organizationId, userContext);
+        res.json({
+          success: true,
+          data: options,
+        });
+      } catch (error) {
+        if (error instanceof PermissionError) {
+          const userContext = req.userContext ?? (req.user as UserContext | undefined);
+          if (userContext) {
+            await auditService.logEvent(userContext, {
+              eventType: 'SECURITY',
+              resource: 'organization_staff_options',
+              resourceId: req.params['id'] ?? 'unknown',
+              action: 'UNAUTHORIZED_ACCESS_ATTEMPT',
+              result: 'FAILURE',
+              metadata: { error: error.message },
+            });
+          }
+          res.status(403).json({
+            success: false,
+            error: error.message,
+            code: error.code,
+          });
+          return;
+        }
+        console.error('Get organization staff options error:', error);
+        res.status(500).json({
+          success: false,
+          error: 'Failed to retrieve staff options',
+        });
+      }
+    }
+  );
+
+  /**
    * PUT /api/organizations/:id/users/:userId
    * Update a team member's information and roles
    */
   router.put('/organizations/:id/users/:userId',
     authMiddleware.requireAuth,
     authMiddleware.requireSameOrganization('id'),
-    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']),
+    authMiddleware.requireRole([...ADMIN_ROLES]),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const organizationId = req.params['id'];
@@ -833,7 +898,7 @@ export function createOrganizationRouter(db: Database): Router {
   router.post('/organizations/:id/users/:userId/deactivate',
     authMiddleware.requireAuth,
     authMiddleware.requireSameOrganization('id'),
-    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']),
+    authMiddleware.requireRole([...ADMIN_ROLES]),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const organizationId = req.params['id'];
@@ -1101,7 +1166,7 @@ export function createOrganizationRouter(db: Database): Router {
   router.post('/organizations/:id/users/:userId/reactivate',
     authMiddleware.requireAuth,
     authMiddleware.requireSameOrganization('id'),
-    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']),
+    authMiddleware.requireRole([...ADMIN_ROLES]),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const organizationId = req.params['id'];
@@ -1191,7 +1256,7 @@ export function createOrganizationRouter(db: Database): Router {
   router.post('/organizations/:id/invitations/:invitationId/resend',
     authMiddleware.requireAuth,
     authMiddleware.requireSameOrganization('id'),
-    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']),
+    authMiddleware.requireRole([...ADMIN_ROLES]),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const organizationId = req.params['id'];
@@ -1227,7 +1292,7 @@ export function createOrganizationRouter(db: Database): Router {
   router.delete('/organizations/:id/invitations/:invitationId',
     authMiddleware.requireAuth,
     authMiddleware.requireSameOrganization('id'),
-    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']),
+    authMiddleware.requireRole([...ADMIN_ROLES]),
     async (req: Request, res: Response): Promise<void> => {
       try {
         const organizationId = req.params['id'];
@@ -1321,7 +1386,11 @@ export function createOrganizationRouter(db: Database): Router {
 
       const userId = await organizationService.acceptInvitation(request);
 
-      if (inviteTokenRow?.target_type === 'CAREGIVER' || inviteTokenRow?.target_type === 'FAMILY') {
+      if (
+        inviteTokenRow?.target_type === 'CAREGIVER' ||
+        inviteTokenRow?.target_type === 'FAMILY' ||
+        inviteTokenRow?.target_type === 'CLIENT'
+      ) {
         const permissionService = new PermissionService();
         const portalAccessService = new PortalAccessService(db, permissionService, auditService);
         await portalAccessService.acceptPortalInvite(request.token, userId);
@@ -1462,7 +1531,7 @@ export function createOrganizationRouter(db: Database): Router {
    */
   router.delete('/invitations/:token',
     authMiddleware.requireAuth,
-    authMiddleware.requireRole(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN']),
+    authMiddleware.requireRole([...ADMIN_ROLES]),
     async (req: Request, res: Response): Promise<void> => {
     try {
       const token = req.params['token'];

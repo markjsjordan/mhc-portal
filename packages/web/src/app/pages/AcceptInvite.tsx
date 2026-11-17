@@ -166,6 +166,8 @@ export function AcceptInvite() {
       ADMIN: 'Administrator',
       COORDINATOR: 'Care Coordinator',
       CAREGIVER: 'Caregiver',
+      CLIENT: 'Client',
+      FAMILY: 'Family Member',
       BILLING: 'Billing Specialist',
       BILLING_SPECIALIST: 'Billing Specialist',
       SCHEDULER: 'Scheduler',

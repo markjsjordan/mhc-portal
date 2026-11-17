@@ -57,6 +57,8 @@ describe('PortalAccessService - client portal access', () => {
     first_name: 'Cli',
     last_name: 'Ent',
     status: 'ACTIVE',
+    portal_self_access_allowed: true,
+    portal_access_level: 'FULL_ACCESS',
     deleted_at: null,
     ...over,
   });
@@ -294,9 +296,11 @@ describe('CLIENT role permissions (least privilege)', () => {
     directClientId: CLIENT_ID,
   };
 
-  it('can read clients (scoped server-side) but nothing that mutates or lists org-wide PHI', () => {
-    expect(ps.hasPermission(ctx, 'clients:read')).toBe(true);
-    for (const p of ['clients:update', 'clients:create', 'clients:delete', 'visits:read', 'care-plans:read', 'notes:read',
+  it('can read own scoped resources but nothing that mutates or lists org-wide PHI', () => {
+    for (const p of ['clients:read', 'visits:read', 'care-plans:read', 'notes:read', 'messages:view', 'messages:send']) {
+      expect(ps.hasPermission(ctx, p), p).toBe(true);
+    }
+    for (const p of ['clients:update', 'clients:create', 'clients:delete',
       'caregivers:read', 'billing:read', 'users:read', 'audit:read']) {
       expect(ps.hasPermission(ctx, p), p).toBe(false);
     }
