@@ -73,6 +73,7 @@ function getUserContext(req: Request): UserContext {
     branchIds: req.user.branchIds,
     roles: req.user.roles as Role[],
     permissions: req.user.permissions,
+    directClientId: (req.user as { directClientId?: string }).directClientId,
   };
 }
 

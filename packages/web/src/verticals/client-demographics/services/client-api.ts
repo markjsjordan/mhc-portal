@@ -1,6 +1,15 @@
 import type { ApiClient } from '@/core/services';
 import type { PaginatedResult, SearchParams } from '@/core/types';
-import type { Client, CreateClientInput, UpdateClientInput, ClientSearchFilters, FamilyPortalAccessRow, ClientPortalAccess } from '../types';
+import type {
+  Client,
+  CreateClientInput,
+  UpdateClientInput,
+  ClientSearchFilters,
+  FamilyPortalAccessRow,
+  ClientPortalAccess,
+  CreateFamilyMemberInput,
+  UpdateFamilyMemberInput,
+} from '../types';
 
 export interface DashboardClient {
   id: string;
@@ -74,12 +83,17 @@ export interface ClientApiService {
   deleteClient(id: string): Promise<void>;
   getBranches(): Promise<Array<{ id: string; name: string; code?: string; status?: string }>>;
   getFamilyPortalAccess(clientId: string): Promise<FamilyPortalAccessRow[]>;
+  createFamilyMember(clientId: string, input: CreateFamilyMemberInput): Promise<FamilyPortalAccessRow>;
+  updateFamilyMember(familyMemberId: string, input: UpdateFamilyMemberInput): Promise<FamilyPortalAccessRow>;
+  deleteFamilyMember(familyMemberId: string): Promise<void>;
   inviteFamilyPortal(
     familyMemberId: string,
     options?: { sendEmail?: boolean }
   ): Promise<FamilyPortalAccessRow & { inviteUrl?: string }>;
   revokeFamilyPortal(familyMemberId: string, reason: string): Promise<FamilyPortalAccessRow>;
   getClientPortalAccess(clientId: string): Promise<ClientPortalAccess>;
+  updateClientPortalSelfAccess(clientId: string, portalSelfAccessAllowed: boolean): Promise<ClientPortalAccess>;
+  getClientPortalInviteLink(clientId: string): Promise<{ inviteUrl: string; inviteExpiresAt: string }>;
   inviteClientPortal(clientId: string): Promise<void>;
   revokeClientPortal(clientId: string, reason: string): Promise<void>;
   suspendClientPortal(clientId: string, reason: string): Promise<void>;
@@ -189,6 +203,32 @@ export const createClientApiService = (apiClient: ApiClient): ClientApiService =
       return [];
     },
 
+    async createFamilyMember(clientId: string, input: CreateFamilyMemberInput): Promise<FamilyPortalAccessRow> {
+      const response = await apiClient.post<{ success?: boolean; data?: FamilyPortalAccessRow } | FamilyPortalAccessRow>(
+        `/api/clients/${clientId}/family-members`,
+        input
+      );
+      if ('data' in response && response.data) {
+        return response.data;
+      }
+      return response as FamilyPortalAccessRow;
+    },
+
+    async updateFamilyMember(familyMemberId: string, input: UpdateFamilyMemberInput): Promise<FamilyPortalAccessRow> {
+      const response = await apiClient.patch<{ success?: boolean; data?: FamilyPortalAccessRow } | FamilyPortalAccessRow>(
+        `/api/family-members/${familyMemberId}`,
+        input
+      );
+      if ('data' in response && response.data) {
+        return response.data;
+      }
+      return response as FamilyPortalAccessRow;
+    },
+
+    async deleteFamilyMember(familyMemberId: string): Promise<void> {
+      await apiClient.delete(`/api/family-members/${familyMemberId}`);
+    },
+
     async inviteFamilyPortal(
       familyMemberId: string,
       options?: { sendEmail?: boolean }
@@ -225,6 +265,32 @@ export const createClientApiService = (apiClient: ApiClient): ClientApiService =
         return response.data;
       }
       return response as ClientPortalAccess;
+    },
+
+    async updateClientPortalSelfAccess(
+      clientId: string,
+      portalSelfAccessAllowed: boolean
+    ): Promise<ClientPortalAccess> {
+      const response = await apiClient.patch<
+        { success?: boolean; data?: ClientPortalAccess } | ClientPortalAccess
+      >(`/api/clients/${clientId}/portal-access`, { portalSelfAccessAllowed });
+      if ('data' in response && response.data) {
+        return response.data;
+      }
+      return response as ClientPortalAccess;
+    },
+
+    async getClientPortalInviteLink(
+      clientId: string
+    ): Promise<{ inviteUrl: string; inviteExpiresAt: string }> {
+      const response = await apiClient.get<
+        | { success?: boolean; data?: { inviteUrl: string; inviteExpiresAt: string } }
+        | { inviteUrl: string; inviteExpiresAt: string }
+      >(`/api/clients/${clientId}/portal-invite-link`);
+      if ('data' in response && response.data) {
+        return response.data;
+      }
+      return response as { inviteUrl: string; inviteExpiresAt: string };
     },
 
     async inviteClientPortal(clientId: string): Promise<void> {

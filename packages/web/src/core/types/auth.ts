@@ -1,5 +1,7 @@
 import type { Section } from './sections';
 
+export { ADMIN_ROLES, type AdminRole } from '@folkcare/core/browser';
+
 export type Role =
   | 'SUPER_ADMIN'
   | 'ORG_ADMIN'

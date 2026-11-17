@@ -1488,6 +1488,21 @@ export function createVisitRouter(db: Database): Router {
         return;
       }
 
+      // CLIENT self-scoping: may only view their own visits
+      if (context.roles.includes('CLIENT') && context.roles.every((r) => r === 'CLIENT')) {
+        if (
+          context.directClientId === undefined ||
+          context.directClientId === '' ||
+          context.directClientId !== visit.clientId
+        ) {
+          res.status(404).json({
+            success: false,
+            error: 'Visit not found',
+          });
+          return;
+        }
+      }
+
       res.json({
         success: true,
         data: visit,

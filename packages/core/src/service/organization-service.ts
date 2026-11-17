@@ -5,7 +5,8 @@
  */
 
 import { randomBytes, pbkdf2Sync } from '../utils/crypto';
-import { UUID, ValidationError, ConflictError, NotFoundError, Role } from '../types/base';
+import { UUID, ValidationError, ConflictError, NotFoundError, PermissionError, Role, UserContext } from '../types/base';
+import { getPermissionService } from '../permissions/permission-service';
 import {
   Organization,
   CreateOrganizationRequest,
@@ -19,6 +20,12 @@ import { OrganizationRepository } from '../repository/organization-repository';
 import { UserRepository, CreateUserRequest } from '../repository/user-repository';
 import { Database } from '../db/connection';
 import { findPortalDerivedRoles, PORTAL_DERIVED_ROLE_MESSAGE } from './portal-link-resolver';
+
+export interface StaffOption {
+  id: UUID;
+  firstName: string;
+  lastName: string;
+}
 
 export interface TeamMember {
   id: UUID;
@@ -45,6 +52,7 @@ export interface IOrganizationService {
   }>;
   getOrganizationById(id: UUID): Promise<Organization>;
   getOrganizationUsers(organizationId: UUID): Promise<TeamMember[]>;
+  getStaffOptions(organizationId: UUID, context: UserContext): Promise<StaffOption[]>;
   updateOrganizationUser(
     organizationId: UUID,
     userId: UUID,
@@ -319,12 +327,14 @@ export class OrganizationService implements IOrganizationService {
         }
       }
 
-      // Mark invitation as accepted for non-portal invites; portal invites (CAREGIVER/FAMILY/CLIENT)
-      // are transitioned to ACCEPTED by PortalAccessService.acceptPortalInvite.
-      const isPortalInvite =
-        invite.targetType === 'CAREGIVER' ||
-        invite.targetType === 'FAMILY';
-      if (!isPortalInvite) {
+      // Portal-targeted invites (CAREGIVER, FAMILY, CLIENT) are marked ACCEPTED
+      // atomically by PortalAccessService.acceptPortalInvite right after this.
+      const targetType = String(invite.targetType ?? '');
+      const isPortalTarget =
+        targetType === 'CAREGIVER' ||
+        targetType === 'FAMILY' ||
+        targetType === 'CLIENT';
+      if (!isPortalTarget) {
         await this.userRepo.acceptInviteToken(request.token, newUser.id);
       }
 
@@ -479,6 +489,36 @@ export class OrganizationService implements IOrganizationService {
       status: u.status,
       createdAt: new Date(),
     }));
+  }
+
+  async getStaffOptions(organizationId: UUID, context: UserContext): Promise<StaffOption[]> {
+    if (context.roles.length === 0 || context.roles.every((r) => r === 'FAMILY' || r === 'CLIENT')) {
+      throw new PermissionError('Permission denied: staff options require staff role');
+    }
+    const permissionService = getPermissionService();
+    if (
+      !permissionService.hasAnyPermission(context, [
+        'care-plans:create',
+        'care-plans:update',
+        'messages:view',
+        'messages:create',
+      ])
+    ) {
+      permissionService.requirePermission(context, 'care-plans:create');
+    }
+
+    const users = await this.userRepo.getUsersByOrganization(organizationId);
+    return users
+      .filter(
+        (u) =>
+          u.status === 'ACTIVE' &&
+          !u.roles.every((r) => r === 'FAMILY' || r === 'CLIENT')
+      )
+      .map((u) => ({
+        id: u.id,
+        firstName: u.firstName,
+        lastName: u.lastName,
+      }));
   }
 
   async updateOrganizationUser(

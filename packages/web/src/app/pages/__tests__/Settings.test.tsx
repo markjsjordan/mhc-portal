@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
 import { Settings } from '../Settings';
 
 const mockApiClient = vi.hoisted(() => ({
@@ -13,6 +14,9 @@ const mockApiClient = vi.hoisted(() => ({
 
 vi.mock('@/core/hooks', () => ({
   useApiClient: () => mockApiClient,
+  useAuth: () => ({
+    user: { id: 'user-1', organizationId: 'org-1', roles: ['ORG_ADMIN'] },
+  }),
 }));
 
 describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
@@ -95,9 +99,11 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
 
   const renderSettings = () =>
     render(
-      <QueryClientProvider client={queryClient}>
-        <Settings />
-      </QueryClientProvider>
+      <MemoryRouter>
+        <QueryClientProvider client={queryClient}>
+          <Settings />
+        </QueryClientProvider>
+      </MemoryRouter>
     );
 
   it('unwrap profile envelope, opens Team tab, generates invite URL without email prompt, and copies link', async () => {
@@ -395,9 +401,11 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
     });
 
     const second = render(
-      <QueryClientProvider client={queryClient}>
-        <Settings />
-      </QueryClientProvider>
+      <MemoryRouter>
+        <QueryClientProvider client={queryClient}>
+          <Settings />
+        </QueryClientProvider>
+      </MemoryRouter>
     );
     const tabs = await second.findAllByRole('tab', { name: /Team/i });
     fireEvent.click(tabs[tabs.length - 1]);
@@ -407,4 +415,77 @@ describe('Settings - Team Invitation URL Flow (wdvf3abhz0)', () => {
     await second.findAllByRole('heading', { name: 'Edit Team Member' });
     expect(screen.queryByTestId('section-access-editor')).not.toBeInTheDocument();
   });
+});
+
+describe('Settings - Team Tab & Route Access Control (wdvf3ad5fr)', () => {
+  let queryClient: QueryClient;
+
+  beforeEach(() => {
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: 0 },
+      },
+    });
+    mockApiClient.get.mockReset();
+  });
+
+  afterEach(() => {
+    queryClient.clear();
+  });
+
+  it.each(['ORG_ADMIN', 'BRANCH_ADMIN', 'SUPER_ADMIN', 'ADMIN'])(
+    'shows Team tab for admin role %s',
+    async (role) => {
+      mockApiClient.get.mockImplementation(async (url: string) => {
+        if (url === '/api/users/profile') {
+          return {
+            success: true,
+            data: { id: 'u-1', firstName: 'A', lastName: 'B', email: 'a@b.com', organizationId: 'org-1', roles: [role] },
+          };
+        }
+        return { success: true, data: [] };
+      });
+
+      render(
+        <MemoryRouter initialEntries={['/settings/team']}>
+          <QueryClientProvider client={queryClient}>
+            <Settings initialTab="team" />
+          </QueryClientProvider>
+        </MemoryRouter>
+      );
+
+      const teamTab = await screen.findByRole('tab', { name: /Team/i });
+      expect(teamTab).toBeInTheDocument();
+      expect(teamTab).toHaveAttribute('data-state', 'active');
+    }
+  );
+
+  it.each(['COORDINATOR', 'NURSE_RN', 'SCHEDULER', 'BILLING', 'CAREGIVER', 'FAMILY'])(
+    'hides Team tab and never fetches roster/invitations for non-admin role %s',
+    async (role) => {
+      mockApiClient.get.mockImplementation(async (url: string) => {
+        if (url === '/api/users/profile') {
+          return {
+            success: true,
+            data: { id: 'u-2', firstName: 'C', lastName: 'D', email: 'c@d.com', organizationId: 'org-1', roles: [role] },
+          };
+        }
+        return { success: true, data: [] };
+      });
+
+      render(
+        <MemoryRouter initialEntries={['/settings/team']}>
+          <QueryClientProvider client={queryClient}>
+            <Settings initialTab="team" />
+          </QueryClientProvider>
+        </MemoryRouter>
+      );
+
+      await screen.findByText(/Profile Information/i);
+      expect(screen.queryByRole('tab', { name: /Team/i })).toBeNull();
+      const calledUrls = mockApiClient.get.mock.calls.map((c) => c[0] as string);
+      expect(calledUrls.some((u) => u.includes('/users') && u.includes('/organizations/'))).toBe(false);
+      expect(calledUrls.some((u) => u.includes('/invitations'))).toBe(false);
+    }
+  );
 });

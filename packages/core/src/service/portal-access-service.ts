@@ -306,9 +306,12 @@ export class PortalAccessService {
       first_name: string | null;
       last_name: string | null;
       status: string;
+      portal_self_access_allowed: boolean;
+      portal_access_level: string;
       deleted_at: Date | null;
     }>(
-      `SELECT id, organization_id, email, first_name, last_name, status, deleted_at
+      `SELECT id, organization_id, email, first_name, last_name, status,
+              portal_self_access_allowed, portal_access_level, deleted_at
        FROM clients
        WHERE id = $1 AND deleted_at IS NULL`,
       [clientId]
@@ -321,6 +324,12 @@ export class PortalAccessService {
 
     if (client.organization_id !== orgId) {
       throw new NotFoundError(`Client not found in organization: ${clientId}`);
+    }
+
+    if (!client.portal_self_access_allowed) {
+      throw new ValidationError(
+        'Client self-portal access is not enabled. Enable self-access first, or invite a legal representative via Family Portal Access with FULL_ACCESS.'
+      );
     }
 
     if (['DISCHARGED', 'DECEASED'].includes(client.status)) {
@@ -701,6 +710,107 @@ export class PortalAccessService {
     this.permissions.requirePermission(context, 'clients:update');
     await this.assertClientInOrg(clientId, context);
     await this.performClientRevoke(clientId, reason, context, 'MANUAL');
+  }
+
+  /**
+   * Enable or disable client self-portal access (capacity / legal representative gate).
+   * When disabled while access is ACTIVE, INVITED, or SUSPENDED, immediately revokes
+   * portal access, pending tokens, and active sessions.
+   */
+  async setClientSelfAccessAllowed(
+    clientId: UUID,
+    allowed: boolean,
+    context: UserContext
+  ): Promise<void> {
+    this.permissions.requirePermission(context, 'clients:update');
+
+    const orgId = context.organizationId;
+    if (orgId === undefined || orgId === '') {
+      throw new ValidationError('Organization ID is required in user context');
+    }
+
+    const clientRes = await this.db.query<{
+      id: string;
+      organization_id: string;
+      portal_access_status: string;
+    }>(
+      `SELECT id, organization_id, portal_access_status
+       FROM clients
+       WHERE id = $1 AND deleted_at IS NULL`,
+      [clientId]
+    );
+
+    const client = clientRes.rows[0];
+    if (client?.organization_id !== orgId) {
+      throw new NotFoundError(`Client not found: ${clientId}`);
+    }
+
+    await this.db.query(
+      `UPDATE clients
+       SET portal_self_access_allowed = $2,
+           updated_at = NOW(),
+           updated_by = $3
+       WHERE id = $1`,
+      [clientId, allowed, context.userId]
+    );
+
+    if (
+      !allowed &&
+      ['ACTIVE', 'INVITED', 'SUSPENDED'].includes(client.portal_access_status)
+    ) {
+      await this.performClientRevoke(
+        clientId,
+        'Client self-portal access disabled by administrator',
+        context,
+        'MANUAL'
+      );
+    }
+
+    await this.audit.logEvent(context, {
+      eventType: 'PORTAL_SELF_ACCESS_UPDATED',
+      resource: 'client',
+      resourceId: clientId,
+      action: 'PORTAL_SELF_ACCESS_UPDATED',
+      result: 'SUCCESS',
+      metadata: { clientId, portalSelfAccessAllowed: allowed },
+    });
+  }
+
+  /**
+   * Fetch the latest unexpired PENDING invite token for a portal target.
+   */
+  async getLatestPendingInvite(
+    targetType: 'FAMILY' | 'CAREGIVER' | 'CLIENT',
+    targetId: UUID
+  ): Promise<PortalInviteResult | null> {
+    const res = await this.db.query<{ token: string; expires_at: Date }>(
+      `SELECT token, expires_at
+       FROM invite_tokens
+       WHERE target_type = $1
+         AND target_id = $2
+         AND status = 'PENDING'
+         AND expires_at > NOW()
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [targetType, targetId]
+    );
+
+    const row = res.rows[0];
+    if (row === undefined) {
+      return null;
+    }
+
+    return {
+      token: row.token,
+      expiresAt: row.expires_at,
+    };
+  }
+
+  /**
+   * Build the full invite acceptance URL for a portal invite token.
+   */
+  buildInviteUrl(baseUrl: string, token: string): string {
+    return `${baseUrl.replace(/\/$/, '')}/accept-invite/${token}`;
   }
 
   /**

@@ -79,6 +79,7 @@ const SPECIFIC_RULES: ReadonlyArray<{ pattern: RegExp; section: Section }> = [
 
 export const SECTION_PREFIX_TABLE: readonly PrefixRule[] = [
   { prefix: 'clients', section: 'clients' },
+  { prefix: 'family-members', section: 'clients' },
   { prefix: 'branches', section: 'clients' },
   { prefix: 'medications', section: 'clients' },
   { prefix: 'caregivers', section: 'caregivers' },
@@ -240,6 +241,12 @@ export function resolveRequest(
   }
 
   if (EXEMPT_PREFIXES.some((p) => matchesPrefix(path, p))) {
+    return { kind: 'exempt' };
+  }
+
+  // Narrow staff-picker endpoint is permission-checked in OrganizationService.getStaffOptions
+  // for care-plans & messaging consumers (not an admin-settings route).
+  if (/^organizations\/[^/]+\/staff-options$/.test(path)) {
     return { kind: 'exempt' };
   }
 

@@ -33,9 +33,12 @@ export default defineConfig({
   // Snapshot settings
   expect: {
     toHaveScreenshot: {
-      // Allow slight differences due to font rendering
-      maxDiffPixelRatio: 0.02,
+      // 0.5% maxDiffPixelRatio: 0.02 on 1920x1080 (~41k px) is loose enough to hide
+      // a missing primary button. 0.005 catches missing/shifted controls while tolerating
+      // minor subpixel anti-aliasing in the pinned Linux Playwright container.
+      maxDiffPixelRatio: 0.005,
       threshold: 0.2,
+      animations: 'disabled',
     },
   },
 

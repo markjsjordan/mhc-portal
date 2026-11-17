@@ -16,7 +16,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import express from 'express';
 import request from 'supertest';
-import { AuditService, OrganizationService, ValidationError, type Database } from '@folkcare/core';
+import { AuditService, OrganizationService, PermissionError, ValidationError, type Database } from '@folkcare/core';
 import type { Router } from 'express';
 
 // Type for Express Router stack layer (Express internals aren't fully typed)
@@ -305,7 +305,8 @@ describe('Organization Routes', () => {
       // POST /portal-invitations/accept
       // GET /organizations/:id/users/:userId/section-access
       // PUT /organizations/:id/users/:userId/section-access
-      expect(routes.length).toBe(21);
+      // GET /organizations/:id/staff-options
+      expect(routes.length).toBe(22);
     });
   });
 
@@ -701,6 +702,115 @@ describe('Organization Routes', () => {
         .send({ roles: ['CAREGIVER'] });
       expect(res.status).toBe(400);
       expect(res.body.error).toMatch(/Invite to portal/);
+    });
+  });
+
+function buildOrgTestApp(user: { userId: string; organizationId: string; roles: string[] } | null): express.Express {
+  const mockDb = {
+    query: vi.fn().mockResolvedValue({ rows: [] }),
+  } as unknown as Database;
+  const r = createOrganizationRouter(mockDb);
+  const app = express();
+  app.use(express.json());
+  app.use((req: any, res: any, next: any) => {
+    if (!user) {
+      res.status(401).json({ success: false, error: 'Authentication required' });
+      return;
+    }
+    req.user = user;
+    req.userContext = { ...user, permissions: [] };
+    next();
+  });
+  app.use('/api', r);
+  return app;
+}
+
+  describe('Team Roster & Invitations Read RBAC (wdvf3ad5fr)', () => {
+    const orgId = '223e4567-e89b-12d3-a456-426614174000';
+    const otherOrgId = '999e4567-e89b-12d3-a456-426614174999';
+
+    it.each(['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN'])(
+      'allows admin role %s to read /users and /invitations (200)',
+      async (role) => {
+        const app = buildOrgTestApp({ userId: 'u-1', organizationId: orgId, roles: [role] });
+        const results = vi.mocked(OrganizationService).mock.results;
+        const svc = results[results.length - 1]?.value as any;
+        svc.getOrganizationUsers = vi.fn().mockResolvedValue([]);
+        svc.getOrganizationInvitations = vi.fn().mockResolvedValue([]);
+
+        const usersRes = await request(app).get(`/api/organizations/${orgId}/users`);
+        expect(usersRes.status).toBe(200);
+        const invRes = await request(app).get(`/api/organizations/${orgId}/invitations`);
+        expect(invRes.status).toBe(200);
+      }
+    );
+
+    it.each(['COORDINATOR', 'NURSE_RN', 'NURSE', 'SCHEDULER', 'BILLING', 'CAREGIVER', 'FAMILY'])(
+      'denies non-admin role %s on /users and /invitations with 403',
+      async (role) => {
+        const app = buildOrgTestApp({ userId: 'u-2', organizationId: orgId, roles: [role] });
+        const usersRes = await request(app).get(`/api/organizations/${orgId}/users`);
+        expect(usersRes.status).toBe(403);
+        const invRes = await request(app).get(`/api/organizations/${orgId}/invitations`);
+        expect(invRes.status).toBe(403);
+      }
+    );
+
+    it('denies cross-organization admin with 403', async () => {
+      const app = buildOrgTestApp({ userId: 'u-1', organizationId: otherOrgId, roles: ['ORG_ADMIN'] });
+      const usersRes = await request(app).get(`/api/organizations/${orgId}/users`);
+      expect(usersRes.status).toBe(403);
+      const invRes = await request(app).get(`/api/organizations/${orgId}/invitations`);
+      expect(invRes.status).toBe(403);
+    });
+
+    it('denies unauthenticated requests with 401', async () => {
+      const app = buildOrgTestApp(null);
+      const usersRes = await request(app).get(`/api/organizations/${orgId}/users`);
+      expect(usersRes.status).toBe(401);
+      const invRes = await request(app).get(`/api/organizations/${orgId}/invitations`);
+      expect(invRes.status).toBe(401);
+    });
+  });
+
+  describe('GET /organizations/:id/staff-options (wdvf3ad5fr)', () => {
+    const orgId = '223e4567-e89b-12d3-a456-426614174000';
+    const otherOrgId = '999e4567-e89b-12d3-a456-426614174999';
+
+    it('returns 200 with narrow { id, firstName, lastName }[] when authorized', async () => {
+      const app = buildOrgTestApp({ userId: 'u-1', organizationId: orgId, roles: ['COORDINATOR'] });
+      const results = vi.mocked(OrganizationService).mock.results;
+      const svc = results[results.length - 1]?.value as any;
+      svc.getStaffOptions = vi.fn().mockResolvedValue([
+        { id: 'staff-1', firstName: 'Sarah', lastName: 'Miller' },
+      ]);
+
+      const res = await request(app).get(`/api/organizations/${orgId}/staff-options`);
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual([{ id: 'staff-1', firstName: 'Sarah', lastName: 'Miller' }]);
+      expect(res.body.data[0].email).toBeUndefined();
+      expect(res.body.data[0].roles).toBeUndefined();
+      expect(res.body.data[0].status).toBeUndefined();
+    });
+
+    it('returns 403 when OrganizationService.getStaffOptions throws PermissionError', async () => {
+      const app = buildOrgTestApp({ userId: 'u-2', organizationId: orgId, roles: ['BILLING'] });
+      const results = vi.mocked(OrganizationService).mock.results;
+      const svc = results[results.length - 1]?.value as any;
+      svc.getStaffOptions = vi.fn().mockRejectedValue(new PermissionError('Permission denied'));
+
+      const res = await request(app).get(`/api/organizations/${orgId}/staff-options`);
+      expect(res.status).toBe(403);
+    });
+
+    it('returns 403 for cross-org requests and 401 when unauthenticated', async () => {
+      const crossApp = buildOrgTestApp({ userId: 'u-1', organizationId: otherOrgId, roles: ['COORDINATOR'] });
+      const crossRes = await request(crossApp).get(`/api/organizations/${orgId}/staff-options`);
+      expect(crossRes.status).toBe(403);
+
+      const unauthApp = buildOrgTestApp(null);
+      const unauthRes = await request(unauthApp).get(`/api/organizations/${orgId}/staff-options`);
+      expect(unauthRes.status).toBe(401);
     });
   });
 });
