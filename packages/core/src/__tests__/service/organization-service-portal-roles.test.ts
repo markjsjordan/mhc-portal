@@ -41,4 +41,46 @@ describe('portal-derived roles cannot be assigned as team roles (wdvf3acxk6)', (
     userRepo.updateUser.mockResolvedValue({ id: 'u', firstName: 'a', lastName: 'b', email: 'a@b.com', roles: ['COORDINATOR'], status: 'ACTIVE' });
     await expect(svc.updateOrganizationUser('o', 'u', { roles: ['COORDINATOR' as never] }, 'admin')).resolves.toBeTruthy();
   });
+
+  describe('getStaffOptions (wdvf3ad5fr)', () => {
+    it.each(['COORDINATOR', 'ORG_ADMIN', 'NURSE_RN', 'CAREGIVER'])(
+      'allows %s and returns only active staff with { id, firstName, lastName }',
+      async (role) => {
+        const { svc, userRepo } = build();
+        (userRepo as { getUsersByOrganization?: ReturnType<typeof vi.fn> }).getUsersByOrganization = vi.fn().mockResolvedValue([
+          { id: 's-1', firstName: 'Sarah', lastName: 'Miller', email: 'sarah@org.com', roles: ['COORDINATOR'], status: 'ACTIVE' },
+          { id: 's-2', firstName: 'Bob', lastName: 'Inactive', email: 'bob@org.com', roles: ['COORDINATOR'], status: 'INACTIVE' },
+          { id: 'f-1', firstName: 'Fam', lastName: 'User', email: 'fam@org.com', roles: ['FAMILY'], status: 'ACTIVE' },
+          { id: 'c-1', firstName: 'Cli', lastName: 'User', email: 'cli@org.com', roles: ['CLIENT'], status: 'ACTIVE' },
+        ]);
+
+        const result = await svc.getStaffOptions('o', {
+          userId: 'u-1',
+          organizationId: 'o',
+          roles: [role as never],
+          permissions: [],
+          branchIds: [],
+        });
+
+        expect(result).toEqual([{ id: 's-1', firstName: 'Sarah', lastName: 'Miller' }]);
+        expect(Object.keys(result[0]!).sort((a, b) => a.localeCompare(b))).toEqual(['firstName', 'id', 'lastName']);
+      }
+    );
+
+    it.each(['BILLING', 'SCHEDULER', 'FAMILY', 'CLIENT'])(
+      'throws PermissionError for %s',
+      async (role) => {
+        const { svc } = build();
+        await expect(
+          svc.getStaffOptions('o', {
+            userId: 'u-1',
+            organizationId: 'o',
+            roles: [role as never],
+            permissions: [],
+            branchIds: [],
+          })
+        ).rejects.toThrow(/Permission denied/);
+      }
+    );
+  });
 });

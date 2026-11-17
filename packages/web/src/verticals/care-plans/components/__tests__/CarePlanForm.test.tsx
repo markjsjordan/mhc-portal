@@ -19,14 +19,12 @@ vi.mock('@/core/hooks', () => ({
   }),
   useApiClient: () => ({
     get: vi.fn().mockImplementation((url: string) => {
-      if (url.includes('/users')) {
+      if (url.includes('/staff-options')) {
         return Promise.resolve([
           {
             id: 'coord-1',
             firstName: 'Sarah',
             lastName: 'Miller',
-            email: 'sarah.miller@example.com',
-            roles: ['COORDINATOR'],
           },
         ]);
       }

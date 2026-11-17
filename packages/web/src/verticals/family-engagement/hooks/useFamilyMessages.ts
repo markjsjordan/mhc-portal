@@ -14,9 +14,6 @@ export interface StaffMemberOption {
   id: UUID;
   firstName: string;
   lastName: string;
-  email: string;
-  roles: string[];
-  status: 'ACTIVE' | 'INACTIVE';
 }
 
 /**
@@ -26,11 +23,11 @@ export function useOrganizationStaff(organizationId: UUID | null) {
   const apiClient = useApiClient();
 
   return useQuery({
-    queryKey: ['teamMembers', organizationId],
+    queryKey: ['organization-staff-options', organizationId],
     queryFn: async (): Promise<StaffMemberOption[]> => {
       const res = await apiClient.get<
         StaffMemberOption[] | { data?: StaffMemberOption[] }
-      >(`/api/organizations/${organizationId}/users`);
+      >(`/api/organizations/${organizationId}/staff-options`);
       return Array.isArray(res) ? res : (res.data ?? []);
     },
     enabled: !!organizationId,
