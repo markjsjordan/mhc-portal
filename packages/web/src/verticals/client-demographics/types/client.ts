@@ -218,13 +218,71 @@ export interface PortalAccessSummary {
   linked: boolean;               // user_id IS NOT NULL
 }
 
+export type FamilyRelationship =
+  | 'SPOUSE'
+  | 'PARENT'
+  | 'CHILD'
+  | 'SIBLING'
+  | 'GRANDPARENT'
+  | 'GRANDCHILD'
+  | 'GUARDIAN'
+  | 'POWER_OF_ATTORNEY'
+  | 'HEALTHCARE_PROXY'
+  | 'OTHER';
+
+export type PortalAccessLevel =
+  | 'VIEW_BASIC'
+  | 'VIEW_DETAILED'
+  | 'VIEW_MEDICAL'
+  | 'VIEW_FINANCIAL'
+  | 'FULL_ACCESS';
+
+export type FamilyAuthorizerType = 'CLIENT' | 'LEGAL_REPRESENTATIVE';
+
+export interface CreateFamilyMemberInput {
+  firstName: string;
+  lastName: string;
+  relationship: FamilyRelationship;
+  relationshipNote?: string | null;
+  email: string;
+  phoneNumber?: string;
+  isPrimaryContact?: boolean;
+  portalAccessLevel?: PortalAccessLevel;
+  confirmElevatedAccess?: boolean;
+  inviteNow?: boolean;
+  consent: {
+    consentGiven: true;
+    authorizedBy: FamilyAuthorizerType;
+    authorizerName: string;
+    notes?: string;
+  };
+}
+
+export interface UpdateFamilyMemberInput {
+  firstName?: string;
+  lastName?: string;
+  relationship?: FamilyRelationship;
+  relationshipNote?: string | null;
+  email?: string;
+  phoneNumber?: string;
+  isPrimaryContact?: boolean;
+  portalAccessLevel?: PortalAccessLevel;
+  confirmElevatedAccess?: boolean;
+}
+
 export interface FamilyPortalAccessRow extends PortalAccessSummary {
   familyMemberId: string;
   firstName: string;
   lastName: string;
   relationship: string;          // family_members.relationship
+  relationshipNote?: string | null;
   email: string;
-  portalAccessLevel: 'VIEW_BASIC' | 'VIEW_DETAILED' | 'VIEW_MEDICAL' | 'VIEW_FINANCIAL' | 'FULL_ACCESS';
+  phoneNumber?: string;
+  isPrimaryContact?: boolean;
+  portalAccessLevel: PortalAccessLevel;
+  emailSent?: boolean;
+  emailError?: string | null;
+  inviteUrl?: string | null;
 }
 
 

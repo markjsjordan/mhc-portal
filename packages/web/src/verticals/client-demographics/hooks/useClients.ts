@@ -3,7 +3,13 @@ import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tansta
 import { toast } from 'sonner';
 import { useApiClient } from '@/core/hooks';
 import { createClientApiService } from '../services/client-api';
-import type { ClientSearchFilters, CreateClientInput, UpdateClientInput } from '../types';
+import type {
+  ClientSearchFilters,
+  CreateClientInput,
+  UpdateClientInput,
+  CreateFamilyMemberInput,
+  UpdateFamilyMemberInput,
+} from '../types';
 import type { SearchParams } from '@/core/types';
 
 export const useClientApi = () => {
@@ -146,6 +152,67 @@ export const useRevokeFamilyPortal = (clientId: string | undefined) => {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to revoke portal access');
+    },
+  });
+};
+
+export const useCreateFamilyMember = (clientId: string | undefined) => {
+  const clientApi = useClientApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateFamilyMemberInput) => clientApi.createFamilyMember(clientId!, input),
+    onSuccess: (data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ['family-portal-access', clientId] });
+      if (variables.inviteNow) {
+        if (data.emailSent === false) {
+          toast.warning(
+            data.emailError
+              ? `Family member added, but invitation email failed: ${data.emailError}`
+              : 'Family member added, but invitation email could not be sent'
+          );
+        } else {
+          toast.success('Family member added and portal invitation sent');
+        }
+      } else {
+        toast.success('Family member added');
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to add family member');
+    },
+  });
+};
+
+export const useUpdateFamilyMember = (clientId: string | undefined) => {
+  const clientApi = useClientApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ familyMemberId, input }: { familyMemberId: string; input: UpdateFamilyMemberInput }) =>
+      clientApi.updateFamilyMember(familyMemberId, input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['family-portal-access', clientId] });
+      toast.success('Family member updated');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update family member');
+    },
+  });
+};
+
+export const useDeleteFamilyMember = (clientId: string | undefined) => {
+  const clientApi = useClientApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (familyMemberId: string) => clientApi.deleteFamilyMember(familyMemberId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['family-portal-access', clientId] });
+      toast.success('Family member removed');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to remove family member');
     },
   });
 };

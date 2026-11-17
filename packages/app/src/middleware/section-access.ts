@@ -79,6 +79,7 @@ const SPECIFIC_RULES: ReadonlyArray<{ pattern: RegExp; section: Section }> = [
 
 export const SECTION_PREFIX_TABLE: readonly PrefixRule[] = [
   { prefix: 'clients', section: 'clients' },
+  { prefix: 'family-members', section: 'clients' },
   { prefix: 'branches', section: 'clients' },
   { prefix: 'medications', section: 'clients' },
   { prefix: 'caregivers', section: 'caregivers' },
