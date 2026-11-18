@@ -107,6 +107,7 @@ export interface CreatePatternPayload {
   clientId: string;
   caregiverId?: string;
   serviceTypeId: string;
+  serviceTypeCode?: string;
   serviceTypeName?: string;
   frequency?: string;
   rrule?: string;
@@ -125,6 +126,7 @@ export interface CreateVisitPayload {
   clientId: string;
   caregiverId?: string;
   serviceTypeId: string;
+  serviceTypeCode?: string;
   serviceTypeName?: string;
   visitType?: VisitType | string;
   scheduledDate: string;

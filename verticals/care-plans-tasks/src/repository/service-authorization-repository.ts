@@ -24,14 +24,14 @@ export class ServiceAuthorizationRepository extends Repository<ServiceAuthorizat
       authorizationNumber: row.authorization_number,
       payerName: row.payer_name,
       payerId: row.payer_id,
-      serviceCodes: row.service_codes,
+      serviceCodes: row.service_codes ?? (row.service_type_code ? [row.service_type_code] : undefined),
       authorizedUnits: parseFloat(row.authorized_units),
       unitType: row.unit_type,
       ratePerUnit: row.rate_per_unit ? parseFloat(row.rate_per_unit) : undefined,
-      effectiveDate: row.effective_date,
-      expirationDate: row.expiration_date,
-      unitsUsed: parseFloat(row.units_used),
-      unitsRemaining: parseFloat(row.units_remaining),
+      effectiveDate: row.effective_date ?? row.effective_from,
+      expirationDate: row.expiration_date ?? row.effective_to,
+      unitsUsed: parseFloat(row.units_used ?? row.used_units ?? '0'),
+      unitsRemaining: parseFloat(row.units_remaining ?? row.remaining_units ?? '0'),
       lastUsageDate: row.last_usage_date,
       formNumber: row.form_number,
       mcoId: row.mco_id,
@@ -80,21 +80,38 @@ export class ServiceAuthorizationRepository extends Repository<ServiceAuthorizat
 
   async findActiveByClientAndService(
     clientId: UUID,
-    serviceCode: string
+    serviceCodeOrKeys: string | string[]
   ): Promise<ServiceAuthorization[]> {
+    const rawKeys = Array.from(
+      new Set(
+        (Array.isArray(serviceCodeOrKeys) ? serviceCodeOrKeys : [serviceCodeOrKeys])
+          .map((k) => k.trim())
+          .filter(Boolean)
+      )
+    );
+    if (rawKeys.length === 0) {
+      return [];
+    }
+    const upperKeys = rawKeys.map((k) => k.toUpperCase());
+
     const query = `
       SELECT * FROM service_authorizations
       WHERE client_id = $1
-        AND $2 = ANY(service_codes)
+        AND (
+          service_type_id::text = ANY($2)
+          OR UPPER(service_type_code) = ANY($3)
+          OR UPPER(service_type_name) = ANY($3)
+          OR (service_codes IS NOT NULL AND service_codes && $2)
+        )
         AND status = 'ACTIVE'
-        AND effective_date <= CURRENT_DATE
-        AND expiration_date >= CURRENT_DATE
-        AND units_remaining > 0
+        AND effective_from <= CURRENT_DATE
+        AND effective_to >= CURRENT_DATE
+        AND COALESCE(remaining_units, units_remaining, 0) > 0
         AND deleted_at IS NULL
-      ORDER BY expiration_date ASC
+      ORDER BY effective_to ASC
     `;
 
-    const result = await this.database.query(query, [clientId, serviceCode]);
+    const result = await this.database.query(query, [clientId, rawKeys, upperKeys]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return result.rows.map((row: any) => this.mapRowToEntity(row));
   }

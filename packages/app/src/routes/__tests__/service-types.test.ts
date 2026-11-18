@@ -143,4 +143,14 @@ describe('Service Types Routes - GET /api/service-types', () => {
     expect(res.body.success).toBe(false);
     expect(res.body.error).toContain('Supported states are TX and FL');
   });
+
+  it('returns valid UUIDs for all 6 service type ids', async () => {
+    const res = await request(app).get('/api/service-types');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(6);
+    const uuidRegex = /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i;
+    for (const st of res.body.data as Array<{ id: string }>) {
+      expect(st.id).toMatch(uuidRegex);
+    }
+  });
 });

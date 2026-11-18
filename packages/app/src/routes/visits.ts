@@ -21,7 +21,7 @@ import { ServiceAuthorizationRepository } from '@folkcare/care-plans-tasks';
 import { ClientRepository } from '@folkcare/client-demographics';
 import { ComplianceCheckingService, complianceCheckRequestSchema, DocumentationQualityService, HospitalizationRiskService, VitalsAnomalyService, SentimentAnalysisService, ReportGenerationService } from '@folkcare/visit-notes';
 import { VisitDurationPredictionService } from '@folkcare/scheduling-visits';
-import { HOME_CARE_SERVICE_TYPES } from './service-types.js';
+import { findServiceType } from './service-types.js';
 import knex from 'knex';
 import { z } from 'zod';
 
@@ -93,18 +93,21 @@ function validateVisitFormats(input: {
 }
 
 /**
- * Resolves the service type name and UUID from given inputs.
+ * Resolves the service type name, code, billingCodes, and UUID from given inputs.
  */
 function resolveServiceType(serviceTypeId: string, serviceTypeName?: string): {
   id: string;
+  code?: string;
   name: string;
+  billingCodes: string[];
 } {
-  const matchedService = HOME_CARE_SERVICE_TYPES.find(
-    (st) => st.id === serviceTypeId || st.code === serviceTypeId
-  );
+  const matchedService =
+    findServiceType(serviceTypeId) ?? (serviceTypeName ? findServiceType(serviceTypeName) : undefined);
   return {
-    id: isValidUUID(serviceTypeId) ? serviceTypeId : '00000000-0000-0000-0000-000000000000',
+    id: matchedService?.id ?? (isValidUUID(serviceTypeId) ? serviceTypeId : '00000000-0000-0000-0000-000000000000'),
+    code: matchedService?.code,
     name: serviceTypeName ?? matchedService?.name ?? serviceTypeId,
+    billingCodes: matchedService?.billingCodes ?? [],
   };
 }
 
@@ -676,7 +679,11 @@ export function createVisitRouter(db: Database): Router {
     const authRepo = new ServiceAuthorizationRepository(db);
     const authReader: IServiceAuthorizationReader = {
       findActiveByClientAndService: async (clientId: string, serviceCode: string) => {
-        return authRepo.findActiveByClientAndService(clientId, serviceCode);
+        const def = findServiceType(serviceCode);
+        const lookupKeys = def
+          ? Array.from(new Set([serviceCode, def.id, def.slug, def.code, def.name, ...def.billingCodes]))
+          : serviceCode;
+        return authRepo.findActiveByClientAndService(clientId, lookupKeys);
       },
     };
 
@@ -730,6 +737,7 @@ export function createVisitRouter(db: Database): Router {
         clientId: z.guid('Invalid clientId format'),
         caregiverId: z.guid('Invalid caregiverId format').optional().nullable(),
         serviceTypeId: z.guid('Invalid serviceTypeId format'),
+        serviceTypeCode: z.string().optional(),
         serviceTypeName: z.string().optional(),
         frequency: z.enum(['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'CUSTOM']).optional(),
         rrule: z.string().optional(),
@@ -824,11 +832,14 @@ export function createVisitRouter(db: Database): Router {
       }
 
       // Enforce authorization limit on create
+      const resolvedService = resolveServiceType(validated.serviceTypeId, validated.serviceTypeName);
       const guard = getAuthorizationGuard();
       const authCheck = await guard.validatePattern({
         organizationId: context.organizationId!,
         clientId: validated.clientId,
-        serviceTypeId: validated.serviceTypeId,
+        serviceTypeId: resolvedService.id,
+        serviceTypeCode: validated.serviceTypeCode ?? resolvedService.code,
+        serviceTypeName: validated.serviceTypeName ?? resolvedService.name,
         dayOfWeek: (validated.dayOfWeek ?? []) as unknown as import('@folkcare/scheduling-visits').DayOfWeek[],
         duration: validated.duration,
         startDate: validated.startDate,

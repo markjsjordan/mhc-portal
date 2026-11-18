@@ -22,6 +22,7 @@ export interface StateTaxonomyBilling {
 
 export interface ServiceTypeDefinition {
   id: string;
+  slug: string;
   code: ServiceTypeCode;
   name: string;
   category: ServiceCategory;
@@ -43,7 +44,8 @@ export interface FormattedServiceType extends ServiceTypeDefinition {
 
 export const HOME_CARE_SERVICE_TYPES: ServiceTypeDefinition[] = [
   {
-    id: 'skilled-nursing',
+    id: '00000000-0000-4000-8000-00000005ec03',
+    slug: 'skilled-nursing',
     code: 'SN',
     name: 'Skilled Nursing',
     category: 'SKILLED',
@@ -69,7 +71,8 @@ export const HOME_CARE_SERVICE_TYPES: ServiceTypeDefinition[] = [
     },
   },
   {
-    id: 'physical-therapy',
+    id: '00000000-0000-4000-8000-00000005ec04',
+    slug: 'physical-therapy',
     code: 'PT',
     name: 'Physical Therapy',
     category: 'SKILLED',
@@ -95,7 +98,8 @@ export const HOME_CARE_SERVICE_TYPES: ServiceTypeDefinition[] = [
     },
   },
   {
-    id: 'occupational-therapy',
+    id: '00000000-0000-4000-8000-00000005ec05',
+    slug: 'occupational-therapy',
     code: 'OT',
     name: 'Occupational Therapy',
     category: 'SKILLED',
@@ -121,7 +125,8 @@ export const HOME_CARE_SERVICE_TYPES: ServiceTypeDefinition[] = [
     },
   },
   {
-    id: 'speech-therapy',
+    id: '00000000-0000-4000-8000-00000005ec06',
+    slug: 'speech-therapy',
     code: 'ST',
     name: 'Speech Therapy',
     category: 'SKILLED',
@@ -147,7 +152,8 @@ export const HOME_CARE_SERVICE_TYPES: ServiceTypeDefinition[] = [
     },
   },
   {
-    id: 'home-health-aide',
+    id: '00000000-0000-4000-8000-00000005ec02',
+    slug: 'home-health-aide',
     code: 'HHA',
     name: 'Home Health Aide',
     category: 'NON_SKILLED',
@@ -173,7 +179,8 @@ export const HOME_CARE_SERVICE_TYPES: ServiceTypeDefinition[] = [
     },
   },
   {
-    id: 'personal-care',
+    id: '00000000-0000-4000-8000-00000005ec01',
+    slug: 'personal-care',
     code: 'PC',
     name: 'Personal Care / Companionship',
     category: 'NON_SKILLED',
@@ -203,6 +210,27 @@ export const HOME_CARE_SERVICE_TYPES: ServiceTypeDefinition[] = [
 /**
  * Create router for service types
  */
+/**
+ * Look up a canonical service type by UUID, slug, code, name (or prefix), or billing code.
+ */
+export function findServiceType(idOrCodeOrName: string): ServiceTypeDefinition | undefined {
+  const trimmed = idOrCodeOrName.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  const normalized = trimmed.toLowerCase();
+
+  return HOME_CARE_SERVICE_TYPES.find((st) => {
+    if (st.id.toLowerCase() === normalized) return true;
+    if (st.slug.toLowerCase() === normalized) return true;
+    if (st.code.toLowerCase() === normalized) return true;
+    const stName = st.name.toLowerCase();
+    if (stName === normalized || stName.startsWith(`${normalized} /`)) return true;
+    if (st.billingCodes.some((bc) => bc.toLowerCase() === normalized)) return true;
+    return false;
+  });
+}
+
 export function createServiceTypesRouter(_db?: Database): Router {
   const router = Router();
 

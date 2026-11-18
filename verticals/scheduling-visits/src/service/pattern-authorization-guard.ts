@@ -41,6 +41,7 @@ export interface AuthorizationGuardInput {
   clientId: UUID;
   serviceTypeId: UUID;
   serviceTypeCode?: string;
+  serviceTypeName?: string;
   dayOfWeek: DayOfWeek[];
   duration: number; // in minutes
   startDate: string | Date;
@@ -106,6 +107,7 @@ export class PatternAuthorizationGuard {
             reason: 'NO_AUTHORIZATION_RECORD',
             clientId: input.clientId,
             serviceTypeId: input.serviceTypeId,
+            serviceTypeCode: input.serviceTypeCode,
             isMedicaidOrWaiver: true,
           },
         };
