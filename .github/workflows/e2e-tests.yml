@@ -34,7 +34,7 @@ env:
 jobs:
   e2e-tests:
     name: E2E Tests (${{ matrix.browser || 'chromium' }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30  # 30 min: full 13-spec suite + web preview + retries (owner-approved)
 
     strategy:
@@ -175,7 +175,7 @@ jobs:
 
   e2e-mobile:
     name: E2E Tests (Mobile)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # Run mobile tests on nightly schedule or manual dispatch with 'mobile' or 'all'
     if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.browser == 'mobile' || github.event.inputs.browser == 'all'))
     timeout-minutes: 15  # 15 min max
@@ -269,7 +269,7 @@ jobs:
 
   e2e-report:
     name: Generate E2E Test Report
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [e2e-tests]
     if: always()
 
@@ -324,7 +324,7 @@ jobs:
 
   visual-tests:
     name: Visual Regression Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: ${{ github.event.inputs.update_visual_baselines != 'true' }}
     # Pinned to @playwright/test@1.57.0 (package-lock.json) so Linux font rendering matches baselines
     container:
@@ -354,7 +354,7 @@ jobs:
 
   update-visual-baselines:
     name: Update Visual Baselines (Linux CI)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.update_visual_baselines == 'true' }}
     permissions:
       contents: write
