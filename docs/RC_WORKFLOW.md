@@ -248,6 +248,23 @@ gh workflow run sync-develop-to-preview.yml
 3. **Review together:** RC review sees all features integrated, catches conflicts early
 4. **Test preview:** Always test in preview before approving for production
 5. **Document deployments:** Record what was deployed and when in ClickUp comments
+
+## QA Gates: Bug-to-Regression-Test Rule
+
+Any ticket tagged `bug` or arriving via `QA FAILURE` / `VERDICT: FAIL` **cannot** move to `review` without an automated regression test that:
+
+1. **Fails on the base commit** (`origin/preview` or `origin/develop`) before the fix is applied (or with the fix reverted), and
+2. **Passes on the fix commit** (`HEAD`).
+
+### Lowest-Level Test Selection Rule
+
+Choose the lowest test level that reliably catches the defect:
+
+1. **Vitest unit/component test** (`*.test.ts` / `*.test.tsx`) for domain logic, state, payload mapping, and component rendering.
+2. **Vitest API/route test** (`packages/app/src/routes/__tests__/*.test.ts`) for HTTP status codes, SQL query column/parameter contracts, and middleware.
+3. **Playwright E2E spec** (`e2e/*.spec.ts`) **only** when the failure requires a real browser, multi-page route navigation, or full permission/auth redirect flow.
+
+Record the chosen test level and why in the ClickUp review comment alongside both test runs (base SHA red, head SHA green).
 6. **Monitor production:** Check Sentry and logs after each deployment
 
 ## Troubleshooting

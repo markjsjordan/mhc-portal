@@ -160,3 +160,53 @@ jobs:
           ignoreLabels: |
             dependencies
             bot
+
+  remind-fix-regression-test:
+    name: Remind Regression Test on fix PRs
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Check for test files on fix PRs
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          script: |
+            const title = context.payload.pull_request.title || '';
+            if (!/^fix(\([^)]+\))?:/i.test(title)) {
+              return;
+            }
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              per_page: 100
+            });
+
+            const testPattern = /(\.(test|spec)\.(ts|tsx|js|jsx)|__tests__\/)/;
+            const hasTestFile = files.some(f => testPattern.test(f.filename));
+            if (hasTestFile) {
+              return;
+            }
+
+            const marker = '<!-- fix-regression-test-reminder -->';
+            const body = `${marker}
+            > [!NOTE]
+            > **Bug-to-Regression-Test Reminder**: This PR has a \`fix:\` title but does not modify any test files (\`*.test.ts(x)\`, \`*.spec.ts(x)\`, or \`__tests__/\`).
+            >
+            > Per the Bug-to-Regression-Test rule, bug fixes should ship with a failing-first regression test (base SHA red, head SHA green) at the lowest test level that catches the defect. This check is **warn-only** and does not block merge.`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number
+            });
+
+            const existing = comments.find(c => c.user.type === 'Bot' && c.body.includes(marker));
+            if (!existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body
+              });
+            }
