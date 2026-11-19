@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useCreateClient, useClients, useUpdateClient, useBranches } from '@/verticals/client-demographics/hooks';
@@ -253,16 +253,9 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       },
     }
   );
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-
-  // Auto-save every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLastSaved(new Date());
-      // In real app: save to backend
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [intakeData]);
+  // savedClientId tracks a client record created by mid-wizard Save in create mode.
+  // Once set, subsequent Save presses (and final Submit) update that record instead of creating a new one.
+  const [savedClientId, setSavedClientId] = useState<string | undefined>(clientId);
 
   const updateData = (field: string, value: unknown) => {
     setIntakeData((prev) => ({ ...prev, [field]: value }));
@@ -640,6 +633,108 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
     }
   };
 
+  /**
+   * handleSave — persist current wizard state without navigating away.
+   *
+   * - On the first save in create mode, calls createClient with status=PENDING_INTAKE
+   *   (server accepts name + DOB + address; all other fields are optional).
+   * - On subsequent saves, calls updateClient so we don't create duplicate records.
+   * - In edit mode, always calls updateClient against the existing clientId.
+   *
+   * Guards: firstName, lastName, dateOfBirth, and a complete address (all four required
+   * fields) must be provided — the server rejects without them and surfaces a toast.
+   */
+  const handleSave = async () => {
+    if (!intakeData.firstName?.trim()) {
+      toast.error('First name is required to save.');
+      setCurrentStep(1);
+      return;
+    }
+    if (!intakeData.lastName?.trim()) {
+      toast.error('Last name is required to save.');
+      setCurrentStep(1);
+      return;
+    }
+    if (!intakeData.dateOfBirth) {
+      toast.error('Date of birth is required to save.');
+      setCurrentStep(1);
+      return;
+    }
+
+    const addr = intakeData.address;
+    const line1 = blankToUndefined(addr?.line1);
+    const city = blankToUndefined(addr?.city);
+    const state = blankToUndefined(addr?.state);
+    const postalCode = blankToUndefined(addr?.postalCode);
+    if (!line1 || !city || !state || !postalCode) {
+      toast.error('A complete home address is required to save.');
+      setCurrentStep(1);
+      return;
+    }
+
+    const addressInput = {
+      type: 'HOME' as const,
+      line1,
+      line2: blankToUndefined(addr?.line2),
+      city,
+      state: state.toUpperCase(),
+      postalCode,
+      country: 'US' as const,
+    };
+
+    const phoneNumber = blankToUndefined(intakeData.phone);
+    const phoneInput = phoneNumber
+      ? {
+          number: phoneNumber,
+          type: intakeData.phoneType ?? ('MOBILE' as const),
+          canReceiveSMS: intakeData.phoneCanReceiveSMS ?? false,
+        }
+      : undefined;
+
+    try {
+      const targetId = isEditMode ? clientId : savedClientId;
+      if (targetId) {
+        // Update the existing record (edit mode or already-saved create mode)
+        await updateClient.mutateAsync({
+          id: targetId,
+          input: {
+            firstName: intakeData.firstName.trim(),
+            lastName: intakeData.lastName.trim(),
+            dateOfBirth: intakeData.dateOfBirth,
+            email: blankToUndefined(intakeData.email),
+            primaryPhone: phoneInput,
+            primaryAddress: addressInput,
+          },
+        });
+        toast.success('Progress saved.');
+      } else {
+        // First save in create mode — create a PENDING_INTAKE draft
+        if (!user?.organizationId) {
+          toast.error('Unable to save: no organization context for the signed-in user.');
+          return;
+        }
+        const newClient = await createClient.mutateAsync({
+          organizationId: user.organizationId,
+          branchId:
+            (activeBranchId && activeBranchId.trim() !== '' ? activeBranchId : undefined) ??
+            (user?.branchIds?.[0] && user.branchIds[0].trim() !== '' ? user.branchIds[0] : undefined) ??
+            undefined,
+          firstName: intakeData.firstName.trim(),
+          lastName: intakeData.lastName.trim(),
+          dateOfBirth: intakeData.dateOfBirth,
+          email: blankToUndefined(intakeData.email),
+          primaryPhone: phoneInput,
+          primaryAddress: addressInput,
+          status: 'PENDING_INTAKE',
+        });
+        setSavedClientId(newClient.id);
+        toast.success('Draft saved. Continue filling out the form.');
+      }
+    } catch {
+      // useCreateClient/useUpdateClient's onError already surfaces a toast.
+    }
+  };
+
   return (
     <div className="max-w-[1200px] mx-auto px-4 py-6 md:px-5 md:py-10 font-sans min-w-0 w-full box-border overflow-x-hidden">
       {/* Desktop Progress Stepper (>= 768px) */}
@@ -701,13 +796,6 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           ))}
         </div>
       </div>
-
-      {/* Auto-save indicator */}
-      {lastSaved && (
-        <div className="text-right text-xs text-gray-500 mb-3">
-          💾 Auto-saved at {lastSaved.toLocaleTimeString()}
-        </div>
-      )}
 
       {/* Step Content */}
       <div className="bg-white rounded-xl p-4 sm:p-6 md:p-10 shadow-sm border border-gray-100 min-h-[400px] md:min-h-[500px]">
@@ -1888,6 +1976,18 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
             disabled={currentStep === 1}
           >
             ← Back
+          </Button>
+
+          {/* Save button — available on all steps once required fields are filled */}
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="w-full sm:w-auto min-h-[48px] sm:min-w-[120px] order-3 sm:order-2"
+            onClick={() => { void handleSave(); }}
+            disabled={createClient.isPending || updateClient.isPending}
+          >
+            {(createClient.isPending || updateClient.isPending) ? 'Saving…' : '💾 Save'}
           </Button>
 
           {currentStep < 7 ? (
