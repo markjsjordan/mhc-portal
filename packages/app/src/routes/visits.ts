@@ -22,6 +22,7 @@ import { ClientRepository } from '@folkcare/client-demographics';
 import { ComplianceCheckingService, complianceCheckRequestSchema, DocumentationQualityService, HospitalizationRiskService, VitalsAnomalyService, SentimentAnalysisService, ReportGenerationService } from '@folkcare/visit-notes';
 import { VisitDurationPredictionService } from '@folkcare/scheduling-visits';
 import { findServiceType } from './service-types.js';
+import { isCaregiverAvailableForVisit } from './visit-availability-guard.js';
 import knex from 'knex';
 import { z } from 'zod';
 
@@ -2113,6 +2114,22 @@ export function createVisitRouter(db: Database): Router {
           });
           return;
         }
+      }
+
+      // Block assignment when caregiver's set availability does not cover the visit window
+      const availableForVisit = await isCaregiverAvailableForVisit(
+        db,
+        caregiverId,
+        visit,
+        context
+      );
+      if (availableForVisit === false) {
+        res.status(409).json({
+          success: false,
+          error: 'Caregiver is not available for this time slot',
+          code: 'CAREGIVER_NOT_AVAILABLE',
+        });
+        return;
       }
 
       // If compliance was overridden, log the override for audit trail

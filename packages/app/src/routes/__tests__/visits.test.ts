@@ -10,6 +10,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createVisitRouter } from '../visits';
 import { ScheduleRepository } from '@folkcare/scheduling-visits';
 import { ComplianceAutopilotService, type Database } from '@folkcare/core';
+import { CaregiverAvailabilityService } from '@folkcare/caregiver-staff';
 import type { Request, Response, NextFunction } from 'express';
 import type { Pool } from 'pg';
 
@@ -374,6 +375,8 @@ describe('Visit Routes', () => {
 
   describe('PUT /:id/assign', () => {
     beforeEach(() => {
+      // Default: caregiver has no schedule configured (fail-open)
+      vi.spyOn(CaregiverAvailabilityService.prototype, 'getAvailability').mockResolvedValue({ schedule: {} } as any);
       mockRequest = {
         params: { id: 'visit-123' },
         body: {
@@ -468,6 +471,92 @@ describe('Visit Routes', () => {
         'SUCCESS',
         expect.any(String),
       ]);
+    });
+
+    describe('availability guard', () => {
+      const mockAssignFlow = (): void => {
+        vi.mocked(mockDb.query)
+          .mockResolvedValueOnce({
+            rows: [{
+              id: 'visit-123',
+              organization_id: '550e8400-e29b-41d4-a716-446655440000',
+              branch_id: 'branch-123',
+              scheduled_date: new Date('2025-01-15'), // Wednesday
+              scheduled_start_time: '09:00:00',
+              scheduled_end_time: '10:00:00',
+              status: 'UNASSIGNED',
+            }],
+          } as any)
+          .mockResolvedValueOnce({ rows: [{ id: 'caregiver-456', status: 'ACTIVE' }] } as any)
+          .mockResolvedValueOnce({ rows: [] } as any)
+          .mockResolvedValueOnce({
+            rows: [{ id: 'visit-123', assigned_caregiver_id: 'caregiver-456', status: 'ASSIGNED' }],
+          } as any);
+      };
+      const runAssign = async (): Promise<void> => {
+        const router = createVisitRouter(mockDb);
+        const handler = router.stack.find((layer: any) => layer.route?.path === '/:id/assign')?.route?.stack.find((s: any) => s.method === 'put')?.handle;
+        if (!handler) {
+          throw new Error('Handler not found');
+        }
+        await handler(mockRequest as Request, mockResponse as Response, nextMock);
+      };
+      const stubAvailability = (schedule: Record<string, unknown>): void => {
+        vi.spyOn(CaregiverAvailabilityService.prototype, 'getAvailability').mockResolvedValueOnce({
+          schedule,
+        } as any);
+      };
+
+      it('returns 409 CAREGIVER_NOT_AVAILABLE when no slot overlaps the visit window', async () => {
+        mockAssignFlow();
+        stubAvailability({
+          wednesday: { available: true, timeSlots: [{ startTime: '13:00', endTime: '17:00' }] },
+          monday: { available: true, timeSlots: [{ startTime: '08:00', endTime: '12:00' }] },
+        });
+
+        await runAssign();
+
+        expect(statusMock).toHaveBeenCalledWith(409);
+        expect(jsonMock).toHaveBeenCalledWith({
+          success: false,
+          error: 'Caregiver is not available for this time slot',
+          code: 'CAREGIVER_NOT_AVAILABLE',
+        });
+        const updateCall = vi.mocked(mockDb.query).mock.calls.find(([sql]) =>
+          typeof sql === 'string' && sql.includes('UPDATE visits')
+        );
+        expect(updateCall).toBeUndefined();
+      });
+
+      it('allows assignment when caregiver is available for the visit window', async () => {
+        mockAssignFlow();
+        stubAvailability({
+          wednesday: { available: true, timeSlots: [{ startTime: '08:00', endTime: '12:00' }] },
+        });
+
+        await runAssign();
+
+        expect(statusMock).not.toHaveBeenCalledWith(409);
+        expect(jsonMock).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+      });
+
+      it('allows assignment when caregiver has no availability schedule at all (fail-open)', async () => {
+        mockAssignFlow();
+        stubAvailability({
+          monday: { available: false },
+          tuesday: { available: false },
+          wednesday: { available: false },
+          thursday: { available: false },
+          friday: { available: false },
+          saturday: { available: false },
+          sunday: { available: false },
+        });
+
+        await runAssign();
+
+        expect(statusMock).not.toHaveBeenCalledWith(409);
+        expect(jsonMock).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+      });
     });
 
     it('should assign caregiver to visit successfully', async () => {
