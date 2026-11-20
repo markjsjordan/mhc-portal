@@ -25,12 +25,14 @@ vi.mock('@folkcare/caregiver-staff', () => ({
   ExclusionListService: vi.fn().mockImplementation(() => ({})),
 }));
 
+const mockSendInvitation = vi.fn<(...args: any[]) => Promise<any>>().mockImplementation(async () => {});
+
 vi.mock('@folkcare/core', async () => {
   const actual = await vi.importActual('@folkcare/core');
   return {
     ...actual,
     createEmailService: vi.fn(() => ({
-      sendInvitation: vi.fn().mockImplementation(async () => {}),
+      sendInvitation: mockSendInvitation,
     })),
     AuthMiddleware: vi.fn().mockImplementation(function () {
       return {
@@ -201,6 +203,148 @@ describe('Portal Access API Routes', () => {
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
       expect(res.body.error).toContain('email');
+    });
+
+    it('POST /api/caregivers/:id/portal-invite success case: sendInvitation resolves → emailSent: true, emailError: null', async () => {
+      const caregiverId = '55555555-5555-4555-8555-555555555551';
+      mockSendInvitation.mockImplementationOnce(async () => {});
+      mockDb.query
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              employment_status: 'ACTIVE',
+              email: 'cg@example.com',
+              first_name: 'John',
+              last_name: 'Doe',
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: caregiverId,
+              organization_id: 'org-1',
+              email: 'cg@example.com',
+              first_name: 'John',
+              last_name: 'Doe',
+              employment_status: 'ACTIVE',
+              deleted_at: null,
+            },
+          ],
+        })
+        .mockResolvedValue({
+          rows: [
+            {
+              name: 'MHC Portal',
+              first_name: 'Admin',
+              last_name: 'User',
+              portal_access_status: 'INVITED',
+              expires_at: new Date('2026-11-27T00:00:00Z'),
+            },
+          ],
+        });
+
+      const res = await request(app).post(`/api/caregivers/${caregiverId}/portal-invite`);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.emailSent).toBe(true);
+      expect(res.body.data.emailError).toBeNull();
+      expect(res.body.data.inviteUrl).toBeTruthy();
+    });
+
+    it('POST /api/caregivers/:id/portal-invite failure case: sendInvitation rejects → emailSent: false, emailError: message', async () => {
+      const caregiverId = '55555555-5555-4555-8555-555555555551';
+      mockSendInvitation.mockRejectedValueOnce(new Error('Resend API error'));
+      mockDb.query
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              employment_status: 'ACTIVE',
+              email: 'cg@example.com',
+              first_name: 'John',
+              last_name: 'Doe',
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: caregiverId,
+              organization_id: 'org-1',
+              email: 'cg@example.com',
+              first_name: 'John',
+              last_name: 'Doe',
+              employment_status: 'ACTIVE',
+              deleted_at: null,
+            },
+          ],
+        })
+        .mockResolvedValue({
+          rows: [
+            {
+              name: 'MHC Portal',
+              first_name: 'Admin',
+              last_name: 'User',
+              portal_access_status: 'INVITED',
+              expires_at: new Date('2026-11-27T00:00:00Z'),
+            },
+          ],
+        });
+
+      const res = await request(app).post(`/api/caregivers/${caregiverId}/portal-invite`);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.emailSent).toBe(false);
+      expect(res.body.data.emailError).toBe('Resend API error');
+      expect(res.body.data.inviteUrl).toBeTruthy();
+    });
+
+    it('POST /api/caregivers/:id/portal-invite sendEmail: false omits emailSent and emailError', async () => {
+      const caregiverId = '55555555-5555-4555-8555-555555555551';
+      mockDb.query
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              employment_status: 'ACTIVE',
+              email: 'cg@example.com',
+              first_name: 'John',
+              last_name: 'Doe',
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: caregiverId,
+              organization_id: 'org-1',
+              email: 'cg@example.com',
+              first_name: 'John',
+              last_name: 'Doe',
+              employment_status: 'ACTIVE',
+              deleted_at: null,
+            },
+          ],
+        })
+        .mockResolvedValue({
+          rows: [
+            {
+              name: 'MHC Portal',
+              first_name: 'Admin',
+              last_name: 'User',
+              portal_access_status: 'INVITED',
+              expires_at: new Date('2026-11-27T00:00:00Z'),
+            },
+          ],
+        });
+
+      const res = await request(app)
+        .post(`/api/caregivers/${caregiverId}/portal-invite`)
+        .send({ sendEmail: false });
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).not.toHaveProperty('emailSent');
+      expect(res.body.data).not.toHaveProperty('emailError');
+      expect(res.body.data.inviteUrl).toBeTruthy();
     });
 
     it('POST /api/caregivers/:id/portal-revoke returns 400 for missing or empty reason', async () => {

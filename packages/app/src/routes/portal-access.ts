@@ -31,7 +31,9 @@ async function sendPortalInviteEmail(
   recipientName: string,
   token: string,
   expiresAt: Date
-): Promise<void> {
+): Promise<{ emailSent: boolean; emailError: string | null }> {
+  let emailSent = false;
+  let emailError: string | null = null;
   try {
     const orgRes = await db.query<{ name: string }>(
       `SELECT name FROM organizations WHERE id = $1`,
@@ -56,9 +58,12 @@ async function sendPortalInviteEmail(
       invitationToken: token,
       expiresAt,
     });
+    emailSent = true;
   } catch (err) {
+    emailError = err instanceof Error ? err.message : 'Failed to send invitation email';
     console.warn('[PortalAccess] Failed to send invitation email:', err);
   }
+  return { emailSent, emailError };
 }
 
 export type PortalAccessStatus = 'NONE' | 'INVITED' | 'ACTIVE' | 'SUSPENDED' | 'REVOKED';
@@ -1055,9 +1060,10 @@ export function createPortalAccessRouter(db: Database): Router {
       const inviteResult = await portalAccessService.inviteClient(clientId, context);
 
       // Attempt email send when requested
+      let emailResult: { emailSent: boolean; emailError: string | null } | undefined;
       if (sendEmail) {
         const recipientName = `${clientCheck.first_name ?? ''} ${clientCheck.last_name ?? ''}`.trim() || trimmedEmail;
-        await sendPortalInviteEmail(
+        emailResult = await sendPortalInviteEmail(
           db,
           context.organizationId,
           context.userId,
@@ -1070,7 +1076,7 @@ export function createPortalAccessRouter(db: Database): Router {
 
       const inviteUrl = buildInvitationUrl(inviteResult.token);
       res.setHeader('Cache-Control', 'no-store');
-      res.json({ success: true, data: { ...inviteResult, inviteUrl } });
+      res.json({ success: true, data: { ...inviteResult, inviteUrl, ...(emailResult ?? {}) } });
     } catch (error) {
       if (error instanceof NotFoundError) {
         res.status(404).json({ success: false, error: error.message });
