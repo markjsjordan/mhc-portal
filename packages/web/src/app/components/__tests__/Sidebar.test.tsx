@@ -153,4 +153,20 @@ describe('Sidebar component', () => {
       expect(screen.queryByText(label)).not.toBeInTheDocument();
     }
   });
+
+  it('does not mark Visits or Dashboard active when navigating to /scheduling/calendar', () => {
+    render(
+      <MemoryRouter initialEntries={['/scheduling/calendar']}>
+        <Sidebar isOpen={true} onClose={vi.fn()} isDesktopOpen={true} />
+      </MemoryRouter>
+    );
+
+    const calendarLink = screen.getByRole('link', { name: /calendar/i });
+    const visitsLink = screen.getByRole('link', { name: /visits/i });
+    const dashboardLink = screen.getByRole('link', { name: /dashboard/i });
+
+    expect(calendarLink.className).toContain('bg-primary-50');
+    expect(visitsLink.className).not.toContain('bg-primary-50');
+    expect(dashboardLink.className).not.toContain('bg-primary-50');
+  });
 });
