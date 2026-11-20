@@ -363,6 +363,15 @@ describe('PermissionService', () => {
       });
     });
 
+    describe('SCHEDULER', () => {
+      it('should be able to read caregiver availability but not edit it', () => {
+        const context = createMockUserContext({ roles: ['SCHEDULER'], permissions: [] });
+
+        expect(permissionService.hasPermission(context, 'availability:read')).toBe(true);
+        expect(permissionService.hasPermission(context, 'availability:update-own')).toBe(false);
+      });
+    });
+
     describe('READ_ONLY', () => {
       it('should have minimal read access', () => {
         const context = createMockUserContext({ roles: ['READ_ONLY'] });

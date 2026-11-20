@@ -98,6 +98,7 @@ export class PermissionService {
         'caregivers:read',
         'schedules:*',
         'visits:read',
+        'availability:read',
       ])
     );
 

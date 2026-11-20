@@ -506,6 +506,56 @@ export function createCaregiverRouter(db: Database): Router {
   });
 
   /**
+   * GET /api/caregivers/:id/availability
+   * Scheduler-facing read of a caregiver's resolved weekly availability
+   */
+  router.get(
+    '/:id/availability',
+    requirePermissionSafe(['availability:read']),
+    async (req: Request, res: Response, next: NextFunction) => {
+      const auditService = new AuditService(db);
+      const context = getUserContext(req);
+      try {
+        const caregiverId = req.params['id'] as string;
+        const weekStart = typeof req.query['weekStart'] === 'string' ? req.query['weekStart'] : undefined;
+        if (!weekStart) {
+          res.status(400).json({
+            success: false,
+            error: 'Query parameter weekStart (YYYY-MM-DD) is required',
+            code: 'VALIDATION_ERROR',
+          });
+          return;
+        }
+
+        const availService = new CaregiverAvailabilityService(db);
+        const resolved = await availService.getAvailability(caregiverId, weekStart, context);
+
+        try {
+          await auditService.logEvent(context, {
+            eventType: 'DATA_ACCESS',
+            resource: 'caregiver_availability',
+            resourceId: caregiverId,
+            action: 'READ',
+            result: 'SUCCESS',
+            metadata: { weekStart },
+          });
+        } catch (auditErr) {
+          console.error('Audit write failure on availability read:', auditErr);
+        }
+
+        res.json({
+          schedule: resolved.schedule,
+          conflicts: resolved.conflicts,
+          version: resolved.version,
+          source: resolved.source,
+        });
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  /**
    * GET /api/caregivers/:id
    * Get caregiver by ID
    */
