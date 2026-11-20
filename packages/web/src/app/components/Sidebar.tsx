@@ -216,13 +216,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isDesktopOpen
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200',
+          'fixed top-0 left-0 z-50 w-64 h-screen [height:100dvh] bg-white border-r border-gray-200',
           'transform transition-transform duration-200 ease-in-out',
           isOpen ? 'translate-x-0' : '-translate-x-full',
           isDesktopOpen ? 'lg:translate-x-0' : 'lg:-translate-x-full'
         )}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-hidden">
           {/* Close button */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold">Menu</h2>
