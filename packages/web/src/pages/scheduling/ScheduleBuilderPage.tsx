@@ -245,6 +245,24 @@ export default function ScheduleBuilderPage() {
     [visits, selectedDate]
   );
 
+  // Canonical caregiver availability lookup via /api/visits/caregivers/availability
+  const { data: caregiverAvailability, isLoading: availabilityLoading } = useCaregiverAvailability(new Date(selectedDate));
+  const availableCaregiverIds = useMemo(() => {
+    if (caregiverAvailability == null || caregiverAvailability.length === 0) return null;
+    return new Set(caregiverAvailability.map(c => c.caregiver_id));
+  }, [caregiverAvailability]);
+
+  const getCaregiverAvailability = useCallback(
+    (caregiverId: string) => {
+      // Fail closed while availability is in flight
+      if (availabilityLoading) return false;
+      // Loaded but no availability records exist: fail open so the grid is not fully blocked
+      if (availableCaregiverIds == null) return true;
+      return availableCaregiverIds.has(caregiverId);
+    },
+    [availabilityLoading, availableCaregiverIds]
+  );
+
   const handleDragStart = (visit: Visit) => {
     setDraggedVisit(visit);
   };
@@ -255,6 +273,12 @@ export default function ScheduleBuilderPage() {
 
   const handleDrop = useCallback(async (caregiverId: string) => {
     if (!draggedVisit) return;
+
+    if (!getCaregiverAvailability(caregiverId)) {
+      toast.error('Cannot assign: caregiver is not available for this time slot');
+      setDraggedVisit(null);
+      return;
+    }
 
     try {
       await visitApi.assignCaregiver(draggedVisit.id, caregiverId, false);
@@ -267,7 +291,7 @@ export default function ScheduleBuilderPage() {
     } finally {
       setDraggedVisit(null);
     }
-  }, [draggedVisit, visitApi, queryClient, refetchVisits]);
+  }, [draggedVisit, visitApi, queryClient, refetchVisits, getCaregiverAvailability]);
 
   // INCOMPLETE: visitApi has no dedicated "unassign" endpoint and
   // assignCaregiver requires a non-null caregiverId (see
@@ -327,18 +351,6 @@ export default function ScheduleBuilderPage() {
       return hour >= (startHour ?? 0) && hour < (endHour ?? 24);
     });
   };
-
-  // Canonical caregiver availability lookup via /api/visits/caregivers/availability
-  const { data: caregiverAvailability } = useCaregiverAvailability(new Date(selectedDate));
-  const availableCaregiverIds = useMemo(() => {
-    if (caregiverAvailability == null || caregiverAvailability.length === 0) return null;
-    return new Set(caregiverAvailability.map(c => c.caregiver_id));
-  }, [caregiverAvailability]);
-
-  const getCaregiverAvailability = useCallback(
-    (caregiverId: string) => availableCaregiverIds == null || availableCaregiverIds.has(caregiverId),
-    [availableCaregiverIds]
-  );
 
   return (
     <div
@@ -430,6 +442,9 @@ export default function ScheduleBuilderPage() {
       >
         <div>
           <h1 style={isMobile ? styles.titleMobile : styles.title}>Schedule Builder</h1>
+          {availabilityLoading && (
+            <span style={{ fontSize: '11px', color: '#888' }}>Loading availability...</span>
+          )}
           <p style={styles.subtitle}>
             Drag unassigned visits to caregiver time slots
           </p>
@@ -763,7 +778,7 @@ export default function ScheduleBuilderPage() {
                           }}
                           onDragOver={isAvailable && !isOccupied ? handleDragOver : undefined}
                           onDrop={
-                            isAvailable && !isOccupied
+                            !isOccupied
                               ? () => { void handleDrop(caregiver.id); }
                               : undefined
                           }

@@ -1,10 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ScheduleBuilderPage from '../ScheduleBuilderPage.js';
 
 // Mock the hooks
+vi.mock('sonner', () => ({
+  toast: { error: (...a: unknown[]) => mockToastError(...a), success: vi.fn() },
+}));
+
 const mockUseIsMobile = vi.fn();
 vi.mock('@/core/hooks', () => ({
   useIsMobile: () => mockUseIsMobile(),
@@ -12,17 +16,19 @@ vi.mock('@/core/hooks', () => ({
 
 vi.mock('@/verticals/caregivers/hooks/useCaregivers', () => ({
   useCaregivers: () => ({
-    caregivers: [
-      { id: 'cg-1', firstName: 'Alice', lastName: 'Walker', role: 'RN' },
-      { id: 'cg-2', firstName: 'Bob', lastName: 'Smith', role: 'HHA' },
-    ],
+    data: {
+      items: [
+        { id: 'cg-1', firstName: 'Alice', lastName: 'Walker', role: 'RN' },
+        { id: 'cg-2', firstName: 'Bob', lastName: 'Smith', role: 'HHA' },
+      ],
+    },
     isLoading: false,
   }),
 }));
 
 vi.mock('@/verticals/scheduling-visits/hooks/useVisits', () => ({
   useCalendarVisits: () => ({
-    visits: [
+    data: [
       {
         id: 'visit-1',
         clientId: 'client-1',
@@ -30,8 +36,9 @@ vi.mock('@/verticals/scheduling-visits/hooks/useVisits', () => ({
         clientLastName: 'Doe',
         assignedCaregiverId: null,
         scheduledDate: '2026-10-18T09:00:00.000Z',
-        startTime: '09:00',
-        endTime: '11:00',
+        scheduledStartTime: '09:00',
+        scheduledEndTime: '11:00',
+        scheduledDuration: 7200,
         status: 'SCHEDULED',
         visitType: 'SKILLED_NURSING',
       },
@@ -40,16 +47,20 @@ vi.mock('@/verticals/scheduling-visits/hooks/useVisits', () => ({
     refetch: vi.fn(),
   }),
   useVisitApi: () => ({
-    assignCaregiver: vi.fn(),
-    unassignCaregiver: vi.fn(),
+    assignCaregiver: (...args: unknown[]) => mockAssign(...args),
+    unassignCaregiver: (...args: unknown[]) => mockAssign(...args),
     createPattern: (...args: unknown[]) => mockCreatePattern(...args),
   }),
-  useCaregiverAvailability: () => ({
-    data: [{ caregiver_id: 'cg-1', available: true }],
-  }),
+  useCaregiverAvailability: () => mockAvailability(),
 }));
 
-const { mockCreatePattern, mockClientsReturn } = vi.hoisted(() => ({
+const { mockCreatePattern, mockClientsReturn, mockAvailability, mockAssign, mockToastError } = vi.hoisted(() => ({
+  mockAvailability: vi.fn(() => ({
+    data: [{ caregiver_id: 'cg-1', available: true }] as Array<{ caregiver_id: string; available: boolean }> | undefined,
+    isLoading: false,
+  })),
+  mockAssign: vi.fn(),
+  mockToastError: vi.fn(),
   mockCreatePattern: vi.fn().mockResolvedValue({ generatedVisitsCount: 4 }),
   mockClientsReturn: vi.fn(() => ({
     data: {
@@ -256,6 +267,59 @@ describe('ScheduleBuilderPage responsive header (wdvf3abp4v)', () => {
       expect(payload.serviceTypeId).not.toBe('00000000-0000-0000-0000-000000000002');
       expect(payload.serviceTypeCode).toBe('PC');
       expect(payload.serviceTypeName).toBe('Personal Care');
+    });
+  });
+
+  describe('Availability guard (wdvf3adceg)', () => {
+    beforeEach(() => {
+      mockUseIsMobile.mockReturnValue(false);
+      mockAssign.mockClear();
+      mockToastError.mockClear();
+      vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-10-18T16:00:00.000Z') });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('treats all caregivers as unavailable while availability is loading', () => {
+      mockAvailability.mockReturnValue({ data: undefined, isLoading: true });
+      renderComponent();
+
+      expect(screen.getAllByText('Unavailable')).toHaveLength(2);
+      expect(screen.getByText('Loading availability...')).toBeInTheDocument();
+    });
+
+    it('treats all caregivers as available when loaded with an empty array', () => {
+      mockAvailability.mockReturnValue({ data: [], isLoading: false });
+      renderComponent();
+
+      expect(screen.queryByText('Unavailable')).not.toBeInTheDocument();
+      expect(screen.queryByText('Loading availability...')).not.toBeInTheDocument();
+    });
+
+    it('shows an error toast and does not assign when dropping on an unavailable caregiver', async () => {
+      mockAvailability.mockReturnValue({
+        data: [{ caregiver_id: 'cg-1', available: true }],
+        isLoading: false,
+      });
+      const { container } = renderComponent();
+
+      const draggable = container.querySelector('[draggable="true"]') as HTMLElement;
+      expect(draggable).not.toBeNull();
+      fireEvent.dragStart(draggable);
+
+      // cg-2 (Bob) is the second caregiver column; drop on its first slot
+      const bobHeader = screen.getByText('Bob Smith').closest('div')?.parentElement as HTMLElement;
+      const slot = bobHeader.children[1] as HTMLElement;
+      fireEvent.drop(slot);
+
+      await vi.waitFor(() => {
+        expect(mockToastError).toHaveBeenCalledWith(
+          'Cannot assign: caregiver is not available for this time slot'
+        );
+      });
+      expect(mockAssign).not.toHaveBeenCalled();
     });
   });
 });
