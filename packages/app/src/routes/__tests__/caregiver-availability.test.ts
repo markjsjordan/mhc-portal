@@ -16,13 +16,48 @@ import type { Database } from '@folkcare/core';
 import { createVisitRouter } from '../visits.js';
 import { createCaregiverRouter } from '../caregivers.js';
 
+const mockRequirePermission = vi.hoisted(
+  () =>
+    (permissions: string[]) =>
+    (req: any, res: any, next: any): void => {
+      const granted: string[] | undefined = req.user?.permissions;
+      if (!req.user) {
+        res.status(401).json({ success: false, error: 'Unauthorized' });
+      } else if (!permissions.some((p) => granted?.includes(p))) {
+        res.status(403).json({ success: false, error: 'Forbidden' });
+      } else {
+        next();
+      }
+    }
+);
+const mockGetAvailability = vi.hoisted(() => vi.fn());
+
+vi.mock('@folkcare/caregiver-staff', async () => {
+  const actual = await vi.importActual<typeof import('@folkcare/caregiver-staff')>('@folkcare/caregiver-staff');
+  return {
+    ...actual,
+    CaregiverAvailabilityService: vi.fn().mockImplementation(function () {
+      return { getAvailability: mockGetAvailability };
+    }),
+  };
+});
+
 vi.mock('@folkcare/core', async () => {
   const actual = await vi.importActual<typeof import('@folkcare/core')>('@folkcare/core');
   return {
     ...actual,
     AuthMiddleware: vi.fn().mockImplementation(function () {
       return {
-        requireAuth: (req: any, _res: any, next: any) => {
+        requirePermission: mockRequirePermission,
+        requireAuth: (req: any, res: any, next: any) => {
+          if (req.headers['x-test-unauthenticated']) {
+            res.status(401).json({ success: false, error: 'Unauthorized' });
+            return;
+          }
+          if (req.user) {
+            next();
+            return;
+          }
           req.user = {
             userId: 'user-1',
             email: 'coord@example.com',
@@ -144,6 +179,86 @@ describe('Caregiver Availability Route Normalization', () => {
 
       expect(res.status).toBe(307);
       expect(res.header.location).toBe('/api/visits/caregivers/availability?date=2026-10-15&branch_ids=branch-1');
+    });
+  });
+
+  describe('Scheduler read: GET /api/caregivers/:id/availability', () => {
+    const caregiverId = '11111111-1111-1111-1111-111111111111';
+    const orgId = '33333333-3333-3333-3333-333333333333';
+
+    const buildApp = (roles: string[], permissions: string[]): express.Express => {
+      const a = express();
+      a.use(express.json());
+      a.use((req, _res, next) => {
+        req.user = {
+          userId: 'user-2',
+          email: 'user@example.com',
+          organizationId: orgId,
+          branchIds: [],
+          tokenVersion: 1,
+          roles,
+          permissions,
+        } as any;
+        next();
+      });
+      a.use('/api/caregivers', createCaregiverRouter(mockDb as Database));
+      return a;
+    };
+
+    beforeEach(() => {
+      mockGetAvailability.mockReset();
+      mockGetAvailability.mockResolvedValue({
+        schedule: { monday: [{ start: '09:00', end: '17:00' }] },
+        source: 'OVERRIDE',
+        version: 3,
+        conflicts: [],
+        editable: false,
+        cutoffAt: '2026-10-12T00:00:00.000Z',
+      });
+    });
+
+    it('returns 200 with schedule, source, version, conflicts for a scheduler', async () => {
+      const schedulerApp = buildApp(['SCHEDULER'], ['availability:read']);
+      const res = await request(schedulerApp).get(
+        `/api/caregivers/${caregiverId}/availability?weekStart=2026-10-12`
+      );
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        schedule: { monday: [{ start: '09:00', end: '17:00' }] },
+        source: 'OVERRIDE',
+        version: 3,
+        conflicts: [],
+      });
+      expect(res.body).not.toHaveProperty('editable');
+      expect(res.body).not.toHaveProperty('cutoffAt');
+      expect(mockGetAvailability).toHaveBeenCalledWith(caregiverId, '2026-10-12', expect.anything());
+    });
+
+    it('returns 401 without authentication', async () => {
+      const res = await request(app)
+        .get(`/api/caregivers/${caregiverId}/availability?weekStart=2026-10-12`)
+        .set('x-test-unauthenticated', '1');
+
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 403 for a caregiver role with only availability:read-own', async () => {
+      const caregiverApp = buildApp(['CAREGIVER'], ['availability:read-own']);
+      const res = await request(caregiverApp).get(
+        `/api/caregivers/${caregiverId}/availability?weekStart=2026-10-12`
+      );
+
+      expect(res.status).toBe(403);
+      expect(mockGetAvailability).not.toHaveBeenCalled();
+    });
+
+    it('returns 400 when weekStart is missing', async () => {
+      const schedulerApp = buildApp(['SCHEDULER'], ['availability:read']);
+      const res = await request(schedulerApp).get(`/api/caregivers/${caregiverId}/availability`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('VALIDATION_ERROR');
     });
   });
 });
