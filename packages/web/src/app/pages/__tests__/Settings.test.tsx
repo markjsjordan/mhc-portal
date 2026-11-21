@@ -489,3 +489,82 @@ describe('Settings - Team Tab & Route Access Control (wdvf3ad5fr)', () => {
     }
   );
 });
+
+describe('Settings - Team Members Header Layout (wdvf3adaue)', () => {
+  let queryClient: QueryClient;
+
+  beforeEach(() => {
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: 0 },
+        mutations: { retry: false },
+      },
+    });
+
+    mockApiClient.get.mockReset();
+    mockApiClient.get.mockImplementation(async (url: string) => {
+      if (url === '/api/users/profile') {
+        return {
+          success: true,
+          data: {
+            id: 'user-admin-1',
+            firstName: 'Admin',
+            lastName: 'User',
+            email: 'admin@folkcare.example',
+            organizationId: 'org-123',
+            roles: ['ORG_ADMIN'],
+          },
+        };
+      }
+      if (url === '/api/organizations/org-123/users') {
+        return { success: true, data: [] };
+      }
+      if (url === '/api/organizations/org-123/invitations') {
+        return { success: true, data: [] };
+      }
+      return { success: true, data: [] };
+    });
+  });
+
+  afterEach(() => {
+    queryClient.clear();
+  });
+
+  it('renders Team Members header with non-overflowing flex layout and keeps Account/Preferences tabs working', async () => {
+    render(
+      <MemoryRouter initialEntries={['/settings/team']}>
+        <QueryClientProvider client={queryClient}>
+          <Settings initialTab="team" />
+        </QueryClientProvider>
+      </MemoryRouter>
+    );
+
+    const heading = await screen.findByRole('heading', { name: 'Team Members' });
+    expect(heading).toHaveClass('whitespace-nowrap');
+
+    const titleWrapper = heading.parentElement;
+    expect(titleWrapper).toHaveClass('min-w-0');
+
+    const headerRow = titleWrapper?.parentElement;
+    expect(headerRow).toHaveClass('flex', 'justify-between', 'gap-4', 'sm:flex-nowrap');
+
+    const statusFilter = document.getElementById('team-status-filter') as HTMLSelectElement | null;
+    expect(statusFilter).not.toBeNull();
+    expect(statusFilter).toHaveClass('w-auto', 'shrink-0');
+    expect(statusFilter).not.toHaveClass('w-full');
+
+    const inviteButton = screen.getByRole('button', { name: /Invite Member/i });
+    expect(inviteButton).toHaveClass('shrink-0', 'whitespace-nowrap');
+
+    const actionInner = statusFilter?.parentElement;
+    expect(actionInner).toHaveClass('shrink-0');
+    expect(actionInner?.parentElement).toHaveClass('shrink-0');
+
+    // Verify Account and Preferences tabs still render without regression
+    fireEvent.click(screen.getByRole('tab', { name: /Account/i }));
+    expect(await screen.findByRole('heading', { name: 'Change Password' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: /Preferences/i }));
+    expect(await screen.findByRole('heading', { name: 'Preferences' })).toBeInTheDocument();
+  });
+});
