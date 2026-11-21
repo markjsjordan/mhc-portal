@@ -496,13 +496,13 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           id: effectiveClientId,
           input: updateInput,
         });
-        toast.success(
-          !isEditMode
-            ? 'Client intake submitted.'
-            : activate
-              ? 'Client saved and activated.'
-              : 'Client saved.'
-        );
+        let successMessage = 'Client saved.';
+        if (!isEditMode) {
+          successMessage = 'Client intake submitted.';
+        } else if (activate) {
+          successMessage = 'Client saved and activated.';
+        }
+        toast.success(successMessage);
 
         if (onSuccess) {
           onSuccess(updatedClient);
@@ -740,7 +740,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           organizationId: user.organizationId,
           branchId:
             (activeBranchId && activeBranchId.trim() !== '' ? activeBranchId : undefined) ??
-            (user?.branchIds?.[0] && user.branchIds[0].trim() !== '' ? user.branchIds[0] : undefined) ??
+            (user.branchIds?.[0] && user.branchIds[0].trim() !== '' ? user.branchIds[0] : undefined) ??
             undefined,
           firstName: intakeData.firstName.trim(),
           lastName: intakeData.lastName.trim(),
