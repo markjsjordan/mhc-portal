@@ -16,8 +16,8 @@ function build() {
   return { svc, userRepo };
 }
 
-describe('portal-derived roles cannot be assigned as team roles (wdvf3acxk6)', () => {
-  it.each(['CAREGIVER', 'FAMILY', 'CLIENT'])('updateOrganizationUser rejects %s and names the portal invite flow', async (role) => {
+describe('portal-derived roles cannot be assigned as team roles (wdvf3acxk6 / wdvf3adczm)', () => {
+  it.each(['FAMILY', 'CLIENT'])('updateOrganizationUser rejects %s and names the portal invite flow', async (role) => {
     const { svc, userRepo } = build();
     await expect(
       svc.updateOrganizationUser('o', 'u', { roles: [role as never] }, 'admin')
@@ -28,12 +28,30 @@ describe('portal-derived roles cannot be assigned as team roles (wdvf3acxk6)', (
     expect(userRepo.updateUser).not.toHaveBeenCalled();
   });
 
-  it('createInvitation rejects CAREGIVER for a staff invite', async () => {
+  it('createInvitation rejects FAMILY for a staff invite', async () => {
     const { svc, userRepo } = build();
     await expect(
-      svc.createInvitation('o', { email: 'a@b.com', roles: ['CAREGIVER' as never] }, 'admin')
+      svc.createInvitation('o', { email: 'a@b.com', roles: ['FAMILY' as never] }, 'admin')
     ).rejects.toBeInstanceOf(ValidationError);
     expect(userRepo.createInviteToken).not.toHaveBeenCalled();
+  });
+
+  it('allows CAREGIVER for team invites and member edits (wdvf3adczm)', async () => {
+    const { svc, userRepo } = build();
+    userRepo.updateUser.mockResolvedValue({
+      id: 'u',
+      firstName: 'a',
+      lastName: 'b',
+      email: 'a@b.com',
+      roles: ['CAREGIVER'],
+      status: 'ACTIVE',
+    });
+    await expect(
+      svc.createInvitation('o', { email: 'cg@b.com', roles: ['CAREGIVER' as never] }, 'admin')
+    ).resolves.toBeTruthy();
+    await expect(
+      svc.updateOrganizationUser('o', 'u', { roles: ['CAREGIVER' as never] }, 'admin')
+    ).resolves.toBeTruthy();
   });
 
   it('allows staff roles', async () => {
