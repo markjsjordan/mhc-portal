@@ -195,4 +195,52 @@ describe('ClientIntakeWorkflow - Mobile and Responsive Layout', () => {
     const nextBtn = screen.getByRole('button', { name: /Next →/i });
     expect(nextBtn.className).toContain('min-h-[48px]');
   });
+
+  it('renders Visit Frequency and Visit Duration as free-text inputs and shows entered text on Step 7', () => {
+    const initialData = {
+      firstName: 'Jane',
+      lastName: 'Doe',
+      dateOfBirth: '1980-05-15',
+      address: {
+        line1: '123 Main Street',
+        city: 'Austin',
+        state: 'TX',
+        postalCode: '78701',
+      },
+      consents: {
+        careAgreement: true,
+        hipaa: true,
+        financialResponsibility: true,
+      },
+      signature: 'Jane Doe',
+    };
+
+    renderWorkflow({ initialData });
+
+    // Advance Step 1 -> Step 2 -> Step 3
+    fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
+    expect(screen.getByText('Care Plan Creation')).toBeInTheDocument();
+
+    const freqInput = document.getElementById('visit-frequency') as HTMLInputElement | null;
+    const durInput = document.getElementById('visit-duration') as HTMLInputElement | null;
+    expect(freqInput).not.toBeNull();
+    expect(durInput).not.toBeNull();
+    expect(freqInput!.tagName).toBe('INPUT');
+    expect(freqInput!.type).toBe('text');
+    expect(durInput!.tagName).toBe('INPUT');
+    expect(durInput!.type).toBe('text');
+
+    fireEvent.change(freqInput!, { target: { value: '3x per week' } });
+    fireEvent.change(durInput!, { target: { value: '45-60 min' } });
+
+    // Advance Step 3 -> Step 4 -> Step 5 -> Step 6 -> Step 7
+    for (let i = 0; i < 4; i += 1) {
+      fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
+    }
+
+    expect(screen.getByText('Review & Submit')).toBeInTheDocument();
+    expect(screen.getByText('3x per week')).toBeInTheDocument();
+    expect(screen.getByText('45-60 min')).toBeInTheDocument();
+  });
 });
