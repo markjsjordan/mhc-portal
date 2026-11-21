@@ -77,6 +77,7 @@ export const VisitCard: React.FC<VisitCardProps> = ({ visit, compact = false, on
       <div
         role="button"
         tabIndex={0}
+        data-testid="visit-card"
         onClick={handleCardClick}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -125,6 +126,7 @@ export const VisitCard: React.FC<VisitCardProps> = ({ visit, compact = false, on
     <div
       role="button"
       tabIndex={0}
+      data-testid="visit-card"
       onClick={handleCardClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -203,11 +205,17 @@ export const VisitCard: React.FC<VisitCardProps> = ({ visit, compact = false, on
           <div className="flex items-center text-gray-600 min-w-0">
             <User className="h-3.5 w-3.5 mr-2 text-gray-400 flex-shrink-0" />
             {visit.assignedCaregiverId ? (
-              <span className="text-gray-700 font-medium truncate">
+              <span
+                data-testid="visit-caregiver-status"
+                className="text-gray-700 font-medium truncate"
+              >
                 {getCaregiverName() ?? 'Caregiver Assigned'}
               </span>
             ) : (
-              <span className="text-amber-700 font-medium bg-amber-50 px-1.5 py-0.2 rounded text-[11px]">
+              <span
+                data-testid="visit-caregiver-status"
+                className="text-amber-700 font-medium bg-amber-50 px-1.5 py-0.2 rounded text-[11px]"
+              >
                 Unassigned
               </span>
             )}

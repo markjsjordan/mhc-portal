@@ -424,4 +424,18 @@ describe('CalendarView', () => {
     expect(screen.getByTestId('calendar-event-visit-3')).toBeInTheDocument();
     expect(screen.queryByText('Show all')).not.toBeInTheDocument();
   });
+
+  it('filters to unassigned visits when kpi-unassigned chip is clicked (wdvf3add17)', async () => {
+    mockAuthUser = { id: 'user-1', roles: ['COORDINATOR', 'ADMINISTRATOR'] };
+    mockMyCaregiverId = undefined;
+    const user = userEvent.setup();
+
+    render(<CalendarView />);
+
+    await user.click(screen.getByTestId('kpi-unassigned'));
+
+    expect(screen.getByTestId('calendar-event-visit-1')).toBeInTheDocument();
+    expect(screen.queryByTestId('calendar-event-visit-2')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('calendar-event-visit-3')).not.toBeInTheDocument();
+  });
 });

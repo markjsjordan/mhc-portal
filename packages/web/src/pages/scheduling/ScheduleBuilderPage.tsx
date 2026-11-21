@@ -142,6 +142,7 @@ export default function ScheduleBuilderPage() {
   const [focusCaregiverId, setFocusCaregiverId] = useState<string | null>(null);
   const [draggedVisit, setDraggedVisit] = useState<Visit | null>(null);
   const [viewMode, setViewMode] = useState<'week' | 'day'>('day');
+  const [unassignedScope, setUnassignedScope] = useState<'day' | 'week'>('day');
   const [showPatternModal, setShowPatternModal] = useState(false);
 
   const [searchParams] = useSearchParams();
@@ -240,10 +241,17 @@ export default function ScheduleBuilderPage() {
     setSelectedDate(todayStr);
   }, [todayStr]);
 
-  const unassignedVisits = useMemo(
+  const unassignedDayVisits = useMemo(
     () => visits.filter(v => v.status === 'unassigned' && v.date === selectedDate),
     [visits, selectedDate]
   );
+
+  const unassignedWeekVisits = useMemo(
+    () => visits.filter(v => v.status === 'unassigned'),
+    [visits]
+  );
+
+  const unassignedVisits = unassignedScope === 'week' ? unassignedWeekVisits : unassignedDayVisits;
 
   const handleDragStart = (visit: Visit) => {
     setDraggedVisit(visit);
@@ -623,9 +631,36 @@ export default function ScheduleBuilderPage() {
           className="schedule-builder-sidebar"
           style={isMobile ? styles.sidebarMobile : styles.sidebar}
         >
-          <h3 style={styles.sidebarTitle}>
-            Unassigned Visits ({unassignedVisits.length})
-          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '12px' }}>
+            <h3 style={{ ...styles.sidebarTitle, marginBottom: 0 }}>
+              Unassigned Visits ({unassignedVisits.length})
+            </h3>
+            <div
+              data-testid="unassigned-scope-toggle"
+              style={{ display: 'inline-flex', border: '1px solid #d1d5db', borderRadius: '6px', overflow: 'hidden', fontSize: '11px' }}
+            >
+              <Button
+                type="button"
+                variant={unassignedScope === 'day' ? 'default' : 'ghost'}
+                size="xs"
+                aria-pressed={unassignedScope === 'day'}
+                onClick={() => setUnassignedScope('day')}
+                className="rounded-none h-6 px-2 text-[11px]"
+              >
+                Day ({unassignedDayVisits.length})
+              </Button>
+              <Button
+                type="button"
+                variant={unassignedScope === 'week' ? 'default' : 'ghost'}
+                size="xs"
+                aria-pressed={unassignedScope === 'week'}
+                onClick={() => setUnassignedScope('week')}
+                className="rounded-none border-l border-gray-300 h-6 px-2 text-[11px]"
+              >
+                Week ({unassignedWeekVisits.length})
+              </Button>
+            </div>
+          </div>
           <div style={styles.unassignedList}>
             {unassignedVisits.length === 0 ? (
               <p style={styles.emptyMessage}>All visits assigned! 🎉</p>
@@ -633,8 +668,14 @@ export default function ScheduleBuilderPage() {
               unassignedVisits.map(visit => (
                 <div
                   key={visit.id}
+                  data-testid="builder-unassigned-visit"
                   draggable
                   onDragStart={() => handleDragStart(visit)}
+                  onClick={() => {
+                    if (visit.date !== selectedDate) {
+                      setSelectedDate(visit.date);
+                    }
+                  }}
                   style={styles.unassignedVisit}
                 >
                   <div style={styles.visitHeader}>
@@ -643,6 +684,11 @@ export default function ScheduleBuilderPage() {
                       {visit.startTime} - {visit.endTime}
                     </span>
                   </div>
+                  {unassignedScope === 'week' && (
+                    <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>
+                      {visit.date}
+                    </div>
+                  )}
                   {visit.patternId && (
                     <div style={{ marginBottom: '6px' }}>
                       <span style={styles.recurringBadge}>🔁 Recurring</span>
