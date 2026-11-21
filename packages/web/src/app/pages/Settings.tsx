@@ -566,7 +566,7 @@ const inviteSchema = z.object({
   email: z.email('Please enter a valid email address'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  role: z.enum(['ORG_ADMIN', 'BRANCH_ADMIN', 'COORDINATOR', 'BILLING', 'SCHEDULER', 'NURSE_RN']),
+  role: z.enum(['ORG_ADMIN', 'BRANCH_ADMIN', 'COORDINATOR', 'CAREGIVER', 'BILLING', 'SCHEDULER', 'NURSE_RN']),
 });
 
 type InviteFormData = z.infer<typeof inviteSchema>;
@@ -575,12 +575,12 @@ const editMemberSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   email: z.email('Please enter a valid email address'),
-  role: z.enum(['ORG_ADMIN', 'BRANCH_ADMIN', 'COORDINATOR', 'BILLING', 'SCHEDULER', 'NURSE_RN']),
+  role: z.enum(['ORG_ADMIN', 'BRANCH_ADMIN', 'COORDINATOR', 'CAREGIVER', 'BILLING', 'SCHEDULER', 'NURSE_RN']),
 });
 
 type EditMemberFormData = z.infer<typeof editMemberSchema>;
 
-const VALID_EDIT_ROLES = ['ORG_ADMIN', 'BRANCH_ADMIN', 'COORDINATOR', 'BILLING', 'SCHEDULER', 'NURSE_RN'] as const;
+const VALID_EDIT_ROLES = ['ORG_ADMIN', 'BRANCH_ADMIN', 'COORDINATOR', 'CAREGIVER', 'BILLING', 'SCHEDULER', 'NURSE_RN'] as const;
 
 function resolveMemberRole(roles?: string[]): EditMemberFormData['role'] {
   const role = roles?.[0];
@@ -590,7 +590,7 @@ function resolveMemberRole(roles?: string[]): EditMemberFormData['role'] {
   if (role === 'SUPER_ADMIN' || role === 'ADMIN') {
     return 'ORG_ADMIN';
   }
-  // CAREGIVER/FAMILY are derived from portal links and cannot be assigned here
+  // FAMILY/CLIENT are derived from portal links and cannot be assigned here
   return 'SCHEDULER';
 }
 
@@ -721,6 +721,7 @@ function EditMemberModal({
                 options={[
                   { value: 'NURSE_RN', label: 'Registered Nurse (RN)' },
                   { value: 'COORDINATOR', label: 'Care Coordinator' },
+                  { value: 'CAREGIVER', label: 'Caregiver' },
                   { value: 'SCHEDULER', label: 'Scheduler' },
                   { value: 'BILLING', label: 'Billing Specialist' },
                   { value: 'BRANCH_ADMIN', label: 'Branch Administrator' },
@@ -1249,6 +1250,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
                     options={[
                       { value: 'NURSE_RN', label: 'Registered Nurse (RN)' },
                       { value: 'COORDINATOR', label: 'Care Coordinator' },
+                      { value: 'CAREGIVER', label: 'Caregiver' },
                       { value: 'SCHEDULER', label: 'Scheduler' },
                       { value: 'BILLING', label: 'Billing Specialist' },
                       { value: 'BRANCH_ADMIN', label: 'Branch Administrator' },
