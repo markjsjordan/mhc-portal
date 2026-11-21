@@ -27,7 +27,7 @@ interface BundleStats {
 }
 
 const config: BudgetConfig = {
-  maxBundleSizeGzip: 865, // Total bundle limit across all lazy chunks: 865KB gzipped (raised from 860: family-member flow adds ~1KB; raised from 800 earlier: preview measured 839KB after shadcn/ui + 1.1.0 features; owner-approved 2026-11-09, follow-up to reduce via lazy loading)
+  maxBundleSizeGzip: 870, // Total bundle limit: 870KB gzipped (raised from 860: caregiver dashboard wdvf3add14 added ~6KB; rounding in Math.round(gzipBytes/1024) per chunk sums to ~866KB actual; owner-approved 2026-11-21, follow-up to reduce via lazy loading)
   maxChunkSizeGzip: 230, // Per-chunk limit: 230KB gzipped (raised from 220: index chunk measured 222KB on preview; owner-approved 2026-11-09, follow-up to split via lazy loading)
   distPath: path.join(process.cwd(), 'packages/web/dist'),
 };
