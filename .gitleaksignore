@@ -16,3 +16,5 @@ c4f9253ec705cd57d3b2872de0adf7087f9f202b:docs/API_DOCUMENTATION.md:generic-api-k
 443e5c4417df84840d98366645295b3ce17bcf32:VERCEL_ENV_SETUP.md:generic-api-key:24
 443e5c4417df84840d98366645295b3ce17bcf32:VERCEL_ENV_SETUP.md:generic-api-key:25
 443e5c4417df84840d98366645295b3ce17bcf32:VERCEL_ENV_SETUP.md:generic-api-key:28
+# Test environment JWT captured in Playwright E2E results file. Not a production credential.
+fa04eded416f3d66da952864df62f59d4f3f4bb8:.e2e-results-wdvf3add19.json:generic-api-key:***

@@ -177,10 +177,28 @@ describe('mapClientToIntakeData', () => {
     expect(data.dietaryNeeds).toBe('Low sodium');
     expect(data.serviceTypes).toEqual(['Personal Care']);
     expect(data.visitFrequency).toBe('3xweek');
+    expect(data.visitDuration).toBe('2');
     expect(data.scheduleStartDate).toBe('2026-11-20');
     expect(data.visitSchedule).toEqual([{ dayOfWeek: 1, time: '09:00', duration: 2 }]);
     expect(data.primaryCaregiver).toBe('cg-1');
     expect(data.backupCaregivers).toEqual(['cg-2']);
     expect(data.preferences).toEqual({ gender: 'female', language: ['English', 'Spanish'] });
+  });
+
+  it('maps free-text visitFrequency and visitDuration and defaults to empty strings when absent', () => {
+    const withFreeText = mapClientToIntakeData(
+      makeClient({
+        carePlanSummary: {
+          visitFrequency: '3x per week',
+          visitDuration: '45-60 min',
+        },
+      })
+    );
+    expect(withFreeText.visitFrequency).toBe('3x per week');
+    expect(withFreeText.visitDuration).toBe('45-60 min');
+
+    const withoutCarePlan = mapClientToIntakeData(makeClient({ carePlanSummary: undefined }));
+    expect(withoutCarePlan.visitFrequency).toBe('');
+    expect(withoutCarePlan.visitDuration).toBe('');
   });
 });

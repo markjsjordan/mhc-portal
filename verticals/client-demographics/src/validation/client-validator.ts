@@ -120,8 +120,8 @@ const assessmentDataSchema = z.object({
 
 const carePlanSummarySchema = z.object({
   serviceTypes: z.array(z.string()).optional(),
-  visitFrequency: z.enum(['daily', '3xweek', '2xweek', 'weekly']).optional(),
-  visitDuration: z.number().nonnegative().optional(),
+  visitFrequency: z.string().optional(),
+  visitDuration: z.union([z.string(), z.number().nonnegative()]).optional(),
   preferredTimes: z.array(z.string()).optional(),
   tasks: z.array(z.string()).optional(),
   goals: z.string().optional(),

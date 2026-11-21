@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useCreateClient, useClients, useUpdateClient, useBranches } from '@/verticals/client-demographics/hooks';
@@ -131,8 +131,8 @@ interface IntakeData {
 
   // Step 3: Care Plan
   serviceTypes: string[];
-  visitFrequency: 'daily' | '3xweek' | '2xweek' | 'weekly';
-  visitDuration: number;
+  visitFrequency: string;
+  visitDuration: string | number;
   preferredTimes: string[];
   tasks: string[];
   goals: string;
@@ -223,6 +223,116 @@ function isValidPhoneNumber(value: string): boolean {
   const digits = value.replace(/\D/g, '');
   const phoneDigits = digits.startsWith('1') && digits.length === 11 ? digits.slice(1) : digits;
   return phoneDigits.length === 10;
+}
+
+/**
+ * Renders content only when the active step matches the target step.
+ * Extracted to reduce cognitive complexity of the main component's JSX.
+ */
+function showForStep(activeStep: number, targetStep: number, content: React.ReactNode): React.ReactNode {
+  return activeStep === targetStep ? content : null;
+}
+
+type IntakePartBInput = {
+  primaryPhysician?: { name: string; phone?: { number: string; type: 'WORK'; isPrimary: boolean } };
+  insurance?: { type: 'MEDICAID' | 'MEDICARE' | 'PRIVATE' | 'OTHER'; policyNumber?: string; groupNumber?: string; isPrimary: boolean }[];
+  authorizationInfo: { number?: string; approvedHours?: number; validFrom?: string; validTo?: string };
+  assessmentData: { adls?: IntakeData['adls']; iadls?: IntakeData['iadls']; mobility?: IntakeData['mobility']; cognitive?: IntakeData['cognitive']; conditions?: IntakeData['conditions']; medications?: IntakeData['medications']; allergies?: IntakeData['allergies']; dietaryNeeds?: IntakeData['dietaryNeeds'] };
+  carePlanSummary: { serviceTypes?: IntakeData['serviceTypes']; visitFrequency?: string; visitDuration?: string; preferredTimes?: IntakeData['preferredTimes']; tasks?: IntakeData['tasks']; goals?: IntakeData['goals'] };
+  visitSchedule: { scheduleStartDate?: string; visitSchedule?: IntakeData['visitSchedule'] };
+  caregiverAssignment: { primaryCaregiver?: string; backupCaregivers?: string[]; preferences?: IntakeData['preferences'] };
+  consents: { careAgreement: boolean; hipaa: boolean; financialResponsibility: boolean; evv: boolean; signature: string; signedDate: string };
+};
+
+const INSURANCE_TYPE_MAP: Record<string, 'MEDICAID' | 'MEDICARE' | 'PRIVATE' | 'OTHER'> = {
+  medicaid: 'MEDICAID',
+  medicare: 'MEDICARE',
+  private: 'PRIVATE',
+  other: 'OTHER',
+};
+
+/**
+ * Builds the Part-B fields (non-demographic) for create/update client input.
+ * Extracted to reduce cognitive complexity of handleSubmit.
+ */
+function buildIntakePartBFields(intakeData: Partial<IntakeData>): IntakePartBInput {
+  const sig = intakeData.signature ?? '';
+  const effectiveSignedDate =
+    sig.trim() && !intakeData.signedDate
+      ? new Date().toISOString().slice(0, 10)
+      : (intakeData.signedDate ?? '');
+
+  return {
+    primaryPhysician: intakeData.physician?.name?.trim()
+      ? {
+          name: intakeData.physician.name.trim(),
+          ...(intakeData.physician.phone?.trim() && {
+            phone: {
+              number: intakeData.physician.phone.trim(),
+              type: 'WORK' as const,
+              isPrimary: true,
+            },
+          }),
+        }
+      : undefined,
+    insurance:
+      intakeData.insurance?.memberId?.trim() ||
+      intakeData.insurance?.groupNumber?.trim() ||
+      (intakeData.insurance?.type && intakeData.insurance.type !== 'private')
+        ? [
+            {
+              type: INSURANCE_TYPE_MAP[intakeData.insurance?.type ?? 'private'] || 'PRIVATE',
+              policyNumber: intakeData.insurance?.memberId?.trim() || undefined,
+              groupNumber: intakeData.insurance?.groupNumber?.trim() || undefined,
+              isPrimary: true,
+            },
+          ]
+        : undefined,
+    authorizationInfo: {
+      number: intakeData.authorization?.number?.trim() || undefined,
+      approvedHours: intakeData.authorization?.approvedHours,
+      validFrom: intakeData.authorization?.validFrom || undefined,
+      validTo: intakeData.authorization?.validTo || undefined,
+    },
+    assessmentData: {
+      adls: intakeData.adls,
+      iadls: intakeData.iadls,
+      mobility: intakeData.mobility,
+      cognitive: intakeData.cognitive,
+      conditions: intakeData.conditions,
+      medications: intakeData.medications,
+      allergies: intakeData.allergies,
+      dietaryNeeds: intakeData.dietaryNeeds,
+    },
+    carePlanSummary: {
+      serviceTypes: intakeData.serviceTypes,
+      visitFrequency: blankToUndefined(intakeData.visitFrequency),
+      visitDuration:
+        typeof intakeData.visitDuration === 'number'
+          ? String(intakeData.visitDuration)
+          : blankToUndefined(intakeData.visitDuration),
+      preferredTimes: intakeData.preferredTimes,
+      tasks: intakeData.tasks,
+      goals: intakeData.goals,
+    },
+    visitSchedule: {
+      scheduleStartDate: intakeData.scheduleStartDate,
+      visitSchedule: intakeData.visitSchedule,
+    },
+    caregiverAssignment: {
+      primaryCaregiver: intakeData.primaryCaregiver,
+      backupCaregivers: intakeData.backupCaregivers,
+      preferences: intakeData.preferences,
+    },
+    consents: {
+      careAgreement: intakeData.consents?.careAgreement ?? false,
+      hipaa: intakeData.consents?.hipaa ?? false,
+      financialResponsibility: intakeData.consents?.financialResponsibility ?? false,
+      evv: (intakeData.consents as { evv?: boolean } | undefined)?.evv ?? false,
+      signature: sig,
+      signedDate: effectiveSignedDate,
+    },
+  };
 }
 
 export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = {}) {
@@ -488,90 +598,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         ...(c.notes !== undefined && { notes: c.notes }),
       }));
 
-    const insuranceTypeMap: Record<
-      string,
-      'MEDICAID' | 'MEDICARE' | 'PRIVATE' | 'OTHER'
-    > = {
-      medicaid: 'MEDICAID',
-      medicare: 'MEDICARE',
-      private: 'PRIVATE',
-      other: 'OTHER',
-    };
-
-    const sig = intakeData.signature ?? '';
-    const effectiveSignedDate =
-      sig.trim() && !intakeData.signedDate
-        ? new Date().toISOString().slice(0, 10)
-        : (intakeData.signedDate ?? '');
-
-    const intakePartBFields = {
-      primaryPhysician: intakeData.physician?.name?.trim()
-        ? {
-            name: intakeData.physician.name.trim(),
-            ...(intakeData.physician.phone?.trim() && {
-              phone: {
-                number: intakeData.physician.phone.trim(),
-                type: 'WORK' as const,
-                isPrimary: true,
-              },
-            }),
-          }
-        : undefined,
-      insurance:
-        intakeData.insurance?.memberId?.trim() ||
-        intakeData.insurance?.groupNumber?.trim() ||
-        (intakeData.insurance?.type && intakeData.insurance.type !== 'private')
-          ? [
-              {
-                type: insuranceTypeMap[intakeData.insurance?.type ?? 'private'] || 'PRIVATE',
-                policyNumber: intakeData.insurance?.memberId?.trim() || undefined,
-                groupNumber: intakeData.insurance?.groupNumber?.trim() || undefined,
-                isPrimary: true,
-              },
-            ]
-          : undefined,
-      authorizationInfo: {
-        number: intakeData.authorization?.number?.trim() || undefined,
-        approvedHours: intakeData.authorization?.approvedHours,
-        validFrom: intakeData.authorization?.validFrom || undefined,
-        validTo: intakeData.authorization?.validTo || undefined,
-      },
-      assessmentData: {
-        adls: intakeData.adls,
-        iadls: intakeData.iadls,
-        mobility: intakeData.mobility,
-        cognitive: intakeData.cognitive,
-        conditions: intakeData.conditions,
-        medications: intakeData.medications,
-        allergies: intakeData.allergies,
-        dietaryNeeds: intakeData.dietaryNeeds,
-      },
-      carePlanSummary: {
-        serviceTypes: intakeData.serviceTypes,
-        visitFrequency: intakeData.visitFrequency,
-        visitDuration: intakeData.visitDuration,
-        preferredTimes: intakeData.preferredTimes,
-        tasks: intakeData.tasks,
-        goals: intakeData.goals,
-      },
-      visitSchedule: {
-        scheduleStartDate: intakeData.scheduleStartDate,
-        visitSchedule: intakeData.visitSchedule,
-      },
-      caregiverAssignment: {
-        primaryCaregiver: intakeData.primaryCaregiver,
-        backupCaregivers: intakeData.backupCaregivers,
-        preferences: intakeData.preferences,
-      },
-      consents: {
-        careAgreement: intakeData.consents?.careAgreement ?? false,
-        hipaa: intakeData.consents?.hipaa ?? false,
-        financialResponsibility: intakeData.consents?.financialResponsibility ?? false,
-        evv: (intakeData.consents as { evv?: boolean } | undefined)?.evv ?? false,
-        signature: sig,
-        signedDate: effectiveSignedDate,
-      },
-    };
+    const intakePartBFields = buildIntakePartBFields(intakeData);
 
     try {
       if (isEditMode && clientId) {
@@ -711,7 +738,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
 
       {/* Step Content */}
       <div className="bg-white rounded-xl p-4 sm:p-6 md:p-10 shadow-sm border border-gray-100 min-h-[400px] md:min-h-[500px]">
-        {currentStep === 1 && (
+        {showForStep(currentStep, 1, (
           <div>
             <h2 className="text-xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
               Demographics & Contact Information
@@ -1096,9 +1123,9 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </div>
             </div>
           </div>
-        )}
+        ))}
 
-        {currentStep === 2 && (
+        {showForStep(currentStep, 2, (
           <div>
             <h2 className="text-xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
               Care Assessment
@@ -1274,9 +1301,9 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </Button>
             </div>
           </div>
-        )}
+        ))}
 
-        {currentStep === 3 && (
+        {showForStep(currentStep, 3, (
           <div>
             <h2 className="text-xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
               Care Plan Creation
@@ -1315,39 +1342,29 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               <div className="flex flex-col sm:flex-row gap-4 md:gap-5 mb-4 md:mb-5">
                 <div className="flex-1 min-w-0 flex flex-col">
                   <Label htmlFor="visit-frequency" className="block text-sm font-medium text-gray-700 mb-1.5">Visit Frequency</Label>
-                  <Select
-                    value={intakeData.visitFrequency ?? undefined}
-                    onValueChange={(val) => updateData('visitFrequency', val)}
-                  >
-                    <SelectTrigger id="visit-frequency" className="w-full min-h-[44px]">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="daily">Daily (7 days/week)</SelectItem>
-                      <SelectItem value="3xweek">3x per week</SelectItem>
-                      <SelectItem value="2xweek">2x per week</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="visit-frequency"
+                    type="text"
+                    className="w-full min-h-[44px]"
+                    value={intakeData.visitFrequency ?? ''}
+                    onChange={(e) => updateData('visitFrequency', e.target.value)}
+                    placeholder="e.g., 3x per week"
+                  />
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <Label htmlFor="visit-duration" className="block text-sm font-medium text-gray-700 mb-1.5">Visit Duration (minutes)</Label>
-                  <Select
-                    value={intakeData.visitDuration ? String(intakeData.visitDuration) : undefined}
-                    onValueChange={(val) => updateData('visitDuration', parseInt(val, 10))}
-                  >
-                    <SelectTrigger id="visit-duration" className="w-full min-h-[44px]">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="30">30 minutes</SelectItem>
-                      <SelectItem value="60">1 hour</SelectItem>
-                      <SelectItem value="90">1.5 hours</SelectItem>
-                      <SelectItem value="120">2 hours</SelectItem>
-                      <SelectItem value="180">3 hours</SelectItem>
-                      <SelectItem value="240">4 hours</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="visit-duration" className="block text-sm font-medium text-gray-700 mb-1.5">Visit Duration</Label>
+                  <Input
+                    id="visit-duration"
+                    type="text"
+                    className="w-full min-h-[44px]"
+                    value={
+                      intakeData.visitDuration !== undefined
+                        ? String(intakeData.visitDuration)
+                        : ''
+                    }
+                    onChange={(e) => updateData('visitDuration', e.target.value)}
+                    placeholder="e.g., 45-60 min"
+                  />
                 </div>
               </div>
             </div>
@@ -1408,9 +1425,9 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               />
             </div>
           </div>
-        )}
+        ))}
 
-        {currentStep === 4 && (
+        {showForStep(currentStep, 4, (
           <div>
             <h2 className="text-xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
               Caregiver Assignment
@@ -1503,9 +1520,9 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </div>
             </div>
           </div>
-        )}
+        ))}
 
-        {currentStep === 5 && (
+        {showForStep(currentStep, 5, (
           <div>
             <h2 className="text-xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
               Initial Schedule
@@ -1532,8 +1549,15 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 Visit Pattern
               </h3>
               <p className="text-sm text-gray-500 mb-4">
-                Based on {intakeData.visitFrequency ?? 'selected'} frequency -{' '}
-                {intakeData.visitDuration ?? 0} minutes per visit
+                Based on {blankToUndefined(intakeData.visitFrequency) ?? 'selected'} frequency -{' '}
+                {typeof intakeData.visitDuration === 'number'
+                  ? `${intakeData.visitDuration} minutes`
+                  : blankToUndefined(intakeData.visitDuration)
+                    ? /^\d+$/.test(intakeData.visitDuration!.trim())
+                      ? `${intakeData.visitDuration!.trim()} minutes`
+                      : intakeData.visitDuration!.trim()
+                    : 'not specified'}{' '}
+                per visit
               </p>
               <div className="p-4 md:p-6 bg-gray-50 rounded-xl border border-gray-200">
                 <p className="font-semibold text-gray-800 mb-2">Example Schedule:</p>
@@ -1564,9 +1588,9 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </div>
             </div>
           </div>
-        )}
+        ))}
 
-        {currentStep === 6 && (
+        {showForStep(currentStep, 6, (
           <div>
             <h2 className="text-xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
               Consent & Signatures
@@ -1663,9 +1687,9 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </div>
             </div>
           </div>
-        )}
+        ))}
 
-        {currentStep === 7 && (
+        {showForStep(currentStep, 7, (
           <div>
             <h2 className="text-xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
               Review & Submit
@@ -1754,8 +1778,8 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 <span className="text-xs sm:text-sm font-semibold sm:font-medium text-gray-500 sm:text-gray-600 sm:w-44 sm:min-w-[170px] sm:flex-shrink-0 uppercase sm:normal-case tracking-wider sm:tracking-normal">
                   Frequency:
                 </span>
-                <span className="text-sm md:text-base font-medium sm:font-normal text-gray-900 break-words flex-1 min-w-0 capitalize">
-                  {intakeData.visitFrequency ?? <span className="text-gray-400 italic">Not set</span>}
+                <span className="text-sm md:text-base font-medium sm:font-normal text-gray-900 break-words flex-1 min-w-0">
+                  {blankToUndefined(intakeData.visitFrequency) ?? <span className="text-gray-400 italic">Not set</span>}
                 </span>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-baseline py-2.5 md:py-3 border-b border-gray-200/80 gap-1 sm:gap-4 w-full">
@@ -1763,7 +1787,13 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   Duration:
                 </span>
                 <span className="text-sm md:text-base font-medium sm:font-normal text-gray-900 break-words flex-1 min-w-0">
-                  {intakeData.visitDuration ? `${intakeData.visitDuration} minutes` : <span className="text-gray-400 italic">Not set</span>}
+                  {typeof intakeData.visitDuration === 'number' ? (
+                    `${intakeData.visitDuration} minutes`
+                  ) : blankToUndefined(intakeData.visitDuration) ? (
+                    intakeData.visitDuration!.trim()
+                  ) : (
+                    <span className="text-gray-400 italic">Not set</span>
+                  )}
                 </span>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-baseline py-2.5 md:py-3 gap-1 sm:gap-4 w-full">
@@ -1867,7 +1897,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               <p>Once submitted, the client record will be created and visits will be scheduled.</p>
             </div>
           </div>
-        )}
+        ))}
       </div>
 
       {/* Navigation Buttons */}
