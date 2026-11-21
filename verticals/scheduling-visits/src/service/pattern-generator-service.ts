@@ -28,6 +28,7 @@ import type {
   ClientHospitalHoldException,
   PatternGenerationException,
   PatternGenerationResult,
+  SkippedVisitInfo,
 } from '../types/visit-pattern.js';
 import type { Visit, DayOfWeek, VisitAddress } from '../types/schedule.js';
 import { VisitPatternRepository } from '../repository/visit-pattern-repository.js';
@@ -98,7 +99,10 @@ export class RecurringVisitPatternEngine {
 
     return {
       pattern,
-      generatedVisitsCount: result.visits.length,
+      generatedVisitsCount: result.committedCount,
+      scheduledCandidateCount: result.scheduledCandidateCount,
+      skippedVisitsCount: result.skippedVisits.length,
+      skippedVisits: result.skippedVisits,
       visits: result.visits,
       exceptions: result.exceptions,
     };
@@ -360,10 +364,22 @@ export class RecurringVisitPatternEngine {
     pattern: VisitPattern,
     options: GenerateVisitsOptions,
     context: UserContext
-  ): Promise<{ visits: Visit[]; exceptions: PatternGenerationException[] }> {
+  ): Promise<{
+    visits: Visit[];
+    exceptions: PatternGenerationException[];
+    skippedVisits: SkippedVisitInfo[];
+    scheduledCandidateCount: number;
+    committedCount: number;
+  }> {
     const today = options.referenceDate ?? new Date();
     if (!isPatternEligibleForGeneration(pattern, today)) {
-      return { visits: [], exceptions: [] };
+      return {
+        visits: [],
+        exceptions: [],
+        skippedVisits: [],
+        scheduledCandidateCount: 0,
+        committedCount: 0,
+      };
     }
 
     const horizonDays = options.horizonDays ?? 60;
@@ -460,22 +476,130 @@ export class RecurringVisitPatternEngine {
       });
     }
 
+    // Pre-check existing active visits for the same client/date/start_time to avoid duplicates
+    const candidateDateStrs = visitsToCreate.map((item) => item.scheduledDate);
+    const existingDates = await this.repository.findExistingActiveVisitDates(
+      pattern.organizationId,
+      pattern.clientId,
+      pattern.startTime,
+      candidateDateStrs
+    );
+
     // Persist concrete visits in the database
     const createdVisits: Visit[] = [];
+    const skippedVisits: SkippedVisitInfo[] = [];
+
     for (const item of visitsToCreate) {
-      const visit = await this.insertConcreteVisit(
-        pattern,
-        item.scheduledDate,
-        item.assignedCaregiverId,
-        item.status,
-        item.notes,
-        options.defaultAddress,
-        context
-      );
-      createdVisits.push(visit);
+      if (existingDates.has(item.scheduledDate)) {
+        const reason = 'Duplicate visit already exists for client at scheduled date and time';
+        skippedVisits.push({
+          date: item.scheduledDate,
+          startTime: pattern.startTime,
+          clientId: pattern.clientId,
+          caregiverId: item.assignedCaregiverId ?? null,
+          reason,
+        });
+        exceptions.push({
+          date: item.scheduledDate,
+          type: 'DUPLICATE_VISIT',
+          reason,
+          clientId: pattern.clientId,
+          caregiverId: item.assignedCaregiverId ?? undefined,
+        });
+        console.warn('[RecurringVisitPatternEngine] Skipped duplicate visit', {
+          patternId: pattern.id,
+          clientId: pattern.clientId,
+          caregiverId: item.assignedCaregiverId ?? null,
+          scheduledDate: item.scheduledDate,
+          startTime: pattern.startTime,
+          reason,
+        });
+        continue;
+      }
+
+      try {
+        const visit = await this.insertConcreteVisit(
+          pattern,
+          item.scheduledDate,
+          item.assignedCaregiverId,
+          item.status,
+          item.notes,
+          options.defaultAddress,
+          context
+        );
+        if (visit) {
+          createdVisits.push(visit);
+        } else {
+          const reason = 'Insert skipped due to unique constraint conflict';
+          skippedVisits.push({
+            date: item.scheduledDate,
+            startTime: pattern.startTime,
+            clientId: pattern.clientId,
+            caregiverId: item.assignedCaregiverId ?? null,
+            reason,
+          });
+          exceptions.push({
+            date: item.scheduledDate,
+            type: 'INSERT_SKIPPED',
+            reason,
+            clientId: pattern.clientId,
+            caregiverId: item.assignedCaregiverId ?? undefined,
+          });
+          console.warn('[RecurringVisitPatternEngine] Visit insert skipped on conflict', {
+            patternId: pattern.id,
+            clientId: pattern.clientId,
+            caregiverId: item.assignedCaregiverId ?? null,
+            scheduledDate: item.scheduledDate,
+            startTime: pattern.startTime,
+            reason,
+          });
+        }
+      } catch (err: unknown) {
+        const pgCode = (err as { code?: string } | null)?.code;
+        if (pgCode === '23505') {
+          const reason = 'Duplicate visit conflict (23505)';
+          skippedVisits.push({
+            date: item.scheduledDate,
+            startTime: pattern.startTime,
+            clientId: pattern.clientId,
+            caregiverId: item.assignedCaregiverId ?? null,
+            reason,
+          });
+          exceptions.push({
+            date: item.scheduledDate,
+            type: 'INSERT_SKIPPED',
+            reason,
+            clientId: pattern.clientId,
+            caregiverId: item.assignedCaregiverId ?? undefined,
+          });
+          console.warn('[RecurringVisitPatternEngine] Visit insert failed with 23505', {
+            patternId: pattern.id,
+            clientId: pattern.clientId,
+            caregiverId: item.assignedCaregiverId ?? null,
+            scheduledDate: item.scheduledDate,
+            startTime: pattern.startTime,
+            reason,
+          });
+        } else {
+          throw err;
+        }
+      }
     }
 
-    return { visits: createdVisits, exceptions };
+    // Confirm actual committed row count from database
+    const dbCommittedCount = await this.repository.countCommittedVisitsForPattern(
+      pattern.id,
+      pattern.organizationId
+    );
+    const committedCount = dbCommittedCount !== null ? dbCommittedCount : createdVisits.length;
+
+    return {
+      visits: createdVisits,
+      exceptions,
+      skippedVisits,
+      scheduledCandidateCount: visitsToCreate.length,
+      committedCount,
+    };
   }
 
   /**
@@ -489,7 +613,7 @@ export class RecurringVisitPatternEngine {
     notes: string | undefined,
     defaultAddress: VisitAddress | undefined,
     context: UserContext
-  ): Promise<Visit> {
+  ): Promise<Visit | null> {
     const endTime = this.calculateEndTime(pattern.startTime, pattern.duration);
     const visitNumber = this.generateVisitNumber(scheduledDate);
     const address = defaultAddress ?? {
@@ -518,6 +642,7 @@ export class RecurringVisitPatternEngine {
         $17, $18, NOW(), $19,
         NOW(), $19, 1
       )
+      ON CONFLICT DO NOTHING
       RETURNING *
     `;
 
@@ -544,7 +669,10 @@ export class RecurringVisitPatternEngine {
     ];
 
     const result = await this.pool.query(query, values);
-    const row = result.rows[0];
+    const row = result?.rows?.[0];
+    if (!row) {
+      return null;
+    }
 
     return {
       id: row.id,

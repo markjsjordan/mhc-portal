@@ -71,10 +71,18 @@ export interface ClientHospitalHoldException {
 
 export interface PatternGenerationException {
   date: string;
-  type: 'HOLIDAY' | 'CAREGIVER_TIME_OFF' | 'HOSPITAL_HOLD';
+  type: 'HOLIDAY' | 'CAREGIVER_TIME_OFF' | 'HOSPITAL_HOLD' | 'DUPLICATE_VISIT' | 'INSERT_SKIPPED';
   reason: string;
   caregiverId?: UUID;
   clientId?: UUID;
+}
+
+export interface SkippedVisitInfo {
+  date: string;
+  startTime: string;
+  clientId: UUID;
+  caregiverId?: UUID | null;
+  reason: string;
 }
 
 export interface CreateVisitPatternInput {
@@ -119,6 +127,9 @@ export interface UpdateVisitPatternInput {
 export interface PatternGenerationResult {
   pattern: VisitPattern;
   generatedVisitsCount: number;
+  scheduledCandidateCount?: number;
+  skippedVisitsCount?: number;
+  skippedVisits?: SkippedVisitInfo[];
   visits: Visit[];
   exceptions: PatternGenerationException[];
 }

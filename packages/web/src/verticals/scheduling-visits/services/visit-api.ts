@@ -93,7 +93,15 @@ export interface VisitApiService {
   getVisitById(visitId: string): Promise<Visit>;
   createVisit(data: CreateVisitPayload): Promise<Visit>;
   updateVisit(visitId: string, data: UpdateVisitPayload): Promise<Visit>;
-  createPattern(data: CreatePatternPayload): Promise<{ pattern: unknown; visits: Visit[]; generatedVisitsCount: number; exceptions: unknown[] }>;
+  createPattern(data: CreatePatternPayload): Promise<{
+    pattern: unknown;
+    visits: Visit[];
+    generatedVisitsCount: number;
+    scheduledCandidateCount?: number;
+    skippedVisitsCount?: number;
+    skippedVisits?: Array<{ date: string; startTime?: string; clientId: string; caregiverId?: string | null; reason: string }>;
+    exceptions: unknown[];
+  }>;
   getPattern(id: string): Promise<PatternDetailsResponse>;
   updatePattern(id: string, data: UpdatePatternPayload): Promise<unknown>;
   listPatterns(params?: string | ListPatternsParams): Promise<PatternListItem[]>;
@@ -275,8 +283,27 @@ export const createVisitApiService = (apiClient: ApiClient): VisitApiService => 
       return response.data;
     },
 
-    async createPattern(data: CreatePatternPayload): Promise<{ pattern: unknown; visits: Visit[]; generatedVisitsCount: number; exceptions: unknown[] }> {
-      const response = await apiClient.post<{ success: boolean; data: { pattern: unknown; visits: Visit[]; generatedVisitsCount: number; exceptions: unknown[] } }>(
+    async createPattern(data: CreatePatternPayload): Promise<{
+      pattern: unknown;
+      visits: Visit[];
+      generatedVisitsCount: number;
+      scheduledCandidateCount?: number;
+      skippedVisitsCount?: number;
+      skippedVisits?: Array<{ date: string; startTime?: string; clientId: string; caregiverId?: string | null; reason: string }>;
+      exceptions: unknown[];
+    }> {
+      const response = await apiClient.post<{
+        success: boolean;
+        data: {
+          pattern: unknown;
+          visits: Visit[];
+          generatedVisitsCount: number;
+          scheduledCandidateCount?: number;
+          skippedVisitsCount?: number;
+          skippedVisits?: Array<{ date: string; startTime?: string; clientId: string; caregiverId?: string | null; reason: string }>;
+          exceptions: unknown[];
+        };
+      }>(
         '/api/visits/patterns',
         data
       );
