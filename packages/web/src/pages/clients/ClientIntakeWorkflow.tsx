@@ -461,6 +461,89 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         }
       : undefined;
 
+    const { emergencyContactsInput, intakePartBFields } = buildAccumulatedPayload();
+
+    try {
+      const effectiveClientId = isEditMode ? clientId : savedClientId;
+      if (effectiveClientId) {
+        // Update mode (existing client in edit mode, or draft already created via mid-wizard Save)
+        const updateInput: UpdateClientInput = {
+          firstName: intakeData.firstName.trim(),
+          lastName: intakeData.lastName.trim(),
+          dateOfBirth: intakeData.dateOfBirth,
+          email: blankToUndefined(intakeData.email),
+          primaryPhone: phoneInput,
+          primaryAddress: addressInput,
+          emergencyContacts: emergencyContactsInput,
+          ...intakePartBFields,
+        };
+
+        const activate = !isEditMode
+          ? true
+          : shouldActivateOnEdit(currentStatus, {
+              firstName: updateInput.firstName,
+              lastName: updateInput.lastName,
+              dateOfBirth: updateInput.dateOfBirth,
+              email: intakeData.email,
+              phone: intakeData.phone,
+              emergencyContacts: emergencyContactsInput,
+            });
+        if (activate) {
+          updateInput.status = 'ACTIVE';
+        }
+
+        const updatedClient = await updateClient.mutateAsync({
+          id: effectiveClientId,
+          input: updateInput,
+        });
+        toast.success(
+          !isEditMode
+            ? 'Client intake submitted.'
+            : activate
+              ? 'Client saved and activated.'
+              : 'Client saved.'
+        );
+
+        if (onSuccess) {
+          onSuccess(updatedClient);
+        } else {
+          Promise.resolve(navigate(`/clients/${updatedClient.id}`)).catch(() => {});
+        }
+      } else {
+        // Create mode
+        const createInput: CreateClientInput = {
+          organizationId: user!.organizationId,
+          branchId: effectiveBranchId,
+          firstName: intakeData.firstName.trim(),
+          lastName: intakeData.lastName.trim(),
+          dateOfBirth: intakeData.dateOfBirth,
+          email: blankToUndefined(intakeData.email),
+          primaryPhone: phoneInput,
+          primaryAddress: addressInput,
+          emergencyContacts: emergencyContactsInput,
+          status: 'ACTIVE',
+          ...intakePartBFields,
+        };
+
+        const newClient = await createClient.mutateAsync(createInput);
+        toast.success('Client intake submitted.');
+
+        if (onSuccess) {
+          onSuccess(newClient);
+        } else {
+          Promise.resolve(navigate(`/clients/${newClient.id}`)).catch(() => {});
+        }
+      }
+    } catch {
+      // useCreateClient/useUpdateClient's onError already surfaces a toast; nothing further to do here.
+    }
+  };
+
+  /**
+   * Builds the accumulated emergency contacts and Part B (steps 2–6) payload fields
+   * shared by both mid-wizard Save and final Submit.
+   */
+  const buildAccumulatedPayload = () => {
     const emergencyContactsInput = (intakeData.emergencyContacts ?? [])
       .filter((c) => blankToUndefined(c.name) && blankToUndefined(c.phone))
       .map((c) => ({
@@ -566,71 +649,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       },
     };
 
-    try {
-      if (isEditMode && clientId) {
-        // Update mode
-        const updateInput: UpdateClientInput = {
-          firstName: intakeData.firstName.trim(),
-          lastName: intakeData.lastName.trim(),
-          dateOfBirth: intakeData.dateOfBirth,
-          email: blankToUndefined(intakeData.email),
-          primaryPhone: phoneInput,
-          primaryAddress: addressInput,
-          emergencyContacts: emergencyContactsInput,
-          ...intakePartBFields,
-        };
-
-        const activate = shouldActivateOnEdit(currentStatus, {
-          firstName: updateInput.firstName,
-          lastName: updateInput.lastName,
-          dateOfBirth: updateInput.dateOfBirth,
-          email: intakeData.email,
-          phone: intakeData.phone,
-          emergencyContacts: emergencyContactsInput,
-        });
-        if (activate) {
-          updateInput.status = 'ACTIVE';
-        }
-
-        const updatedClient = await updateClient.mutateAsync({
-          id: clientId,
-          input: updateInput,
-        });
-        toast.success(activate ? 'Client saved and activated.' : 'Client saved.');
-
-        if (onSuccess) {
-          onSuccess(updatedClient);
-        } else {
-          Promise.resolve(navigate(`/clients/${updatedClient.id}`)).catch(() => {});
-        }
-      } else {
-        // Create mode
-        const createInput: CreateClientInput = {
-          organizationId: user!.organizationId,
-          branchId: effectiveBranchId,
-          firstName: intakeData.firstName.trim(),
-          lastName: intakeData.lastName.trim(),
-          dateOfBirth: intakeData.dateOfBirth,
-          email: blankToUndefined(intakeData.email),
-          primaryPhone: phoneInput,
-          primaryAddress: addressInput,
-          emergencyContacts: emergencyContactsInput,
-          status: 'ACTIVE',
-          ...intakePartBFields,
-        };
-
-        const newClient = await createClient.mutateAsync(createInput);
-        toast.success('Client intake submitted.');
-
-        if (onSuccess) {
-          onSuccess(newClient);
-        } else {
-          Promise.resolve(navigate(`/clients/${newClient.id}`)).catch(() => {});
-        }
-      }
-    } catch {
-      // useCreateClient/useUpdateClient's onError already surfaces a toast; nothing further to do here.
-    }
+    return { emergencyContactsInput, intakePartBFields };
   };
 
   /**
@@ -691,6 +710,8 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         }
       : undefined;
 
+    const { emergencyContactsInput, intakePartBFields } = buildAccumulatedPayload();
+
     try {
       const targetId = isEditMode ? clientId : savedClientId;
       if (targetId) {
@@ -704,9 +725,11 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
             email: blankToUndefined(intakeData.email),
             primaryPhone: phoneInput,
             primaryAddress: addressInput,
+            emergencyContacts: emergencyContactsInput,
+            ...intakePartBFields,
           },
         });
-        toast.success('Progress saved.');
+        toast.success('Progress saved');
       } else {
         // First save in create mode — create a PENDING_INTAKE draft
         if (!user?.organizationId) {
@@ -725,10 +748,12 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           email: blankToUndefined(intakeData.email),
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
+          emergencyContacts: emergencyContactsInput,
           status: 'PENDING_INTAKE',
+          ...intakePartBFields,
         });
         setSavedClientId(newClient.id);
-        toast.success('Draft saved. Continue filling out the form.');
+        toast.success('Progress saved');
       }
     } catch {
       // useCreateClient/useUpdateClient's onError already surfaces a toast.
