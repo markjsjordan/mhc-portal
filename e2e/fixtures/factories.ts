@@ -13,6 +13,7 @@
 
 import { randomUUID } from 'node:crypto';
 import type { APIRequestContext, APIResponse } from '@playwright/test';
+import { Database, type DatabaseConfig } from '../../packages/core/src/db/connection.js';
 import { getPersonaUser } from './auth.fixture.js';
 import { E2E_UUIDS, type E2EPersonaKey } from './test-data.js';
 
@@ -86,6 +87,124 @@ function uniqueSuffix(): string {
   return `${Date.now()}-${randomUUID().slice(0, 8)}`;
 }
 
+function getE2EDbConfig(): DatabaseConfig {
+  const dbName = process.env['E2E_DATABASE_NAME'] || 'folkcare_e2e_test';
+  const url = process.env['E2E_DATABASE_URL'] || process.env['DATABASE_URL'] || `postgresql://postgres:postgres@localhost:5432/${dbName}`;
+  const match = url.match(/^postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/([^?]+)/);
+  if (!match) {
+    throw new Error(`E2E factory DB error: invalid database URL format`);
+  }
+  const [, user, password, host, port, database] = match;
+  return {
+    host: host!,
+    port: parseInt(port!, 10),
+    database: database!,
+    user: decodeURIComponent(user!),
+    password: decodeURIComponent(password!),
+    ssl: false,
+    max: 2,
+    idleTimeoutMillis: 10000,
+  };
+}
+
+async function withE2EDb<T>(fn: (db: Database) => Promise<T>): Promise<T> {
+  const db = new Database(getE2EDbConfig());
+  try {
+    return await fn(db);
+  } finally {
+    await db.close();
+  }
+}
+
+/**
+ * Create a READY_TO_BILL billable_items row for invoice creation.
+ * (No public POST /api/billing/billable-items endpoint exists; billable items
+ * are generated internally from completed visits.)
+ */
+export async function createBillableItem(
+  overrides: Partial<{
+    payerId: string;
+    payerType: string;
+    payerName: string;
+    serviceDate: string;
+  }> = {}
+): Promise<string> {
+  const id = randomUUID();
+  const today = overrides.serviceDate ?? new Date().toISOString().slice(0, 10);
+  const payerId = overrides.payerId ?? E2E_UUIDS.CLIENT_001;
+  const payerType = overrides.payerType ?? 'PRIVATE_PAY';
+  const payerName = overrides.payerName ?? `E2E Payer ${uniqueSuffix()}`;
+
+  await withE2EDb(async (db) => {
+    await db.query(
+      `INSERT INTO payers (
+        id, organization_id, payer_name, payer_type,
+        created_at, created_by, updated_at, updated_by, version
+      ) VALUES ($1, $2, $3, $4, NOW(), $5, NOW(), $5, 1)
+      ON CONFLICT DO NOTHING`,
+      [payerId, E2E_UUIDS.ORG_E2E, payerName, payerType, E2E_UUIDS.ADMIN_USER]
+    );
+    await db.query(
+      `INSERT INTO billable_items (
+        id, organization_id, branch_id, client_id,
+        service_type_id, service_type_code, service_type_name,
+        service_date, duration_minutes,
+        caregiver_id, caregiver_name,
+        unit_type, units, unit_rate, subtotal,
+        modifiers, adjustments, final_amount,
+        is_authorized,
+        payer_id, payer_type, payer_name,
+        status, status_history,
+        is_hold, requires_review, is_denied, is_appealable, is_paid,
+        created_at, created_by, updated_at, updated_by, version
+      ) VALUES (
+        $1, $2, $3, $4,
+        $11, 'T1019', 'Personal Care',
+        $5, 60,
+        $6, 'Jane Caregiver',
+        'HOURLY', 1, 50.00, 50.00,
+        '[]'::jsonb, '[]'::jsonb, 50.00,
+        true,
+        $7, $8, $9,
+        'READY', '[]'::jsonb,
+        false, false, false, false, false,
+        NOW(), $10, NOW(), $10, 1
+      )`,
+      [
+        id,
+        E2E_UUIDS.ORG_E2E,
+        E2E_UUIDS.BRANCH_E2E,
+        E2E_UUIDS.CLIENT_001,
+        today,
+        E2E_UUIDS.CAREGIVER_001,
+        payerId,
+        payerType,
+        payerName,
+        E2E_UUIDS.ADMIN_USER,
+        randomUUID(),
+      ]
+    );
+  });
+
+  return id;
+}
+
+/**
+ * Mark a compiled DRAFT timesheet as SUBMITTED so POST /api/payroll/timesheets/:id/approve
+ * can transition it to APPROVED (no public /submit route exists in payroll.ts).
+ */
+export async function markTimeSheetSubmitted(timeSheetId: string): Promise<void> {
+  await withE2EDb(async (db) => {
+    const res = await db.query(
+      `UPDATE time_sheets SET status = 'SUBMITTED', updated_at = NOW() WHERE id = $1`,
+      [timeSheetId]
+    );
+    if ((res.rowCount ?? 0) === 0) {
+      throw new Error(`E2E factory "markTimeSheetSubmitted" found no timesheet with id ${timeSheetId}`);
+    }
+  });
+}
+
 /**
  * Build authenticated request headers for a seeded E2E persona.
  * Throws loudly if the persona has no token in its storageState.
@@ -150,21 +269,38 @@ export async function createInvoice(
   const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const suffix = uniqueSuffix();
 
+  const payerId = overrides.payerId ?? E2E_UUIDS.CLIENT_001;
+  const payerType = overrides.payerType ?? 'PRIVATE_PAY';
+  const payerName = overrides.payerName ?? `E2E Payer ${suffix}`;
+  const billableItemIds =
+    overrides.billableItemIds && overrides.billableItemIds.length > 0
+      ? overrides.billableItemIds
+      : [await createBillableItem({ payerId, payerType, payerName, serviceDate: today })];
+
   const payload = {
-    payerId: overrides.payerId ?? E2E_UUIDS.CLIENT_001,
-    payerType: overrides.payerType ?? 'PRIVATE_PAY',
-    payerName: overrides.payerName ?? `E2E Payer ${suffix}`,
+    payerId,
+    payerType,
+    payerName,
     invoiceDate: overrides.invoiceDate ?? today,
     dueDate: overrides.dueDate ?? dueDate,
     periodStart: overrides.periodStart ?? today,
     periodEnd: overrides.periodEnd ?? today,
-    billableItemIds: overrides.billableItemIds ?? [],
+    billableItemIds,
   };
 
-  const res = await request.post('/api/billing/invoices', {
+  let res = await request.post('/api/billing/invoices', {
     headers: getAuthedHeaders('admin'),
     data: payload,
   });
+  for (let attempt = 0; attempt < 3 && res.status() === 500; attempt++) {
+    const errText = await res.text().catch(() => '');
+    if (!errText.includes('idx_invoices_number')) break;
+    await new Promise((r) => setTimeout(r, 100 * (attempt + 1)));
+    res = await request.post('/api/billing/invoices', {
+      headers: getAuthedHeaders('admin'),
+      data: payload,
+    });
+  }
   const body = (await assertFactoryResponse('createInvoice', res, [201])) as Record<string, unknown>;
   const invoice = (body?.['data'] ?? body) as CreatedInvoice;
   if (!invoice?.id) {
@@ -239,30 +375,22 @@ export async function createCarePlan(
   const today = new Date().toISOString().slice(0, 10);
   const headers = getAuthedHeaders('admin');
 
-  const templatesRes = await request.get('/api/care-plans/templates', { headers });
-  const templatesBody = (await assertFactoryResponse('listCarePlanTemplates', templatesRes, [200])) as
-    | Array<{ id: string }>
-    | { templates?: Array<{ id: string }>; items?: Array<{ id: string }>; data?: Array<{ id: string }> };
-  const templates = Array.isArray(templatesBody)
-    ? templatesBody
-    : (templatesBody?.templates ?? templatesBody?.items ?? templatesBody?.data ?? []);
-  const templateId = templates[0]?.id;
-  if (!templateId) {
-    throw new Error(
-      `E2E factory "createCarePlan" found no care plan templates. Body: ${JSON.stringify(templatesBody)}`
-    );
-  }
-
   const payload = {
-    templateId,
+    organizationId: E2E_UUIDS.ORG_E2E,
     clientId: overrides.clientId ?? E2E_UUIDS.CLIENT_001,
     branchId: E2E_UUIDS.BRANCH_E2E,
     name: overrides.name ?? `E2E Care Plan ${suffix}`,
+    planType: 'PERSONAL_CARE',
+    effectiveDate: overrides.startDate ?? today,
+    coordinatorId: E2E_UUIDS.ADMIN_USER,
+    goals: [],
+    interventions: [],
+    taskTemplates: [],
+    serviceFrequency: { pattern: 'WEEKLY' },
     notes: overrides.description ?? 'Created by E2E factory',
-    startDate: overrides.startDate ?? today,
   };
 
-  const res = await request.post('/api/care-plans/from-template', {
+  const res = await request.post('/api/care-plans', {
     headers,
     data: payload,
   });

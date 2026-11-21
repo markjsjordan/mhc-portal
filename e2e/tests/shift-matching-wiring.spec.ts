@@ -281,8 +281,13 @@ test.describe("FC-AUDIT-SCHEDULING GATE-2: /scheduling/builder — real persiste
     await expect(page.getByRole("heading", { name: /schedule builder/i })).toBeVisible();
 
     const todayIso = new Date().toISOString().split("T")[0]!;
-    const dateSelect = page.locator("select").first();
-    await expect(dateSelect).toHaveValue(todayIso);
+    const expectedLabel = new Date(todayIso).toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
+    const dateSelect = page.locator("#schedule-builder-date-select-desktop");
+    await expect(dateSelect).toContainText(expectedLabel);
   });
 
   test("assigning an unassigned visit persists across a full page reload (real API round-trip, not just component state)", async ({ page, request }) => {

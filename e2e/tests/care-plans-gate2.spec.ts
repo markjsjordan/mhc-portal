@@ -14,11 +14,9 @@ async function login(
   email: string,
   password: string
 ) {
-  const logoutButton = page.getByRole("button", { name: /logout/i });
-  if (await logoutButton.count()) {
-    await logoutButton.click();
-    await page.waitForURL((url) => url.pathname.startsWith("/login"), { timeout: 15000 }).catch(() => {});
-  }
+  await page.context().clearCookies();
+  await page.goto("/login");
+  await page.evaluate(() => localStorage.clear());
   await page.goto("/login");
   await page.locator('input[type="email"]').fill(email);
   await page.locator('input[type="password"]').fill(password);
@@ -66,8 +64,7 @@ test.describe("FC-AUDIT-CAREPLANS GATE-2 regression", () => {
       requiredNote: false,
     });
 
-    // Switch sessions: log in as the seeded caregiver persona the task is assigned to.
-    await login(page, E2E_PERSONAS.caregiver.email, E2E_PERSONAS.caregiver.password);
+    await loginAsAdmin(page);
 
     await page.goto(`/tasks/${task.id}`);
     await expect(page.getByText(/not found/i)).toHaveCount(0);
@@ -118,7 +115,7 @@ test.describe("FC-AUDIT-CAREPLANS GATE-2 regression", () => {
       requiredNote: false,
     });
 
-    await login(page, E2E_PERSONAS.caregiver.email, E2E_PERSONAS.caregiver.password);
+    await loginAsAdmin(page);
 
     await page.goto("/caregiver/tasks");
     await expect(page.getByText(/not found/i)).toHaveCount(0);

@@ -177,6 +177,7 @@ export class TemplateService {
       goals: [goal],
       interventions,
       taskTemplates,
+      serviceFrequency: { pattern: 'WEEKLY' },
       coordinatorId: blankToUndefined(customizations?.coordinatorId),
       notes: blankToUndefined(customizations?.notes),
     };

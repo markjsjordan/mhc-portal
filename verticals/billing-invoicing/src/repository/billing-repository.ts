@@ -637,7 +637,7 @@ export class BillingRepository {
         invoice.organizationId,
         invoice.branchId,
         invoice.invoiceNumber,
-        invoice.invoiceType,
+        invoice.invoiceType ?? 'STANDARD',
         invoice.payerId,
         invoice.payerType,
         invoice.payerName,

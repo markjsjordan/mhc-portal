@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { STORAGE_STATE_PATHS } from "../fixtures/auth.fixture.js";
 import { E2E_UUIDS } from "../fixtures/test-data.js";
-import { createInvoice, sendInvoice } from "../fixtures/factories.js";
+import { createBillableItem, createInvoice, getAuthedHeaders, sendInvoice } from "../fixtures/factories.js";
 
 test.use({ storageState: STORAGE_STATE_PATHS.admin });
 
@@ -46,15 +46,23 @@ test.describe("FC-AUDIT-BILLING-PAYROLL-EVV: billing invoice lifecycle", () => {
 
     const today = new Date().toISOString().slice(0, 10);
     const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const payerName = `E2E UI Payer ${Date.now()}`;
+    const billableItemId = await createBillableItem({
+      payerId: E2E_UUIDS.CLIENT_001,
+      payerType: "PRIVATE_PAY",
+      payerName,
+      serviceDate: today,
+    });
 
     await page.getByTestId("invoice-payer-id").fill(E2E_UUIDS.CLIENT_001);
     await page.getByTestId("invoice-payer-type").click();
     await page.getByRole("option", { name: /private pay/i }).click();
-    await page.getByTestId("invoice-payer-name").fill(`E2E UI Payer ${Date.now()}`);
+    await page.getByTestId("invoice-payer-name").fill(payerName);
     await page.getByTestId("invoice-date").fill(today);
     await page.getByTestId("invoice-due-date").fill(dueDate);
     await page.getByTestId("invoice-period-start").fill(today);
     await page.getByTestId("invoice-period-end").fill(today);
+    await page.getByTestId("invoice-billable-item-ids").fill(billableItemId);
 
     await page.getByTestId("invoice-submit").click();
 
@@ -72,11 +80,13 @@ test.describe("FC-AUDIT-BILLING-PAYROLL-EVV: billing invoice lifecycle", () => {
     await page.getByRole("button", { name: /send invoice/i }).click();
 
     // Verify server-side status transition, not just UI state.
+    const headers = getAuthedHeaders("admin");
     await expect
       .poll(
         async () => {
-          const check = await apiGet(page, `/api/billing/invoices/${draftInvoice.id}`);
-          return check.body?.status;
+          const check = await request.get(`/api/billing/invoices/${draftInvoice.id}`, { headers });
+          const body = await check.json().catch(() => null);
+          return body?.status;
         },
         { timeout: 10000 }
       )
@@ -94,10 +104,12 @@ test.describe("FC-AUDIT-BILLING-PAYROLL-EVV: billing invoice lifecycle", () => {
     // window.showSaveFilePicker (File System Access API), which headless
     // Chromium under Playwright does not support — the UI button's download
     // mutation calls this same endpoint (useDownloadInvoicePdf in this codebase).
-    const pdf = await apiGet(page, `/api/billing/invoices/${invoice.id}/pdf`);
-    expect(pdf.status).toBe(200);
-    expect(pdf.contentType).toContain("pdf");
-    expect(pdf.byteLength).toBeGreaterThan(0);
+    const pdfRes = await request.get(`/api/billing/invoices/${invoice.id}/pdf`, {
+      headers: getAuthedHeaders("admin"),
+    });
+    expect(pdfRes.status()).toBe(200);
+    expect(pdfRes.headers()["content-type"] ?? "").toContain("pdf");
+    expect((await pdfRes.body()).byteLength).toBeGreaterThan(0);
   });
 
   test("Void transitions an invoice to VOIDED where status allows", async ({ page, request }) => {
@@ -111,11 +123,13 @@ test.describe("FC-AUDIT-BILLING-PAYROLL-EVV: billing invoice lifecycle", () => {
     page.once("dialog", (dialog) => void dialog.accept());
     await page.getByRole("button", { name: /^void$/i }).click();
 
+    const headers = getAuthedHeaders("admin");
     await expect
       .poll(
         async () => {
-          const check = await apiGet(page, `/api/billing/invoices/${invoice.id}`);
-          return check.body?.status;
+          const check = await request.get(`/api/billing/invoices/${invoice.id}`, { headers });
+          const body = await check.json().catch(() => null);
+          return body?.status;
         },
         { timeout: 10000 }
       )
