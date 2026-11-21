@@ -351,4 +351,26 @@ describe('ScheduleBuilderPage responsive header (wdvf3abp4v)', () => {
       }
     });
   });
+
+  describe('Unassigned Visits Day/Week scope toggle (wdvf3add17)', () => {
+    beforeEach(() => {
+      mockUseIsMobile.mockReturnValue(false);
+    });
+
+    it('renders Day and Week scope toggle buttons in the Unassigned Visits sidebar', () => {
+      renderComponent();
+
+      const scopeToggle = screen.getByTestId('unassigned-scope-toggle');
+      expect(scopeToggle).toBeInTheDocument();
+
+      const dayBtn = screen.getByRole('button', { name: /^Day \(/i });
+      const weekBtn = screen.getByRole('button', { name: /^Week \(/i });
+      expect(dayBtn).toHaveAttribute('aria-pressed', 'true');
+      expect(weekBtn).toHaveAttribute('aria-pressed', 'false');
+
+      fireEvent.click(weekBtn);
+      expect(dayBtn).toHaveAttribute('aria-pressed', 'false');
+      expect(weekBtn).toHaveAttribute('aria-pressed', 'true');
+    });
+  });
 });
