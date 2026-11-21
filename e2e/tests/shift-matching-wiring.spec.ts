@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+import { E2E_UUIDS } from "../fixtures/test-data.js";
+import { createUnassignedVisit, getAuthedHeaders } from "../fixtures/factories.js";
 
 /**
  * FC-AUDIT-SCHEDULING — GATE-2 regression coverage
@@ -238,67 +240,31 @@ test.describe("FC-AUDIT-SCHEDULING GATE-2: /scheduling/calendar — honest gaps 
   });
 
   test("caregiver-reassignment path (checkAndAssignCaregiver / PUT /api/visits/:id/assign) actually persists end-to-end — distinct from the date/time gap", async ({ page, request }) => {
-    const loginRes = await request.post("/api/auth/login", {
-      data: { email: SCHED_ADMIN_EMAIL, password: SCHED_ADMIN_PASSWORD },
-    });
-    expect(loginRes.status()).toBe(200);
-    const loginBody = await loginRes.json();
-    const token = loginBody.data.tokens.accessToken as string;
-    const orgId = loginBody.data.user.organizationId as string;
-    const userId = loginBody.data.user.id as string;
-
     const today = new Date();
-    const start = today.toISOString().split("T")[0];
-    const weekOut = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    const start = today.toISOString().split("T")[0]!;
+    const weekOut = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]!;
 
-    // X-Organization-Id alone is not sufficient for branch-scoped writes;
-    // the real frontend (packages/web/src/core/services/api-client.ts)
-    // always sends X-User-Id and X-Branch-Id alongside it, so this test
-    // must match that exactly to exercise the real authorization path
-    // rather than an artificially stricter/looser one.
-    const baseHeaders = { Authorization: `Bearer ${token}`, "X-Organization-Id": orgId, "X-User-Id": userId };
+    const visit = await createUnassignedVisit(request, { scheduledDate: start });
+    const headers = {
+      ...getAuthedHeaders("admin"),
+      ...(visit.branchId ? { "X-Branch-Id": visit.branchId } : {}),
+    };
 
-    const beforeRes = await request.get(`/api/visits/calendar?start_date=${start}&end_date=${weekOut}`, { headers: baseHeaders });
-    expect(beforeRes.status()).toBe(200);
-    const beforeBody = await beforeRes.json();
-    const visits = beforeBody.data as Array<{ id: string; assignedCaregiverId: string | null; branchId: string }>;
-    test.skip(visits.length < 1, "No seeded visits in range to test caregiver reassignment against");
-
-    const visit = visits[0]!;
-    const headers = { ...baseHeaders, "X-Branch-Id": visit.branchId };
-
-    const caregiversRes = await request.get(`/api/caregivers?limit=5`, { headers });
-    test.skip(caregiversRes.status() !== 200, "Could not fetch caregivers to test reassignment against");
-    const caregiversBody = await caregiversRes.json();
-    const caregivers = (caregiversBody.items ?? caregiversBody.data ?? []) as Array<{ id: string }>;
-    test.skip(caregivers.length < 1, "No caregivers available to test reassignment against");
-
-    const currentCaregiverId = visit.assignedCaregiverId;
-    const newCaregiver = caregivers.find((c) => c.id !== currentCaregiverId) ?? caregivers[0]!;
-
-    // This is exactly the request checkAndAssignCaregiver (CalendarView) and
-    // handleDrop (ScheduleBuilderPage) issue — the real, working persistence
-    // path, distinct from the date/time gap above.
     const assignRes = await request.put(`/api/visits/${visit.id}/assign`, {
       headers,
-      data: { caregiverId: newCaregiver.id, checkConflicts: false },
+      data: { caregiverId: E2E_UUIDS.CAREGIVER_001, checkConflicts: false },
     });
     expect(assignRes.status()).toBe(200);
 
-    // Re-fetch to prove the change actually persisted server-side (not just
-    // held in request/response memory) — same pattern as the ScheduleBuilder
-    // reload-and-reassert check below.
+    // Re-fetch to prove the change actually persisted server-side.
     const afterRes = await request.get(`/api/visits/calendar?start_date=${start}&end_date=${weekOut}`, { headers });
+    expect(afterRes.status()).toBe(200);
     const afterBody = await afterRes.json();
     const updatedVisit = (afterBody.data as Array<{ id: string; assignedCaregiverId: string | null }>).find(
       (v) => v.id === visit.id
     );
-    expect(updatedVisit?.assignedCaregiverId).toBe(newCaregiver.id);
+    expect(updatedVisit?.assignedCaregiverId).toBe(E2E_UUIDS.CAREGIVER_001);
 
-    // And confirm no "not yet implemented" toast is associated with this
-    // code path when driven through the UI — load the calendar page fresh
-    // and make sure the gap-toast text (which is specific to the date/time
-    // path) is not shown merely from having an assigned visit on screen.
     await loginViaUi(page);
     await page.goto("/scheduling/calendar");
     await page.waitForResponse((res) => res.url().includes("/api/visits/calendar"));
@@ -319,69 +285,41 @@ test.describe("FC-AUDIT-SCHEDULING GATE-2: /scheduling/builder — real persiste
     await expect(dateSelect).toHaveValue(todayIso);
   });
 
-  test("drag an unassigned visit onto a caregiver persists across a full page reload (real API round-trip, not just component state)", async ({ page, request }) => {
-    const loginRes = await request.post("/api/auth/login", {
-      data: { email: SCHED_ADMIN_EMAIL, password: SCHED_ADMIN_PASSWORD },
-    });
-    const loginBody = await loginRes.json();
-    const token = loginBody.data.tokens.accessToken as string;
-    const orgId = loginBody.data.user.organizationId as string;
-    const headers = { Authorization: `Bearer ${token}`, "X-Organization-Id": orgId };
+  test("assigning an unassigned visit persists across a full page reload (real API round-trip, not just component state)", async ({ page, request }) => {
+    const todayIso = new Date().toISOString().split("T")[0]!;
+    const visit = await createUnassignedVisit(request, { scheduledDate: todayIso });
+    const headers = {
+      ...getAuthedHeaders("admin"),
+      ...(visit.branchId ? { "X-Branch-Id": visit.branchId } : {}),
+    };
 
     await loginViaUi(page);
     await page.goto("/scheduling/builder");
     await page.waitForLoadState("networkidle");
 
+    // Confirm the newly created unassigned visit renders in the builder
     const unassignedCard = page.locator('[style*="cursor: grab"]').first();
-    const hasUnassigned = await unassignedCard.isVisible().catch(() => false);
-    test.skip(!hasUnassigned, "No unassigned visits for today to test drag-assign against");
+    await expect(unassignedCard).toBeVisible();
 
-    const caregiverColumn = page.locator("text=/./").locator("..").first();
-    // Find a concrete drop target: the first available (non-occupied) time
-    // slot cell under any caregiver column.
-    const dropTarget = page.locator('div[style*="cursor: pointer"]').first();
-    const hasDropTarget = await dropTarget.isVisible().catch(() => false);
-    test.skip(!hasDropTarget, "No available caregiver time slot to drop onto");
+    // Assign via the same PUT /api/visits/:id/assign endpoint that ScheduleBuilderPage's
+    // handleDrop invokes (reliable in headless Chromium without flaky synthetic DragEvent).
+    const assignRes = await request.put(`/api/visits/${visit.id}/assign`, {
+      headers,
+      data: { caregiverId: E2E_UUIDS.CAREGIVER_001, checkConflicts: false },
+    });
+    expect(assignRes.status()).toBe(200);
 
-    const assignResponse = page.waitForResponse(
-      (res) => res.url().includes("/api/visits/") && res.url().includes("/assign") && res.request().method() === "PUT",
-      { timeout: 10000 }
-    ).catch(() => null);
-
-    // HTML5 drag-and-drop (native onDragStart/onDrop, not react-big-calendar's
-    // DnD addon) IS reliably automatable via dispatchEvent, unlike the
-    // calendar's library-internal drag handling.
-    const sourceBox = await unassignedCard.boundingBox();
-    const targetBox = await dropTarget.boundingBox();
-    test.skip(!sourceBox || !targetBox, "Could not resolve bounding boxes for drag source/target");
-
-    await page.evaluate(
-      ({ sourceSelector, targetSelector }) => {
-        const source = document.querySelector(sourceSelector);
-        const target = document.querySelector(targetSelector);
-        if (!source || !target) return;
-        const dataTransfer = new DataTransfer();
-        source.dispatchEvent(new DragEvent("dragstart", { bubbles: true, dataTransfer }));
-        target.dispatchEvent(new DragEvent("dragover", { bubbles: true, dataTransfer }));
-        target.dispatchEvent(new DragEvent("drop", { bubbles: true, dataTransfer }));
-      },
-      { sourceSelector: '[style*="cursor: grab"]', targetSelector: 'div[style*="cursor: pointer"]' }
-    );
-
-    const response = await assignResponse;
-    test.skip(response === null, "Drag simulation did not trigger the assign API call — see verdict notes on DnD automation limits");
-
-    expect(response!.status()).toBe(200);
-
-    // The real test: reload the ENTIRE page and confirm the assignment is
-    // still there — this proves a real DB round-trip, not just React state.
+    // Reload the entire page and confirm the assignment persisted in the DB.
     await page.reload();
     await page.waitForLoadState("networkidle");
-    const remainingUnassigned = await page.locator('[style*="cursor: grab"]').count();
-    // Can't assert exact count without knowing seed data shape, but the
-    // specific visit that was dragged should no longer appear in the
-    // unassigned sidebar after reload.
-    expect(remainingUnassigned).toBeGreaterThanOrEqual(0); // sanity: page didn't crash
+
+    const verifyRes = await request.get(`/api/visits/calendar?start_date=${todayIso}&end_date=${todayIso}`, { headers });
+    expect(verifyRes.status()).toBe(200);
+    const verifyBody = await verifyRes.json();
+    const persisted = (verifyBody.data as Array<{ id: string; assignedCaregiverId: string | null }>).find(
+      (v) => v.id === visit.id
+    );
+    expect(persisted?.assignedCaregiverId).toBe(E2E_UUIDS.CAREGIVER_001);
   });
 });
 

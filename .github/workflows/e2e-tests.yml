@@ -115,6 +115,9 @@ jobs:
       - name: Build packages
         run: npx turbo run build
 
+      - name: Check for unapproved bare test.skip() in e2e/tests
+        run: npm run lint:e2e-skips
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
@@ -268,6 +271,9 @@ jobs:
 
       - name: Build packages
         run: npx turbo run build
+
+      - name: Check for unapproved bare test.skip() in e2e/tests
+        run: npm run lint:e2e-skips
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps ${{ matrix.browser }}
@@ -427,6 +433,9 @@ jobs:
 
       - name: Build packages
         run: npx turbo run build
+
+      - name: Check for unapproved bare test.skip() in e2e/tests
+        run: npm run lint:e2e-skips
 
       - name: Install Playwright browsers (Mobile)
         run: |

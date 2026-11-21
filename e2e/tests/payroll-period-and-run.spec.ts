@@ -1,5 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { STORAGE_STATE_PATHS } from "../fixtures/auth.fixture.js";
+import { E2E_UUIDS } from "../fixtures/test-data.js";
+import {
+  assertFactoryResponse,
+  createOpenPayPeriod,
+  getAuthedHeaders,
+} from "../fixtures/factories.js";
 
 test.use({ storageState: STORAGE_STATE_PATHS.admin });
 
@@ -189,37 +195,62 @@ test.describe("FC-AUDIT-BILLING-PAYROLL-EVV: payroll period and run lifecycle", 
     await expect(page.getByText(/not found/i)).toHaveCount(0);
   });
 
-  test("calculate/process a pay run and verify pay stubs, when an approved-timesheet pay run exists", async ({ page }) => {
+  test("calculate/process a pay run and verify pay stubs", async ({ page, request }) => {
     await loginAsAdmin(page);
 
-    // Timesheet compilation (prerequisite plumbing, not part of this
-    // ticket's WU-1..WU-7) has a pre-existing bug in this dev environment
-    // (see file header), so there is no APPROVED timesheet data available to
-    // drive createPayRun end-to-end here. Skip gracefully instead of
-    // fabricating a false pass if no DRAFT pay run already exists to
-    // exercise calculate/process against.
-    const draftRuns = await apiGet(page, "/api/payroll/pay-runs?payPeriodId=&status=DRAFT&limit=1");
-    const existingRun = draftRuns.body?.data?.[0] ?? draftRuns.body?.items?.[0];
-    test.skip(
-      !existingRun,
-      "No pay run with compiled timesheets available in this environment " +
-        "(compileTimeSheet has a pre-existing, out-of-scope repository bug " +
-        "blocking test data setup — see file header)"
-    );
+    const headers = getAuthedHeaders("admin");
+    const period = await createOpenPayPeriod(request);
 
-    const calc = await apiPost(page, `/api/payroll/pay-runs/${existingRun.id}/calculate`);
+    // Compile a timesheet for the seeded caregiver in this pay period
+    const compileRes = await request.post("/api/payroll/timesheets", {
+      headers,
+      data: {
+        payPeriodId: period.id,
+        caregiverId: E2E_UUIDS.CAREGIVER_001,
+        branchId: E2E_UUIDS.BRANCH_E2E,
+      },
+    });
+    const compileBody = (await assertFactoryResponse("compileTimeSheet", compileRes, [201])) as {
+      data?: { id?: string };
+    };
+    const timeSheetId = compileBody?.data?.id;
+    expect(timeSheetId).toBeTruthy();
+
+    // Approve the compiled timesheet
+    const approveTsRes = await request.post(`/api/payroll/timesheets/${timeSheetId}/approve`, {
+      headers,
+      data: { approvalNotes: "E2E automated approval" },
+    });
+    await assertFactoryResponse("approveTimeSheet", approveTsRes, [200]);
+
+    // Create a pay run for this pay period
+    const runRes = await request.post("/api/payroll/pay-runs", {
+      headers,
+      data: {
+        payPeriodId: period.id,
+        branchId: E2E_UUIDS.BRANCH_E2E,
+        runType: "REGULAR",
+      },
+    });
+    const runBody = (await assertFactoryResponse("createPayRun", runRes, [201])) as {
+      data?: { id?: string };
+    };
+    const payRunId = runBody?.data?.id;
+    expect(payRunId).toBeTruthy();
+
+    const calc = await apiPost(page, `/api/payroll/pay-runs/${payRunId}/calculate`);
     expect(calc.status).toBe(200);
 
-    const approve = await apiPost(page, `/api/payroll/pay-runs/${existingRun.id}/approve`);
+    const approve = await apiPost(page, `/api/payroll/pay-runs/${payRunId}/approve`);
     expect(approve.status).toBe(200);
 
-    const process = await apiPost(page, `/api/payroll/pay-runs/${existingRun.id}/process`);
+    const process = await apiPost(page, `/api/payroll/pay-runs/${payRunId}/process`);
     expect(process.status).toBe(200);
-    expect(["PROCESSED", "FUNDED", "COMPLETED"]).toContain(process.body?.status);
+    expect(["PROCESSED", "FUNDED", "COMPLETED"]).toContain(process.body?.data?.status ?? process.body?.status);
 
-    const stubs = await apiGet(page, `/api/payroll/pay-stubs?payRunId=${existingRun.id}`);
+    const stubs = await apiGet(page, `/api/payroll/pay-stubs?payRunId=${payRunId}`);
     expect(stubs.status).toBe(200);
-    expect((stubs.body?.items ?? []).length).toBeGreaterThan(0);
+    expect((stubs.body?.data ?? stubs.body?.items ?? []).length).toBeGreaterThan(0);
 
     await page.goto("/payroll/pay-stubs");
     await expect(page.getByText(/not found/i)).toHaveCount(0);

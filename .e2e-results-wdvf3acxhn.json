@@ -1,0 +1,699 @@
+{
+  "config": {
+    "configFile": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/playwright.config.ts",
+    "rootDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/tests",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/setup/global-setup.ts",
+    "globalTeardown": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/setup/global-teardown.ts",
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 4
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/setup",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "tablet",
+        "name": "tablet",
+        "testDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.57.0",
+    "workers": 4,
+    "webServer": {
+      "command": "npm run test:e2e:server",
+      "port": 3000,
+      "timeout": 30000,
+      "reuseExistingServer": true,
+      "stdout": "pipe",
+      "stderr": "pipe",
+      "env": {
+        "NODE_ENV": "test",
+        "DATABASE_URL": "postgresql://markjordan:local@localhost:5432/e2e_wdvf3acxhn_1795289080",
+        "PORT": "3000",
+        "CORS_ORIGIN": "http://localhost:5173,http://localhost:3000",
+        "JWT_SECRET": "e2e-test-jwt-secret-minimum-32-characters-required-for-testing",
+        "JWT_REFRESH_SECRET": "e2e-test-jwt-refresh-secret-minimum-32-characters-required-for-testing",
+        "DEMO_READ_ONLY": "false"
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "../setup/auth.setup.ts",
+      "file": "../setup/auth.setup.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "authenticate as admin (admin@folkcare.example)",
+          "ok": true,
+          "tags": [
+            "folkcare.example)"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "setup",
+              "projectName": "setup",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2587,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-21T19:24:55.616Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "17e3fe6f4d9d8bd79c6b-55ee7c425e3901a2ec66",
+          "file": "../setup/auth.setup.ts",
+          "line": 19,
+          "column": 3
+        },
+        {
+          "title": "authenticate as orgAdmin (orgadmin@e2e-test.invalid)",
+          "ok": true,
+          "tags": [
+            "e2e-test.invalid)"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "setup",
+              "projectName": "setup",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 2281,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-21T19:24:55.611Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "17e3fe6f4d9d8bd79c6b-383024d213e9d7831242",
+          "file": "../setup/auth.setup.ts",
+          "line": 19,
+          "column": 3
+        },
+        {
+          "title": "authenticate as coordinator (coordinator@e2e-test.invalid)",
+          "ok": true,
+          "tags": [
+            "e2e-test.invalid)"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "setup",
+              "projectName": "setup",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 2691,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-21T19:24:55.608Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "17e3fe6f4d9d8bd79c6b-4c18046f43a24cafb947",
+          "file": "../setup/auth.setup.ts",
+          "line": 19,
+          "column": 3
+        },
+        {
+          "title": "authenticate as caregiver (caregiver@e2e-test.invalid)",
+          "ok": true,
+          "tags": [
+            "e2e-test.invalid)"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "setup",
+              "projectName": "setup",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 2305,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-21T19:24:55.607Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "17e3fe6f4d9d8bd79c6b-87875f0439bb8a9f583c",
+          "file": "../setup/auth.setup.ts",
+          "line": 19,
+          "column": 3
+        },
+        {
+          "title": "authenticate as family (family@e2e-test.invalid)",
+          "ok": true,
+          "tags": [
+            "e2e-test.invalid)"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "setup",
+              "projectName": "setup",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 1104,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-21T19:24:58.440Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "17e3fe6f4d9d8bd79c6b-6cc26419af12f4eab337",
+          "file": "../setup/auth.setup.ts",
+          "line": 19,
+          "column": 3
+        }
+      ]
+    },
+    {
+      "title": "care-plans-gate2.spec.ts",
+      "file": "care-plans-gate2.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "FC-AUDIT-CAREPLANS GATE-2 regression",
+          "file": "care-plans-gate2.spec.ts",
+          "line": 34,
+          "column": 6,
+          "specs": [
+            {
+              "title": "care plan detail Edit link navigates to EditCarePlanPage (not 404)",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 1158,
+                      "error": {
+                        "message": "Error: E2E factory \"listCarePlanTemplates\" failed with HTTP 500 (expected 200). Body: {\"error\":\"Internal server error\"}",
+                        "stack": "Error: E2E factory \"listCarePlanTemplates\" failed with HTTP 500 (expected 200). Body: {\"error\":\"Internal server error\"}\n    at assertFactoryResponse (/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts:121:11)\n    at createCarePlan (/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts:243:26)\n    at /Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/tests/care-plans-gate2.spec.ts:36:22",
+                        "location": {
+                          "file": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts",
+                          "column": 11,
+                          "line": 121
+                        },
+                        "snippet": "   at ../fixtures/factories.ts:121\n\n  119 |   const text = await res.text().catch(() => '<unreadable body>');\n  120 |   if (!expectedStatuses.includes(res.status())) {\n> 121 |     throw new Error(\n      |           ^\n  122 |       `E2E factory \"${label}\" failed with HTTP ${res.status()} (expected ${expectedStatuses.join('/')}). Body: ${text}`\n  123 |     );\n  124 |   }"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts",
+                            "column": 11,
+                            "line": 121
+                          },
+                          "message": "Error: E2E factory \"listCarePlanTemplates\" failed with HTTP 500 (expected 200). Body: {\"error\":\"Internal server error\"}\n\n   at ../fixtures/factories.ts:121\n\n  119 |   const text = await res.text().catch(() => '<unreadable body>');\n  120 |   if (!expectedStatuses.includes(res.status())) {\n> 121 |     throw new Error(\n      |           ^\n  122 |       `E2E factory \"${label}\" failed with HTTP ${res.status()} (expected ${expectedStatuses.join('/')}). Body: ${text}`\n  123 |     );\n  124 |   }\n    at assertFactoryResponse (/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts:121:11)\n    at createCarePlan (/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts:243:26)\n    at /Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/tests/care-plans-gate2.spec.ts:36:22"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-21T19:25:00.649Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/test-results/care-plans-gate2-FC-AUDIT--e244a-o-EditCarePlanPage-not-404--chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/test-results/care-plans-gate2-FC-AUDIT--e244a-o-EditCarePlanPage-not-404--chromium/video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts",
+                        "column": 11,
+                        "line": 121
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "fbb4ca642d0928df914f-f88186677f59549889fe",
+              "file": "care-plans-gate2.spec.ts",
+              "line": 35,
+              "column": 3
+            },
+            {
+              "title": "caregiver tasks page renders",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 1025,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-21T19:25:00.631Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "fbb4ca642d0928df914f-c3fadca6992252fe6bf4",
+              "file": "care-plans-gate2.spec.ts",
+              "line": 49,
+              "column": 3
+            },
+            {
+              "title": "signature capture unblocks Complete Task submission",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 1161,
+                      "error": {
+                        "message": "Error: E2E factory \"listCarePlanTemplates\" failed with HTTP 500 (expected 200). Body: {\"error\":\"Internal server error\"}",
+                        "stack": "Error: E2E factory \"listCarePlanTemplates\" failed with HTTP 500 (expected 200). Body: {\"error\":\"Internal server error\"}\n    at assertFactoryResponse (/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts:121:11)\n    at createCarePlan (/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts:243:26)\n    at /Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/tests/care-plans-gate2.spec.ts:57:22",
+                        "location": {
+                          "file": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts",
+                          "column": 11,
+                          "line": 121
+                        },
+                        "snippet": "   at ../fixtures/factories.ts:121\n\n  119 |   const text = await res.text().catch(() => '<unreadable body>');\n  120 |   if (!expectedStatuses.includes(res.status())) {\n> 121 |     throw new Error(\n      |           ^\n  122 |       `E2E factory \"${label}\" failed with HTTP ${res.status()} (expected ${expectedStatuses.join('/')}). Body: ${text}`\n  123 |     );\n  124 |   }"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts",
+                            "column": 11,
+                            "line": 121
+                          },
+                          "message": "Error: E2E factory \"listCarePlanTemplates\" failed with HTTP 500 (expected 200). Body: {\"error\":\"Internal server error\"}\n\n   at ../fixtures/factories.ts:121\n\n  119 |   const text = await res.text().catch(() => '<unreadable body>');\n  120 |   if (!expectedStatuses.includes(res.status())) {\n> 121 |     throw new Error(\n      |           ^\n  122 |       `E2E factory \"${label}\" failed with HTTP ${res.status()} (expected ${expectedStatuses.join('/')}). Body: ${text}`\n  123 |     );\n  124 |   }\n    at assertFactoryResponse (/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts:121:11)\n    at createCarePlan (/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts:243:26)\n    at /Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/tests/care-plans-gate2.spec.ts:57:22"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-21T19:25:00.714Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/test-results/care-plans-gate2-FC-AUDIT--ecbad-ks-Complete-Task-submission-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/test-results/care-plans-gate2-FC-AUDIT--ecbad-ks-Complete-Task-submission-chromium/video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts",
+                        "column": 11,
+                        "line": 121
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "fbb4ca642d0928df914f-8189bc7b557d54cff460",
+              "file": "care-plans-gate2.spec.ts",
+              "line": 56,
+              "column": 3
+            },
+            {
+              "title": "list view (CaregiverTasksPage) gates signature-required Complete Task button",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 3,
+                      "status": "failed",
+                      "duration": 1174,
+                      "error": {
+                        "message": "Error: E2E factory \"listCarePlanTemplates\" failed with HTTP 500 (expected 200). Body: {\"error\":\"Internal server error\"}",
+                        "stack": "Error: E2E factory \"listCarePlanTemplates\" failed with HTTP 500 (expected 200). Body: {\"error\":\"Internal server error\"}\n    at assertFactoryResponse (/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts:121:11)\n    at createCarePlan (/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts:243:26)\n    at /Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/tests/care-plans-gate2.spec.ts:108:22",
+                        "location": {
+                          "file": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts",
+                          "column": 11,
+                          "line": 121
+                        },
+                        "snippet": "   at ../fixtures/factories.ts:121\n\n  119 |   const text = await res.text().catch(() => '<unreadable body>');\n  120 |   if (!expectedStatuses.includes(res.status())) {\n> 121 |     throw new Error(\n      |           ^\n  122 |       `E2E factory \"${label}\" failed with HTTP ${res.status()} (expected ${expectedStatuses.join('/')}). Body: ${text}`\n  123 |     );\n  124 |   }"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts",
+                            "column": 11,
+                            "line": 121
+                          },
+                          "message": "Error: E2E factory \"listCarePlanTemplates\" failed with HTTP 500 (expected 200). Body: {\"error\":\"Internal server error\"}\n\n   at ../fixtures/factories.ts:121\n\n  119 |   const text = await res.text().catch(() => '<unreadable body>');\n  120 |   if (!expectedStatuses.includes(res.status())) {\n> 121 |     throw new Error(\n      |           ^\n  122 |       `E2E factory \"${label}\" failed with HTTP ${res.status()} (expected ${expectedStatuses.join('/')}). Body: ${text}`\n  123 |     );\n  124 |   }\n    at assertFactoryResponse (/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts:121:11)\n    at createCarePlan (/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts:243:26)\n    at /Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/tests/care-plans-gate2.spec.ts:108:22"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-21T19:25:00.629Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/test-results/care-plans-gate2-FC-AUDIT--b4e73-quired-Complete-Task-button-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/test-results/care-plans-gate2-FC-AUDIT--b4e73-quired-Complete-Task-button-chromium/video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/fixtures/factories.ts",
+                        "column": 11,
+                        "line": 121
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "fbb4ca642d0928df914f-5ca19d5cc967d4899375",
+              "file": "care-plans-gate2.spec.ts",
+              "line": 107,
+              "column": 3
+            },
+            {
+              "title": "create a care plan from template end-to-end",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 1314,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m201\u001b[39m\nReceived: \u001b[31m500\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m201\u001b[39m\nReceived: \u001b[31m500\u001b[39m\n    at /Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/tests/care-plans-gate2.spec.ts:199:31",
+                        "location": {
+                          "file": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/tests/care-plans-gate2.spec.ts",
+                          "column": 31,
+                          "line": 199
+                        },
+                        "snippet": "  197 |     ]);\n  198 |\n> 199 |     expect(response.status()).toBe(201);\n      |                               ^\n  200 |\n  201 |     await expect(page.getByText(/failed to create care plan/i)).toHaveCount(0, { timeout: 10000 });\n  202 |     await page.waitForURL((url) => !url.pathname.includes(\"/from-template\"), { timeout: 10000 });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/tests/care-plans-gate2.spec.ts",
+                            "column": 31,
+                            "line": 199
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m201\u001b[39m\nReceived: \u001b[31m500\u001b[39m\n\n  197 |     ]);\n  198 |\n> 199 |     expect(response.status()).toBe(201);\n      |                               ^\n  200 |\n  201 |     await expect(page.getByText(/failed to create care plan/i)).toHaveCount(0, { timeout: 10000 });\n  202 |     await page.waitForURL((url) => !url.pathname.includes(\"/from-template\"), { timeout: 10000 });\n    at /Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/tests/care-plans-gate2.spec.ts:199:31"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-21T19:25:02.151Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/test-results/care-plans-gate2-FC-AUDIT--995d0-an-from-template-end-to-end-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/test-results/care-plans-gate2-FC-AUDIT--995d0-an-from-template-end-to-end-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/test-results/care-plans-gate2-FC-AUDIT--995d0-an-from-template-end-to-end-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3acxhn-1795287880/e2e/tests/care-plans-gate2.spec.ts",
+                        "column": 31,
+                        "line": 199
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "fbb4ca642d0928df914f-f2d7227ab6ec6237f968",
+              "file": "care-plans-gate2.spec.ts",
+              "line": 165,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-21T19:24:49.756Z",
+    "duration": 13809.39,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 4,
+    "flaky": 0
+  }
+}
