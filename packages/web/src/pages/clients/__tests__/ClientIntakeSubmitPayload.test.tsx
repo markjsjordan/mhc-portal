@@ -117,4 +117,36 @@ describe('ClientIntakeWorkflow submit payload', () => {
     expect(String(toastError.mock.calls[0]?.[0])).toMatch(/ZIP/);
     expect(createMutateAsync).not.toHaveBeenCalled();
   });
+
+  it('submits free-text visitFrequency and visitDuration and omits blank strings as undefined', async () => {
+    renderAtReview({
+      ...baseData,
+      visitFrequency: '3x per week',
+      visitDuration: '45-60 min',
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Submit & Create Client/i }));
+
+    await waitFor(() => expect(createMutateAsync).toHaveBeenCalledTimes(1));
+    const payload = createMutateAsync.mock.calls[0]?.[0] as Record<string, unknown>;
+    const carePlan = payload['carePlanSummary'] as Record<string, unknown>;
+    expect(carePlan['visitFrequency']).toBe('3x per week');
+    expect(carePlan['visitDuration']).toBe('45-60 min');
+  });
+
+  it('omits blank visitFrequency and visitDuration as undefined', async () => {
+    renderAtReview({
+      ...baseData,
+      visitFrequency: '   ',
+      visitDuration: '',
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Submit & Create Client/i }));
+
+    await waitFor(() => expect(createMutateAsync).toHaveBeenCalledTimes(1));
+    const payload = createMutateAsync.mock.calls[0]?.[0] as Record<string, unknown>;
+    const carePlan = payload['carePlanSummary'] as Record<string, unknown>;
+    expect(carePlan['visitFrequency']).toBeUndefined();
+    expect(carePlan['visitDuration']).toBeUndefined();
+  });
 });
