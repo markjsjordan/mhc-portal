@@ -488,7 +488,7 @@ export class AuthService {
       async () => {
         const result = await this.db.query(
           `SELECT id, organization_id, email, password_hash, first_name, last_name,
-                  roles, permissions, status, token_version, failed_login_attempts,
+                  roles, permissions, branch_ids, status, token_version, failed_login_attempts,
                   locked_until, oauth_provider, oauth_provider_id
            FROM users
            WHERE email = $1 AND deleted_at IS NULL`,

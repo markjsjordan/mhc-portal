@@ -158,6 +158,8 @@ export default defineConfig({
       // JWT secrets for authentication (pinned at top of config)
       JWT_SECRET: TEST_JWT_SECRET,
       JWT_REFRESH_SECRET: TEST_JWT_REFRESH_SECRET,
+      // Allow E2E tests to create/mutate data with seeded admin@folkcare.example
+      DEMO_READ_ONLY: 'false',
     },
   },
 });

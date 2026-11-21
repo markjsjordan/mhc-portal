@@ -556,6 +556,20 @@ expect(text).toBe('COMPLETED'); // No auto-retry
 **Folk Care** - Shared care software, community owned
 Brought to you by [Neighborhood Lab](https://neighborhoodlab.org)
 
+## Allowed E2E Skips
+
+Tests in `e2e/tests/` **must** create their own data via `e2e/fixtures/factories.ts` and fail loudly with HTTP status and response body when setup fails. Data-dependent `test.skip(...)` calls are forbidden and blocked by `npm run lint:e2e-skips` (`scripts/check-e2e-skips.mjs`).
+
+Only environment-capability skips are permitted, annotated with `// e2e-allow-skip: <reason>` on the same or immediately preceding line and documented below:
+
+| Spec | Line / Test | Reason |
+| --- | --- | --- |
+| *(none currently)* | — | All active specs in `e2e/tests/` create their own data and run unconditionally in Chromium. |
+
+Note: `e2e/tests/visual-regression.spec.ts` baseline skips (if any) are tracked separately in E2E-7.
+
+---
+
 ## Visual Regression Baselines
 
 Visual regression tests use `playwright.visual.config.ts` (`npm run test:visual` / `npm run test:visual:update`) with `maxDiffPixelRatio: 0.005`, `animations: 'disabled'`, frozen `page.clock`, and dynamic content masked.

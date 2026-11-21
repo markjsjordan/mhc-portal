@@ -110,6 +110,10 @@ export async function seedE2EPersonas(db: Database): Promise<void> {
         [branchId],
       ]
     );
+    await db.query(
+      `UPDATE users SET branch_ids = $2 WHERE (id = $1 OR email = $3) AND (branch_ids IS NULL OR array_length(branch_ids, 1) IS NULL)`,
+      [p.userId, [branchId], p.email]
+    );
   }
 
   // 4. Linked Caregiver record for CAREGIVER persona (grants dynamic CAREGIVER role)

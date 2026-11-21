@@ -1,5 +1,13 @@
+import { randomUUID } from "node:crypto";
 import { test, expect } from "@playwright/test";
 import { STORAGE_STATE_PATHS } from "../fixtures/auth.fixture.js";
+import { E2E_UUIDS } from "../fixtures/test-data.js";
+import {
+  assertFactoryResponse,
+  createOpenPayPeriod,
+  getAuthedHeaders,
+  markTimeSheetSubmitted,
+} from "../fixtures/factories.js";
 
 test.use({ storageState: STORAGE_STATE_PATHS.admin });
 
@@ -71,8 +79,9 @@ async function apiPost(page: import("@playwright/test").Page, url: string, data:
 }
 
 test.describe("FC-AUDIT-BILLING-PAYROLL-EVV: payroll period and run lifecycle", () => {
-  test("Create Pay Period opens a DRAFT period and immediately transitions it to OPEN", async ({ page }) => {
+  test("Create Pay Period opens a DRAFT period and immediately transitions it to OPEN", async ({ page, request }) => {
     await loginAsAdmin(page);
+    const headers = getAuthedHeaders("admin");
 
     await page.goto("/payroll");
     await expect(page.getByText(/not found/i)).toHaveCount(0);
@@ -116,35 +125,24 @@ test.describe("FC-AUDIT-BILLING-PAYROLL-EVV: payroll period and run lifecycle", 
     await expect
       .poll(
         async () => {
-          const res = await apiGet(page, `/api/payroll/periods/${payPeriodId}`);
-          return res.body?.data?.status;
+          const res = await request.get(`/api/payroll/periods/${payPeriodId}`, { headers });
+          const body = await res.json().catch(() => null);
+          return body?.data?.status;
         },
         { timeout: 10000 }
       )
       .toBe("OPEN");
 
     // --- Lock the pay period via PayPeriodManagement (WU-3) ---
-    // This shared dev DB accumulates many pay periods with the *same*
-    // date range across repeated test runs (including manual verification
-    // runs), so matching "the period we just created" by displayed date
-    // text or row position in the UI is ambiguous and flaky. Instead,
-    // drive the Lock/Unlock actions directly against the captured
-    // payPeriodId via the same REST endpoints PayPeriodManagement's
-    // Lock/Unlock buttons call (POST /api/payroll/periods/:id/lock and
-    // /unlock — see payroll-api.ts), which is unambiguous no matter how
-    // many same-date-range rows exist. This still exercises WU-3's real
-    // server-side lock/unlock wiring end to end; only the UI row-click
-    // step (which can't be scoped to an id without a test-id attribute
-    // in production markup, out of scope for this test-only fix) is
-    // replaced with an equally-real API call using the exact id.
-    const lockRes = await apiPost(page, `/api/payroll/periods/${payPeriodId}/lock`);
-    expect(lockRes.status).toBe(200);
+    const lockRes = await request.post(`/api/payroll/periods/${payPeriodId}/lock`, { headers, data: {} });
+    expect(lockRes.status()).toBe(200);
 
     await expect
       .poll(
         async () => {
-          const res = await apiGet(page, `/api/payroll/periods/${payPeriodId}`);
-          return res.body?.data?.status;
+          const res = await request.get(`/api/payroll/periods/${payPeriodId}`, { headers });
+          const body = await res.json().catch(() => null);
+          return body?.data?.status;
         },
         { timeout: 10000 }
       )
@@ -157,14 +155,15 @@ test.describe("FC-AUDIT-BILLING-PAYROLL-EVV: payroll period and run lifecycle", 
     await expect(page.getByText(/not found/i)).toHaveCount(0);
 
     // --- Unlock it back to OPEN (WU-3) ---
-    const unlockRes = await apiPost(page, `/api/payroll/periods/${payPeriodId}/unlock`);
-    expect(unlockRes.status).toBe(200);
+    const unlockRes = await request.post(`/api/payroll/periods/${payPeriodId}/unlock`, { headers, data: {} });
+    expect(unlockRes.status()).toBe(200);
 
     await expect
       .poll(
         async () => {
-          const res = await apiGet(page, `/api/payroll/periods/${payPeriodId}`);
-          return res.body?.data?.status;
+          const res = await request.get(`/api/payroll/periods/${payPeriodId}`, { headers });
+          const body = await res.json().catch(() => null);
+          return body?.data?.status;
         },
         { timeout: 10000 }
       )
@@ -189,37 +188,79 @@ test.describe("FC-AUDIT-BILLING-PAYROLL-EVV: payroll period and run lifecycle", 
     await expect(page.getByText(/not found/i)).toHaveCount(0);
   });
 
-  test("calculate/process a pay run and verify pay stubs, when an approved-timesheet pay run exists", async ({ page }) => {
+  test("calculate/process a pay run and verify pay stubs", async ({ page, request }) => {
     await loginAsAdmin(page);
 
-    // Timesheet compilation (prerequisite plumbing, not part of this
-    // ticket's WU-1..WU-7) has a pre-existing bug in this dev environment
-    // (see file header), so there is no APPROVED timesheet data available to
-    // drive createPayRun end-to-end here. Skip gracefully instead of
-    // fabricating a false pass if no DRAFT pay run already exists to
-    // exercise calculate/process against.
-    const draftRuns = await apiGet(page, "/api/payroll/pay-runs?payPeriodId=&status=DRAFT&limit=1");
-    const existingRun = draftRuns.body?.data?.[0] ?? draftRuns.body?.items?.[0];
-    test.skip(
-      !existingRun,
-      "No pay run with compiled timesheets available in this environment " +
-        "(compileTimeSheet has a pre-existing, out-of-scope repository bug " +
-        "blocking test data setup — see file header)"
-    );
+    const headers = getAuthedHeaders("admin");
+    const period = await createOpenPayPeriod(request);
 
-    const calc = await apiPost(page, `/api/payroll/pay-runs/${existingRun.id}/calculate`);
-    expect(calc.status).toBe(200);
+    // Compile a timesheet for the seeded caregiver in this pay period
+    const compileRes = await request.post("/api/payroll/timesheets", {
+      headers,
+      data: {
+        payPeriodId: period.id,
+        caregiverId: E2E_UUIDS.CAREGIVER_001,
+        caregiverName: "Jane Caregiver",
+        caregiverEmployeeId: "CG-E2E-001",
+        branchId: E2E_UUIDS.BRANCH_E2E,
+        regularRate: 25,
+        evvRecordIds: [randomUUID()],
+      },
+    });
+    const compileBody = (await assertFactoryResponse("compileTimeSheet", compileRes, [201])) as {
+      data?: { id?: string };
+    };
+    const timeSheetId = compileBody?.data?.id;
+    expect(timeSheetId).toBeTruthy();
 
-    const approve = await apiPost(page, `/api/payroll/pay-runs/${existingRun.id}/approve`);
-    expect(approve.status).toBe(200);
+    // Mark compiled timesheet SUBMITTED, then approve via API
+    await markTimeSheetSubmitted(timeSheetId!);
+    const approveTsRes = await request.post(`/api/payroll/timesheets/${timeSheetId}/approve`, {
+      headers,
+      data: { approvalNotes: "E2E automated approval" },
+    });
+    await assertFactoryResponse("approveTimeSheet", approveTsRes, [200]);
 
-    const process = await apiPost(page, `/api/payroll/pay-runs/${existingRun.id}/process`);
-    expect(process.status).toBe(200);
-    expect(["PROCESSED", "FUNDED", "COMPLETED"]).toContain(process.body?.status);
+    // Lock the pay period before creating a pay run
+    const lockRes = await request.post(`/api/payroll/periods/${period.id}/lock`, {
+      headers,
+      data: {},
+    });
+    await assertFactoryResponse("lockPayPeriod", lockRes, [200]);
 
-    const stubs = await apiGet(page, `/api/payroll/pay-stubs?payRunId=${existingRun.id}`);
-    expect(stubs.status).toBe(200);
-    expect((stubs.body?.items ?? []).length).toBeGreaterThan(0);
+    // Create a pay run for this pay period
+    const runRes = await request.post("/api/payroll/pay-runs", {
+      headers,
+      data: {
+        payPeriodId: period.id,
+        branchId: E2E_UUIDS.BRANCH_E2E,
+        runType: "REGULAR",
+      },
+    });
+    const runBody = (await assertFactoryResponse("createPayRun", runRes, [201])) as {
+      data?: { id?: string };
+    };
+    const payRunId = runBody?.data?.id;
+    expect(payRunId).toBeTruthy();
+
+    // createPayRun already calculates pay stubs for the approved timesheets;
+    // approve and process the pay run, then verify pay stubs were generated.
+    const approveRes = await request.post(`/api/payroll/pay-runs/${payRunId}/approve`, { headers, data: {} });
+    await assertFactoryResponse("approvePayRun", approveRes, [200]);
+
+    const processRes = await request.post(`/api/payroll/pay-runs/${payRunId}/process`, { headers, data: {} });
+    const processBody = (await assertFactoryResponse("processPayRun", processRes, [200])) as {
+      data?: { status?: string };
+      status?: string;
+    };
+    expect(["PROCESSED", "FUNDED", "COMPLETED"]).toContain(processBody?.data?.status ?? processBody?.status);
+
+    const stubsRes = await request.get(`/api/payroll/pay-stubs?payRunId=${payRunId}`, { headers });
+    const stubsBody = (await assertFactoryResponse("getPayStubs", stubsRes, [200])) as {
+      data?: unknown[];
+      items?: unknown[];
+    };
+    expect((stubsBody?.data ?? stubsBody?.items ?? []).length).toBeGreaterThan(0);
 
     await page.goto("/payroll/pay-stubs");
     await expect(page.getByText(/not found/i)).toHaveCount(0);
