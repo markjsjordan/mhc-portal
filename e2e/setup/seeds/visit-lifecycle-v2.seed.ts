@@ -1,4 +1,5 @@
 import { Database } from '../../../packages/core/src/db/connection.js';
+import { E2E_UUIDS } from '../../fixtures/test-data.js';
 
 /**
  * Seed Data: Visit Lifecycle E2E Fixture (E2E-4 wdvf3acxhq)
@@ -19,9 +20,11 @@ import { Database } from '../../../packages/core/src/db/connection.js';
  * (ee20) so both seed sets can coexist in the dev DB without collisions.
  */
 
-const ORG_ID = '00000000-0000-0000-0000-000000000001';
-const BRANCH_ID = '00000000-0000-0000-0000-000000000002';
-const ADMIN_USER_ID = '00000000-0000-0000-0000-000000000003';
+// Org/admin come from the E2E global setup (admin@folkcare.example); the branch
+// is owned by this seed because global setup does not create one.
+const ORG_ID = E2E_UUIDS.ORG_E2E;
+const BRANCH_ID = '00000000-ee40-4000-8000-0000000b0001';
+const ADMIN_USER_ID = E2E_UUIDS.ADMIN_USER;
 
 export const VL_FIXTURE_CLIENT_ID = '00000000-ee40-4000-8000-0000000c1001';
 export const VL_FIXTURE_CAREGIVER_VALID_ID = '00000000-ee40-4000-8000-0000000ca001';
@@ -34,6 +37,21 @@ export const FIXTURE_LOCATION_OUTSIDE = { latitude: 40.7128, longitude: -74.006,
 
 export async function seedDatabase(db: Database): Promise<void> {
   console.log('Seeding visit-lifecycle-v2 fixture...');
+
+  // ── Branch (FK target for clients/caregivers) ────────────────────────────
+  await db.query(
+    `INSERT INTO branches (
+      id, organization_id, name, code, address, status, timezone,
+      created_at, created_by, updated_at, updated_by, version
+    ) VALUES ($1, $2, 'E2E Lifecycle Branch', 'E2E-VL', $3, 'ACTIVE', 'America/Chicago', NOW(), $4, NOW(), $4, 1)
+    ON CONFLICT (id) DO NOTHING`,
+    [
+      BRANCH_ID,
+      ORG_ID,
+      JSON.stringify({ line1: '100 Congress Ave', city: 'Austin', state: 'TX', postalCode: '78701', country: 'USA' }),
+      ADMIN_USER_ID,
+    ]
+  );
 
   // ── Client ───────────────────────────────────────────────────────────────
   await db.query(
@@ -179,7 +197,7 @@ export async function seedDatabase(db: Database): Promise<void> {
       JSON.stringify([]),
       JSON.stringify({ monday: true, wednesday: true, friday: true }),
       JSON.stringify({ hourlyRate: 20.0, currency: 'USD' }),
-      'PENDING',
+      'PENDING_VERIFICATION',
       'ACTIVE',
       'America/Chicago',
       ADMIN_USER_ID,
