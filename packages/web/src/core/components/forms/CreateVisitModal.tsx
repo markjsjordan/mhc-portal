@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { VisitForm } from './VisitForm.js';
 import { useVisitApi } from '@/verticals/scheduling-visits/hooks/useVisits.js';
@@ -19,6 +20,7 @@ interface CreateVisitModalProps {
   preSelectedDate?: string;
   preSelectedStartTime?: string;
   preSelectedEndTime?: string;
+  preSelectedCaregiverId?: string;
   initialVisitType?: VisitType;
 }
 
@@ -29,15 +31,18 @@ export const CreateVisitModal: React.FC<CreateVisitModalProps> = ({
   preSelectedDate,
   preSelectedStartTime = '09:00',
   preSelectedEndTime = '10:00',
+  preSelectedCaregiverId,
   initialVisitType = 'REGULAR',
 }) => {
   const visitApi = useVisitApi();
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (data: CreateVisitPayload) => {
     setIsSubmitting(true);
     try {
       await visitApi.createVisit(data);
+      await queryClient.invalidateQueries({ queryKey: ['visits'] });
       toast.success('Visit created successfully');
       onSuccess?.();
       onClose();
@@ -60,6 +65,7 @@ export const CreateVisitModal: React.FC<CreateVisitModalProps> = ({
             initialDate={preSelectedDate}
             initialStartTime={preSelectedStartTime}
             initialEndTime={preSelectedEndTime}
+            initialCaregiverId={preSelectedCaregiverId}
             initialVisitType={initialVisitType}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}

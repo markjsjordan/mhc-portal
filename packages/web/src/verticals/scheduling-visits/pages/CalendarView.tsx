@@ -23,6 +23,7 @@ import {
   X,
   Calendar as CalendarIcon,
   Zap,
+  Plus,
 } from 'lucide-react';
 import { useCalendarVisits, useVisitApi, useCaregiverAvailability } from '../hooks/useVisits';
 import { useCaregivers } from '@/verticals/caregivers/hooks/useCaregivers';
@@ -1157,6 +1158,21 @@ export const CalendarView: React.FC = () => {
 
           {/* Action buttons (Min 44px touch targets) */}
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Primary CTA: Schedule New Individual Visit */}
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => {
+                setCreateVisitSlotInfo(null);
+                setIsCreateVisitModalOpen(true);
+              }}
+              className="min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-semibold flex items-center gap-2"
+              data-testid="calendar-create-visit-btn"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Schedule Visit</span>
+            </Button>
+
             {/* Toggle Left Rail (Mini Calendar & Filters) */}
             <Button
               variant={showSidebar ? 'secondary' : 'outline'}

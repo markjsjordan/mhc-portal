@@ -296,12 +296,15 @@ export default function ScheduleBuilderPage() {
 
   const handleCreateVisit = useCallback(async () => {
     if (!createModalData) return;
-    const endHour = String(parseInt(createModalData.startTime.split(':')[0] ?? '9') + createModalData.duration).padStart(2, '0');
-    const endTime = `${endHour}:00`;
+    const [startH, startM] = createModalData.startTime.split(':').map(Number);
+    const totalEndMinutes = Math.min((startH ?? 9) * 60 + (startM ?? 0) + createModalData.duration * 60, 23 * 60 + 59);
+    const endHour = String(Math.floor(totalEndMinutes / 60)).padStart(2, '0');
+    const endMin = String(totalEndMinutes % 60).padStart(2, '0');
+    const endTime = `${endHour}:${endMin}`;
     try {
       await visitApi.createVisit({
         clientId: createModalData.clientId,
-        caregiverId: createModalData.caregiverId,
+        caregiverId: createModalData.caregiverId || undefined,
         serviceTypeId: DEFAULT_SERVICE_TYPES[0]!.id,
         visitType: createModalData.visitType as import('@/verticals/scheduling-visits/types').VisitType,
         scheduledDate: createModalData.date,
@@ -867,6 +870,7 @@ export default function ScheduleBuilderPage() {
         <CreateAppointmentModal
           data={createModalData}
           clients={clients}
+          caregivers={caregivers}
           onClose={() => {
             setShowCreateModal(false);
             setCreateModalData(null);
@@ -1948,6 +1952,7 @@ interface CreateAppointmentModalProps {
     visitType: string;
   };
   clients: Array<{ id: string; firstName: string; lastName: string }>;
+  caregivers: Caregiver[];
   onClose: () => void;
   onSubmit: () => Promise<void>;
   onChange: (updates: Partial<{
@@ -1963,6 +1968,7 @@ interface CreateAppointmentModalProps {
 function CreateAppointmentModal({
   data,
   clients,
+  caregivers,
   onClose,
   onSubmit,
   onChange,
@@ -2010,6 +2016,26 @@ function CreateAppointmentModal({
               {clients.map(client => (
                 <SelectItem key={client.id} value={client.id}>
                   {client.firstName} {client.lastName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div style={styles.formGroup}>
+          <Label htmlFor="appointment-caregiver">Caregiver (Optional)</Label>
+          <Select
+            value={data.caregiverId || 'unassigned'}
+            onValueChange={(val) => onChange({ caregiverId: val === 'unassigned' ? undefined : val })}
+          >
+            <SelectTrigger id="appointment-caregiver">
+              <SelectValue placeholder="Unassigned" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
+              {caregivers.map(cg => (
+                <SelectItem key={cg.id} value={cg.id}>
+                  {cg.name}
                 </SelectItem>
               ))}
             </SelectContent>
