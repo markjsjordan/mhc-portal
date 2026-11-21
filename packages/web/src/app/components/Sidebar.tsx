@@ -244,6 +244,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isDesktopOpen
                   key={item.path}
                   id={id}
                   to={item.path}
+                  end={item.path === '/scheduling' || item.path === '/'}
                   onClick={handleNavClick}
                   className={({ isActive }) =>
                     cn(
