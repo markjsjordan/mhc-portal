@@ -66,12 +66,12 @@ export const MobileAgendaView: React.FC<MobileAgendaViewProps> = ({
           }
 
           let statusColor = caregiverColor;
-          if (visit.status === 'UNASSIGNED') {
-            statusColor = '#F59E0B';
-          } else if (visit.status === 'COMPLETED') {
+          if (visit.status === 'COMPLETED') {
             statusColor = '#10B981';
           } else if (visit.status === 'CANCELLED') {
             statusColor = '#EF4444';
+          } else if (visit.status === 'UNASSIGNED' || !visit.assignedCaregiverId) {
+            statusColor = '#F59E0B';
           }
 
           const startTime = visit.scheduledStartTime || '09:00';

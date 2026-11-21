@@ -26,6 +26,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { useCalendarVisits, useVisitApi, useCaregiverAvailability } from '../hooks/useVisits';
+import { isVisitUnassigned } from '../types';
 import { useCaregivers } from '@/verticals/caregivers/hooks/useCaregivers';
 import { useMyCaregiverId } from '@/verticals/caregivers/hooks/useMyCaregiverId';
 import { useAuth } from '@/core/hooks';
@@ -167,7 +168,7 @@ const computeVisitMetrics = (visits: Visit[]) => {
 
   for (const v of visits) {
     const statusStr = (v.status as string) || '';
-    if (v.status === 'UNASSIGNED' || !v.assignedCaregiverId) {
+    if (isVisitUnassigned(v)) {
       unassigned++;
     } else if (v.status === 'IN_PROGRESS') {
       inProgress++;
@@ -194,14 +195,23 @@ const filterCalendarVisits = (
   return visits.filter((visit: Visit) => {
     if (statusFilter) {
       if (statusFilter === 'UNASSIGNED') {
-        if (visit.status !== 'UNASSIGNED' && Boolean(visit.assignedCaregiverId)) return false;
+        if (!isVisitUnassigned(visit)) return false;
       } else if (statusFilter === 'NEEDS_REVIEW') {
         if ((visit.status as string) !== 'NEEDS_REVIEW' && !visit.requiresSupervision) return false;
       } else {
         if (visit.status !== statusFilter) return false;
       }
     } else if (selectedStatusFilterIds.length > 0) {
-      if (!selectedStatusFilterIds.includes(visit.status)) {
+      const matchesSelectedStatus = selectedStatusFilterIds.some((st) => {
+        if (st === 'UNASSIGNED') {
+          return isVisitUnassigned(visit);
+        }
+        if (st === 'NEEDS_REVIEW') {
+          return (visit.status as string) === 'NEEDS_REVIEW' || Boolean(visit.requiresSupervision);
+        }
+        return visit.status === st;
+      });
+      if (!matchesSelectedStatus) {
         return false;
       }
     }
@@ -245,7 +255,7 @@ const mapVisitsToEvents = (
     const statusStr = (visit.status as string) || '';
 
     let color = '#3B82F6';
-    if (visit.status === 'UNASSIGNED' || !visit.assignedCaregiverId) {
+    if (isVisitUnassigned(visit)) {
       color = '#F59E0B';
     } else if (visit.status === 'IN_PROGRESS') {
       color = '#06B6D4';
@@ -336,7 +346,7 @@ const CustomEvent: React.FC<CustomEventProps> = ({ event, densityMode }) => {
                   'Caregiver Assigned'}
             </div>
           )}
-          {event.resource.status === 'UNASSIGNED' && (
+          {isVisitUnassigned(event.resource) && (
             <div className="mt-2 pt-2 border-t border-gray-700 text-amber-400 font-medium">
               Needs Assignment
             </div>
@@ -500,7 +510,7 @@ const getEventStyle = (event: CalendarEvent) => ({
     color: '#FFFFFF',
     borderRadius: '4px',
     opacity: event.resource.status === 'CANCELLED' ? 0.6 : 1,
-    border: event.resource.status === 'UNASSIGNED' ? '2px dashed #F59E0B' : '1px solid',
+    border: isVisitUnassigned(event.resource) ? '2px dashed #F59E0B' : '1px solid',
   },
 });
 

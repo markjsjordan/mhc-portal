@@ -5,7 +5,7 @@
  * - Today's schedule with map/directions
  * - Pending tasks by client
  * - Training/credential expiration reminders
- * 
+ *
  * Error Recovery Features:
  * - Connection status monitoring with visual indicator
  * - Data freshness indicators showing "last updated" timestamps
@@ -13,7 +13,7 @@
  * - LocalStorage fallback for offline access to last known data
  * - Stale data warnings (>5 minutes old)
  * - Optimistic UI updates for check-in/check-out actions
- * 
+ *
  * Regulatory Context:
  * - Supports audit requirements by showing data freshness
  * - Critical for EVV compliance when connectivity is intermittent
@@ -22,9 +22,9 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, useIsMobile } from '@/core/hooks';
+import { useAuth, useIsMobile, useApiClient } from '@/core/hooks';
 import { useConnectionStatus } from '@/hooks';
-import { EmptyState, DemoBadge } from '@/core/components';
+import { EmptyState } from '@/core/components';
 import { Button } from '@/components/ui/button.js';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card.js';
 import { DataFreshness, StaleDataWarning } from '@/components/DataFreshness';
@@ -52,6 +52,9 @@ import {
   WifiOff,
 } from 'lucide-react';
 
+type VisitStatus = 'upcoming' | 'in-progress' | 'completed';
+type CredentialSeverity = 'critical' | 'warning' | 'info';
+
 interface VisitCardProps {
   clientName: string;
   visitType: string;
@@ -59,7 +62,7 @@ interface VisitCardProps {
   duration: string;
   address: string;
   clientPhone?: string;
-  status: 'upcoming' | 'in-progress' | 'completed';
+  status: VisitStatus;
   tasks: string[];
   onNavigate?: () => void;
   onCheckIn?: () => Promise<void>;
@@ -170,10 +173,12 @@ const VisitCard: React.FC<VisitCardProps> = ({
         </div>
 
         {/* Address */}
-        <div className="flex items-start gap-2 text-sm text-gray-700">
-          <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-          <span>{address}</span>
-        </div>
+        {address && (
+          <div className="flex items-start gap-2 text-sm text-gray-700">
+            <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <span>{address}</span>
+          </div>
+        )}
 
         {/* Client Phone (Mobile) */}
         {clientPhone && isMobile && onCall && (
@@ -274,8 +279,14 @@ const VisitCard: React.FC<VisitCardProps> = ({
 interface CredentialAlertProps {
   title: string;
   expiresIn: string;
-  severity: 'critical' | 'warning' | 'info';
+  severity: CredentialSeverity;
   onClick?: () => void;
+}
+
+function getExpirationLabel(expiresIn: string): string {
+  if (expiresIn === 'Expired') return 'Expired';
+  if (expiresIn === 'Today') return 'Expires today';
+  return `Expires in ${expiresIn}`;
 }
 
 const CredentialAlert: React.FC<CredentialAlertProps> = ({ title, expiresIn, severity, onClick }) => {
@@ -303,6 +314,7 @@ const CredentialAlert: React.FC<CredentialAlertProps> = ({ title, expiresIn, sev
   };
 
   const styles = getSeverityStyles();
+  const expirationLabel = getExpirationLabel(expiresIn);
 
   return (
     <div
@@ -313,7 +325,7 @@ const CredentialAlert: React.FC<CredentialAlertProps> = ({ title, expiresIn, sev
         <AlertCircle className={`h-5 w-5 ${styles.icon} mt-0.5`} />
         <div className="flex-1">
           <h4 className="font-semibold text-gray-900 text-sm">{title}</h4>
-          <p className="text-sm text-gray-600 mt-0.5">Expires in {expiresIn}</p>
+          <p className="text-sm text-gray-600 mt-0.5">{expirationLabel}</p>
         </div>
       </div>
     </div>
@@ -322,20 +334,22 @@ const CredentialAlert: React.FC<CredentialAlertProps> = ({ title, expiresIn, sev
 
 // Types for dashboard data
 interface VisitData {
+  id: string;
+  evvRecordId?: string;
   clientName: string;
   visitType: string;
   time: string;
   duration: string;
   address: string;
   clientPhone?: string;
-  status: 'upcoming' | 'in-progress' | 'completed';
+  status: VisitStatus;
   tasks: string[];
 }
 
 interface CredentialData {
   title: string;
   expiresIn: string;
-  severity: 'critical' | 'warning' | 'info';
+  severity: CredentialSeverity;
 }
 
 interface DashboardStats {
@@ -345,16 +359,256 @@ interface DashboardStats {
   activeClientsCount: number;
 }
 
+interface ApiVisitAddress {
+  line1?: string;
+  street1?: string;
+  street?: string;
+  line2?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  zipCode?: string;
+}
+
+interface ApiVisit {
+  id: string;
+  evvRecordId?: string;
+  clientId?: string;
+  clientFirstName?: string;
+  clientLastName?: string;
+  serviceTypeName?: string;
+  visitType?: string;
+  scheduledDate?: string;
+  scheduledStartTime?: string;
+  scheduledEndTime?: string;
+  scheduledDuration?: number;
+  actualDuration?: number;
+  billableHours?: number | string;
+  address?: ApiVisitAddress | string;
+  clientPhone?: string | { number?: string };
+  status?: string;
+  tasks?: Array<string | { name?: string; title?: string }>;
+}
+
+interface ApiTaskItem {
+  id?: string;
+  visitId?: string;
+  clientId?: string;
+  name?: string;
+  title?: string;
+}
+
+interface ApiCredentialItem {
+  name?: string;
+  title?: string;
+  type?: string;
+  credentialType?: string;
+  expirationDate?: string;
+  expiresAt?: string;
+  status?: string;
+}
+
+interface ApiCaregiverProfile {
+  id?: string;
+  credentials?: ApiCredentialItem[];
+  training?: ApiCredentialItem[];
+}
+
+interface ApiEvvRecord {
+  id?: string;
+  evvRecordId?: string;
+  visitId?: string;
+  recordStatus?: string;
+}
+
+const TIME_PATTERN = /^(\d{1,2}):(\d{2})/;
+
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getWeekDateRange(date: Date): { weekStartStr: string; weekEndStr: string } {
+  const dayOfWeek = date.getDay();
+  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate() + diffToMonday);
+  const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+  return {
+    weekStartStr: formatLocalDate(monday),
+    weekEndStr: formatLocalDate(sunday),
+  };
+}
+
+function parseTimeToMinutes(time?: string): number | null {
+  if (!time) return null;
+  const match = TIME_PATTERN.exec(time);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+  return hours * 60 + minutes;
+}
+
+function formatVisitTime(time?: string): string {
+  if (!time) return '';
+  const match = TIME_PATTERN.exec(time);
+  if (!match) return time;
+  const hours24 = Number(match[1]);
+  const minutes = match[2];
+  if (Number.isNaN(hours24)) return time;
+  const period = hours24 >= 12 ? 'PM' : 'AM';
+  const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+  return `${hours12}:${minutes} ${period}`;
+}
+
+function getVisitDurationMinutes(visit: ApiVisit): number {
+  if (typeof visit.scheduledDuration === 'number' && visit.scheduledDuration > 0) {
+    return visit.scheduledDuration;
+  }
+  const start = parseTimeToMinutes(visit.scheduledStartTime);
+  const end = parseTimeToMinutes(visit.scheduledEndTime);
+  if (start !== null && end !== null && end > start) {
+    return end - start;
+  }
+  return 0;
+}
+
+function formatDuration(minutes: number): string {
+  if (minutes <= 0) return '0 min';
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.round((minutes / 60) * 10) / 10;
+  return hours === 1 ? '1 hour' : `${hours} hours`;
+}
+
+function formatVisitAddress(address?: ApiVisitAddress | string): string {
+  if (!address) return '';
+  if (typeof address === 'string') return address;
+  const street = address.line1 ?? address.street1 ?? address.street ?? '';
+  const line2 = address.line2 ?? '';
+  const cityState = [address.city, address.state].filter(Boolean).join(', ');
+  const postal = address.postalCode ?? address.zipCode ?? '';
+  const cityStateZip = [cityState, postal].filter(Boolean).join(' ');
+  return [street, line2, cityStateZip].filter(Boolean).join(', ');
+}
+
+function mapVisitStatus(status?: string): VisitStatus {
+  switch (status) {
+    case 'COMPLETED':
+      return 'completed';
+    case 'IN_PROGRESS':
+    case 'ARRIVED':
+    case 'PAUSED':
+      return 'in-progress';
+    default:
+      return 'upcoming';
+  }
+}
+
+function formatExpiresIn(isExpiredStatus: boolean, daysUntilExpiration: number): string {
+  if (isExpiredStatus || daysUntilExpiration < 0) return 'Expired';
+  if (daysUntilExpiration === 0) return 'Today';
+  if (daysUntilExpiration === 1) return '1 day';
+  return `${daysUntilExpiration} days`;
+}
+
+function mapCredentialsFromProfile(caregiver: ApiCaregiverProfile): CredentialData[] {
+  const combinedItems: ApiCredentialItem[] = [
+    ...(Array.isArray(caregiver.credentials) ? caregiver.credentials : []),
+    ...(Array.isArray(caregiver.training) ? caregiver.training : []),
+  ];
+
+  const nowMs = Date.now();
+  const liveCredentials: CredentialData[] = [];
+
+  for (const item of combinedItems) {
+    const expDateStr = item.expirationDate ?? item.expiresAt;
+    const isExpiredStatus = item.status === 'EXPIRED';
+    if (!expDateStr && !isExpiredStatus) continue;
+
+    let daysUntilExpiration = -1;
+    if (expDateStr) {
+      const expMs = new Date(expDateStr).getTime();
+      if (Number.isNaN(expMs)) continue;
+      daysUntilExpiration = Math.ceil((expMs - nowMs) / (1000 * 60 * 60 * 24));
+    }
+
+    if (!isExpiredStatus && daysUntilExpiration > 90) continue;
+
+    let severity: CredentialSeverity = 'info';
+    if (isExpiredStatus || daysUntilExpiration <= 14) {
+      severity = 'critical';
+    } else if (daysUntilExpiration <= 60) {
+      severity = 'warning';
+    }
+
+    liveCredentials.push({
+      title: item.title ?? item.name ?? item.credentialType ?? item.type ?? 'Credential',
+      expiresIn: formatExpiresIn(isExpiredStatus, daysUntilExpiration),
+      severity,
+    });
+  }
+
+  return liveCredentials;
+}
+
+function isNotFoundError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const err = error as { status?: number; statusCode?: number; response?: { status?: number } };
+  return err.status === 404 || err.statusCode === 404 || err.response?.status === 404;
+}
+
+function getDeviceInfo(): { userAgent: string } {
+  return {
+    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+  };
+}
+
+async function getCurrentGeolocation(): Promise<
+  { latitude: number; longitude: number; accuracy: number } | undefined
+> {
+  const geo =
+    typeof navigator !== 'undefined'
+      ? (navigator.geolocation as Geolocation | undefined)
+      : undefined;
+  if (!geo || typeof geo.getCurrentPosition !== 'function') {
+    return;
+  }
+  return new Promise((resolve) => {
+    geo.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        });
+      },
+      () => {
+        // eslint-disable-next-line unicorn/no-useless-undefined -- TypeScript requires explicit undefined for Promise<T | undefined>
+        resolve(undefined);
+      },
+      { enableHighAccuracy: true, timeout: 3000, maximumAge: 60000 }
+    );
+  });
+}
+
 export const CaregiverDashboard: React.FC = () => {
   const { user } = useAuth();
+  const apiClient = useApiClient();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const connectionStatus = useConnectionStatus();
 
-  // State for data with localStorage fallback
-  const [visits, setVisits] = useState<VisitData[]>(() =>
-    getLocalStorage(CACHE_KEYS.CAREGIVER_DASHBOARD_VISITS, [])
-  );
+  const [caregiverId, setCaregiverId] = useState<string | null>(null);
+
+  // State for data with localStorage fallback (discard legacy cached mock entries lacking id)
+  const [visits, setVisits] = useState<VisitData[]>(() => {
+    const cached = getLocalStorage<VisitData[]>(CACHE_KEYS.CAREGIVER_DASHBOARD_VISITS, []);
+    return Array.isArray(cached)
+      ? cached.filter((v) => typeof v.id === 'string' && v.id.length > 0)
+      : [];
+  });
   const [credentials, setCredentials] = useState<CredentialData[]>(() =>
     getLocalStorage(CACHE_KEYS.CAREGIVER_DASHBOARD_CREDENTIALS, [])
   );
@@ -387,58 +641,71 @@ export const CaregiverDashboard: React.FC = () => {
   const fetchVisits = useCallback(async () => {
     setIsRefreshingVisits(true);
     try {
-      // API integration pending - using mock data for demonstration
-      // Future: const response = await fetch('/api/caregiver/visits/today');
-      // Future: const data = await response.json();
-      
-      // Mock data for now
-      const mockVisits: VisitData[] = [
-        {
-          clientName: 'John Smith',
-          visitType: 'Personal Care',
-          time: '8:00 AM',
-          duration: '2 hours',
-          address: '123 Main St, Austin, TX 78701',
-          clientPhone: '(512) 555-0101',
-          status: 'upcoming',
-          tasks: [
-            'Morning routine assistance',
-            'Medication reminder',
-            'Light housekeeping',
-          ],
-        },
-        {
-          clientName: 'Mary Johnson',
-          visitType: 'Medication Assistance',
-          time: '10:30 AM',
-          duration: '1 hour',
-          address: '456 Oak Ave, Austin, TX 78702',
-          clientPhone: '(512) 555-0102',
-          status: 'upcoming',
-          tasks: [
-            'Medication administration',
-            'Vital signs check',
-            'Document observations',
-          ],
-        },
-        {
-          clientName: 'Robert Davis',
-          visitType: 'Companionship',
-          time: '2:00 PM',
-          duration: '3 hours',
-          address: '789 Elm St, Austin, TX 78703',
-          clientPhone: '(512) 555-0103',
-          status: 'upcoming',
-          tasks: [
-            'Social engagement',
-            'Light exercise/walk',
-            'Meal preparation',
-          ],
-        },
-      ];
+      const todayStr = formatLocalDate(new Date());
+      const [visitsRes, tasksRes] = await Promise.all([
+        apiClient.get<{ success?: boolean; data?: ApiVisit[] }>(
+          `/api/visits/my-visits?start_date=${todayStr}&end_date=${todayStr}`
+        ),
+        apiClient
+          .get<{ items?: ApiTaskItem[] }>(
+            `/api/tasks?scheduledDateFrom=${todayStr}&scheduledDateTo=${todayStr}`
+          )
+          .catch(() => ({ items: [] as ApiTaskItem[] })),
+      ]);
 
-      setVisits(mockVisits);
-      setLocalStorage(CACHE_KEYS.CAREGIVER_DASHBOARD_VISITS, mockVisits, CACHE_EXPIRATION.FIFTEEN_MINUTES);
+      const rawVisits = Array.isArray(visitsRes.data) ? visitsRes.data : [];
+      const taskItems = Array.isArray(tasksRes.items) ? tasksRes.items : [];
+
+      const liveVisits: VisitData[] = rawVisits
+        .filter((v) => v.status !== 'CANCELLED' && v.status !== 'REJECTED')
+        .map((visit) => {
+          const clientName =
+            [visit.clientFirstName, visit.clientLastName].filter(Boolean).join(' ').trim() ||
+            'Client';
+          const visitType = visit.serviceTypeName ?? visit.visitType ?? 'Care Visit';
+          const time = formatVisitTime(visit.scheduledStartTime);
+          const duration = formatDuration(getVisitDurationMinutes(visit));
+          const address = formatVisitAddress(visit.address);
+          const clientPhone =
+            typeof visit.clientPhone === 'string'
+              ? visit.clientPhone
+              : visit.clientPhone?.number;
+
+          const matchedTasks = taskItems
+            .filter(
+              (task) =>
+                task.visitId === visit.id ||
+                (!task.visitId && Boolean(visit.clientId) && task.clientId === visit.clientId)
+            )
+            .map((task) => task.title ?? task.name ?? '')
+            .filter(Boolean);
+
+          const embeddedTasks = Array.isArray(visit.tasks)
+            ? visit.tasks
+                .map((t) => (typeof t === 'string' ? t : t.title ?? t.name ?? ''))
+                .filter(Boolean)
+            : [];
+
+          return {
+            id: visit.id,
+            evvRecordId: visit.evvRecordId,
+            clientName,
+            visitType,
+            time,
+            duration,
+            address,
+            clientPhone,
+            status: mapVisitStatus(visit.status),
+            tasks: matchedTasks.length > 0 ? matchedTasks : embeddedTasks,
+          };
+        });
+
+      setVisits(liveVisits);
+      setLocalStorage(
+        CACHE_KEYS.CAREGIVER_DASHBOARD_VISITS,
+        liveVisits,
+        CACHE_EXPIRATION.FIFTEEN_MINUTES
+      );
       setVisitsLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching visits:', error);
@@ -446,57 +713,107 @@ export const CaregiverDashboard: React.FC = () => {
     } finally {
       setIsRefreshingVisits(false);
     }
-  }, []);
+  }, [apiClient]);
 
   // Fetch credentials data
   const fetchCredentials = useCallback(async () => {
     setIsRefreshingCredentials(true);
     try {
-      // API integration pending - using mock data for demonstration
-      const mockCredentials: CredentialData[] = [
-        {
-          title: 'CPR Certification',
-          expiresIn: '5 days',
-          severity: 'critical',
-        },
-        {
-          title: 'First Aid Certificate',
-          expiresIn: '45 days',
-          severity: 'warning',
-        },
-      ];
+      const caregiver = await apiClient.get<ApiCaregiverProfile>('/api/caregivers/me');
+      if (caregiver.id) {
+        setCaregiverId(caregiver.id);
+      }
 
-      setCredentials(mockCredentials);
-      setLocalStorage(CACHE_KEYS.CAREGIVER_DASHBOARD_CREDENTIALS, mockCredentials, CACHE_EXPIRATION.ONE_HOUR);
+      const liveCredentials = mapCredentialsFromProfile(caregiver);
+
+      setCredentials(liveCredentials);
+      setLocalStorage(
+        CACHE_KEYS.CAREGIVER_DASHBOARD_CREDENTIALS,
+        liveCredentials,
+        CACHE_EXPIRATION.ONE_HOUR
+      );
       setCredentialsLastUpdated(new Date());
     } catch (error) {
-      console.error('Error fetching credentials:', error);
+      if (isNotFoundError(error)) {
+        setCredentials([]);
+        setLocalStorage(
+          CACHE_KEYS.CAREGIVER_DASHBOARD_CREDENTIALS,
+          [],
+          CACHE_EXPIRATION.ONE_HOUR
+        );
+        setCredentialsLastUpdated(new Date());
+      } else {
+        console.error('Error fetching credentials:', error);
+      }
     } finally {
       setIsRefreshingCredentials(false);
     }
-  }, []);
+  }, [apiClient]);
 
   // Fetch stats data
   const fetchStats = useCallback(async () => {
     setIsRefreshingStats(true);
     try {
-      // API integration pending - using mock data for demonstration
-      const mockStats: DashboardStats = {
-        todayVisitsCount: 3,
-        todayHoursScheduled: 6,
-        weekHoursWorked: 32.5,
-        activeClientsCount: 8,
+      const now = new Date();
+      const todayStr = formatLocalDate(now);
+      const { weekStartStr, weekEndStr } = getWeekDateRange(now);
+
+      const response = await apiClient.get<{ success?: boolean; data?: ApiVisit[] }>(
+        `/api/visits/my-visits?start_date=${weekStartStr}&end_date=${weekEndStr}`
+      );
+      const rawVisits = Array.isArray(response.data) ? response.data : [];
+      const activeVisits = rawVisits.filter(
+        (v) => v.status !== 'CANCELLED' && v.status !== 'REJECTED'
+      );
+
+      const todayVisits = activeVisits.filter(
+        (v) => String(v.scheduledDate ?? '').slice(0, 10) === todayStr
+      );
+
+      const todayMinutes = todayVisits.reduce(
+        (sum, v) => sum + getVisitDurationMinutes(v),
+        0
+      );
+      const todayHoursScheduled = Math.round((todayMinutes / 60) * 10) / 10;
+
+      const weekHoursRaw = activeVisits.reduce((sum, v) => {
+        if (typeof v.actualDuration === 'number' && v.actualDuration > 0) {
+          return sum + v.actualDuration / 60;
+        }
+        if (v.billableHours !== undefined && Number(v.billableHours) > 0) {
+          return sum + Number(v.billableHours);
+        }
+        if (v.status === 'COMPLETED') {
+          return sum + getVisitDurationMinutes(v) / 60;
+        }
+        return sum;
+      }, 0);
+      const weekHoursWorked = Math.round(weekHoursRaw * 10) / 10;
+
+      const activeClientsCount = new Set(
+        activeVisits.map((v) => v.clientId).filter(Boolean)
+      ).size;
+
+      const liveStats: DashboardStats = {
+        todayVisitsCount: todayVisits.length,
+        todayHoursScheduled,
+        weekHoursWorked,
+        activeClientsCount,
       };
 
-      setStats(mockStats);
-      setLocalStorage(CACHE_KEYS.CAREGIVER_DASHBOARD_STATS, mockStats, CACHE_EXPIRATION.FIFTEEN_MINUTES);
+      setStats(liveStats);
+      setLocalStorage(
+        CACHE_KEYS.CAREGIVER_DASHBOARD_STATS,
+        liveStats,
+        CACHE_EXPIRATION.FIFTEEN_MINUTES
+      );
       setStatsLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching stats:', error);
     } finally {
       setIsRefreshingStats(false);
     }
-  }, []);
+  }, [apiClient]);
 
   // Refresh all data
   const refreshAll = useCallback(async () => {
@@ -521,11 +838,11 @@ export const CaregiverDashboard: React.FC = () => {
   }, [navigate]);
 
   const handleNavigateToTraining = useCallback(() => {
-    if (user?.id) {
-      Promise.resolve(navigate(`/caregivers/${user.id}/training`)).catch(() => {});
+    const targetId = caregiverId ?? user?.id;
+    if (targetId) {
+      Promise.resolve(navigate(`/caregivers/${targetId}/training`)).catch(() => {});
     }
-    // else: no user id available yet -- button left as a no-op until auth resolves
-  }, [navigate, user?.id]);
+  }, [navigate, caregiverId, user?.id]);
 
   // Initial data load
   useEffect(() => {
@@ -545,15 +862,32 @@ export const CaregiverDashboard: React.FC = () => {
     }
 
     try {
-      // API integration pending - mock implementation
-      // Future: await fetch('/api/caregiver/visits/check-in', {
-      //   method: 'POST',
-      //   body: JSON.stringify({ visitId: visit.id }),
-      // });
-      
-      // Update cache
-      setLocalStorage(CACHE_KEYS.CAREGIVER_DASHBOARD_VISITS, updatedVisits, CACHE_EXPIRATION.FIFTEEN_MINUTES);
+      const location = await getCurrentGeolocation();
+      const response = await apiClient.post<{
+        evvRecordId?: string;
+        id?: string;
+        data?: { evvRecordId?: string; id?: string };
+      }>('/api/evv/clock-in', {
+        visitId: visit.id,
+        caregiverId: caregiverId ?? user?.id,
+        location,
+        deviceInfo: getDeviceInfo(),
+      });
+
+      const returnedEvvId =
+        response.evvRecordId ?? response.id ?? response.data?.evvRecordId ?? response.data?.id;
+
+      const syncedVisits = updatedVisits.map((item, idx) =>
+        idx === visitIndex && returnedEvvId ? { ...item, evvRecordId: returnedEvvId } : item
+      );
+      setVisits(syncedVisits);
+      setLocalStorage(
+        CACHE_KEYS.CAREGIVER_DASHBOARD_VISITS,
+        syncedVisits,
+        CACHE_EXPIRATION.FIFTEEN_MINUTES
+      );
       setVisitsLastUpdated(new Date());
+      void fetchStats();
     } catch (error) {
       console.error('Error checking in:', error);
       // Revert on error
@@ -573,15 +907,44 @@ export const CaregiverDashboard: React.FC = () => {
     }
 
     try {
-      // API integration pending - mock implementation
-      // Future: await fetch('/api/caregiver/visits/check-out', {
-      //   method: 'POST',
-      //   body: JSON.stringify({ visitId: visit.id }),
-      // });
-      
-      // Update cache
-      setLocalStorage(CACHE_KEYS.CAREGIVER_DASHBOARD_VISITS, updatedVisits, CACHE_EXPIRATION.FIFTEEN_MINUTES);
+      let evvRecordId = visit.evvRecordId;
+      const resolvedCaregiverId = caregiverId ?? user?.id;
+
+      if (!evvRecordId && resolvedCaregiverId) {
+        const evvRes = await apiClient.get<{ data?: ApiEvvRecord[]; records?: ApiEvvRecord[] }>(
+          `/api/evv?caregiverId=${resolvedCaregiverId}`
+        );
+        let records: ApiEvvRecord[] = [];
+        if (Array.isArray(evvRes.data)) {
+          records = evvRes.data;
+        } else if (Array.isArray(evvRes.records)) {
+          records = evvRes.records;
+        }
+        const pending = records.find(
+          (r) => r.visitId === visit.id && r.recordStatus === 'PENDING'
+        );
+        evvRecordId = pending?.evvRecordId ?? pending?.id;
+      }
+
+      if (!evvRecordId) {
+        throw new Error('Missing EVV record ID for clock-out');
+      }
+
+      const location = await getCurrentGeolocation();
+      await apiClient.post(`/api/evv/${evvRecordId}/clock-out`, {
+        visitId: visit.id,
+        caregiverId: resolvedCaregiverId,
+        location,
+        deviceInfo: getDeviceInfo(),
+      });
+
+      setLocalStorage(
+        CACHE_KEYS.CAREGIVER_DASHBOARD_VISITS,
+        updatedVisits,
+        CACHE_EXPIRATION.FIFTEEN_MINUTES
+      );
       setVisitsLastUpdated(new Date());
+      void fetchStats();
     } catch (error) {
       console.error('Error checking out:', error);
       // Revert on error
@@ -707,10 +1070,6 @@ export const CaregiverDashboard: React.FC = () => {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <h2 className={`${isMobile ? 'text-xl' : 'text-lg'} font-semibold text-gray-900`}>Today's Schedule</h2>
-            <DemoBadge size="sm" />
-          </div>
-          <div className="flex items-center gap-3">
-            <DemoBadge size="sm" />
           </div>
           <div className="flex items-center gap-3">
             <DataFreshness
@@ -732,13 +1091,30 @@ export const CaregiverDashboard: React.FC = () => {
           {visits.length > 0 ? (
             visits.map((visit, index) => (
               <VisitCard
-                key={index}
+                key={visit.id}
                 {...visit}
-                onNavigate={() => window.open(`https://maps.google.com/?q=${encodeURIComponent(visit.address)}`, '_blank', 'noopener,noreferrer')}
+                onNavigate={
+                  visit.address
+                    ? () =>
+                        window.open(
+                          `https://maps.google.com/?q=${encodeURIComponent(visit.address)}`,
+                          '_blank',
+                          'noopener,noreferrer'
+                        )
+                    : undefined
+                }
                 onCheckIn={async () => handleCheckIn(index)}
                 onCheckOut={async () => handleCheckOut(index)}
-                onViewDetails={() => { Promise.resolve(navigate('/scheduling/calendar')).catch(() => {}); }}
-                onCall={visit.clientPhone ? () => { window.location.href = `tel:${visit.clientPhone ?? ''}`; } : undefined}
+                onViewDetails={() => {
+                  Promise.resolve(navigate(`/visits/${visit.id}`)).catch(() => {});
+                }}
+                onCall={
+                  visit.clientPhone
+                    ? () => {
+                        window.location.href = `tel:${visit.clientPhone ?? ''}`;
+                      }
+                    : undefined
+                }
               />
             ))
           ) : (

@@ -8,6 +8,7 @@ export interface SummaryCardProps {
   subtitle?: string;
   onClick?: () => void;
   isActive?: boolean;
+  dataTestId?: string;
 }
 
 export const SummaryCard: React.FC<SummaryCardProps> = ({
@@ -18,6 +19,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
   subtitle,
   onClick,
   isActive = false,
+  dataTestId,
 }) => {
   const colorStyles = {
     blue: {
@@ -56,6 +58,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
     <div
       role="button"
       tabIndex={0}
+      data-testid={dataTestId}
       onClick={onClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
