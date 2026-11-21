@@ -65,12 +65,12 @@ export function CardHeader({
   className,
 }: CardHeaderProps): React.ReactElement {
   return (
-    <div className={cn('flex items-start justify-between', className)}>
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+    <div className={cn('flex flex-wrap items-center justify-between gap-4 sm:flex-nowrap', className)}>
+      <div className="min-w-0">
+        <h3 className="text-lg font-semibold text-gray-900 whitespace-nowrap">{title}</h3>
         {subtitle && <p className="mt-1 text-sm text-gray-600">{subtitle}</p>}
       </div>
-      {action && <div>{action}</div>}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }

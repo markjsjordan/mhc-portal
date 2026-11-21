@@ -1039,13 +1039,13 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
           title="Team Members"
           subtitle="Manage your organization's team"
           action={
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               <Label htmlFor="team-status-filter" className="sr-only">Filter by status</Label>
               <NativeSelect
                 id="team-status-filter"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE')}
-                className="h-9 w-auto"
+                className="h-9 w-auto shrink-0"
               >
                 <option value="ACTIVE">Active</option>
                 <option value="INACTIVE">Inactive</option>
@@ -1053,6 +1053,7 @@ function TeamSettings({ organizationId, onSuccess, onError }: TeamSettingsProps)
               </NativeSelect>
               <Button
                 size="sm"
+                className="shrink-0 whitespace-nowrap"
                 onClick={() => setShowInviteModal(true)}
               >
                 <UserPlus className="h-4 w-4 mr-2" />
