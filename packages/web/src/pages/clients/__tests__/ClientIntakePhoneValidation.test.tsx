@@ -12,10 +12,6 @@ vi.mock('@/core/hooks', () => ({
   }),
 }));
 
-vi.mock('@/verticals/caregivers/hooks', () => ({
-  useCaregivers: () => ({ data: { items: [] } }),
-}));
-
 vi.mock('@/verticals/client-demographics/hooks', () => ({
   useCreateClient: () => ({ mutateAsync: vi.fn() }),
   useUpdateClient: () => ({ mutateAsync: vi.fn() }),

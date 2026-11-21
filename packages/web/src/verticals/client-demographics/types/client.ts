@@ -103,15 +103,6 @@ export interface ClientVisitSchedule {
   visitSchedule?: Array<{ dayOfWeek: number; time: string; duration: number }>;
 }
 
-export interface ClientCaregiverAssignment {
-  primaryCaregiver?: string;
-  backupCaregivers?: string[];
-  preferences?: {
-    gender?: 'no-preference' | 'female' | 'male';
-    language?: string[];
-  };
-}
-
 export interface Client {
   id: string;
   organizationId: string;
@@ -140,7 +131,6 @@ export interface Client {
   assessmentData?: ClientAssessmentData;
   carePlanSummary?: ClientCarePlanSummary;
   visitSchedule?: ClientVisitSchedule;
-  caregiverAssignment?: ClientCaregiverAssignment;
   createdAt: string;
   updatedAt: string;
 }
@@ -166,7 +156,6 @@ export interface CreateClientInput {
   assessmentData?: ClientAssessmentData;
   carePlanSummary?: ClientCarePlanSummary;
   visitSchedule?: ClientVisitSchedule;
-  caregiverAssignment?: ClientCaregiverAssignment;
 }
 
 export interface UpdateClientInput {
@@ -189,7 +178,6 @@ export interface UpdateClientInput {
   assessmentData?: ClientAssessmentData;
   carePlanSummary?: ClientCarePlanSummary;
   visitSchedule?: ClientVisitSchedule;
-  caregiverAssignment?: ClientCaregiverAssignment;
 }
 
 export interface ClientSearchFilters {

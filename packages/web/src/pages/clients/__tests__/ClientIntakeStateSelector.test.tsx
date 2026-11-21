@@ -16,17 +16,6 @@ vi.mock('@/verticals/client-demographics/hooks', () => ({
   useBranches: () => ({ data: [{ id: 'branch-1', name: 'Main Branch', code: 'MB' }] }),
 }));
 
-vi.mock('@/verticals/caregivers/hooks', () => ({
-  useCaregivers: () => ({
-    data: {
-      items: [
-        { id: 'cg-1', firstName: 'Maria', lastName: 'Garcia', role: 'Personal Care Aide' },
-        { id: 'cg-2', firstName: 'James', lastName: 'Wilson', role: 'Home Health Aide' },
-      ],
-    },
-  }),
-}));
-
 const USPS_50 = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'];
 
 describe('ClientIntakeWorkflow - Step 1 State selector (50 U.S. states)', () => {

@@ -275,7 +275,6 @@ export interface Client extends Entity, SoftDeletable {
   assessmentData?: ClientAssessmentData;
   carePlanSummary?: ClientCarePlanSummary;
   visitSchedule?: ClientVisitSchedule;
-  caregiverAssignment?: ClientCaregiverAssignment;
 
   // Risk and safety
   riskFlags: RiskFlag[];
@@ -561,15 +560,6 @@ export interface ClientVisitSchedule {
   visitSchedule?: Array<{ dayOfWeek: number; time: string; duration: number }>;
 }
 
-export interface ClientCaregiverAssignment {
-  primaryCaregiver?: string;
-  backupCaregivers?: string[];
-  preferences?: {
-    gender?: 'no-preference' | 'female' | 'male';
-    language?: string[];
-  };
-}
-
 /**
  * Client creation input (subset of full Client)
  */
@@ -596,7 +586,6 @@ export interface CreateClientInput {
   assessmentData?: ClientAssessmentData;
   carePlanSummary?: ClientCarePlanSummary;
   visitSchedule?: ClientVisitSchedule;
-  caregiverAssignment?: ClientCaregiverAssignment;
 }
 
 /**
@@ -625,7 +614,6 @@ export interface UpdateClientInput {
   assessmentData?: ClientAssessmentData;
   carePlanSummary?: ClientCarePlanSummary;
   visitSchedule?: ClientVisitSchedule;
-  caregiverAssignment?: ClientCaregiverAssignment;
 }
 
 /**
@@ -644,7 +632,6 @@ export interface ClientSearchFilters {
   status?: ClientStatus[];
   programId?: UUID;
   serviceTypeId?: UUID; // Filter by service type from service_patterns
-  assignedCaregiver?: UUID;
   coordinatorId?: UUID; // Filter by assigned care coordinator
   riskType?: RiskType[];
   minAge?: number;

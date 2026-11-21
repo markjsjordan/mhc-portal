@@ -146,11 +146,6 @@ describe('mapClientToIntakeData', () => {
           scheduleStartDate: '2026-11-20',
           visitSchedule: [{ dayOfWeek: 1, time: '09:00', duration: 2 }],
         },
-        caregiverAssignment: {
-          primaryCaregiver: 'cg-1',
-          backupCaregivers: ['cg-2'],
-          preferences: { gender: 'female', language: ['English', 'Spanish'] },
-        },
       })
     );
 
@@ -179,8 +174,5 @@ describe('mapClientToIntakeData', () => {
     expect(data.visitFrequency).toBe('3xweek');
     expect(data.scheduleStartDate).toBe('2026-11-20');
     expect(data.visitSchedule).toEqual([{ dayOfWeek: 1, time: '09:00', duration: 2 }]);
-    expect(data.primaryCaregiver).toBe('cg-1');
-    expect(data.backupCaregivers).toEqual(['cg-2']);
-    expect(data.preferences).toEqual({ gender: 'female', language: ['English', 'Spanish'] });
   });
 });

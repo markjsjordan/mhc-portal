@@ -16,10 +16,6 @@ vi.mock('@/core/hooks', () => ({
   }),
 }));
 
-vi.mock('@/verticals/caregivers/hooks', () => ({
-  useCaregivers: () => ({ data: { items: [] } }),
-}));
-
 vi.mock('@/verticals/client-demographics/hooks', () => ({
   useCreateClient: () => ({ mutateAsync: vi.fn() }),
   useUpdateClient: () => ({ mutateAsync: updateMutateAsync }),
@@ -70,7 +66,7 @@ function openEditAndSave(client: Client) {
       />
     </BrowserRouter>
   );
-  for (let i = 0; i < 6; i += 1) {
+  for (let i = 0; i < 5; i += 1) {
     fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
   }
   fireEvent.click(screen.getByRole('button', { name: /Submit & Create Client/i }));

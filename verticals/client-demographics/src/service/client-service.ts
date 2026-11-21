@@ -166,7 +166,6 @@ export class ClientService {
     if (input.assessmentData !== undefined) client.assessmentData = input.assessmentData;
     if (input.carePlanSummary !== undefined) client.carePlanSummary = input.carePlanSummary;
     if (input.visitSchedule !== undefined) client.visitSchedule = input.visitSchedule;
-    if (input.caregiverAssignment !== undefined) client.caregiverAssignment = input.caregiverAssignment;
 
     // Create in database
     const created = await this.repository.create(client, context);
