@@ -71,6 +71,60 @@ Goal: get preview building and let the owner log in to preview as markjsjordan@g
 - Billing lifecycle tests skip on a clean DB (no seeded invoices); login is
   proven, the lifecycle itself is not yet validated end to end.
 
+## E2E-4 (wdvf3acxhq): Rebuild visit lifecycle on current seed (2026-11-21)
+
+**Branch:** `fix/wdvf3acxhq-visit-lifecycle-e2e-v2`
+
+### What was done
+
+- **New seed:** `e2e/setup/seeds/visit-lifecycle-v2.seed.ts` — creates 1 client
+  (Austin TX, geocoded for geofence) + 2 caregivers (one CLEARED, one PENDING/no
+  background_check). Seeds with `ON CONFLICT DO UPDATE` so it is idempotent.
+  IDs use prefix `ee40` (distinct from `ee20` used by evv-clock-persistence).
+- **Seed runner:** `scripts/run-visit-lifecycle-seed.ts` — one-off script that
+  connects to `DATABASE_URL`, runs the seed, and exits cleanly.
+- **New spec:** `e2e/tests/visit-lifecycle.spec.ts` — single `test.describe` tagged
+  `@full` (not `@smoke-eligible` because a multi-step journey with an external
+  Postgres DB is unlikely to stay under 90 s):
+  1. Positive full journey: POST schedule → PUT assign → POST clock-in (inside
+     geofence) → POST clock-out → GET EVV (verify 6 Cures Act elements) →
+     GET visit (status=COMPLETED, billable flag checked if present).
+  2. N1: Clock-in with NYC coordinates — asserts EVV verification.passed=false.
+  3. N2: Assign non-cleared caregiver with `checkCompliance=true` — asserts a
+     compliance issue is returned (422 / 400 / body.complianceIssues).
+
+### Auth dependency note (E2E-3)
+
+The ticket calls for E2E-3 persona storageState (branch
+`feature/wdvf3acxhp-real-persona-logins`). That branch is in QA, not on
+preview. This spec uses the same `loginAsAdmin` / `apiGet` / `apiPost` /
+`apiPut` pattern as `evv-clock-persistence.spec.ts`. When E2E-3 merges:
+replace `loginAsAdmin` with `coordinatorContext` / `caregiverContext`
+storageState and split the visit steps across two separate browser contexts.
+
+### Retired spec decisions
+
+| Spec (in e2e/retired/) | Decision | Reason |
+|---|---|---|
+| `visit-lifecycle.spec.ts` | **REBUILT** (this ticket) | New seed + API-driven journey replacing old page-object spec |
+| `critical-journeys.spec.ts` | **STAY RETIRED** | Depends on old `visit-lifecycle` seed + VisitDetailPage POM; needs dedicated ticket |
+| `multi-user-workflows.spec.ts` | **STAY RETIRED** | Requires real multi-role storageState (E2E-3 not yet merged) |
+| `mobile-workflows.spec.ts` | **STAY RETIRED** | Mobile viewport + touch events POM; not blocked by seed but scope beyond this ticket |
+| `data-integrity.spec.ts` | **STAY RETIRED** | Depends on old seed; pure-logic tests belong in vitest |
+| `error-scenarios.spec.ts` | **STAY RETIRED** | Depends on old seed; API error cases partially covered by vitest |
+| `security.spec.ts` | **STAY RETIRED** | Depends on old seed; auth/authz unit tests cover the logic |
+| `accessibility.spec.ts` | **STAY RETIRED** | Needs axe-playwright integration work; not seed-blocked but separate effort |
+
+### Notes on evv-compliance.spec.ts and caregiver-assignment.spec.ts
+
+Reviewed for the split decision:
+- **evv-compliance.spec.ts**: Drives `/api/evv/*` endpoints via `apiPost`/`apiGet`
+  (no page objects). Fully API-level — appropriate for E2E (EVV persistence across
+  requests is integration-level). Keep in `e2e/tests/`.
+- **caregiver-assignment.spec.ts**: Mixes UI page-object calls with API calls.
+  The UI assertions use `VisitDetailPage` POM which references the web app. Keep
+  in `e2e/tests/` but mark as needing a live web server (uses `baseURL`).
+
 ## Verified full-suite result (run 39034305439, commit 4be79a15, chromium)
 
 - 131 unique tests: **34 passed, 10 skipped, 87 failed**.
