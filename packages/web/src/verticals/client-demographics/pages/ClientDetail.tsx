@@ -56,47 +56,50 @@ export const ClientDetail: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="w-full flex items-center">
         <Link to="/clients">
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="min-h-[44px] px-3">
             <ArrowLeft className="h-4 w-4 mr-1.5" />
             Back
           </Button>
         </Link>
       </div>
 
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            {client.preferredName ?? fullName}
-          </h1>
-          <p className="text-gray-600 mt-1">{client.clientNumber}</p>
+      <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-start">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">
+              {client.preferredName ?? fullName}
+            </h1>
+            <div className="flex flex-wrap items-center gap-2">
+              {client.isDemoData && <DemoBadge size="md" />}
+              {readOnly && <Badge variant="secondary">Read-only</Badge>}
+              <StatusBadge status={client.status} />
+            </div>
+          </div>
+          <p className="text-sm text-gray-600 mt-1">{client.clientNumber}</p>
         </div>
-        <div className="flex gap-2 items-start">
-          {client.isDemoData && <DemoBadge size="md" />}
-          {readOnly && <Badge variant="secondary">Read-only</Badge>}
-          <StatusBadge status={client.status} />
-          {can('clients:write') && canWrite && (
-            <>
-              <Link to={`/clients/${client.id}/edit`}>
-                <Button variant="outline">
-                  <Edit className="h-4 w-4 mr-1.5" />
-                  Edit
-                </Button>
-              </Link>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  void handleDelete();
-                }}
-                disabled={deleteClient.isPending}
-              >
-                <Trash2 className="h-4 w-4 mr-1.5" />
-                {deleteClient.isPending ? 'Deleting...' : 'Delete'}
+        {can('clients:write') && canWrite && (
+          <div className="flex flex-wrap items-center gap-2 md:shrink-0">
+            <Link to={`/clients/${client.id}/edit`}>
+              <Button variant="outline" className="min-h-[44px] px-3">
+                <Edit className="h-4 w-4 mr-1.5" />
+                Edit
               </Button>
-            </>
-          )}
-        </div>
+            </Link>
+            <Button
+              variant="destructive"
+              className="min-h-[44px] px-3"
+              onClick={() => {
+                void handleDelete();
+              }}
+              disabled={deleteClient.isPending}
+            >
+              <Trash2 className="h-4 w-4 mr-1.5" />
+              {deleteClient.isPending ? 'Deleting...' : 'Delete'}
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
