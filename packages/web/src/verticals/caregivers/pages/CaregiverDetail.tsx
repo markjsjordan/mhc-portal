@@ -64,11 +64,12 @@ export const CaregiverDetail: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="w-full flex items-center">
         <Button
           type="button"
           variant="ghost"
-          size="icon-sm"
+          size="sm"
+          className="min-h-[44px] px-3"
           onClick={() => {
             Promise.resolve(navigate('/caregivers')).catch((err: unknown) => {
               toast.error(err instanceof Error ? err.message : 'Navigation failed');
@@ -76,20 +77,26 @@ export const CaregiverDetail: React.FC = () => {
           }}
           aria-label="Back to caregivers"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-4 w-4 mr-1.5" />
+          Back
         </Button>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">
+      </div>
+
+      <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-start">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">
               {caregiver.preferredName ?? fullName}
             </h1>
-            <StatusBadge status={caregiver.status} />
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusBadge status={caregiver.status} />
+            </div>
           </div>
-          <p className="text-gray-600 mt-1">
+          <p className="text-sm text-gray-600 mt-1">
             {caregiver.employeeNumber} &middot; {caregiver.role}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 md:shrink-0">
           <CaregiverActionButtons
             caregiver={caregiver}
             onEdit={() => setIsEditModalOpen(true)}
@@ -101,7 +108,7 @@ export const CaregiverDetail: React.FC = () => {
             }}
           />
           <Link to={`/caregivers/${caregiver.id}/training`}>
-            <Button variant="outline">
+            <Button variant="outline" className="min-h-[44px] px-3">
               <GraduationCap className="h-4 w-4 mr-1.5" />
               Training & Compliance
             </Button>
