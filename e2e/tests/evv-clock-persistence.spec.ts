@@ -1,4 +1,7 @@
 import { test, expect } from "@playwright/test";
+import { STORAGE_STATE_PATHS } from "../fixtures/auth.fixture.js";
+
+test.use({ storageState: STORAGE_STATE_PATHS.admin });
 
 // FC-AUDIT-BILLING-PAYROLL-EVV WU-1/WU-7: EVV clock-in/out server persistence.
 //
@@ -41,9 +44,6 @@ import { test, expect } from "@playwright/test";
 // any leftover EVV record/time entries for the fixture visit on each run),
 // so this spec produces a real PASS on every run, not a skip.
 
-const ADMIN_EMAIL = "admin@folkcare.example";
-const ADMIN_PASSWORD = "Admin123!";
-
 // Fixture visit seeded by e2e/setup/seeds/evv-clock-persistence.seed.ts —
 // status ASSIGNED, geocoded TX address, caregiver/client pair with no
 // existing EVV record. Seeded automatically in beforeAll below (idempotent:
@@ -56,10 +56,7 @@ const FIXTURE_CAREGIVER_ID = "00000000-ee20-4000-8000-0000000ca001";
 const FIXTURE_LOCATION = { latitude: 30.2672, longitude: -97.7431, accuracy: 10 };
 
 async function loginAsAdmin(page: import("@playwright/test").Page) {
-  await page.goto("/login");
-  await page.locator('input[type="email"]').fill(ADMIN_EMAIL);
-  await page.locator('input[type="password"]').fill(ADMIN_PASSWORD);
-  await page.getByRole("button", { name: /sign in|log in/i }).click();
+  await page.goto("/admin");
   await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 15000 });
 }
 
