@@ -1,15 +1,16 @@
 import { test, expect } from "@playwright/test";
+import { STORAGE_STATE_PATHS } from "../../fixtures/auth.fixture.js";
 
 test.describe("Mobile Sidebar Viewport Containment (wdvf3adau7)", () => {
-  test.use({ viewport: { width: 390, height: 844 } });
+  test.use({
+    viewport: { width: 390, height: 844 },
+    storageState: STORAGE_STATE_PATHS.admin,
+  });
 
   test("mobile sidebar uses 100dvh and keeps footer visible without scrolling", async ({
     page,
   }) => {
-    await page.goto("/login");
-    await page.fill('input[type="email"]', "admin@folkcare.example");
-    await page.fill('input[type="password"]', "Admin123!");
-    await page.click('button[type="submit"]');
+    await page.goto("/admin");
     await page.waitForURL(/\/(admin|dashboard|clients|scheduling)/, {
       timeout: 15000,
     });

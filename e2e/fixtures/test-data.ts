@@ -91,12 +91,108 @@ export interface TestVisit {
 }
 
 /**
+ * Shared E2E test password for all seeded persona accounts.
+ * Never use a real user's password or seed production/preview databases.
+ */
+export const E2E_PASSWORD = 'Admin123!';
+
+export type E2EPersonaKey = 'admin' | 'orgAdmin' | 'coordinator' | 'caregiver' | 'family';
+
+export interface E2EPersonaConfig {
+  key: E2EPersonaKey;
+  userId: string;
+  username: string;
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  organizationId: string;
+  branchId: string;
+  roles: string[];
+  expectedLandingPath: RegExp;
+  storageStatePath: string;
+}
+
+export const E2E_PERSONAS: Record<E2EPersonaKey, E2EPersonaConfig> = {
+  admin: {
+    key: 'admin',
+    userId: E2E_UUIDS.ADMIN_USER,
+    username: 'e2e_admin',
+    email: 'admin@folkcare.example',
+    password: E2E_PASSWORD,
+    firstName: 'Admin',
+    lastName: 'User',
+    organizationId: E2E_UUIDS.ORG_E2E,
+    branchId: E2E_UUIDS.BRANCH_E2E,
+    roles: ['SUPER_ADMIN'],
+    expectedLandingPath: /\/admin/,
+    storageStatePath: 'e2e/.auth/admin.json',
+  },
+  orgAdmin: {
+    key: 'orgAdmin',
+    userId: E2E_UUIDS.ORG_ADMIN_USER,
+    username: 'e2e_orgadmin',
+    email: 'orgadmin@e2e-test.invalid',
+    password: E2E_PASSWORD,
+    firstName: 'Org',
+    lastName: 'Admin',
+    organizationId: E2E_UUIDS.ORG_E2E,
+    branchId: E2E_UUIDS.BRANCH_E2E,
+    roles: ['ORG_ADMIN'],
+    expectedLandingPath: /\/admin/,
+    storageStatePath: 'e2e/.auth/orgAdmin.json',
+  },
+  coordinator: {
+    key: 'coordinator',
+    userId: E2E_UUIDS.COORDINATOR_USER,
+    username: 'e2e_coordinator',
+    email: 'coordinator@e2e-test.invalid',
+    password: E2E_PASSWORD,
+    firstName: 'Care',
+    lastName: 'Coordinator',
+    organizationId: E2E_UUIDS.ORG_E2E,
+    branchId: E2E_UUIDS.BRANCH_E2E,
+    roles: ['COORDINATOR'],
+    expectedLandingPath: /\/analytics\/coordinator/,
+    storageStatePath: 'e2e/.auth/coordinator.json',
+  },
+  caregiver: {
+    key: 'caregiver',
+    userId: E2E_UUIDS.CAREGIVER_USER,
+    username: 'e2e_caregiver',
+    email: 'caregiver@e2e-test.invalid',
+    password: E2E_PASSWORD,
+    firstName: 'Jane',
+    lastName: 'Caregiver',
+    organizationId: E2E_UUIDS.ORG_E2E,
+    branchId: E2E_UUIDS.BRANCH_E2E,
+    roles: ['CAREGIVER'],
+    expectedLandingPath: /\/caregiver\/dashboard/,
+    storageStatePath: 'e2e/.auth/caregiver.json',
+  },
+  family: {
+    key: 'family',
+    userId: E2E_UUIDS.FAMILY_USER,
+    username: 'e2e_family',
+    email: 'family@e2e-test.invalid',
+    password: E2E_PASSWORD,
+    firstName: 'Family',
+    lastName: 'Member',
+    organizationId: E2E_UUIDS.ORG_E2E,
+    branchId: E2E_UUIDS.BRANCH_E2E,
+    roles: ['FAMILY'],
+    expectedLandingPath: /\/family-portal/,
+    storageStatePath: 'e2e/.auth/family.json',
+  },
+};
+
+/**
  * Test Users
  */
 export const TEST_USERS: Record<string, TestUser> = {
   admin: {
     userId: E2E_UUIDS.ADMIN_USER,
-    email: 'admin@e2e-test.com',
+    email: 'admin@folkcare.example',
     firstName: 'Admin',
     lastName: 'User',
     organizationId: E2E_UUIDS.ORG_E2E,
@@ -106,7 +202,7 @@ export const TEST_USERS: Record<string, TestUser> = {
   },
   orgAdmin: {
     userId: E2E_UUIDS.ORG_ADMIN_USER,
-    email: 'orgadmin@e2e-test.com',
+    email: 'orgadmin@e2e-test.invalid',
     firstName: 'Org',
     lastName: 'Admin',
     organizationId: E2E_UUIDS.ORG_E2E,
@@ -125,7 +221,7 @@ export const TEST_USERS: Record<string, TestUser> = {
   },
   coordinator: {
     userId: E2E_UUIDS.COORDINATOR_USER,
-    email: 'coordinator@e2e-test.com',
+    email: 'coordinator@e2e-test.invalid',
     firstName: 'Care',
     lastName: 'Coordinator',
     organizationId: E2E_UUIDS.ORG_E2E,
@@ -148,7 +244,7 @@ export const TEST_USERS: Record<string, TestUser> = {
   },
   caregiver: {
     userId: E2E_UUIDS.CAREGIVER_USER,
-    email: 'caregiver@e2e-test.com',
+    email: 'caregiver@e2e-test.invalid',
     firstName: 'Jane',
     lastName: 'Caregiver',
     organizationId: E2E_UUIDS.ORG_E2E,
@@ -164,12 +260,12 @@ export const TEST_USERS: Record<string, TestUser> = {
   },
   familyMember: {
     userId: E2E_UUIDS.FAMILY_USER,
-    email: 'family@e2e-test.com',
+    email: 'family@e2e-test.invalid',
     firstName: 'Family',
     lastName: 'Member',
     organizationId: E2E_UUIDS.ORG_E2E,
     branchId: E2E_UUIDS.BRANCH_E2E,
-    roles: ['FAMILY_MEMBER'],
+    roles: ['FAMILY'],
     permissions: ['family-portal:read', 'messages:write'],
   },
 };

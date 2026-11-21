@@ -126,6 +126,9 @@ export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // HIPAA-012: Enforce max 10 failed login attempts per 15 minutes
   skipSuccessfulRequests: true, // Don't count successful requests
+  skip: () =>
+    process.env['NODE_ENV'] === 'test' &&
+    process.env['ENABLE_TEST_RATE_LIMIT'] !== 'true',
   standardHeaders: true,
   legacyHeaders: false,
   store: getRedisStore('rl:auth:'),
