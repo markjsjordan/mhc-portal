@@ -250,6 +250,22 @@ function validateDateRangeParams(
   return { startDate, endDate };
 }
 
+async function fetchCreatedVisit(
+  db: Database,
+  visitId: string,
+  fallbackRow: unknown
+): Promise<unknown> {
+  try {
+    const pool = typeof db.getPool === 'function' ? db.getPool() : null;
+    if (!pool) return fallbackRow;
+    const repository = new ScheduleRepository(pool);
+    const mappedVisit = await repository.getVisitById(visitId);
+    return mappedVisit ?? fallbackRow;
+  } catch {
+    return fallbackRow;
+  }
+}
+
 export function createVisitRouter(db: Database): Router {
   const router = Router();
   const authMiddleware = new AuthMiddleware(db);
@@ -499,7 +515,7 @@ export function createVisitRouter(db: Database): Router {
         address,
         notes,
         clientInstructions,
-        status = 'UNASSIGNED',
+        status,
       } = req.body;
 
       // Validate required fields
@@ -610,6 +626,8 @@ export function createVisitRouter(db: Database): Router {
         assignedCaregiverId = caregiver.id;
       }
 
+      const resolvedStatus = status ?? (assignedCaregiverId ? 'ASSIGNED' : 'UNASSIGNED');
+
       // Create the visit
       const result = await db.query(
         `INSERT INTO visits (
@@ -620,6 +638,7 @@ export function createVisitRouter(db: Database): Router {
           scheduled_duration, timezone,
           address, internal_notes, client_instructions,
           status, assignment_method,
+          assigned_at, assigned_by,
           created_by, updated_by, created_at, updated_at
         ) VALUES (
           gen_random_uuid(), $1, $2, $3, $4,
@@ -629,6 +648,8 @@ export function createVisitRouter(db: Database): Router {
           $12, $13,
           $14, $15, $16,
           $17, $18,
+          CASE WHEN $4::uuid IS NOT NULL THEN NOW() ELSE NULL END,
+          CASE WHEN $4::uuid IS NOT NULL THEN $19::uuid ELSE NULL END,
           $19, $19, NOW(), NOW()
         ) RETURNING *`,
         [
@@ -648,7 +669,7 @@ export function createVisitRouter(db: Database): Router {
           JSON.stringify(resolvedAddress),
           notes || null,
           clientInstructions || null,
-          status,
+          resolvedStatus,
           'MANUAL',
           context.userId,
         ]
@@ -662,9 +683,12 @@ export function createVisitRouter(db: Database): Router {
         return;
       }
 
+      const createdRow = result.rows[0] as { id: string };
+      const responseVisit = await fetchCreatedVisit(db, createdRow.id, result.rows[0]);
+
       res.status(201).json({
         success: true,
-        data: result.rows[0],
+        data: responseVisit,
       });
     } catch (error) {
       next(error);
