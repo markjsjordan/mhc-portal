@@ -1,6 +1,10 @@
 /* eslint-disable sonarjs/code-eval -- test file intentionally contains XSS payload strings */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { escapeHtmlStrict } from '../html-escape';
+
+// Raise timeout for this file: the property-based fuzz tests below can exceed
+// the default 5000ms under concurrent CI load even though each run is fast standalone.
+vi.setConfig({ testTimeout: 15000 });
 
 /**
  * Expected values were captured from sanitize-html@2.18.1 configured with

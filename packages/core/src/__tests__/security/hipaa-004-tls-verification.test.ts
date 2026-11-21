@@ -42,6 +42,10 @@ import { Database } from '../../db/connection.js';
 import { createSupabasePool } from '../../db/supabase-adapter.js';
 import { CacheService } from '../../service/cache.service.js';
 
+// Raise timeout for this file: the repo-wide source scan in the first test can
+// exceed the default 5000ms under concurrent CI load even though it's fast standalone.
+vi.setConfig({ testTimeout: 15000 });
+
 function collectSourceFiles(dir: string, acc: string[] = []): string[] {
   let entries: string[] = [];
   try {
