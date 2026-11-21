@@ -5,7 +5,6 @@ import { useCreateClient, useClients, useUpdateClient, useBranches } from '@/ver
 import type { CreateClientInput, UpdateClientInput } from '@/verticals/client-demographics/types';
 import { useAuth } from '@/core/hooks';
 import { US_STATES } from '@/core/constants/us-states';
-import { useCaregivers } from '@/verticals/caregivers/hooks';
 
 // Intake Step 1 offers the 50 U.S. states only (no DC, no territories).
 // Derived from the shared list so codes stay in one source of truth.
@@ -137,15 +136,7 @@ interface IntakeData {
   tasks: string[];
   goals: string;
 
-  // Step 4: Caregiver Assignment
-  primaryCaregiver: string;
-  backupCaregivers: string[];
-  preferences: {
-    gender: 'no-preference' | 'female' | 'male';
-    language: string[];
-  };
-
-  // Step 5: Initial Schedule
+  // Step 4: Initial Schedule
   scheduleStartDate: string;
   visitSchedule: Array<{
     dayOfWeek: number;
@@ -167,10 +158,9 @@ const STEPS = [
   { id: 1, title: 'Demographics', subtitle: 'Contact & Insurance' },
   { id: 2, title: 'Assessment', subtitle: 'Care Needs' },
   { id: 3, title: 'Care Plan', subtitle: 'Services & Goals' },
-  { id: 4, title: 'Caregivers', subtitle: 'Assignment & Matching' },
-  { id: 5, title: 'Schedule', subtitle: 'Initial Visits' },
-  { id: 6, title: 'Consent', subtitle: 'Signatures & Agreements' },
-  { id: 7, title: 'Review', subtitle: 'Finalize & Submit' },
+  { id: 4, title: 'Schedule', subtitle: 'Initial Visits' },
+  { id: 5, title: 'Consent', subtitle: 'Signatures & Agreements' },
+  { id: 6, title: 'Review', subtitle: 'Finalize & Submit' },
 ];
 
 const getStepBadgeClass = (currentStep: number, stepId: number): string => {
@@ -244,7 +234,6 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       tasks: [],
       preferredTimes: [],
       serviceTypes: [],
-      backupCaregivers: [],
       visitSchedule: [],
       consents: {
         careAgreement: false,
@@ -320,18 +309,6 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
     });
   };
 
-  const toggleBackupCaregiver = (id: string) => {
-    setIntakeData((prev) => {
-      const backups = prev.backupCaregivers ?? [];
-      return {
-        ...prev,
-        backupCaregivers: backups.includes(id)
-          ? backups.filter((cg) => cg !== id)
-          : [...backups, id],
-      };
-    });
-  };
-
   const handleNext = () => {
     if (currentStep === 1) {
       if (!intakeData.firstName?.trim()) {
@@ -352,7 +329,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         return;
       }
     }
-    if (currentStep < 7) {
+    if (currentStep < STEPS.length) {
       setCurrentStep(currentStep + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -374,15 +351,6 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
   const [selectedBranchId, setSelectedBranchId] = useState<string>('');
   const defaultBranchId = user?.branchIds?.[0] ?? branches[0]?.id ?? '';
   const activeBranchId = selectedBranchId || defaultBranchId;
-
-  // Fetch real caregivers from the database
-  const { data: caregiversData } = useCaregivers({ status: ['ACTIVE'] }, 1, 100);
-  const caregivers = (caregiversData?.items ?? []).map((cg) => ({
-    id: cg.id,
-    name: `${cg.firstName} ${cg.lastName}`,
-    skills: [cg.role], // Use role as primary skill
-    languages: ['English'], // Default to English; extend later if multilingual data is available
-  }));
 
   const handleSubmit = async () => {
     // Validate required demographic fields with user-friendly error feedback
@@ -561,11 +529,6 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         scheduleStartDate: intakeData.scheduleStartDate,
         visitSchedule: intakeData.visitSchedule,
       },
-      caregiverAssignment: {
-        primaryCaregiver: intakeData.primaryCaregiver,
-        backupCaregivers: intakeData.backupCaregivers,
-        preferences: intakeData.preferences,
-      },
       consents: {
         careAgreement: intakeData.consents?.careAgreement ?? false,
         hipaa: intakeData.consents?.hipaa ?? false,
@@ -693,8 +656,8 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         <div className="text-xs text-gray-500 mb-3">
           {STEPS[currentStep - 1]?.subtitle}
         </div>
-        {/* Progress Bar with 7 segments */}
-        <div className="grid grid-cols-7 gap-1.5 w-full">
+        {/* Progress Bar with 6 segments */}
+        <div className="grid grid-cols-6 gap-1.5 w-full">
           {STEPS.map((step) => (
             <div
               key={step.id}
@@ -1406,101 +1369,6 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         {currentStep === 4 && (
           <div>
             <h2 className="text-xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
-              Caregiver Assignment
-            </h2>
-
-            <div className="mb-8 md:mb-10">
-              <h3 className="text-base md:text-lg font-semibold text-gray-700 pb-2 mb-4 border-b-2 border-gray-200">
-                Client Preferences
-              </h3>
-              <div className="flex flex-col sm:flex-row gap-4 md:gap-5 mb-4 md:mb-5">
-                <div className="w-full sm:max-w-xs flex flex-col">
-                  <Label htmlFor="gender-preference" className="block text-sm font-medium text-gray-700 mb-1.5">Gender Preference</Label>
-                  <Select
-                    value={intakeData.preferences?.gender ?? 'no-preference'}
-                    onValueChange={(val) => updateNestedData('preferences', 'gender', val)}
-                  >
-                    <SelectTrigger id="gender-preference" className="w-full min-h-[44px]">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="no-preference">No Preference</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="male">Male</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-8 md:mb-10">
-              <h3 className="text-base md:text-lg font-semibold text-gray-700 pb-2 mb-4 border-b-2 border-gray-200">
-                Primary Caregiver
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {caregivers.map((cg) => (
-                  <div
-                    key={cg.id}
-                    className={`p-4 md:p-5 border-2 rounded-xl cursor-pointer text-center relative transition-all min-h-[160px] flex flex-col items-center justify-center ${
-                      intakeData.primaryCaregiver === cg.id
-                        ? 'border-blue-600 bg-blue-50/70 shadow-sm ring-1 ring-blue-500'
-                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50'
-                    }`}
-                    onClick={() => updateData('primaryCaregiver', cg.id)}
-                  >
-                    <div className="w-14 h-14 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold mb-3 shadow-inner">
-                      {cg.name.charAt(0)}
-                    </div>
-                    <div className="text-base font-semibold text-gray-900 mb-1">{cg.name}</div>
-                    <div className="text-xs text-gray-500 mb-1.5 leading-relaxed">{cg.skills.join(', ')}</div>
-                    <div className="text-xs text-gray-500">🗣️ {cg.languages.join(', ')}</div>
-                    {intakeData.primaryCaregiver === cg.id && (
-                      <div className="absolute top-2.5 right-2.5 text-xs font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">
-                        ✓ Selected
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <h3 className="text-base md:text-lg font-semibold text-gray-700 pb-2 mb-2 border-b-2 border-gray-200">
-                Backup Caregivers (Optional)
-              </h3>
-              <p className="text-sm text-gray-500 mb-4">Select 1-2 backup caregivers for coverage</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {caregivers.filter((cg) => cg.id !== intakeData.primaryCaregiver).map((cg) => (
-                  <div
-                    key={cg.id}
-                    className={`p-4 md:p-5 border-2 rounded-xl cursor-pointer text-center relative transition-all min-h-[160px] flex flex-col items-center justify-center ${
-                      intakeData.backupCaregivers?.includes(cg.id)
-                        ? 'border-blue-600 bg-blue-50/70 shadow-sm ring-1 ring-blue-500'
-                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50'
-                    }`}
-                    onClick={() => toggleBackupCaregiver(cg.id)}
-                  >
-                    <div className="w-14 h-14 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold mb-3 shadow-inner">
-                      {cg.name.charAt(0)}
-                    </div>
-                    <div className="text-base font-semibold text-gray-900 mb-1">{cg.name}</div>
-                    <div className="text-xs text-gray-500 mb-1.5 leading-relaxed">{cg.skills.join(', ')}</div>
-                    <div className="text-xs text-gray-500">🗣️ {cg.languages.join(', ')}</div>
-                    {intakeData.backupCaregivers?.includes(cg.id) && (
-                      <div className="absolute top-2.5 right-2.5 text-xs font-semibold text-blue-700 bg-blue-100 px-2.5 py-0.5 rounded-full border border-blue-300">
-                        ✓ Backup
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {currentStep === 5 && (
-          <div>
-            <h2 className="text-xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
               Initial Schedule
             </h2>
 
@@ -1566,7 +1434,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           </div>
         )}
 
-        {currentStep === 6 && (
+        {currentStep === 5 && (
           <div>
             <h2 className="text-xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
               Consent & Signatures
@@ -1665,7 +1533,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           </div>
         )}
 
-        {currentStep === 7 && (
+        {currentStep === 6 && (
           <div>
             <h2 className="text-xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
               Review & Submit
@@ -1795,47 +1663,6 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </div>
             </div>
 
-            {/* Assigned Caregivers Review */}
-            <div className="p-4 sm:p-5 md:p-6 mb-5 md:mb-6 bg-gray-50/70 rounded-xl border border-gray-200 shadow-sm w-full box-border">
-              <h3 className="text-base md:text-lg font-semibold text-gray-800 pb-2 mb-3 border-b border-gray-200">
-                Assigned Caregivers
-              </h3>
-              <div className="flex flex-col sm:flex-row sm:items-baseline py-2.5 md:py-3 border-b border-gray-200/80 gap-1 sm:gap-4 w-full">
-                <span className="text-xs sm:text-sm font-semibold sm:font-medium text-gray-500 sm:text-gray-600 sm:w-44 sm:min-w-[170px] sm:flex-shrink-0 uppercase sm:normal-case tracking-wider sm:tracking-normal">
-                  Primary:
-                </span>
-                <span className="text-sm md:text-base font-medium sm:font-normal text-gray-900 break-words flex-1 min-w-0">
-                  {caregivers.find((cg) => cg.id === intakeData.primaryCaregiver)?.name ?? (
-                    <span className="text-gray-400 italic">None selected</span>
-                  )}
-                </span>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-baseline py-2.5 md:py-3 gap-1 sm:gap-4 w-full">
-                <span className="text-xs sm:text-sm font-semibold sm:font-medium text-gray-500 sm:text-gray-600 sm:w-44 sm:min-w-[170px] sm:flex-shrink-0 uppercase sm:normal-case tracking-wider sm:tracking-normal">
-                  Backups:
-                </span>
-                <div className="text-sm md:text-base font-medium sm:font-normal text-gray-900 break-words flex-1 min-w-0">
-                  {intakeData.backupCaregivers && intakeData.backupCaregivers.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5 mt-0.5">
-                      {intakeData.backupCaregivers
-                        .map((id) => caregivers.find((cg) => cg.id === id)?.name)
-                        .filter(Boolean)
-                        .map((name) => (
-                          <span
-                            key={name}
-                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-800 border border-blue-200"
-                          >
-                            {name}
-                          </span>
-                        ))}
-                    </div>
-                  ) : (
-                    <span className="text-gray-400 italic">None selected</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
             {/* Consents Review */}
             <div className="p-4 sm:p-5 md:p-6 mb-5 md:mb-6 bg-gray-50/70 rounded-xl border border-gray-200 shadow-sm w-full box-border">
               <h3 className="text-base md:text-lg font-semibold text-gray-800 pb-2 mb-3 border-b border-gray-200">
@@ -1896,7 +1723,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
             ← Back
           </Button>
 
-          {currentStep < 7 ? (
+          {currentStep < STEPS.length ? (
             <Button
               type="button"
               variant="default"

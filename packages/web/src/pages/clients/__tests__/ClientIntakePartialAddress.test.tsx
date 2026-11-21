@@ -30,10 +30,6 @@ vi.mock('@/verticals/client-demographics/hooks', () => ({
   useBranches: () => ({ data: [{ id: 'branch-1', name: 'Main Branch', code: 'MB' }] }),
 }));
 
-vi.mock('@/verticals/caregivers/hooks', () => ({
-  useCaregivers: () => ({ data: { items: [] } }),
-}));
-
 const base = {
   firstName: 'Jane',
   lastName: 'Doe',
@@ -48,7 +44,7 @@ function renderAtReview(props: Record<string, unknown>) {
       <ClientIntakeWorkflow {...props} />
     </BrowserRouter>
   );
-  for (let i = 0; i < 6; i += 1) {
+  for (let i = 0; i < 5; i += 1) {
     fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
   }
   expect(screen.getByText('Review & Submit')).toBeInTheDocument();

@@ -35,18 +35,6 @@ vi.mock('@/verticals/client-demographics/hooks', () => ({
   }),
 }));
 
-// Mock caregivers hook
-vi.mock('@/verticals/caregivers/hooks', () => ({
-  useCaregivers: () => ({
-    data: {
-      items: [
-        { id: 'cg-1', firstName: 'Maria', lastName: 'Garcia', role: 'Personal Care Aide' },
-        { id: 'cg-2', firstName: 'James', lastName: 'Wilson', role: 'Home Health Aide' },
-      ],
-    },
-  }),
-}));
-
 describe('ClientIntakeWorkflow - Mobile and Responsive Layout', () => {
   const renderWorkflow = (props = {}) => {
     return renderWithQueryClient(
@@ -68,9 +56,9 @@ describe('ClientIntakeWorkflow - Mobile and Responsive Layout', () => {
     expect(mobileStepper).toBeInTheDocument();
 
     // Mobile stepper displays current step and percentage
-    expect(mobileStepper?.textContent).toContain('Step 1 of 7');
+    expect(mobileStepper?.textContent).toContain('Step 1 of 6');
     expect(mobileStepper?.textContent).toContain('Demographics');
-    expect(mobileStepper?.textContent).toContain('14% Complete');
+    expect(mobileStepper?.textContent).toContain('17% Complete');
   });
 
   it('uses responsive layout for form rows to stack on mobile and row on desktop', () => {
@@ -98,7 +86,7 @@ describe('ClientIntakeWorkflow - Mobile and Responsive Layout', () => {
     expect(screen.getByText('Demographics & Contact Information')).toBeInTheDocument();
   });
 
-  it('allows navigation through wizard to Step 7 (Review & Submit)', () => {
+  it('allows navigation through wizard to Step 6 (Review & Submit)', () => {
     const initialData = {
       firstName: 'Jane',
       lastName: 'Doe',
@@ -115,7 +103,6 @@ describe('ClientIntakeWorkflow - Mobile and Responsive Layout', () => {
       visitFrequency: '3xweek' as const,
       visitDuration: 60,
       tasks: ['Bathing assistance', 'Meal preparation'],
-      primaryCaregiver: 'cg-1',
       consents: {
         careAgreement: true,
         hipaa: true,
@@ -137,19 +124,15 @@ describe('ClientIntakeWorkflow - Mobile and Responsive Layout', () => {
     expect(screen.getByText('Care Plan Creation')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
 
-    // Step 4: Caregivers -> Next
-    expect(screen.getByText('Caregiver Assignment')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
-
-    // Step 5: Schedule -> Next
+    // Step 4: Schedule -> Next
     expect(screen.getByText('Initial Schedule')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
 
-    // Step 6: Consent -> Next
+    // Step 5: Consent -> Next
     expect(screen.getByText('Consent & Signatures')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
 
-    // Step 7: Review & Submit
+    // Step 6: Review & Submit
     expect(screen.getByText('Review & Submit')).toBeInTheDocument();
 
     // Verify Review summary cards have responsive stacking layout
@@ -169,8 +152,8 @@ describe('ClientIntakeWorkflow - Mobile and Responsive Layout', () => {
     // Verify consent status displays signed badge
     expect(screen.getByText('✓ All Signed')).toBeInTheDocument();
 
-    // Verify primary caregiver displays name
-    expect(screen.getByText('Maria Garcia')).toBeInTheDocument();
+    // Verify Assigned Caregivers section is absent
+    expect(screen.queryByText('Assigned Caregivers')).not.toBeInTheDocument();
 
     // Verify Submit & Create Client button is present and full-width on mobile
     const submitBtn = screen.getByRole('button', { name: /Submit & Create Client/i });

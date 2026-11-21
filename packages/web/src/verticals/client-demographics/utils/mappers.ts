@@ -87,15 +87,7 @@ export interface IntakeData {
   tasks: string[];
   goals: string;
 
-  // Step 4: Caregiver Assignment
-  primaryCaregiver: string;
-  backupCaregivers: string[];
-  preferences: {
-    gender: 'no-preference' | 'female' | 'male';
-    language: string[];
-  };
-
-  // Step 5: Initial Schedule
+  // Step 4: Initial Schedule
   scheduleStartDate: string;
   visitSchedule: Array<{
     dayOfWeek: number;
@@ -231,13 +223,6 @@ export function mapClientToIntakeData(client: Client | ClientWire): Partial<Inta
     preferredTimes: client.carePlanSummary?.preferredTimes ?? [],
     tasks: client.carePlanSummary?.tasks ?? [],
     goals: client.carePlanSummary?.goals ?? '',
-    // Lane 5: Caregiver Assignment
-    primaryCaregiver: client.caregiverAssignment?.primaryCaregiver ?? '',
-    backupCaregivers: client.caregiverAssignment?.backupCaregivers ?? [],
-    preferences: {
-      gender: client.caregiverAssignment?.preferences?.gender ?? 'no-preference',
-      language: client.caregiverAssignment?.preferences?.language ?? [],
-    },
     scheduleStartDate: client.visitSchedule?.scheduleStartDate ?? '',
     visitSchedule: client.visitSchedule?.visitSchedule ?? [],
     // Lane 1: Consents & Signature

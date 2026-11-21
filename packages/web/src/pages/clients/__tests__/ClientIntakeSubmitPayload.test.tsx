@@ -27,17 +27,6 @@ vi.mock('@/verticals/client-demographics/hooks', () => ({
   useBranches: () => ({ data: [{ id: 'branch-1', name: 'Main Branch', code: 'MB' }] }),
 }));
 
-vi.mock('@/verticals/caregivers/hooks', () => ({
-  useCaregivers: () => ({
-    data: {
-      items: [
-        { id: 'cg-1', firstName: 'Maria', lastName: 'Garcia', role: 'Personal Care Aide' },
-        { id: 'cg-2', firstName: 'James', lastName: 'Wilson', role: 'Home Health Aide' },
-      ],
-    },
-  }),
-}));
-
 const baseData = {
   firstName: 'Jane',
   lastName: 'Doe',
@@ -59,8 +48,8 @@ function renderAtReview(initialData: Record<string, unknown>) {
       <ClientIntakeWorkflow initialData={initialData} />
     </BrowserRouter>
   );
-  // Step 1 -> 7
-  for (let i = 0; i < 6; i += 1) {
+  // Step 1 -> 6
+  for (let i = 0; i < 5; i += 1) {
     fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
   }
   expect(screen.getByText('Review & Submit')).toBeInTheDocument();
@@ -84,6 +73,7 @@ describe('ClientIntakeWorkflow submit payload', () => {
     // zod: z.string().email().optional() rejects "" but accepts a missing key
     expect(payload['email']).toBeUndefined();
     expect(payload['primaryPhone']).toBeUndefined();
+    expect(payload['caregiverAssignment']).toBeUndefined();
     expect((payload['primaryAddress'] as Record<string, unknown>)['line2']).toBeUndefined();
     expect(payload['firstName']).toBe('Jane');
   });

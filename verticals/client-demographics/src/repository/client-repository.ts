@@ -222,11 +222,6 @@ export class ClientRepository extends Repository<Client> {
     if (visitSchedule !== undefined && visitSchedule !== null) {
       entity.visitSchedule = this.parseJsonField(visitSchedule) as typeof entity.visitSchedule;
     }
-
-    const caregiverAssignment = row['caregiver_assignment'];
-    if (caregiverAssignment !== undefined && caregiverAssignment !== null) {
-      entity.caregiverAssignment = this.parseJsonField(caregiverAssignment) as typeof entity.caregiverAssignment;
-    }
   }
 
   /**
@@ -287,9 +282,6 @@ export class ClientRepository extends Repository<Client> {
     }
     if (entity.visitSchedule !== undefined) {
       row['visit_schedule'] = JSON.stringify(entity.visitSchedule);
-    }
-    if (entity.caregiverAssignment !== undefined) {
-      row['caregiver_assignment'] = JSON.stringify(entity.caregiverAssignment);
     }
   }
 

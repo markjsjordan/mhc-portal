@@ -140,17 +140,6 @@ const visitScheduleSchema = z.object({
     .optional(),
 });
 
-const caregiverAssignmentSchema = z.object({
-  primaryCaregiver: z.string().optional(),
-  backupCaregivers: z.array(z.string()).optional(),
-  preferences: z
-    .object({
-      gender: z.enum(['no-preference', 'female', 'male']).optional(),
-      language: z.array(z.string()).optional(),
-    })
-    .optional(),
-});
-
 const createClientSchema = z.object({
   organizationId: uuidSchema,
   branchId: uuidSchema.optional(),
@@ -190,7 +179,6 @@ const createClientSchema = z.object({
   assessmentData: assessmentDataSchema.optional(),
   carePlanSummary: carePlanSummarySchema.optional(),
   visitSchedule: visitScheduleSchema.optional(),
-  caregiverAssignment: caregiverAssignmentSchema.optional(),
 });
 
 const updateClientSchema = z
@@ -224,7 +212,6 @@ const updateClientSchema = z
     assessmentData: assessmentDataSchema.optional(),
     carePlanSummary: carePlanSummarySchema.optional(),
     visitSchedule: visitScheduleSchema.optional(),
-    caregiverAssignment: caregiverAssignmentSchema.optional(),
     notes: z.string().optional(),
   })
   .partial();
