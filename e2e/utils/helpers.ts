@@ -1,7 +1,7 @@
 import { Page, BrowserContext } from '@playwright/test';
 import { TestDatabase } from '../setup/test-database.js';
-import { createAuthenticatedPage, AuthenticatedUser } from '../fixtures/auth.fixture.js';
-import { TEST_GPS_COORDINATES, E2E_UUIDS } from '../fixtures/test-data.js';
+import { applyPersonaStorageState } from '../fixtures/auth.fixture.js';
+import { TEST_GPS_COORDINATES, E2EPersonaKey } from '../fixtures/test-data.js';
 
 /**
  * E2E Test Helper Functions
@@ -10,52 +10,13 @@ import { TEST_GPS_COORDINATES, E2E_UUIDS } from '../fixtures/test-data.js';
  */
 
 /**
- * Quick login as a specific role
+ * Quick login as a specific role using real saved storageState
  */
 export async function login(
   page: Page,
-  role: 'admin' | 'coordinator' | 'caregiver' | 'family'
+  role: E2EPersonaKey
 ): Promise<void> {
-  const users: Record<string, AuthenticatedUser> = {
-    admin: {
-      userId: E2E_UUIDS.ADMIN_USER,
-      email: 'admin@e2e-test.com',
-      organizationId: E2E_UUIDS.ORG_E2E,
-      branchId: E2E_UUIDS.BRANCH_E2E,
-      roles: ['SUPER_ADMIN'],
-      permissions: ['*:*'],
-    },
-    coordinator: {
-      userId: E2E_UUIDS.COORDINATOR_USER,
-      email: 'coordinator@e2e-test.com',
-      organizationId: E2E_UUIDS.ORG_E2E,
-      branchId: E2E_UUIDS.BRANCH_E2E,
-      roles: ['COORDINATOR'],
-      permissions: ['clients:*', 'caregivers:*', 'visits:*', 'evv:*'],
-    },
-    caregiver: {
-      userId: E2E_UUIDS.CAREGIVER_USER,
-      email: 'caregiver@e2e-test.com',
-      organizationId: E2E_UUIDS.ORG_E2E,
-      branchId: E2E_UUIDS.BRANCH_E2E,
-      roles: ['CAREGIVER'],
-      permissions: ['visits:read:own', 'evv:write:own'],
-    },
-    family: {
-      userId: E2E_UUIDS.FAMILY_USER,
-      email: 'family@e2e-test.com',
-      organizationId: E2E_UUIDS.ORG_E2E,
-      branchId: E2E_UUIDS.BRANCH_E2E,
-      roles: ['FAMILY_MEMBER'],
-      permissions: [
-        'clients:read', 'visits:read', 'care-plans:read', 'tasks:read', 'schedules:read',
-        'family-portal:view', 'notifications:view', 'messages:view', 'messages:write',
-        'activity-feed:view'
-      ],
-    },
-  };
-
-  await createAuthenticatedPage(page, users[role]);
+  await applyPersonaStorageState(page, role);
 }
 
 /**

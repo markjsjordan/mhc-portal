@@ -33,7 +33,9 @@ async function sendCaregiverInviteEmail(
   recipientName: string,
   token: string,
   expiresAt: Date
-): Promise<void> {
+): Promise<{ emailSent: boolean; emailError: string | null }> {
+  let emailSent = false;
+  let emailError: string | null = null;
   try {
     const orgRes = await db.query<{ name: string }>(
       `SELECT name FROM organizations WHERE id = $1`,
@@ -58,9 +60,12 @@ async function sendCaregiverInviteEmail(
       invitationToken: token,
       expiresAt,
     });
+    emailSent = true;
   } catch (err) {
+    emailError = err instanceof Error ? err.message : 'Failed to send invitation email';
     console.warn('[PortalAccess] Failed to send invitation email:', err);
   }
+  return { emailSent, emailError };
 }
 import { 
   CaregiverService,
@@ -791,9 +796,10 @@ export function createCaregiverRouter(db: Database): Router {
       const inviteResult = await portalAccessService.inviteCaregiver(caregiverId, context);
 
       // Attempt to send email when requested
+      let emailResult: { emailSent: boolean; emailError: string | null } | undefined;
       if (sendEmail) {
         const recipientName = `${cgCheck.first_name ?? ''} ${cgCheck.last_name ?? ''}`.trim() || trimmedEmail;
-        await sendCaregiverInviteEmail(
+        emailResult = await sendCaregiverInviteEmail(
           db,
           context.organizationId,
           context.userId,
@@ -807,7 +813,7 @@ export function createCaregiverRouter(db: Database): Router {
       const inviteUrl = buildInvitationUrl(inviteResult.token);
       const summary = await getCaregiverPortalSummary(caregiverId, true);
       res.setHeader('Cache-Control', 'no-store');
-      res.json({ success: true, data: { ...summary, inviteUrl } });
+      res.json({ success: true, data: { ...summary, inviteUrl, ...(emailResult ?? {}) } });
     } catch (error) {
       if (error instanceof NotFoundError) {
         res.status(404).json({ success: false, error: error.message });

@@ -2,19 +2,20 @@
  * Tests for Delete Caregiver Confirmation Dialog
  */
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { renderWithQueryClient as render } from '@/test/renderWithQueryClient';
 import userEvent from '@testing-library/user-event';
 import { DeleteCaregiverConfirmation } from '../DeleteCaregiverConfirmation';
-import { caregiverApi } from '../../api/index';
 import { toast } from 'sonner';
 import type { Caregiver } from '../../types/index';
 
-// Mock API
-vi.mock('../../api/index', () => ({
-  caregiverApi: {
-    deleteCaregiver: vi.fn(),
-  },
+const mockDelete = vi.fn();
+
+// Mock useApiClient hook
+vi.mock('@/core/hooks/api', () => ({
+  useApiClient: () => ({
+    delete: mockDelete,
+  }),
 }));
 
 // Mock toast
@@ -50,6 +51,7 @@ const mockCaregiver: Caregiver = {
 describe('DeleteCaregiverConfirmation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockDelete.mockResolvedValue(undefined);
   });
 
   test('renders confirmation dialog when open', () => {
@@ -201,9 +203,8 @@ describe('DeleteCaregiverConfirmation', () => {
     });
   });
 
-  test('calls deleteCaregiver API when delete is confirmed', async () => {
+  test('calls delete API when delete is confirmed', async () => {
     const user = userEvent.setup();
-    (caregiverApi.deleteCaregiver as any).mockResolvedValue(undefined);
 
     render(
       <DeleteCaregiverConfirmation
@@ -225,14 +226,13 @@ describe('DeleteCaregiverConfirmation', () => {
     await user.click(screen.getByRole('button', { name: /delete caregiver/i }));
 
     await waitFor(() => {
-      expect(caregiverApi.deleteCaregiver).toHaveBeenCalledWith('123', { confirmName: 'Sarah Martinez' });
+      expect(mockDelete).toHaveBeenCalledWith('/api/caregivers/123');
     });
   });
 
   test('shows success toast on successful delete', async () => {
     const user = userEvent.setup();
     const onSuccess = vi.fn();
-    (caregiverApi.deleteCaregiver as any).mockResolvedValue(undefined);
 
     render(
       <DeleteCaregiverConfirmation
@@ -264,7 +264,7 @@ describe('DeleteCaregiverConfirmation', () => {
     (error as any).response = {
       data: { success: false, error: 'Permission denied: caregivers:delete' },
     };
-    (caregiverApi.deleteCaregiver as any).mockRejectedValue(error);
+    mockDelete.mockRejectedValue(error);
 
     render(
       <DeleteCaregiverConfirmation
@@ -298,7 +298,7 @@ describe('DeleteCaregiverConfirmation', () => {
         message: 'Cannot delete terminated caregiver',
       },
     };
-    (caregiverApi.deleteCaregiver as any).mockRejectedValue(error);
+    mockDelete.mockRejectedValue(error);
 
     render(
       <DeleteCaregiverConfirmation

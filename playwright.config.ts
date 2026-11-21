@@ -1,14 +1,15 @@
 import { defineConfig, devices } from '@playwright/test';
-import { randomBytes } from 'crypto';
 
-/**
- * Generate a cryptographically secure random secret for testing
- * @param length - Length of the secret in bytes (default: 32)
- * @returns Base64-encoded random string
- */
-function generateTestSecret(length = 32): string {
-  return randomBytes(length).toString('base64');
-}
+// Pin deterministic test JWT secrets across globalSetup, webServer, and worker
+// processes when unset so tokens minted by the server match across processes.
+const TEST_JWT_SECRET =
+  process.env['JWT_SECRET'] ||
+  'e2e-test-jwt-secret-minimum-32-characters-required-for-testing';
+const TEST_JWT_REFRESH_SECRET =
+  process.env['JWT_REFRESH_SECRET'] ||
+  'e2e-test-jwt-refresh-secret-minimum-32-characters-required-for-testing';
+process.env['JWT_SECRET'] = TEST_JWT_SECRET;
+process.env['JWT_REFRESH_SECRET'] = TEST_JWT_REFRESH_SECRET;
 
 /**
  * Playwright Configuration for Folk E2E Testing
@@ -75,9 +76,22 @@ export default defineConfig({
 
   // Project configurations for different browsers and viewports
   projects: [
+    // Auth setup project: logs in once per persona via the real UI form and
+    // saves storageState to e2e/.auth/<persona>.json
+    {
+      name: 'setup',
+      testDir: './e2e/setup',
+      testMatch: /auth\.setup\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1920, height: 1080 },
+      },
+    },
+
     // Desktop browsers
     {
       name: 'chromium',
+      dependencies: ['setup'],
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1920, height: 1080 },
@@ -85,6 +99,7 @@ export default defineConfig({
     },
     {
       name: 'firefox',
+      dependencies: ['setup'],
       use: {
         ...devices['Desktop Firefox'],
         viewport: { width: 1920, height: 1080 },
@@ -92,6 +107,7 @@ export default defineConfig({
     },
     {
       name: 'webkit',
+      dependencies: ['setup'],
       use: {
         ...devices['Desktop Safari'],
         viewport: { width: 1920, height: 1080 },
@@ -101,12 +117,14 @@ export default defineConfig({
     // Mobile viewports (critical for caregiver app)
     {
       name: 'mobile-chrome',
+      dependencies: ['setup'],
       use: {
         ...devices['Pixel 5'],
       },
     },
     {
       name: 'mobile-safari',
+      dependencies: ['setup'],
       use: {
         ...devices['iPhone 12'],
       },
@@ -115,6 +133,7 @@ export default defineConfig({
     // Tablet viewports (coordinator workflows)
     {
       name: 'tablet',
+      dependencies: ['setup'],
       use: {
         ...devices['iPad Pro'],
       },
@@ -136,10 +155,9 @@ export default defineConfig({
       // UI tests run against the built web app on :5173 (vite preview), which
       // calls this API cross-origin. Allow it or every login 500s on CORS.
       CORS_ORIGIN: 'http://localhost:5173,http://localhost:3000',
-      // JWT secrets for authentication
-      // Generate cryptographically secure random secrets if not provided
-      JWT_SECRET: process.env['JWT_SECRET'] || generateTestSecret(),
-      JWT_REFRESH_SECRET: process.env['JWT_REFRESH_SECRET'] || generateTestSecret(),
+      // JWT secrets for authentication (pinned at top of config)
+      JWT_SECRET: TEST_JWT_SECRET,
+      JWT_REFRESH_SECRET: TEST_JWT_REFRESH_SECRET,
     },
   },
 });

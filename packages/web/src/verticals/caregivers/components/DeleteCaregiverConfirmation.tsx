@@ -12,8 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox.js';
 import { Modal } from '@/core/components/index.js';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getApiErrorMessage } from '../../../lib/api-error.js';
-import { caregiverApi } from '../api/index.js';
+import { useApiClient } from '@/core/hooks/api.js';
 import type { Caregiver } from '../types/index.js';
 
 export interface DeleteCaregiverConfirmationProps {
@@ -32,10 +31,11 @@ export const DeleteCaregiverConfirmation: React.FC<DeleteCaregiverConfirmationPr
   const [nameConfirmation, setNameConfirmation] = useState('');
   const [understandsConfirm, setUnderstandsConfirm] = useState(false);
 
+  const apiClient = useApiClient();
   const expectedName = `${caregiver.firstName || ''} ${caregiver.lastName || ''}`.trim();
 
   const deleteMutation = useMutation({
-    mutationFn: () => caregiverApi.deleteCaregiver(caregiver.id, { confirmName: expectedName }),
+    mutationFn: () => apiClient.delete<void>(`/api/caregivers/${caregiver.id}`),
     onSuccess: () => {
       toast.success('Caregiver deleted successfully');
       setNameConfirmation('');
@@ -43,12 +43,12 @@ export const DeleteCaregiverConfirmation: React.FC<DeleteCaregiverConfirmationPr
       onSuccess();
       onClose();
     },
-    onError: (error: { response?: { data?: { error?: string; message?: string } } }) => {
-      console.error('Failed to delete caregiver:', error);
-      if (error.response?.data?.error === 'INVALID_STATUS_TRANSITION') {
+    onError: (error: Error & { response?: { data?: { error?: string; message?: string } }; status?: number }) => {
+      const data = error.response?.data;
+      if (data?.error === 'INVALID_STATUS_TRANSITION') {
         toast.error('Cannot delete terminated caregiver');
       } else {
-        toast.error(getApiErrorMessage(error, 'Failed to delete caregiver'));
+        toast.error(data?.message ?? data?.error ?? 'Failed to delete caregiver');
       }
     },
   });
