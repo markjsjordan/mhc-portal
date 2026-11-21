@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { toDateKey } from '@/core/utils';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Calendar,
   Grid,
@@ -19,6 +19,7 @@ import {
   Plus,
   ChevronDown,
   Repeat,
+  UserX,
 } from 'lucide-react';
 import { LoadingSpinner, EmptyState, ErrorMessage } from '@/core/components';
 import { Button } from '@/components/ui/button.js';
@@ -41,7 +42,7 @@ import { useVisits } from '../hooks/useVisits';
 import { VisitCard, SummaryCard, VisitFilters } from '../components';
 import { VISIT_TYPES } from '../config/visitTypeConfig';
 import type { VisitSearchFilters, Visit, VisitType } from '../types';
-import { VISIT_STATUS_LABELS, VISIT_TYPE_LABELS } from '../types';
+import { VISIT_STATUS_LABELS, VISIT_TYPE_LABELS, isVisitUnassigned } from '../types';
 
 const getDefaultFilters = (): VisitSearchFilters => ({
   dateFrom: new Date(),
@@ -68,7 +69,7 @@ const matchesSummaryFilter = (
     );
   }
   if (activeSummaryFilter === 'unassigned') {
-    return v.status === 'UNASSIGNED' || !v.assignedCaregiverId;
+    return isVisitUnassigned(v);
   }
   if (activeSummaryFilter === 'completed') {
     return v.status === 'COMPLETED';
@@ -121,8 +122,44 @@ export const VisitList: React.FC = () => {
   // Advanced dropdown filters
   const [advancedFilters, setAdvancedFilters] = useState<VisitSearchFilters>({});
 
-  // Summary card active filter
-  const [activeSummaryFilter, setActiveSummaryFilter] = useState<SummaryFilterType | null>(null);
+  // Summary card active filter (synced with URL query params ?filter=unassigned or ?unassigned=true)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeSummaryFilter, setActiveSummaryFilterState] = useState<SummaryFilterType | null>(
+    () => {
+      const filterParam = searchParams.get('filter');
+      if (filterParam === 'unassigned' || searchParams.get('unassigned') === 'true') {
+        return 'unassigned';
+      }
+      if (filterParam === 'today' || filterParam === 'upcoming' || filterParam === 'completed') {
+        return filterParam;
+      }
+      return null;
+    }
+  );
+
+  const setActiveSummaryFilter = useCallback(
+    (next: SummaryFilterType | null) => {
+      setActiveSummaryFilterState(next);
+      setSearchParams(
+        (prev) => {
+          const updated = new URLSearchParams(prev);
+          if (next === 'unassigned') {
+            updated.set('filter', 'unassigned');
+            updated.delete('unassigned');
+          } else if (next) {
+            updated.set('filter', next);
+            updated.delete('unassigned');
+          } else {
+            updated.delete('filter');
+            updated.delete('unassigned');
+          }
+          return updated;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
 
   // Backend query (gets default 30-day window)
   const [queryFilters] = useState<VisitSearchFilters>(getDefaultFilters);
@@ -157,7 +194,7 @@ export const VisitList: React.FC = () => {
       ) {
         upcomingCount++;
       }
-      if (v.status === 'UNASSIGNED' || !v.assignedCaregiverId) {
+      if (isVisitUnassigned(v)) {
         unassignedCount++;
       }
       if (v.status === 'COMPLETED') {
@@ -189,7 +226,14 @@ export const VisitList: React.FC = () => {
 
       // 3. Status Filter
       if (advancedFilters.status && advancedFilters.status.length > 0) {
-        if (!advancedFilters.status.includes(v.status)) return false;
+        const matchesStatus = advancedFilters.status.some((st) =>
+          st === 'UNASSIGNED' ? isVisitUnassigned(v) : v.status === st
+        );
+        if (!matchesStatus) return false;
+      }
+
+      if (advancedFilters.isUnassigned) {
+        if (!isVisitUnassigned(v)) return false;
       }
 
       // 4. Visit Type Filter
@@ -432,6 +476,7 @@ export const VisitList: React.FC = () => {
             icon={<AlertCircle className="h-5 w-5" />}
             color="yellow"
             subtitle="Needs caregiver"
+            dataTestId="summary-card-unassigned"
             isActive={activeSummaryFilter === 'unassigned'}
             onClick={() =>
               setActiveSummaryFilter(activeSummaryFilter === 'unassigned' ? null : 'unassigned')
@@ -478,6 +523,24 @@ export const VisitList: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 self-end sm:self-auto">
+            <Button
+              type="button"
+              variant={activeSummaryFilter === 'unassigned' ? 'secondary' : 'outline'}
+              size="sm"
+              onClick={() =>
+                setActiveSummaryFilter(activeSummaryFilter === 'unassigned' ? null : 'unassigned')
+              }
+              aria-pressed={activeSummaryFilter === 'unassigned'}
+              data-testid="unassigned-visits-filter-toggle"
+              className="gap-1.5"
+            >
+              <UserX className="w-4 h-4 text-amber-600" />
+              <span>Unassigned</span>
+              <span className="ml-0.5 px-1.5 py-0.2 text-xs rounded-full bg-amber-100 text-amber-800 font-semibold">
+                {metrics.unassignedCount}
+              </span>
+            </Button>
+
             <VisitFilters
               filters={advancedFilters}
               onFiltersChange={setAdvancedFilters}

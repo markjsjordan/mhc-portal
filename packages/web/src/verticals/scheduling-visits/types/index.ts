@@ -183,3 +183,10 @@ export const VISIT_STATUS_COLORS: Record<VisitStatus, string> = {
   NO_SHOW_CAREGIVER: 'red',
   REJECTED: 'red',
 };
+
+export function isVisitUnassigned(visit: Pick<Visit, 'status' | 'assignedCaregiverId'>): boolean {
+  if (visit.status === 'CANCELLED' || visit.status === 'COMPLETED') {
+    return false;
+  }
+  return visit.status === 'UNASSIGNED' || !visit.assignedCaregiverId;
+}
