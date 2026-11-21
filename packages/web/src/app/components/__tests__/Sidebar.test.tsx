@@ -127,11 +127,25 @@ describe('Sidebar component', () => {
 
     expect(screen.getByText('Visits')).toBeInTheDocument();
     expect(screen.getByText('Calendar')).toBeInTheDocument();
+    const scheduleBuilderLink = screen.getByRole('link', { name: /schedule builder/i });
+    expect(scheduleBuilderLink).toBeInTheDocument();
+    expect(scheduleBuilderLink).toHaveAttribute('href', '/scheduling/builder');
 
     expect(screen.queryByText('Scheduling')).not.toBeInTheDocument();
     expect(screen.queryByText('Calendar View')).not.toBeInTheDocument();
     expect(screen.queryByText('Create Care Plan')).not.toBeInTheDocument();
     expect(screen.queryByText('Import / Export')).not.toBeInTheDocument();
+  });
+
+  it('hides Schedule Builder when scheduling section access is NONE', () => {
+    sectionState.hidden.add('scheduling');
+    render(
+      <MemoryRouter>
+        <Sidebar isOpen={true} onClose={vi.fn()} isDesktopOpen={true} />
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByRole('link', { name: /schedule builder/i })).not.toBeInTheDocument();
   });
 
   it('hides the configured navigation items defined in HIDDEN_NAV_LABELS', () => {
