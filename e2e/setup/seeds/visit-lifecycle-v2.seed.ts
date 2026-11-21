@@ -1,5 +1,6 @@
 import { Database } from '../../../packages/core/src/db/connection.js';
-import { E2E_UUIDS } from '../../fixtures/test-data.js';
+import { PasswordUtils } from '../../../packages/core/src/utils/password-utils.js';
+import { E2E_PASSWORD, E2E_UUIDS } from '../../fixtures/test-data.js';
 
 /**
  * Seed Data: Visit Lifecycle E2E Fixture (E2E-4 wdvf3acxhq)
@@ -20,15 +21,16 @@ import { E2E_UUIDS } from '../../fixtures/test-data.js';
  * (ee20) so both seed sets can coexist in the dev DB without collisions.
  */
 
-// Org/admin come from the E2E global setup (admin@folkcare.example); the branch
-// is owned by this seed because global setup does not create one.
+// Org/branch/admin come from the E2E global setup (seed-personas.ts).
 const ORG_ID = E2E_UUIDS.ORG_E2E;
-const BRANCH_ID = '00000000-ee40-4000-8000-0000000b0001';
+const BRANCH_ID = E2E_UUIDS.BRANCH_E2E;
 const ADMIN_USER_ID = E2E_UUIDS.ADMIN_USER;
 
 export const VL_FIXTURE_CLIENT_ID = '00000000-ee40-4000-8000-0000000c1001';
 export const VL_FIXTURE_CAREGIVER_VALID_ID = '00000000-ee40-4000-8000-0000000ca001';
 export const VL_FIXTURE_CAREGIVER_NOCLEAR_ID = '00000000-ee40-4000-8000-0000000ca002';
+export const VL_FIXTURE_CAREGIVER_USER_ID = '00000000-ee40-4000-8000-0000000a0001';
+export const VL_FIXTURE_CAREGIVER_EMAIL = 'vl.caregiver@e2e.folkcare.local';
 
 // TX address geocoded inside Austin (~100 Congress Ave) — geofence passes for
 // FIXTURE_LOCATION_INSIDE; a distant location (NYC) will flag geofence.
@@ -65,6 +67,7 @@ export async function seedDatabase(db: Database): Promise<void> {
       NOW(), $16, NOW(), $16, 1
     )
     ON CONFLICT (id) DO UPDATE SET
+      branch_id = EXCLUDED.branch_id,
       primary_address = EXCLUDED.primary_address,
       status = EXCLUDED.status`,
     [
@@ -110,6 +113,8 @@ export async function seedDatabase(db: Database): Promise<void> {
       $24, $25, NOW(), $26, NOW(), $26, 1
     )
     ON CONFLICT (id) DO UPDATE SET
+      branch_ids = EXCLUDED.branch_ids,
+      primary_branch_id = EXCLUDED.primary_branch_id,
       compliance_status = EXCLUDED.compliance_status,
       status = EXCLUDED.status`,
     [
@@ -172,6 +177,8 @@ export async function seedDatabase(db: Database): Promise<void> {
       $24, $25, NOW(), $26, NOW(), $26, 1
     )
     ON CONFLICT (id) DO UPDATE SET
+      branch_ids = EXCLUDED.branch_ids,
+      primary_branch_id = EXCLUDED.primary_branch_id,
       compliance_status = EXCLUDED.compliance_status,
       status = EXCLUDED.status`,
     [
@@ -208,6 +215,69 @@ export async function seedDatabase(db: Database): Promise<void> {
   await db.query(
     `UPDATE caregivers SET background_check = NULL WHERE id = $1`,
     [VL_FIXTURE_CAREGIVER_NOCLEAR_ID]
+  );
+
+  // Seed a blocking compliance deadline (TX HHSC EMR / background clearance)
+  // so check-assignment flags the non-cleared caregiver as non-compliant.
+  await db.query(
+    `INSERT INTO compliance_deadlines (
+      id, organization_id, entity_type, entity_id, entity_name,
+      category, title, description,
+      deadline_date, warning_date, urgent_date,
+      status, priority, state_code, regulation, blocks_scheduling
+    ) VALUES (
+      $1, $2, 'CAREGIVER', $3, 'NoClearLifecycle Fixture-Caregiver',
+      'CAREGIVER_BACKGROUND_CHECK', 'Texas EMR / Background Clearance Missing',
+      'Caregiver lacks required Texas Employee Misconduct Registry (EMR) clearance',
+      NOW() - INTERVAL '1 day', NOW() - INTERVAL '15 days', NOW() - INTERVAL '5 days',
+      'BLOCKED', 'CRITICAL', 'TX', '26 TAC §558', true
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      status = 'BLOCKED',
+      blocks_scheduling = true,
+      resolved_at = NULL`,
+    [
+      '00000000-ee40-4000-8000-0000000cd001',
+      ORG_ID,
+      VL_FIXTURE_CAREGIVER_NOCLEAR_ID,
+    ]
+  );
+
+  // ── Non-demo caregiver user with EVV permissions ─────────────────────────
+  const passwordHash = PasswordUtils.hashPassword(E2E_PASSWORD);
+  await db.query(
+    `INSERT INTO users (
+      id, organization_id, username, email, password_hash,
+      first_name, last_name, status, roles, permissions, branch_ids,
+      created_at, created_by, updated_at, updated_by, version
+    ) VALUES (
+      $1, $2, 'vl_caregiver', $3, $4,
+      'ValidLifecycle', 'Caregiver', 'ACTIVE',
+      ARRAY['CAREGIVER', 'SUPERVISOR'],
+      ARRAY['evv:clock_in', 'evv:clock_out', 'evv:read'],
+      $5::uuid[],
+      NOW(), $6, NOW(), $6, 1
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      password_hash = EXCLUDED.password_hash,
+      roles = EXCLUDED.roles,
+      permissions = EXCLUDED.permissions,
+      branch_ids = EXCLUDED.branch_ids,
+      status = 'ACTIVE'`,
+    [
+      VL_FIXTURE_CAREGIVER_USER_ID,
+      ORG_ID,
+      VL_FIXTURE_CAREGIVER_EMAIL,
+      passwordHash,
+      [BRANCH_ID],
+      ADMIN_USER_ID,
+    ]
+  );
+
+  // Link the valid caregiver record to the caregiver user account
+  await db.query(
+    `UPDATE caregivers SET user_id = $2, portal_access_status = 'ACTIVE' WHERE id = $1`,
+    [VL_FIXTURE_CAREGIVER_VALID_ID, VL_FIXTURE_CAREGIVER_USER_ID]
   );
 
   console.log('✅ visit-lifecycle-v2 fixture seeded');
