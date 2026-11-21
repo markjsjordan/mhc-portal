@@ -1251,6 +1251,89 @@ describe('Visit Routes', () => {
       );
     });
 
+    it('should default status to ASSIGNED when caregiverId is provided on creation', async () => {
+      const caregiverId = 'cg123456-0000-0000-0000-000000000001';
+      const mockReq = {
+        body: {
+          clientId: 'c1234567-0000-0000-0000-000000000001',
+          caregiverId,
+          serviceTypeId: 'st-personal-care',
+          scheduledDate: '2026-10-25',
+          scheduledStartTime: '13:00',
+          scheduledEndTime: '14:00',
+        },
+        user: {
+          userId: 'u1234567-0000-0000-0000-000000000001',
+          organizationId: '00000000-0000-0000-0000-000000000001',
+          branchIds: ['00000000-0000-0000-0000-000000000002'],
+          roles: ['COORDINATOR'],
+          permissions: ['visits:write'],
+        },
+      } as unknown as Request;
+
+      vi.mocked(mockDb.query)
+        // 1. Client check
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'c1234567-0000-0000-0000-000000000001',
+              organization_id: '00000000-0000-0000-0000-000000000001',
+              branch_id: '00000000-0000-0000-0000-000000000002',
+              primary_address: { street: '100 Main St', city: 'Austin', state: 'TX', zipCode: '78701' },
+              timezone: 'America/Chicago',
+            },
+          ],
+        } as any)
+        // 2. Visit count check
+        .mockResolvedValueOnce({ rows: [{ count: '6' }] } as any)
+        // 3. Caregiver check
+        .mockResolvedValueOnce({ rows: [{ id: caregiverId, status: 'ACTIVE' }] } as any)
+        // 4. INSERT visits RETURNING *
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 'v1234567-0000-0000-0000-000000000002',
+              organization_id: '00000000-0000-0000-0000-000000000001',
+              branch_id: '00000000-0000-0000-0000-000000000002',
+              client_id: 'c1234567-0000-0000-0000-000000000001',
+              assigned_caregiver_id: caregiverId,
+              visit_number: 'V2026-000007',
+              scheduled_date: '2026-10-25',
+              scheduled_start_time: '13:00',
+              scheduled_end_time: '14:00',
+              scheduled_duration: 60,
+              timezone: 'America/Chicago',
+              status: 'ASSIGNED',
+              assignment_method: 'MANUAL',
+            },
+          ],
+        } as any);
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find(
+        (layer: any) => layer.route?.path === '/' && layer.route?.methods?.post
+      )?.route?.stack[0]?.handle;
+
+      expect(handler).toBeDefined();
+      await handler!(mockReq, mockResponse as Response, nextMock);
+
+      expect(statusMock).toHaveBeenCalledWith(201);
+      // Verify INSERT was called with status = 'ASSIGNED' and assignment_method = 'MANUAL'
+      const insertCall = vi.mocked(mockDb.query).mock.calls[3];
+      expect(insertCall?.[1]).toContain('ASSIGNED');
+      expect(insertCall?.[1]).toContain('MANUAL');
+      expect(insertCall?.[1]).toContain(caregiverId);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          data: expect.objectContaining({
+            assigned_caregiver_id: caregiverId,
+            status: 'ASSIGNED',
+          }),
+        })
+      );
+    });
+
     it('should return 400 when required fields are missing', async () => {
       const mockReq = {
         body: {
