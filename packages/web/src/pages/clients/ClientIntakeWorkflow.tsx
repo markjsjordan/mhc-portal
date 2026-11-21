@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useCreateClient, useClients, useUpdateClient, useBranches } from '@/verticals/client-demographics/hooks';
@@ -242,16 +242,9 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       },
     }
   );
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-
-  // Auto-save every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLastSaved(new Date());
-      // In real app: save to backend
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [intakeData]);
+  // savedClientId tracks a client record created by mid-wizard Save in create mode.
+  // Once set, subsequent Save presses (and final Submit) update that record instead of creating a new one.
+  const [savedClientId, setSavedClientId] = useState<string | undefined>(clientId);
 
   const updateData = (field: string, value: unknown) => {
     setIntakeData((prev) => ({ ...prev, [field]: value }));
@@ -436,6 +429,89 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         }
       : undefined;
 
+    const { emergencyContactsInput, intakePartBFields } = buildAccumulatedPayload();
+
+    try {
+      const effectiveClientId = isEditMode ? clientId : savedClientId;
+      if (effectiveClientId) {
+        // Update mode (existing client in edit mode, or draft already created via mid-wizard Save)
+        const updateInput: UpdateClientInput = {
+          firstName: intakeData.firstName.trim(),
+          lastName: intakeData.lastName.trim(),
+          dateOfBirth: intakeData.dateOfBirth,
+          email: blankToUndefined(intakeData.email),
+          primaryPhone: phoneInput,
+          primaryAddress: addressInput,
+          emergencyContacts: emergencyContactsInput,
+          ...intakePartBFields,
+        };
+
+        const activate = !isEditMode
+          ? true
+          : shouldActivateOnEdit(currentStatus, {
+              firstName: updateInput.firstName,
+              lastName: updateInput.lastName,
+              dateOfBirth: updateInput.dateOfBirth,
+              email: intakeData.email,
+              phone: intakeData.phone,
+              emergencyContacts: emergencyContactsInput,
+            });
+        if (activate) {
+          updateInput.status = 'ACTIVE';
+        }
+
+        const updatedClient = await updateClient.mutateAsync({
+          id: effectiveClientId,
+          input: updateInput,
+        });
+        let successMessage = 'Client saved.';
+        if (!isEditMode) {
+          successMessage = 'Client intake submitted.';
+        } else if (activate) {
+          successMessage = 'Client saved and activated.';
+        }
+        toast.success(successMessage);
+
+        if (onSuccess) {
+          onSuccess(updatedClient);
+        } else {
+          Promise.resolve(navigate(`/clients/${updatedClient.id}`)).catch(() => {});
+        }
+      } else {
+        // Create mode
+        const createInput: CreateClientInput = {
+          organizationId: user!.organizationId,
+          branchId: effectiveBranchId,
+          firstName: intakeData.firstName.trim(),
+          lastName: intakeData.lastName.trim(),
+          dateOfBirth: intakeData.dateOfBirth,
+          email: blankToUndefined(intakeData.email),
+          primaryPhone: phoneInput,
+          primaryAddress: addressInput,
+          emergencyContacts: emergencyContactsInput,
+          status: 'ACTIVE',
+          ...intakePartBFields,
+        };
+
+        const newClient = await createClient.mutateAsync(createInput);
+        toast.success('Client intake submitted.');
+
+        if (onSuccess) {
+          onSuccess(newClient);
+        } else {
+          Promise.resolve(navigate(`/clients/${newClient.id}`)).catch(() => {});
+        }
+      }
+    } catch {
+      // useCreateClient/useUpdateClient's onError already surfaces a toast; nothing further to do here.
+    }
+  };
+
+  /**
+   * Builds the accumulated emergency contacts and Part B (steps 2–6) payload fields
+   * shared by both mid-wizard Save and final Submit.
+   */
+  const buildAccumulatedPayload = () => {
     const emergencyContactsInput = (intakeData.emergencyContacts ?? [])
       .filter((c) => blankToUndefined(c.name) && blankToUndefined(c.phone))
       .map((c) => ({
@@ -539,48 +615,99 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       },
     };
 
+    return { emergencyContactsInput, intakePartBFields };
+  };
+
+  /**
+   * handleSave — persist current wizard state without navigating away.
+   *
+   * - On the first save in create mode, calls createClient with status=PENDING_INTAKE
+   *   (server accepts name + DOB + address; all other fields are optional).
+   * - On subsequent saves, calls updateClient so we don't create duplicate records.
+   * - In edit mode, always calls updateClient against the existing clientId.
+   *
+   * Guards: firstName, lastName, dateOfBirth, and a complete address (all four required
+   * fields) must be provided — the server rejects without them and surfaces a toast.
+   */
+  const handleSave = async () => {
+    if (!intakeData.firstName?.trim()) {
+      toast.error('First name is required to save.');
+      setCurrentStep(1);
+      return;
+    }
+    if (!intakeData.lastName?.trim()) {
+      toast.error('Last name is required to save.');
+      setCurrentStep(1);
+      return;
+    }
+    if (!intakeData.dateOfBirth) {
+      toast.error('Date of birth is required to save.');
+      setCurrentStep(1);
+      return;
+    }
+
+    const addr = intakeData.address;
+    const line1 = blankToUndefined(addr?.line1);
+    const city = blankToUndefined(addr?.city);
+    const state = blankToUndefined(addr?.state);
+    const postalCode = blankToUndefined(addr?.postalCode);
+    if (!line1 || !city || !state || !postalCode) {
+      toast.error('A complete home address is required to save.');
+      setCurrentStep(1);
+      return;
+    }
+
+    const addressInput = {
+      type: 'HOME' as const,
+      line1,
+      line2: blankToUndefined(addr?.line2),
+      city,
+      state: state.toUpperCase(),
+      postalCode,
+      country: 'US' as const,
+    };
+
+    const phoneNumber = blankToUndefined(intakeData.phone);
+    const phoneInput = phoneNumber
+      ? {
+          number: phoneNumber,
+          type: intakeData.phoneType ?? ('MOBILE' as const),
+          canReceiveSMS: intakeData.phoneCanReceiveSMS ?? false,
+        }
+      : undefined;
+
+    const { emergencyContactsInput, intakePartBFields } = buildAccumulatedPayload();
+
     try {
-      if (isEditMode && clientId) {
-        // Update mode
-        const updateInput: UpdateClientInput = {
-          firstName: intakeData.firstName.trim(),
-          lastName: intakeData.lastName.trim(),
-          dateOfBirth: intakeData.dateOfBirth,
-          email: blankToUndefined(intakeData.email),
-          primaryPhone: phoneInput,
-          primaryAddress: addressInput,
-          emergencyContacts: emergencyContactsInput,
-          ...intakePartBFields,
-        };
-
-        const activate = shouldActivateOnEdit(currentStatus, {
-          firstName: updateInput.firstName,
-          lastName: updateInput.lastName,
-          dateOfBirth: updateInput.dateOfBirth,
-          email: intakeData.email,
-          phone: intakeData.phone,
-          emergencyContacts: emergencyContactsInput,
+      const targetId = isEditMode ? clientId : savedClientId;
+      if (targetId) {
+        // Update the existing record (edit mode or already-saved create mode)
+        await updateClient.mutateAsync({
+          id: targetId,
+          input: {
+            firstName: intakeData.firstName.trim(),
+            lastName: intakeData.lastName.trim(),
+            dateOfBirth: intakeData.dateOfBirth,
+            email: blankToUndefined(intakeData.email),
+            primaryPhone: phoneInput,
+            primaryAddress: addressInput,
+            emergencyContacts: emergencyContactsInput,
+            ...intakePartBFields,
+          },
         });
-        if (activate) {
-          updateInput.status = 'ACTIVE';
-        }
-
-        const updatedClient = await updateClient.mutateAsync({
-          id: clientId,
-          input: updateInput,
-        });
-        toast.success(activate ? 'Client saved and activated.' : 'Client saved.');
-
-        if (onSuccess) {
-          onSuccess(updatedClient);
-        } else {
-          Promise.resolve(navigate(`/clients/${updatedClient.id}`)).catch(() => {});
-        }
+        toast.success('Progress saved');
       } else {
-        // Create mode
-        const createInput: CreateClientInput = {
-          organizationId: user!.organizationId,
-          branchId: effectiveBranchId,
+        // First save in create mode — create a PENDING_INTAKE draft
+        if (!user?.organizationId) {
+          toast.error('Unable to save: no organization context for the signed-in user.');
+          return;
+        }
+        const newClient = await createClient.mutateAsync({
+          organizationId: user.organizationId,
+          branchId:
+            (activeBranchId && activeBranchId.trim() !== '' ? activeBranchId : undefined) ??
+            (user.branchIds?.[0] && user.branchIds[0].trim() !== '' ? user.branchIds[0] : undefined) ??
+            undefined,
           firstName: intakeData.firstName.trim(),
           lastName: intakeData.lastName.trim(),
           dateOfBirth: intakeData.dateOfBirth,
@@ -588,21 +715,14 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
           emergencyContacts: emergencyContactsInput,
-          status: 'ACTIVE',
+          status: 'PENDING_INTAKE',
           ...intakePartBFields,
-        };
-
-        const newClient = await createClient.mutateAsync(createInput);
-        toast.success('Client intake submitted.');
-
-        if (onSuccess) {
-          onSuccess(newClient);
-        } else {
-          Promise.resolve(navigate(`/clients/${newClient.id}`)).catch(() => {});
-        }
+        });
+        setSavedClientId(newClient.id);
+        toast.success('Progress saved');
       }
     } catch {
-      // useCreateClient/useUpdateClient's onError already surfaces a toast; nothing further to do here.
+      // useCreateClient/useUpdateClient's onError already surfaces a toast.
     }
   };
 
@@ -667,13 +787,6 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           ))}
         </div>
       </div>
-
-      {/* Auto-save indicator */}
-      {lastSaved && (
-        <div className="text-right text-xs text-gray-500 mb-3">
-          💾 Auto-saved at {lastSaved.toLocaleTimeString()}
-        </div>
-      )}
 
       {/* Step Content */}
       <div className="bg-white rounded-xl p-4 sm:p-6 md:p-10 shadow-sm border border-gray-100 min-h-[400px] md:min-h-[500px]">
@@ -1721,6 +1834,18 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
             disabled={currentStep === 1}
           >
             ← Back
+          </Button>
+
+          {/* Save button — available on all steps once required fields are filled */}
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="w-full sm:w-auto min-h-[48px] sm:min-w-[120px] order-3 sm:order-2"
+            onClick={() => { void handleSave(); }}
+            disabled={createClient.isPending || updateClient.isPending}
+          >
+            {(createClient.isPending || updateClient.isPending) ? 'Saving…' : '💾 Save'}
           </Button>
 
           {currentStep < STEPS.length ? (
