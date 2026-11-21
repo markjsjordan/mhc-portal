@@ -1,4 +1,5 @@
 import { Database, DatabaseConfig } from '../../packages/core/src/db/connection.js';
+import { seedE2EPersonas } from './seed-personas.js';
 
 /**
  * Test Database Helper
@@ -130,6 +131,10 @@ export class TestDatabase {
         END $$;
         COMMIT;
       `);
+
+      // Immediately re-seed the 5 E2E persona accounts and portal links so
+      // storageState sessions remain valid for subsequent tests.
+      await seedE2EPersonas(db);
     } catch (error: unknown) {
       const err = error as Error;
       console.error('❌ Failed to cleanup database:', err.message);

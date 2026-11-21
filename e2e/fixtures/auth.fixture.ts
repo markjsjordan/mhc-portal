@@ -1,7 +1,19 @@
+import fs from 'fs';
+import path from 'path';
 import { test as base, Page } from '@playwright/test';
-import { TestDatabase } from '../setup/test-database.js';
-import { JWTUtils, TokenPayload } from '../../packages/core/src/utils/jwt-utils.js';
-import { E2E_UUIDS } from './test-data.js';
+import { E2E_PERSONAS, E2EPersonaKey, E2E_UUIDS } from './test-data.js';
+
+/**
+ * Paths to Playwright storageState files produced by e2e/setup/auth.setup.ts
+ * via real UI logins against the seeded E2E database.
+ */
+export const STORAGE_STATE_PATHS: Record<E2EPersonaKey, string> = {
+  admin: E2E_PERSONAS.admin.storageStatePath,
+  orgAdmin: E2E_PERSONAS.orgAdmin.storageStatePath,
+  coordinator: E2E_PERSONAS.coordinator.storageStatePath,
+  caregiver: E2E_PERSONAS.caregiver.storageStatePath,
+  family: E2E_PERSONAS.family.storageStatePath,
+};
 
 /**
  * Authenticated User Type
@@ -16,224 +28,236 @@ export type AuthenticatedUser = {
   token?: string;
 };
 
+interface SavedStorageState {
+  cookies?: Array<{
+    name: string;
+    value: string;
+    domain: string;
+    path: string;
+    expires: number;
+    httpOnly: boolean;
+    secure: boolean;
+    sameSite: 'Strict' | 'Lax' | 'None';
+  }>;
+  origins?: Array<{
+    origin: string;
+    localStorage?: Array<{ name: string; value: string }>;
+  }>;
+}
+
+/**
+ * Read a saved storageState JSON file for a persona.
+ */
+export function readPersonaStorageState(personaKey: E2EPersonaKey): SavedStorageState {
+  const filePath = path.resolve(process.cwd(), STORAGE_STATE_PATHS[personaKey]);
+  if (!fs.existsSync(filePath)) {
+    throw new Error(
+      `Missing storageState file for persona "${personaKey}" at ${filePath}. ` +
+        `Ensure the Playwright "setup" project (e2e/setup/auth.setup.ts) ran first.`
+    );
+  }
+  return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as SavedStorageState;
+}
+
+/**
+ * Extract the real AuthenticatedUser (including server-issued JWT accessToken,
+ * roles, and permissions) from the persona's saved storageState.
+ */
+export function getPersonaUser(personaKey: E2EPersonaKey): AuthenticatedUser {
+  const persona = E2E_PERSONAS[personaKey];
+  const state = readPersonaStorageState(personaKey);
+
+  let storedUser: {
+    id?: string;
+    email?: string;
+    organizationId?: string;
+    roles?: string[];
+    permissions?: string[];
+  } | null = null;
+  let storedToken: string | undefined;
+
+  for (const origin of state.origins ?? []) {
+    const authEntry = origin.localStorage?.find((item) => item.name === 'auth-storage');
+    if (authEntry) {
+      try {
+        const parsed = JSON.parse(authEntry.value);
+        storedUser = parsed?.state?.user ?? null;
+        storedToken = parsed?.state?.token ?? undefined;
+        break;
+      } catch {
+        // Ignore malformed entries
+      }
+    }
+  }
+
+  return {
+    userId: storedUser?.id ?? persona.userId,
+    email: storedUser?.email ?? persona.email,
+    organizationId: storedUser?.organizationId ?? persona.organizationId,
+    branchId: persona.branchId,
+    roles: storedUser?.roles ?? persona.roles,
+    permissions: storedUser?.permissions ?? [],
+    token: storedToken,
+  };
+}
+
+/**
+ * Apply a persona's real storageState (cookies + localStorage) to an existing Page.
+ */
+export async function applyPersonaStorageState(
+  page: Page,
+  personaKey: E2EPersonaKey
+): Promise<Page> {
+  const state = readPersonaStorageState(personaKey);
+
+  if (state.cookies && state.cookies.length > 0) {
+    await page.context().addCookies(state.cookies);
+  }
+
+  const authEntry = state.origins
+    ?.flatMap((o) => o.localStorage ?? [])
+    .find((item) => item.name === 'auth-storage');
+
+  await page.goto('/');
+  if (authEntry) {
+    await page.evaluate((rawAuth) => {
+      localStorage.setItem('auth-storage', rawAuth);
+    }, authEntry.value);
+    await page.reload();
+  }
+
+  return page;
+}
+
+function resolvePersonaKey(user: AuthenticatedUser): E2EPersonaKey | null {
+  for (const key of Object.keys(E2E_PERSONAS) as E2EPersonaKey[]) {
+    const p = E2E_PERSONAS[key];
+    if (p.userId === user.userId || p.email === user.email) {
+      return key;
+    }
+  }
+  return null;
+}
+
 /**
  * Auth Fixtures for E2E Tests
  *
- * Provides pre-configured user contexts for different roles:
- * - adminUser: Super admin with all permissions
- * - coordinatorUser: Care coordinator with scheduling/EVV permissions
- * - caregiverUser: Caregiver with visit and task permissions
- * - authenticatedPage: Page with authentication headers set
+ * All persona fixtures are backed by real UI logins saved to
+ * e2e/.auth/<persona>.json during the Playwright setup project.
  */
 export type AuthFixtures = {
   authenticatedPage: Page;
+  adminPage: Page;
+  orgAdminPage: Page;
+  coordinatorPage: Page;
+  caregiverPage: Page;
+  familyPage: Page;
   adminUser: AuthenticatedUser;
+  orgAdminUser: AuthenticatedUser;
   coordinatorUser: AuthenticatedUser;
   caregiverUser: AuthenticatedUser;
-  orgAdminUser: AuthenticatedUser;
+  familyUser: AuthenticatedUser;
 };
 
 /**
- * Extended test with authentication fixtures
+ * Extended test with real storageState-backed authentication fixtures
  */
 export const test = base.extend<AuthFixtures>({
-  /**
-   * Super Admin User - Full access to all resources
-   */
   adminUser: async ({}, use) => {
-    const user: AuthenticatedUser = {
-      userId: E2E_UUIDS.ADMIN_USER,
-      email: 'admin@e2e-test.com',
-      organizationId: E2E_UUIDS.ORG_E2E,
-      branchId: E2E_UUIDS.BRANCH_E2E,
-      roles: ['SUPER_ADMIN'],
-      permissions: ['*:*'], // Wildcard permission
-    };
-
-    // Generate JWT token
-    const tokenPayload: TokenPayload = {
-      userId: user.userId,
-      email: user.email,
-      organizationId: user.organizationId,
-      roles: user.roles,
-      permissions: user.permissions,
-      tokenVersion: 1,
-    };
-    user.token = JWTUtils.generateTokenPair(tokenPayload).accessToken;
-
-    await use(user);
+    await use(getPersonaUser('admin'));
   },
 
-  /**
-   * Organization Admin User - Full access within organization
-   */
   orgAdminUser: async ({}, use) => {
-    const user: AuthenticatedUser = {
-      userId: E2E_UUIDS.ORG_ADMIN_USER,
-      email: 'orgadmin@e2e-test.com',
-      organizationId: E2E_UUIDS.ORG_E2E,
-      branchId: E2E_UUIDS.BRANCH_E2E,
-      roles: ['ORG_ADMIN'],
-      permissions: [
-        'organizations:read',
-        'organizations:write',
-        'branches:read',
-        'branches:write',
-        'users:read',
-        'users:write',
-        'clients:*',
-        'caregivers:*',
-        'visits:*',
-        'evv:*',
-        'billing:*',
-        'payroll:*',
-      ],
-    };
-
-    const tokenPayload: TokenPayload = {
-      userId: user.userId,
-      email: user.email,
-      organizationId: user.organizationId,
-      roles: user.roles,
-      permissions: user.permissions,
-      tokenVersion: 1,
-    };
-    user.token = JWTUtils.generateTokenPair(tokenPayload).accessToken;
-
-    await use(user);
+    await use(getPersonaUser('orgAdmin'));
   },
 
-  /**
-   * Care Coordinator User - Scheduling, assignment, EVV management
-   */
   coordinatorUser: async ({}, use) => {
-    const user: AuthenticatedUser = {
-      userId: E2E_UUIDS.COORDINATOR_USER,
-      email: 'coordinator@e2e-test.com',
-      organizationId: E2E_UUIDS.ORG_E2E,
-      branchId: E2E_UUIDS.BRANCH_E2E,
-      roles: ['COORDINATOR'],
-      permissions: [
-        'clients:read',
-        'clients:write',
-        'caregivers:read',
-        'caregivers:write',
-        'visits:read',
-        'visits:write',
-        'evv:read',
-        'evv:write',
-        'care-plans:read',
-        'care-plans:write',
-        'tasks:read',
-        'tasks:write',
-        'scheduling:read',
-        'scheduling:write',
-        'billing:read',
-      ],
-    };
-
-    const tokenPayload: TokenPayload = {
-      userId: user.userId,
-      email: user.email,
-      organizationId: user.organizationId,
-      roles: user.roles,
-      permissions: user.permissions,
-      tokenVersion: 1,
-    };
-    user.token = JWTUtils.generateTokenPair(tokenPayload).accessToken;
-
-    await use(user);
+    await use(getPersonaUser('coordinator'));
   },
 
-  /**
-   * Caregiver User - Limited to own visits and tasks
-   */
   caregiverUser: async ({}, use) => {
-    const user: AuthenticatedUser = {
-      userId: E2E_UUIDS.CAREGIVER_USER,
-      email: 'caregiver@e2e-test.com',
-      organizationId: E2E_UUIDS.ORG_E2E,
-      branchId: E2E_UUIDS.BRANCH_E2E,
-      roles: ['CAREGIVER'],
-      permissions: [
-        'visits:read:own', // Only own visits
-        'evv:write:own', // Clock in/out for own visits
-        'tasks:read:own',
-        'tasks:write:own',
-        'care-plans:read:assigned', // Only assigned care plans
-      ],
-    };
-
-    const tokenPayload: TokenPayload = {
-      userId: user.userId,
-      email: user.email,
-      organizationId: user.organizationId,
-      roles: user.roles,
-      permissions: user.permissions,
-      tokenVersion: 1,
-    };
-    user.token = JWTUtils.generateTokenPair(tokenPayload).accessToken;
-
-    await use(user);
+    await use(getPersonaUser('caregiver'));
   },
 
-  /**
-   * Authenticated Page - Page with auth headers/cookies set
-   * Defaults to coordinator role, but can be overridden
-   */
-  authenticatedPage: async ({ page, coordinatorUser }, use) => {
-    // The app's real auth state lives in a Zustand store persisted to
-    // localStorage under the 'auth-storage' key (see
-    // packages/web/src/core/hooks/auth.ts). ProtectedRoute and useApiClient
-    // both read user/token from that store, not from ad-hoc keys like
-    // 'authToken' — writing the wrong shape here silently leaves the app
-    // treating every page as unauthenticated and redirecting to /login.
-    await page.goto('/');
-    await page.evaluate(
-      ({ token, user }) => {
-        localStorage.setItem(
-          'auth-storage',
-          JSON.stringify({
-            state: { user, token, isAuthenticated: true },
-            version: 0,
-          })
-        );
-      },
-      {
-        token: coordinatorUser.token,
-        user: {
-          id: coordinatorUser.userId,
-          organizationId: coordinatorUser.organizationId,
-          email: coordinatorUser.email,
-          name: coordinatorUser.email,
-          roles: coordinatorUser.roles,
-          permissions: coordinatorUser.permissions,
-        },
-      }
-    );
+  familyUser: async ({}, use) => {
+    await use(getPersonaUser('family'));
+  },
 
-    // Reload so the app boots with the auth store already hydrated instead
-    // of racing the initial unauthenticated render.
-    await page.reload();
-
+  authenticatedPage: async ({ page }, use) => {
+    await applyPersonaStorageState(page, 'coordinator');
     await use(page);
+  },
+
+  adminPage: async ({ browser }, use) => {
+    const context = await browser.newContext({
+      storageState: path.resolve(process.cwd(), STORAGE_STATE_PATHS.admin),
+    });
+    const page = await context.newPage();
+    await use(page);
+    await context.close();
+  },
+
+  orgAdminPage: async ({ browser }, use) => {
+    const context = await browser.newContext({
+      storageState: path.resolve(process.cwd(), STORAGE_STATE_PATHS.orgAdmin),
+    });
+    const page = await context.newPage();
+    await use(page);
+    await context.close();
+  },
+
+  coordinatorPage: async ({ browser }, use) => {
+    const context = await browser.newContext({
+      storageState: path.resolve(process.cwd(), STORAGE_STATE_PATHS.coordinator),
+    });
+    const page = await context.newPage();
+    await use(page);
+    await context.close();
+  },
+
+  caregiverPage: async ({ browser }, use) => {
+    const context = await browser.newContext({
+      storageState: path.resolve(process.cwd(), STORAGE_STATE_PATHS.caregiver),
+    });
+    const page = await context.newPage();
+    await use(page);
+    await context.close();
+  },
+
+  familyPage: async ({ browser }, use) => {
+    const context = await browser.newContext({
+      storageState: path.resolve(process.cwd(), STORAGE_STATE_PATHS.family),
+    });
+    const page = await context.newPage();
+    await use(page);
+    await context.close();
   },
 });
 
 /**
- * Helper: Create custom authenticated page for specific user
+ * Helper: Authenticate a Page using the real saved storageState for a seeded
+ * persona user.
  */
 export async function createAuthenticatedPage(
   page: Page,
   user: AuthenticatedUser
 ): Promise<Page> {
-  await page.goto('/');
+  const personaKey = resolvePersonaKey(user);
+  if (personaKey) {
+    return applyPersonaStorageState(page, personaKey);
+  }
+  return injectSyntheticAuthState(page, user);
+}
 
-  // Write auth state in the shape the app's Zustand auth store expects
-  // (packages/web/src/core/hooks/auth.ts persists to localStorage under
-  // 'auth-storage' as { state: { user, token, isAuthenticated }, version }).
-  // ProtectedRoute and useApiClient both read from this store — writing a
-  // different shape/key leaves every route treated as unauthenticated.
+/**
+ * Unit-style helper ONLY for negative/synthetic token tests (e.g., testing
+ * expired or malformed tokens without a real seeded login).
+ */
+export async function injectSyntheticAuthState(
+  page: Page,
+  user: AuthenticatedUser
+): Promise<Page> {
+  await page.goto('/');
   await page.evaluate(
     ({ token, authUser }) => {
       localStorage.setItem(
@@ -245,10 +269,10 @@ export async function createAuthenticatedPage(
       );
     },
     {
-      token: user.token,
+      token: user.token ?? 'invalid-synthetic-token',
       authUser: {
-        id: user.userId,
-        organizationId: user.organizationId,
+        id: user.userId || E2E_UUIDS.ADMIN_USER,
+        organizationId: user.organizationId || E2E_UUIDS.ORG_E2E,
         email: user.email,
         name: user.email,
         roles: user.roles,
@@ -256,11 +280,7 @@ export async function createAuthenticatedPage(
       },
     }
   );
-
-  // Reload so the app boots with the auth store already hydrated instead of
-  // racing the initial unauthenticated render.
   await page.reload();
-
   return page;
 }
 

@@ -1,4 +1,7 @@
 import { test, expect } from "@playwright/test";
+import { STORAGE_STATE_PATHS } from "../fixtures/auth.fixture.js";
+
+test.use({ storageState: STORAGE_STATE_PATHS.admin });
 
 // FC-AUDIT-BILLING-PAYROLL-EVV WU-7: Billing invoice lifecycle E2E coverage.
 //
@@ -18,14 +21,8 @@ import { test, expect } from "@playwright/test";
 // cookies — page.request's APIRequestContext does not share the browser's
 // JS-driven Authorization header, so raw page.request calls would 401.
 
-const ADMIN_EMAIL = "admin@folkcare.example";
-const ADMIN_PASSWORD = "Admin123!";
-
 async function loginAsAdmin(page: import("@playwright/test").Page) {
-  await page.goto("/login");
-  await page.locator('input[type="email"]').fill(ADMIN_EMAIL);
-  await page.locator('input[type="password"]').fill(ADMIN_PASSWORD);
-  await page.getByRole("button", { name: /sign in|log in/i }).click();
+  await page.goto("/admin");
   await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 15000 });
 }
 
