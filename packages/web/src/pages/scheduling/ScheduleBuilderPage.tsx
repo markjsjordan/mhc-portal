@@ -887,10 +887,16 @@ export default function ScheduleBuilderPage() {
           clients={clients}
           caregivers={caregivers}
           onClose={() => setShowPatternModal(false)}
-          onSuccess={(count) => {
+          onSuccess={(count, skippedCount) => {
             void (async () => {
               setShowPatternModal(false);
-              toast.success(`Recurring schedule created! Generated ${count} visits.`);
+              if (skippedCount && skippedCount > 0) {
+                toast.warning(
+                  `Recurring schedule created: ${count} visits scheduled (${skippedCount} duplicates skipped).`
+                );
+              } else {
+                toast.success(`Recurring schedule created! Generated ${count} visits.`);
+              }
               await queryClient.invalidateQueries({ queryKey: ['visits'] });
               await refetchVisits();
             })();
@@ -1315,7 +1321,7 @@ interface CreateRecurringPatternModalProps {
   clients: Array<{ id: string; firstName: string; lastName: string }>;
   caregivers: Caregiver[];
   onClose: () => void;
-  onSuccess: (count: number) => void;
+  onSuccess: (count: number, skippedCount?: number) => void;
 }
 
 function CreateRecurringPatternModal({
@@ -1385,7 +1391,7 @@ function CreateRecurringPatternModal({
       });
 
       void queryClient.invalidateQueries({ queryKey: ['visit-patterns'] });
-      onSuccess(res.generatedVisitsCount);
+      onSuccess(res.generatedVisitsCount, res.skippedVisitsCount);
     } catch (err: unknown) {
       console.error('Error creating pattern:', err);
       const message = err instanceof Error ? err.message : 'Failed to create recurring pattern';

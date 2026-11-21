@@ -172,7 +172,10 @@ describe('RecurringVisitPatternEngine', () => {
         deletedBy: null,
       };
 
-      mockQuery.mockImplementation((_query: string, values: any[]) => {
+      mockQuery.mockImplementation((query: string, values: any[]) => {
+        if (!query.includes('INSERT INTO visits')) {
+          return Promise.resolve({ rows: [] });
+        }
         return Promise.resolve({
           rows: [
             {
@@ -235,7 +238,10 @@ describe('RecurringVisitPatternEngine', () => {
         deletedBy: null,
       };
 
-      mockQuery.mockImplementation((_q: string, values: any[]) => {
+      mockQuery.mockImplementation((query: string, values: any[]) => {
+        if (!query.includes('INSERT INTO visits')) {
+          return Promise.resolve({ rows: [] });
+        }
         return Promise.resolve({
           rows: [
             {
@@ -300,7 +306,10 @@ describe('RecurringVisitPatternEngine', () => {
       };
 
       const capturedRows: any[] = [];
-      mockQuery.mockImplementation((_q: string, values: any[]) => {
+      mockQuery.mockImplementation((query: string, values: any[]) => {
+        if (!query.includes('INSERT INTO visits')) {
+          return Promise.resolve({ rows: [] });
+        }
         const row = {
           id: `v-${values[7]}`,
           organization_id: TEST_IDS.org,
@@ -384,7 +393,10 @@ describe('RecurringVisitPatternEngine', () => {
         deletedBy: null,
       };
 
-      mockQuery.mockImplementation((_q: string, values: any[]) => {
+      mockQuery.mockImplementation((query: string, values: any[]) => {
+        if (!query.includes('INSERT INTO visits')) {
+          return Promise.resolve({ rows: [] });
+        }
         return Promise.resolve({
           rows: [
             {
@@ -429,6 +441,196 @@ describe('RecurringVisitPatternEngine', () => {
       expect(result.exceptions[0]!.date).toBe('2026-10-02');
       expect(result.exceptions[1]!.type).toBe('HOSPITAL_HOLD');
       expect(result.exceptions[1]!.date).toBe('2026-10-03');
+    });
+  });
+
+  describe('Duplicate Conflict Handling & Committed Count Verification', () => {
+    it('skips pre-existing duplicate dates and returns actual DB committed count (14 of 35)', async () => {
+      // 35 consecutive days: 2026-10-01 through 2026-11-04
+      const patternRow = {
+        id: TEST_IDS.pattern,
+        organization_id: TEST_IDS.org,
+        branch_id: TEST_IDS.branch,
+        client_id: TEST_IDS.client,
+        caregiver_id: TEST_IDS.caregiver,
+        service_type_id: TEST_IDS.serviceType,
+        service_type_name: 'Personal Care',
+        frequency: 'DAILY',
+        rrule: 'FREQ=DAILY',
+        start_date: '2026-10-01',
+        end_date: '2026-11-04',
+        day_of_week: JSON.stringify([]),
+        start_time: '09:00',
+        duration: 120,
+        status: 'ACTIVE',
+        skip_holidays: false,
+        created_at: FIXED_BASE_DATE,
+        created_by: TEST_IDS.user,
+        updated_at: FIXED_BASE_DATE,
+        updated_by: TEST_IDS.user,
+      };
+
+      // First 21 dates already exist in DB
+      const existingDateRows: Array<{ scheduled_date: string }> = [];
+      for (let i = 1; i <= 21; i++) {
+        existingDateRows.push({ scheduled_date: `2026-10-${String(i).padStart(2, '0')}` });
+      }
+
+      let insertedCount = 0;
+      mockQuery.mockImplementation((query: string, values: any[]) => {
+        if (query.includes('INSERT INTO visit_patterns')) {
+          return Promise.resolve({ rows: [patternRow] });
+        }
+        if (query.includes('SELECT DISTINCT TO_CHAR(scheduled_date')) {
+          return Promise.resolve({
+            rows: existingDateRows,
+          });
+        }
+        if (query.includes('INSERT INTO visits')) {
+          insertedCount++;
+          return Promise.resolve({
+            rows: [
+              {
+                id: `v-${values[7]}`,
+                organization_id: values[0],
+                branch_id: values[1],
+                client_id: values[2],
+                pattern_id: values[3],
+                visit_number: values[4],
+                service_type_id: values[5],
+                service_type_name: values[6],
+                scheduled_date: values[7],
+                scheduled_start_time: values[8],
+                scheduled_end_time: values[9],
+                scheduled_duration: values[10],
+                assigned_caregiver_id: values[11],
+                status: values[12],
+                address: values[13],
+                created_at: FIXED_BASE_DATE,
+                created_by: TEST_IDS.user,
+                updated_at: FIXED_BASE_DATE,
+                updated_by: TEST_IDS.user,
+                version: 1,
+              },
+            ],
+          });
+        }
+        if (query.includes('SELECT COUNT(*)::int AS count')) {
+          return Promise.resolve({ rows: [{ count: insertedCount }] });
+        }
+        return Promise.resolve({ rows: [] });
+      });
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const result = await engine.createPatternAndGenerateVisits(
+        {
+          organizationId: TEST_IDS.org,
+          clientId: TEST_IDS.client,
+          caregiverId: TEST_IDS.caregiver,
+          serviceTypeId: TEST_IDS.serviceType,
+          frequency: 'DAILY',
+          startDate: '2026-10-01',
+          endDate: '2026-11-04',
+          startTime: '09:00',
+          duration: 120,
+          horizonDays: 90,
+          skipHolidays: false,
+        },
+        testContext,
+        { referenceDate: FIXED_BASE_DATE }
+      );
+      warnSpy.mockRestore();
+
+      expect(result.scheduledCandidateCount).toBe(35);
+      expect(result.generatedVisitsCount).toBe(14);
+      expect(result.visits).toHaveLength(14);
+      expect(result.skippedVisitsCount).toBe(21);
+      expect(result.skippedVisits).toHaveLength(21);
+      expect(result.skippedVisits?.[0]).toMatchObject({
+        date: '2026-10-01',
+        clientId: TEST_IDS.client,
+        caregiverId: TEST_IDS.caregiver,
+      });
+      expect(result.exceptions.filter((e) => e.type === 'DUPLICATE_VISIT')).toHaveLength(21);
+    });
+
+    it('records skipped visits when ON CONFLICT DO NOTHING returns 0 rows or 23505 is thrown', async () => {
+      const pattern: VisitPattern = {
+        id: TEST_IDS.pattern,
+        organizationId: TEST_IDS.org,
+        clientId: TEST_IDS.client,
+        caregiverId: TEST_IDS.caregiver,
+        serviceTypeId: TEST_IDS.serviceType,
+        frequency: 'DAILY',
+        dayOfWeek: [],
+        startDate: new Date('2026-10-01T00:00:00.000Z'),
+        endDate: new Date('2026-10-03T00:00:00.000Z'),
+        startTime: '09:00',
+        duration: 120,
+        status: 'ACTIVE',
+        skipHolidays: false,
+        createdAt: FIXED_BASE_DATE,
+        createdBy: TEST_IDS.user,
+        updatedAt: FIXED_BASE_DATE,
+        updatedBy: TEST_IDS.user,
+        version: 1,
+        deletedAt: null,
+        deletedBy: null,
+      };
+
+      mockQuery.mockImplementation((query: string, values: any[]) => {
+        if (query.includes('SELECT DISTINCT TO_CHAR(scheduled_date')) {
+          return Promise.resolve({ rows: [] });
+        }
+        if (query.includes('INSERT INTO visits')) {
+          const scheduledDate = values[7];
+          if (scheduledDate === '2026-10-01') {
+            return Promise.resolve({ rows: [] }); // ON CONFLICT DO NOTHING
+          }
+          if (scheduledDate === '2026-10-02') {
+            const err = new Error('duplicate key') as Error & { code: string };
+            err.code = '23505';
+            return Promise.reject(err);
+          }
+          return Promise.resolve({
+            rows: [
+              {
+                id: `v-${scheduledDate}`,
+                organization_id: TEST_IDS.org,
+                client_id: TEST_IDS.client,
+                pattern_id: TEST_IDS.pattern,
+                scheduled_date: scheduledDate,
+                scheduled_start_time: '09:00',
+                scheduled_end_time: '11:00',
+                scheduled_duration: 120,
+                status: 'ASSIGNED',
+                created_at: FIXED_BASE_DATE,
+                created_by: TEST_IDS.user,
+                updated_at: FIXED_BASE_DATE,
+                updated_by: TEST_IDS.user,
+                version: 1,
+              },
+            ],
+          });
+        }
+        if (query.includes('SELECT COUNT(*)::int AS count')) {
+          return Promise.resolve({ rows: [{ count: 1 }] });
+        }
+        return Promise.resolve({ rows: [] });
+      });
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const result = await engine.generateConcreteVisits(
+        pattern,
+        { horizonDays: 5, referenceDate: FIXED_BASE_DATE, skipHolidays: false },
+        testContext
+      );
+      warnSpy.mockRestore();
+
+      expect(result.committedCount).toBe(1);
+      expect(result.visits).toHaveLength(1);
+      expect(result.skippedVisits).toHaveLength(2);
+      expect(result.exceptions.filter((e) => e.type === 'INSERT_SKIPPED')).toHaveLength(2);
     });
   });
 
