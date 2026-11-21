@@ -5,6 +5,10 @@ import { useApiClient } from '@/core/hooks/index.js';
 import { extractList } from '@/core/utils/list-response.js';
 import VisitTypeSelector from '@/verticals/scheduling-visits/components/VisitTypeSelector.js';
 import type { VisitType } from '@/verticals/scheduling-visits/types/index.js';
+import {
+  formatCaregiverOptionLabel,
+  type CaregiverOption,
+} from '@/verticals/scheduling-visits/utils/caregiverOptionLabel.js';
 import { Button } from '@/components/ui/button.js';
 import { Input } from '@/components/ui/input.js';
 import { Textarea } from '@/components/ui/textarea.js';
@@ -43,10 +47,49 @@ interface VisitFormData {
   clientInstructions?: string;
 }
 
+const DURATION_OPTIONS = [
+  { value: 30, label: '30 minutes' },
+  { value: 45, label: '45 minutes' },
+  { value: 60, label: '1 hour (60 min)' },
+  { value: 90, label: '1.5 hours (90 min)' },
+  { value: 120, label: '2 hours (120 min)' },
+  { value: 180, label: '3 hours (180 min)' },
+  { value: 240, label: '4 hours (240 min)' },
+  { value: 360, label: '6 hours (360 min)' },
+  { value: 480, label: '8 hours (480 min)' },
+] as const;
+
+const UNASSIGNED_VALUE = 'UNASSIGNED';
+
+function parseTimeToMinutes(time: string): number | null {
+  const parts = time.split(':').map(Number);
+  if (parts.length < 2 || Number.isNaN(parts[0]) || Number.isNaN(parts[1])) {
+    return null;
+  }
+  return parts[0]! * 60 + parts[1]!;
+}
+
+function formatMinutesToTime(totalMinutes: number): string {
+  const clamped = Math.max(0, Math.min(totalMinutes, 23 * 60 + 59));
+  const hours = String(Math.floor(clamped / 60)).padStart(2, '0');
+  const mins = String(clamped % 60).padStart(2, '0');
+  return `${hours}:${mins}`;
+}
+
+function computeInitialDuration(startTime: string, endTime: string): number {
+  const start = parseTimeToMinutes(startTime);
+  const end = parseTimeToMinutes(endTime);
+  if (start === null || end === null || end <= start) {
+    return 60;
+  }
+  return end - start;
+}
+
 interface VisitFormProps {
   initialDate?: string;
   initialStartTime?: string;
   initialEndTime?: string;
+  initialCaregiverId?: string;
   initialVisitType?: VisitType;
   onSubmit: (data: VisitFormData) => Promise<void>;
   isSubmitting?: boolean;
@@ -56,14 +99,19 @@ export const VisitForm: React.FC<VisitFormProps> = ({
   initialDate,
   initialStartTime = '09:00',
   initialEndTime = '10:00',
+  initialCaregiverId,
   initialVisitType = 'REGULAR',
   onSubmit,
   isSubmitting = false,
 }) => {
   const apiClient = useApiClient();
   const [visitType, setVisitType] = useState<VisitType>(initialVisitType);
+  const [durationMinutes, setDurationMinutes] = useState<number>(() =>
+    computeInitialDuration(initialStartTime, initialEndTime)
+  );
   const [formData, setFormData] = useState<VisitFormData>({
     clientId: '',
+    caregiverId: initialCaregiverId ?? '',
     serviceTypeId: '',
     visitType: initialVisitType,
     scheduledDate: initialDate ?? new Date().toISOString().split('T')[0]!,
@@ -85,6 +133,15 @@ export const VisitForm: React.FC<VisitFormProps> = ({
       const response = await apiClient.get<unknown>('/api/clients?limit=100');
       // API returns { data: { items } }; showcase returns a bare array.
       return extractList<ClientItem>(response);
+    },
+  });
+
+  // Fetch active caregivers for manual optional assignment (no AI suggestions)
+  const { data: caregivers = [] } = useQuery({
+    queryKey: ['caregivers', 'active'],
+    queryFn: async () => {
+      const response = await apiClient.get<unknown>('/api/caregivers?limit=100');
+      return extractList<CaregiverOption>(response);
     },
   });
 
@@ -144,9 +201,26 @@ export const VisitForm: React.FC<VisitFormProps> = ({
     }
 
     try {
-      await onSubmit(formData);
+      await onSubmit({
+        ...formData,
+        caregiverId: formData.caregiverId || undefined,
+      });
     } catch {
       toast.error('Failed to create visit');
+    }
+  };
+
+  const handleDurationChange = (newDurationStr: string) => {
+    const minutes = parseInt(newDurationStr, 10);
+    if (Number.isNaN(minutes) || minutes <= 0) return;
+    setDurationMinutes(minutes);
+    const startMins = parseTimeToMinutes(formData.scheduledStartTime);
+    if (startMins !== null) {
+      const newEndTime = formatMinutesToTime(startMins + minutes);
+      setFormData((prev) => ({ ...prev, scheduledEndTime: newEndTime }));
+      if (errors.scheduledEndTime) {
+        setErrors((prev) => ({ ...prev, scheduledEndTime: undefined }));
+      }
     }
   };
 
@@ -156,6 +230,25 @@ export const VisitForm: React.FC<VisitFormProps> = ({
       setFormData((prev) => ({
         ...prev,
         visitType: value as VisitType,
+      }));
+    } else if (field === 'scheduledStartTime' && typeof value === 'string') {
+      const startMins = parseTimeToMinutes(value);
+      const nextEndTime =
+        startMins !== null ? formatMinutesToTime(startMins + durationMinutes) : formData.scheduledEndTime;
+      setFormData((prev) => ({
+        ...prev,
+        scheduledStartTime: value,
+        scheduledEndTime: nextEndTime,
+      }));
+    } else if (field === 'scheduledEndTime' && typeof value === 'string') {
+      const startMins = parseTimeToMinutes(formData.scheduledStartTime);
+      const endMins = parseTimeToMinutes(value);
+      if (startMins !== null && endMins !== null && endMins > startMins) {
+        setDurationMinutes(endMins - startMins);
+      }
+      setFormData((prev) => ({
+        ...prev,
+        scheduledEndTime: value,
       }));
     } else {
       setFormData((prev) => ({
@@ -253,8 +346,8 @@ export const VisitForm: React.FC<VisitFormProps> = ({
         {errors.scheduledDate && <p className="mt-1 text-sm text-destructive">{errors.scheduledDate}</p>}
       </div>
 
-      {/* Start and End Times */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Start Time, Duration, and End Time */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-1">
           <Label htmlFor="visit-start-time" className="text-sm font-medium">
             Start Time <span className="text-destructive">*</span>
@@ -271,6 +364,31 @@ export const VisitForm: React.FC<VisitFormProps> = ({
         </div>
 
         <div className="space-y-1">
+          <Label htmlFor="visit-duration" className="text-sm font-medium">
+            Duration <span className="text-destructive">*</span>
+          </Label>
+          <Select
+            value={
+              DURATION_OPTIONS.some((opt) => opt.value === durationMinutes)
+                ? String(durationMinutes)
+                : ''
+            }
+            onValueChange={handleDurationChange}
+          >
+            <SelectTrigger id="visit-duration">
+              <SelectValue placeholder={`${durationMinutes} min`} />
+            </SelectTrigger>
+            <SelectContent>
+              {DURATION_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={String(option.value)}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1">
           <Label htmlFor="visit-end-time" className="text-sm font-medium">
             End Time <span className="text-destructive">*</span>
           </Label>
@@ -284,6 +402,29 @@ export const VisitForm: React.FC<VisitFormProps> = ({
           />
           {errors.scheduledEndTime && <p className="mt-1 text-sm text-destructive">{errors.scheduledEndTime}</p>}
         </div>
+      </div>
+
+      {/* Optional Caregiver Selection (Manual Only) */}
+      <div className="space-y-1">
+        <Label htmlFor="visit-caregiver" className="text-sm font-medium">
+          Caregiver
+        </Label>
+        <Select
+          value={formData.caregiverId || UNASSIGNED_VALUE}
+          onValueChange={(val) => handleChange('caregiverId', val === UNASSIGNED_VALUE ? '' : val)}
+        >
+          <SelectTrigger id="visit-caregiver">
+            <SelectValue placeholder="-- Unassigned --" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={UNASSIGNED_VALUE}>-- Unassigned --</SelectItem>
+            {caregivers.map((cg) => (
+              <SelectItem key={cg.id} value={cg.id}>
+                {formatCaregiverOptionLabel(cg)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Address */}

@@ -52,6 +52,7 @@ const CaregiverMoreMenu: React.FC<{
         type="button"
         variant="ghost"
         size="icon-sm"
+        className="min-h-[44px] min-w-[44px]"
         onClick={() => onOpenChange(!isOpen)}
         aria-label="More actions"
         aria-expanded={isOpen}
@@ -132,12 +133,12 @@ export const CaregiverActionButtons: React.FC<CaregiverActionButtonsProps> = ({
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <Button
         onClick={onEdit}
         disabled={!canEdit || isLoading}
-        variant="default"
-        size="sm"
+        variant="outline"
+        className="min-h-[44px] px-3"
         aria-label="Edit caregiver"
       >
         <Edit2 className="h-4 w-4 mr-1.5" />
@@ -148,7 +149,7 @@ export const CaregiverActionButtons: React.FC<CaregiverActionButtonsProps> = ({
         onClick={onDelete}
         disabled={!canDelete || !isDeletable || isLoading}
         variant="destructive"
-        size="sm"
+        className="min-h-[44px] px-3"
         aria-label="Delete caregiver"
         title={deleteButtonTitle}
       >

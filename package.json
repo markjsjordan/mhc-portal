@@ -79,7 +79,7 @@
     "deploy:cloudflare:pages": "wrangler pages deploy packages/web/dist --project-name=folkcare",
     "predeploy": "tsx scripts/pre-deploy-checks.ts",
     "test:e2e:server": "tsx scripts/e2e-server.ts",
-    "test:smoke": "playwright test e2e/tests/smoke.spec.ts",
+    "test:smoke": "playwright test --grep @smoke --project=chromium",
     "vercel:build": "npm run build",
     "prepare": "husky",
     "capture": "tsx scripts/capture-screenshots.ts",
