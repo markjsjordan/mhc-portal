@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import ScheduleBuilderPage from '../ScheduleBuilderPage.js';
 
 // Mock the hooks
@@ -256,6 +257,34 @@ describe('ScheduleBuilderPage responsive header (wdvf3abp4v)', () => {
       expect(payload.serviceTypeId).not.toBe('00000000-0000-0000-0000-000000000002');
       expect(payload.serviceTypeCode).toBe('PC');
       expect(payload.serviceTypeName).toBe('Personal Care');
+    });
+
+    it('sends horizonDays=90 and shows warning toast when duplicate visits are skipped', async () => {
+      mockCreatePattern.mockResolvedValueOnce({
+        generatedVisitsCount: 14,
+        skippedVisitsCount: 21,
+        skippedVisits: [],
+      });
+      const warningSpy = vi.spyOn(toast, 'warning').mockImplementation(() => '');
+
+      renderComponent();
+
+      fireEvent.click(screen.getByRole('button', { name: /\+ Recurring Schedule/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Generate Recurring Visits/i }));
+
+      await vi.waitFor(() => {
+        expect(mockCreatePattern).toHaveBeenCalledTimes(1);
+      });
+
+      const payload = mockCreatePattern.mock.calls[0]![0] as { horizonDays?: number };
+      expect(payload.horizonDays).toBe(90);
+
+      await vi.waitFor(() => {
+        expect(warningSpy).toHaveBeenCalledWith(
+          'Recurring schedule created: 14 visits scheduled (21 duplicates skipped).'
+        );
+      });
+      warningSpy.mockRestore();
     });
   });
 });

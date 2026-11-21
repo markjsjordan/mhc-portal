@@ -234,6 +234,87 @@ describe('Visit Patterns Endpoints (FC-SCHED-002)', () => {
       );
     });
 
+    it('coerces and passes horizonDays=90 to the pattern generator service and defaults to 60 when omitted', async () => {
+      mockCreatePatternAndGenerateVisits.mockResolvedValue({
+        pattern: { id: PATTERN_ID, status: 'ACTIVE' },
+        generatedVisitsCount: 12,
+        skippedVisitsCount: 0,
+        skippedVisits: [],
+        visits: [],
+        exceptions: [],
+      });
+      (mockDb.query as ReturnType<typeof vi.fn>).mockImplementation((sql: string) => {
+        if (sql.includes('FROM clients')) {
+          return Promise.resolve({
+            rows: [{ id: CLIENT_ID, organization_id: ORG_ID, branch_id: BRANCH_ID }],
+          });
+        }
+        return Promise.resolve({ rows: [] });
+      });
+
+      const res90 = await request(app)
+        .post('/api/visits/patterns')
+        .send({ ...validPayload, horizonDays: '90' });
+      expect(res90.status).toBe(201);
+      expect(mockCreatePatternAndGenerateVisits).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ horizonDays: 90 }),
+        expect.anything()
+      );
+
+      const resDefault = await request(app)
+        .post('/api/visits/patterns')
+        .send(validPayload);
+      expect(resDefault.status).toBe(201);
+      expect(mockCreatePatternAndGenerateVisits).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ horizonDays: 60 }),
+        expect.anything()
+      );
+    });
+
+    it('returns skippedVisitsCount and skippedVisits and logs warning when partial duplicates occur', async () => {
+      const skippedVisits = [
+        {
+          date: '2026-10-19',
+          startTime: '09:00',
+          clientId: CLIENT_ID,
+          caregiverId: null,
+          reason: 'Duplicate visit already exists for client at scheduled date and time',
+        },
+      ];
+      mockCreatePatternAndGenerateVisits.mockResolvedValueOnce({
+        pattern: { id: PATTERN_ID, status: 'ACTIVE' },
+        generatedVisitsCount: 3,
+        scheduledCandidateCount: 4,
+        skippedVisitsCount: 1,
+        skippedVisits,
+        visits: [],
+        exceptions: [],
+      });
+      (mockDb.query as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        rows: [{ id: CLIENT_ID, organization_id: ORG_ID, branch_id: BRANCH_ID }],
+      });
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const res = await request(app)
+        .post('/api/visits/patterns')
+        .send({ ...validPayload, horizonDays: 90 });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.generatedVisitsCount).toBe(3);
+      expect(res.body.data.skippedVisitsCount).toBe(1);
+      expect(res.body.data.skippedVisits).toEqual(skippedVisits);
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[POST /api/visits/patterns] Skipped duplicate visits during pattern generation',
+        expect.objectContaining({
+          patternId: PATTERN_ID,
+          skippedVisitsCount: 1,
+        })
+      );
+      warnSpy.mockRestore();
+    });
+
     it('falls back to the organization first branch when client and user context have none', async () => {
       const orgBranchId = 'ee0e8400-e29b-41d4-a716-446655440000';
       mockCreatePatternAndGenerateVisits.mockResolvedValueOnce({

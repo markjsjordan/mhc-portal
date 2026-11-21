@@ -751,7 +751,7 @@ export function createVisitRouter(db: Database): Router {
         clientInstructions: z.string().optional(),
         caregiverInstructions: z.string().optional(),
         skipHolidays: z.boolean().optional(),
-        horizonDays: z.coerce.number().optional(),
+        horizonDays: z.coerce.number().int().min(1).max(365).optional(),
         caregiverTimeOffExceptions: z.array(z.any()).optional(),
         clientHospitalHolds: z.array(z.any()).optional(),
       });
@@ -857,6 +857,11 @@ export function createVisitRouter(db: Database): Router {
         return;
       }
 
+      const horizonDays = validated.horizonDays ?? 60;
+      console.info(
+        `[POST /api/visits/patterns] Creating pattern for client=${validated.clientId} horizonDays=${horizonDays}`
+      );
+
       const patternEngine = new RecurringVisitPatternEngine(db.getPool());
       const result = await patternEngine.createPatternAndGenerateVisits(
         {
@@ -878,12 +883,23 @@ export function createVisitRouter(db: Database): Router {
           clientInstructions: validated.clientInstructions,
           caregiverInstructions: validated.caregiverInstructions,
           skipHolidays: validated.skipHolidays,
-          horizonDays: validated.horizonDays ? Number(validated.horizonDays) : 60,
+          horizonDays,
           caregiverTimeOffExceptions: validated.caregiverTimeOffExceptions,
           clientHospitalHolds: validated.clientHospitalHolds,
         },
         context
       );
+
+      if ((result.skippedVisitsCount ?? 0) > 0) {
+        console.warn('[POST /api/visits/patterns] Skipped duplicate visits during pattern generation', {
+          patternId: result.pattern.id,
+          clientId: validated.clientId,
+          horizonDays,
+          generatedVisitsCount: result.generatedVisitsCount,
+          skippedVisitsCount: result.skippedVisitsCount,
+          skippedVisits: result.skippedVisits,
+        });
+      }
 
       // Audit trail
       try {
