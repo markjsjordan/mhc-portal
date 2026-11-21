@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { execFileSync } from "node:child_process";
 
 // E2E-4 wdvf3acxhq: Rebuild core visit lifecycle E2E
 //
@@ -121,10 +122,13 @@ async function apiPut(page: import("@playwright/test").Page, url: string, data: 
 // ── seed helper ───────────────────────────────────────────────────────────────
 
 function reseedFixtures() {
-  const { execFileSync } = require("node:child_process");
   execFileSync("npx", ["tsx", "scripts/run-visit-lifecycle-seed.ts"], {
     cwd: process.cwd(),
     stdio: "inherit",
+    env: {
+      ...process.env,
+      DATABASE_URL: process.env["E2E_DATABASE_URL"] ?? process.env["DATABASE_URL"] ?? "",
+    },
   });
 }
 
@@ -138,6 +142,8 @@ function todayDate(): string {
 // ── tests ─────────────────────────────────────────────────────────────────────
 
 test.describe("@full E2E-4 wdvf3acxhq: Visit Lifecycle (schedule → assign → clock-in → clock-out → EVV → billing)", () => {
+  test.describe.configure({ mode: "serial" });
+
   test.beforeAll(() => {
     reseedFixtures();
   });
