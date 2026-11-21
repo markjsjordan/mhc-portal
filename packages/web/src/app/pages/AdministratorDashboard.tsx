@@ -464,8 +464,8 @@ export const AdministratorDashboard: React.FC = () => {
 
       {/* Financial Summary and Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Financial Summary */}
-        <div>
+        {/* Financial Summary — hidden pending data validation (tag 1.4.0) */}
+        <div style={{ display: 'none' }}>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Financial Summary</h2>
           <div className="space-y-4">
             {financialStats.map((stat) => (
