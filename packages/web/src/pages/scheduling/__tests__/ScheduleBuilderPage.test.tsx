@@ -12,10 +12,12 @@ vi.mock('@/core/hooks', () => ({
 
 vi.mock('@/verticals/caregivers/hooks/useCaregivers', () => ({
   useCaregivers: () => ({
-    caregivers: [
-      { id: 'cg-1', firstName: 'Alice', lastName: 'Walker', role: 'RN' },
-      { id: 'cg-2', firstName: 'Bob', lastName: 'Smith', role: 'HHA' },
-    ],
+    data: {
+      items: [
+        { id: 'cg-1', firstName: 'Alice', lastName: 'Walker', role: 'RN' },
+        { id: 'cg-2', firstName: 'Bob', lastName: 'Smith', role: 'HHA' },
+      ],
+    },
     isLoading: false,
   }),
 }));
@@ -256,6 +258,97 @@ describe('ScheduleBuilderPage responsive header (wdvf3abp4v)', () => {
       expect(payload.serviceTypeId).not.toBe('00000000-0000-0000-0000-000000000002');
       expect(payload.serviceTypeCode).toBe('PC');
       expect(payload.serviceTypeName).toBe('Personal Care');
+    });
+
+    it('allows selecting Client, Caregiver, Service Type, and Frequency without controlled/uncontrolled warnings (wdvf3add0f)', async () => {
+      // Polyfill pointer capture and scrollIntoView for Radix Select in jsdom
+      if (!Element.prototype.hasPointerCapture) {
+        Element.prototype.hasPointerCapture = () => false;
+      }
+      if (!Element.prototype.releasePointerCapture) {
+        Element.prototype.releasePointerCapture = () => {};
+      }
+      if (!Element.prototype.scrollIntoView) {
+        Element.prototype.scrollIntoView = () => {};
+      }
+
+      mockClientsReturn.mockReturnValue({
+        data: {
+          items: [
+            {
+              id: 'client-1',
+              firstName: 'John',
+              lastName: 'Doe',
+              primaryAddress: { state: 'FL' },
+            },
+            {
+              id: 'client-2',
+              firstName: 'Jane',
+              lastName: 'Roe',
+              primaryAddress: { state: 'TX' },
+            },
+          ],
+        },
+        isLoading: false,
+      });
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      try {
+        renderComponent();
+
+        fireEvent.click(screen.getByRole('button', { name: /\+ Recurring Schedule/i }));
+
+        const openSelect = (id: string) => {
+          const trigger = document.getElementById(id)!;
+          expect(trigger).toBeInTheDocument();
+          fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+          return trigger;
+        };
+
+        // Select Client -> Jane Roe
+        openSelect('recurring-client');
+        fireEvent.click(await screen.findByRole('option', { name: 'Jane Roe' }));
+
+        // Select Caregiver -> Bob Smith
+        openSelect('recurring-caregiver');
+        fireEvent.click(await screen.findByRole('option', { name: 'Bob Smith' }));
+
+        // Select Service Type -> Skilled Nursing
+        openSelect('recurring-service-type');
+        fireEvent.click(await screen.findByRole('option', { name: 'Skilled Nursing' }));
+
+        // Select Frequency -> Bi-weekly
+        openSelect('recurring-frequency');
+        fireEvent.click(await screen.findByRole('option', { name: 'Bi-weekly' }));
+
+        // Submit form
+        fireEvent.click(screen.getByRole('button', { name: /Generate Recurring Visits/i }));
+
+        await vi.waitFor(() => {
+          expect(mockCreatePattern).toHaveBeenCalledTimes(1);
+        });
+
+        expect(mockCreatePattern).toHaveBeenCalledWith(
+          expect.objectContaining({
+            clientId: 'client-2',
+            caregiverId: 'cg-2',
+            serviceTypeId: '00000000-0000-4000-8000-00000005ec03',
+            serviceTypeCode: 'SN',
+            serviceTypeName: 'Skilled Nursing',
+            frequency: 'BIWEEKLY',
+          })
+        );
+
+        const controlledWarnings = [...warnSpy.mock.calls, ...errorSpy.mock.calls]
+          .map((args) => args.map(String).join(' '))
+          .filter((msg) => /controlled|uncontrolled/i.test(msg));
+        expect(controlledWarnings).toEqual([]);
+      } finally {
+        warnSpy.mockRestore();
+        errorSpy.mockRestore();
+      }
     });
   });
 });
