@@ -1183,7 +1183,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1000,
+    zIndex: 50,
     padding: '16px',
   },
   modal: {
@@ -1361,7 +1361,7 @@ function CreateRecurringPatternModal({
 
   return (
     <div style={modalStyles.overlay}>
-      <div style={modalStyles.container} className="modal-container">
+      <div style={modalStyles.container} className="modal-container" role="dialog" aria-modal="true">
         <div style={modalStyles.header} className="modal-header">
           <div>
             <h2 style={modalStyles.title}>Create Recurring Schedule</h2>
@@ -1386,7 +1386,7 @@ function CreateRecurringPatternModal({
             <div style={modalStyles.formGroup}>
               <Label htmlFor="recurring-client">Client *</Label>
               <Select
-                value={clientId || undefined}
+                value={clientId}
                 onValueChange={(val) => {
                   setClientId(val);
                   setClientError('');
@@ -1639,7 +1639,7 @@ function ScheduleSupervisionVisitModal({
 
   return (
     <div style={modalStyles.overlay}>
-      <div style={modalStyles.container}>
+      <div style={modalStyles.container} role="dialog" aria-modal="true">
         <div style={modalStyles.header}>
           <div>
             <h2 style={modalStyles.title}>Schedule Supervision Visit</h2>
@@ -1664,7 +1664,7 @@ function ScheduleSupervisionVisitModal({
             <div style={modalStyles.formGroup}>
               <Label htmlFor="supervision-client">Client *</Label>
               <Select
-                value={clientId || undefined}
+                value={clientId}
                 onValueChange={setClientId}
               >
                 <SelectTrigger id="supervision-client">
@@ -1789,7 +1789,7 @@ const modalStyles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1000,
+    zIndex: 50,
     padding: '16px',
   },
   container: {
@@ -1990,7 +1990,7 @@ function CreateAppointmentModal({
 
   return (
     <div style={styles.modalOverlay}>
-      <div style={styles.modal} className="modal-container">
+      <div style={styles.modal} className="modal-container" role="dialog" aria-modal="true">
         <Button
           type="button"
           variant="ghost"
@@ -2006,7 +2006,7 @@ function CreateAppointmentModal({
         <div style={styles.formGroup}>
           <Label htmlFor="appointment-client">Client</Label>
           <Select
-            value={data.clientId || undefined}
+            value={data.clientId}
             onValueChange={(val) => onChange({ clientId: val })}
           >
             <SelectTrigger id="appointment-client">
