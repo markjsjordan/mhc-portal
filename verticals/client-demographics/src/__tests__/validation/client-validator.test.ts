@@ -366,4 +366,40 @@ describe('ClientValidator', () => {
       vi.useRealTimers();
     });
   });
+
+  describe('carePlanSummary free-text visitFrequency and visitDuration', () => {
+    it('should accept arbitrary free-text strings in validateCreate and validateUpdate', () => {
+      const createInput: CreateClientInput = {
+        organizationId: '123e4567-e89b-12d3-a456-426614174000',
+        branchId: '123e4567-e89b-12d3-a456-426614174001',
+        firstName: 'Jane',
+        lastName: 'Doe',
+        dateOfBirth: new Date('1980-01-01'),
+        primaryAddress: {
+          type: 'HOME',
+          line1: '123 Main St',
+          city: 'Austin',
+          state: 'TX',
+          postalCode: '78701',
+          country: 'US',
+        },
+        carePlanSummary: {
+          visitFrequency: '3x per week',
+          visitDuration: '45-60 min',
+        },
+      };
+
+      const createResult = validator.validateCreate(createInput);
+      expect(createResult.success).toBe(true);
+
+      const updateInput: UpdateClientInput = {
+        carePlanSummary: {
+          visitFrequency: 'Twice daily Mon-Fri',
+          visitDuration: '1.5 hours',
+        },
+      };
+      const updateResult = validator.validateUpdate(updateInput);
+      expect(updateResult.success).toBe(true);
+    });
+  });
 });

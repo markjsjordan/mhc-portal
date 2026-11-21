@@ -81,8 +81,8 @@ export interface IntakeData {
 
   // Step 3: Care Plan
   serviceTypes: string[];
-  visitFrequency: 'daily' | '3xweek' | '2xweek' | 'weekly';
-  visitDuration: number;
+  visitFrequency: string;
+  visitDuration: string;
   preferredTimes: string[];
   tasks: string[];
   goals: string;
@@ -223,8 +223,11 @@ export function mapClientToIntakeData(client: Client | ClientWire): Partial<Inta
     dietaryNeeds: client.assessmentData?.dietaryNeeds ?? '',
     // Lane 4: Care Plan & Visit Schedule
     serviceTypes: client.carePlanSummary?.serviceTypes ?? [],
-    visitFrequency: client.carePlanSummary?.visitFrequency ?? ('weekly' as const),
-    visitDuration: client.carePlanSummary?.visitDuration ?? 1,
+    visitFrequency: client.carePlanSummary?.visitFrequency ?? '',
+    visitDuration:
+      client.carePlanSummary?.visitDuration !== undefined
+        ? String(client.carePlanSummary.visitDuration)
+        : '',
     preferredTimes: client.carePlanSummary?.preferredTimes ?? [],
     tasks: client.carePlanSummary?.tasks ?? [],
     goals: client.carePlanSummary?.goals ?? '',

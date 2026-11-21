@@ -91,8 +91,8 @@ export interface ClientAssessmentData {
 
 export interface ClientCarePlanSummary {
   serviceTypes?: string[];
-  visitFrequency?: 'daily' | '3xweek' | '2xweek' | 'weekly';
-  visitDuration?: number;
+  visitFrequency?: string;
+  visitDuration?: string | number;
   preferredTimes?: string[];
   tasks?: string[];
   goals?: string;

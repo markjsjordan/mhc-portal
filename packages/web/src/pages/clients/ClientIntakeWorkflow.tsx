@@ -131,8 +131,8 @@ interface IntakeData {
 
   // Step 3: Care Plan
   serviceTypes: string[];
-  visitFrequency: 'daily' | '3xweek' | '2xweek' | 'weekly';
-  visitDuration: number;
+  visitFrequency: string;
+  visitDuration: string | number;
   preferredTimes: string[];
   tasks: string[];
   goals: string;
@@ -548,8 +548,11 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       },
       carePlanSummary: {
         serviceTypes: intakeData.serviceTypes,
-        visitFrequency: intakeData.visitFrequency,
-        visitDuration: intakeData.visitDuration,
+        visitFrequency: blankToUndefined(intakeData.visitFrequency),
+        visitDuration:
+          typeof intakeData.visitDuration === 'number'
+            ? String(intakeData.visitDuration)
+            : blankToUndefined(intakeData.visitDuration),
         preferredTimes: intakeData.preferredTimes,
         tasks: intakeData.tasks,
         goals: intakeData.goals,
@@ -1315,39 +1318,29 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               <div className="flex flex-col sm:flex-row gap-4 md:gap-5 mb-4 md:mb-5">
                 <div className="flex-1 min-w-0 flex flex-col">
                   <Label htmlFor="visit-frequency" className="block text-sm font-medium text-gray-700 mb-1.5">Visit Frequency</Label>
-                  <Select
-                    value={intakeData.visitFrequency ?? undefined}
-                    onValueChange={(val) => updateData('visitFrequency', val)}
-                  >
-                    <SelectTrigger id="visit-frequency" className="w-full min-h-[44px]">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="daily">Daily (7 days/week)</SelectItem>
-                      <SelectItem value="3xweek">3x per week</SelectItem>
-                      <SelectItem value="2xweek">2x per week</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="visit-frequency"
+                    type="text"
+                    className="w-full min-h-[44px]"
+                    value={intakeData.visitFrequency ?? ''}
+                    onChange={(e) => updateData('visitFrequency', e.target.value)}
+                    placeholder="e.g., 3x per week"
+                  />
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <Label htmlFor="visit-duration" className="block text-sm font-medium text-gray-700 mb-1.5">Visit Duration (minutes)</Label>
-                  <Select
-                    value={intakeData.visitDuration ? String(intakeData.visitDuration) : undefined}
-                    onValueChange={(val) => updateData('visitDuration', parseInt(val, 10))}
-                  >
-                    <SelectTrigger id="visit-duration" className="w-full min-h-[44px]">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="30">30 minutes</SelectItem>
-                      <SelectItem value="60">1 hour</SelectItem>
-                      <SelectItem value="90">1.5 hours</SelectItem>
-                      <SelectItem value="120">2 hours</SelectItem>
-                      <SelectItem value="180">3 hours</SelectItem>
-                      <SelectItem value="240">4 hours</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="visit-duration" className="block text-sm font-medium text-gray-700 mb-1.5">Visit Duration</Label>
+                  <Input
+                    id="visit-duration"
+                    type="text"
+                    className="w-full min-h-[44px]"
+                    value={
+                      intakeData.visitDuration !== undefined
+                        ? String(intakeData.visitDuration)
+                        : ''
+                    }
+                    onChange={(e) => updateData('visitDuration', e.target.value)}
+                    placeholder="e.g., 45-60 min"
+                  />
                 </div>
               </div>
             </div>
@@ -1532,8 +1525,15 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 Visit Pattern
               </h3>
               <p className="text-sm text-gray-500 mb-4">
-                Based on {intakeData.visitFrequency ?? 'selected'} frequency -{' '}
-                {intakeData.visitDuration ?? 0} minutes per visit
+                Based on {blankToUndefined(intakeData.visitFrequency) ?? 'selected'} frequency -{' '}
+                {typeof intakeData.visitDuration === 'number'
+                  ? `${intakeData.visitDuration} minutes`
+                  : blankToUndefined(intakeData.visitDuration)
+                    ? /^\d+$/.test(intakeData.visitDuration!.trim())
+                      ? `${intakeData.visitDuration!.trim()} minutes`
+                      : intakeData.visitDuration!.trim()
+                    : 'not specified'}{' '}
+                per visit
               </p>
               <div className="p-4 md:p-6 bg-gray-50 rounded-xl border border-gray-200">
                 <p className="font-semibold text-gray-800 mb-2">Example Schedule:</p>
@@ -1754,8 +1754,8 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                 <span className="text-xs sm:text-sm font-semibold sm:font-medium text-gray-500 sm:text-gray-600 sm:w-44 sm:min-w-[170px] sm:flex-shrink-0 uppercase sm:normal-case tracking-wider sm:tracking-normal">
                   Frequency:
                 </span>
-                <span className="text-sm md:text-base font-medium sm:font-normal text-gray-900 break-words flex-1 min-w-0 capitalize">
-                  {intakeData.visitFrequency ?? <span className="text-gray-400 italic">Not set</span>}
+                <span className="text-sm md:text-base font-medium sm:font-normal text-gray-900 break-words flex-1 min-w-0">
+                  {blankToUndefined(intakeData.visitFrequency) ?? <span className="text-gray-400 italic">Not set</span>}
                 </span>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-baseline py-2.5 md:py-3 border-b border-gray-200/80 gap-1 sm:gap-4 w-full">
@@ -1763,7 +1763,13 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
                   Duration:
                 </span>
                 <span className="text-sm md:text-base font-medium sm:font-normal text-gray-900 break-words flex-1 min-w-0">
-                  {intakeData.visitDuration ? `${intakeData.visitDuration} minutes` : <span className="text-gray-400 italic">Not set</span>}
+                  {typeof intakeData.visitDuration === 'number' ? (
+                    `${intakeData.visitDuration} minutes`
+                  ) : blankToUndefined(intakeData.visitDuration) ? (
+                    intakeData.visitDuration!.trim()
+                  ) : (
+                    <span className="text-gray-400 italic">Not set</span>
+                  )}
                 </span>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-baseline py-2.5 md:py-3 gap-1 sm:gap-4 w-full">
