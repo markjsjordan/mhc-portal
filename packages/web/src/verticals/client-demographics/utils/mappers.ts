@@ -87,15 +87,7 @@ export interface IntakeData {
   tasks: string[];
   goals: string;
 
-  // Step 4: Initial Schedule
-  scheduleStartDate: string;
-  visitSchedule: Array<{
-    dayOfWeek: number;
-    time: string;
-    duration: number;
-  }>;
-
-  // Step 6: Consent
+  // Step 4: Consent
   consents: {
     careAgreement: boolean;
     hipaa: boolean;
@@ -213,7 +205,7 @@ export function mapClientToIntakeData(client: Client | ClientWire): Partial<Inta
     medications: client.assessmentData?.medications ?? [],
     allergies: client.assessmentData?.allergies ?? [],
     dietaryNeeds: client.assessmentData?.dietaryNeeds ?? '',
-    // Lane 4: Care Plan & Visit Schedule
+    // Lane 4: Care Plan
     serviceTypes: client.carePlanSummary?.serviceTypes ?? [],
     visitFrequency: client.carePlanSummary?.visitFrequency ?? '',
     visitDuration:
@@ -223,8 +215,6 @@ export function mapClientToIntakeData(client: Client | ClientWire): Partial<Inta
     preferredTimes: client.carePlanSummary?.preferredTimes ?? [],
     tasks: client.carePlanSummary?.tasks ?? [],
     goals: client.carePlanSummary?.goals ?? '',
-    scheduleStartDate: client.visitSchedule?.scheduleStartDate ?? '',
-    visitSchedule: client.visitSchedule?.visitSchedule ?? [],
     // Lane 1: Consents & Signature
     consents: {
       careAgreement: client.consents?.careAgreement ?? false,

@@ -56,9 +56,9 @@ describe('ClientIntakeWorkflow - Mobile and Responsive Layout', () => {
     expect(mobileStepper).toBeInTheDocument();
 
     // Mobile stepper displays current step and percentage
-    expect(mobileStepper?.textContent).toContain('Step 1 of 6');
+    expect(mobileStepper?.textContent).toContain('Step 1 of 5');
     expect(mobileStepper?.textContent).toContain('Demographics');
-    expect(mobileStepper?.textContent).toContain('17% Complete');
+    expect(mobileStepper?.textContent).toContain('20% Complete');
   });
 
   it('uses responsive layout for form rows to stack on mobile and row on desktop', () => {
@@ -86,7 +86,7 @@ describe('ClientIntakeWorkflow - Mobile and Responsive Layout', () => {
     expect(screen.getByText('Demographics & Contact Information')).toBeInTheDocument();
   });
 
-  it('allows navigation through wizard to Step 6 (Review & Submit)', () => {
+  it('allows navigation through wizard to Step 5 (Review & Submit) without Initial Schedule step', () => {
     const initialData = {
       firstName: 'Jane',
       lastName: 'Doe',
@@ -120,19 +120,16 @@ describe('ClientIntakeWorkflow - Mobile and Responsive Layout', () => {
     expect(screen.getByText('Care Assessment')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
 
-    // Step 3: Care Plan -> Next
+    // Step 3: Care Plan -> Next (directly to Consent, no Initial Schedule step)
     expect(screen.getByText('Care Plan Creation')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
 
-    // Step 4: Schedule -> Next
-    expect(screen.getByText('Initial Schedule')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
-
-    // Step 5: Consent -> Next
+    // Step 4: Consent -> Next
+    expect(screen.queryByText('Initial Schedule')).not.toBeInTheDocument();
     expect(screen.getByText('Consent & Signatures')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
 
-    // Step 6: Review & Submit
+    // Step 5: Review & Submit
     expect(screen.getByText('Review & Submit')).toBeInTheDocument();
 
     // Verify Review summary cards have responsive stacking layout
@@ -217,8 +214,8 @@ describe('ClientIntakeWorkflow - Mobile and Responsive Layout', () => {
     fireEvent.change(freqInput!, { target: { value: '3x per week' } });
     fireEvent.change(durInput!, { target: { value: '45-60 min' } });
 
-    // Advance Step 3 -> Step 4 -> Step 5 -> Step 6 (Review & Submit)
-    for (let i = 0; i < 3; i += 1) {
+    // Advance Step 3 -> Step 4 -> Step 5 (Review & Submit)
+    for (let i = 0; i < 2; i += 1) {
       fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
     }
 

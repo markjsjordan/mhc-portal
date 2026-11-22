@@ -77,14 +77,14 @@ describe('ClientIntakeWorkflow - Per-step Save button (wdvf3adau9)', () => {
       </BrowserRouter>
     );
 
-  it('renders the Save button on every wizard step (1-7) and does not show stub auto-save', () => {
+  it('renders the Save button on every wizard step (1-5) and does not show stub auto-save', () => {
     renderWorkflow({ initialData: VALID_STEP1_DATA });
 
     expect(screen.queryByText(/Auto-saved at/i)).not.toBeInTheDocument();
 
-    for (let step = 1; step <= 6; step++) {
+    for (let step = 1; step <= 5; step++) {
       expect(screen.getByRole('button', { name: /Save/i })).toBeInTheDocument();
-      if (step < 6) {
+      if (step < 5) {
         fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
       }
     }
@@ -148,7 +148,7 @@ describe('ClientIntakeWorkflow - Per-step Save button (wdvf3adau9)', () => {
     expect(screen.getByText('Care Assessment')).toBeInTheDocument();
   });
 
-  it('activates the saved draft via updateClient on final Step 6 Submit instead of creating a duplicate', async () => {
+  it('activates the saved draft via updateClient on final Step 5 Submit instead of creating a duplicate', async () => {
     renderWorkflow({
       initialData: {
         ...VALID_STEP1_DATA,
@@ -167,8 +167,8 @@ describe('ClientIntakeWorkflow - Per-step Save button (wdvf3adau9)', () => {
       expect(mockCreateMutateAsync).toHaveBeenCalledTimes(1);
     });
 
-    // Navigate to Step 6 (Review & Submit)
-    for (let step = 1; step < 6; step++) {
+    // Navigate to Step 5 (Review & Submit)
+    for (let step = 1; step < 5; step++) {
       fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
     }
 

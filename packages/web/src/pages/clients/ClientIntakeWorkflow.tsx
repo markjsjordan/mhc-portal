@@ -136,15 +136,7 @@ interface IntakeData {
   tasks: string[];
   goals: string;
 
-  // Step 4: Initial Schedule
-  scheduleStartDate: string;
-  visitSchedule: Array<{
-    dayOfWeek: number;
-    time: string;
-    duration: number;
-  }>;
-
-  // Step 6: Consent
+  // Step 4: Consent
   consents: {
     careAgreement: boolean;
     hipaa: boolean;
@@ -158,9 +150,8 @@ const STEPS = [
   { id: 1, title: 'Demographics', subtitle: 'Contact & Insurance' },
   { id: 2, title: 'Assessment', subtitle: 'Care Needs' },
   { id: 3, title: 'Care Plan', subtitle: 'Services & Goals' },
-  { id: 4, title: 'Schedule', subtitle: 'Initial Visits' },
-  { id: 5, title: 'Consent', subtitle: 'Signatures & Agreements' },
-  { id: 6, title: 'Review', subtitle: 'Finalize & Submit' },
+  { id: 4, title: 'Consent', subtitle: 'Signatures & Agreements' },
+  { id: 5, title: 'Review', subtitle: 'Finalize & Submit' },
 ];
 
 const getStepBadgeClass = (currentStep: number, stepId: number): string => {
@@ -280,7 +271,6 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       tasks: [],
       preferredTimes: [],
       serviceTypes: [],
-      visitSchedule: [],
       consents: {
         careAgreement: false,
         hipaa: false,
@@ -643,10 +633,6 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         preferredTimes: intakeData.preferredTimes,
         tasks: intakeData.tasks,
         goals: intakeData.goals,
-      },
-      visitSchedule: {
-        scheduleStartDate: intakeData.scheduleStartDate,
-        visitSchedule: intakeData.visitSchedule,
       },
       consents: {
         careAgreement: intakeData.consents?.careAgreement ?? false,
@@ -1525,68 +1511,6 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         {currentStep === 4 && (
           <div>
             <h2 className="text-xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
-              Initial Schedule
-            </h2>
-
-            <div className="mb-8 md:mb-10">
-              <h3 className="text-base md:text-lg font-semibold text-gray-700 pb-2 mb-4 border-b-2 border-gray-200">
-                Schedule Start Date
-              </h3>
-              <div className="w-full sm:max-w-xs flex flex-col">
-                <Label htmlFor="schedule-start-date" className="block text-sm font-medium text-gray-700 mb-1.5">First Visit Date</Label>
-                <Input
-                  id="schedule-start-date"
-                  type="date"
-                  className="w-full min-h-[44px]"
-                  value={intakeData.scheduleStartDate ?? ''}
-                  onChange={(e) => updateData('scheduleStartDate', e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <h3 className="text-base md:text-lg font-semibold text-gray-700 pb-2 mb-2 border-b-2 border-gray-200">
-                Visit Pattern
-              </h3>
-              <p className="text-sm text-gray-500 mb-4">
-                Based on {blankToUndefined(intakeData.visitFrequency) ?? 'selected'} frequency -{' '}
-                {formatVisitDuration(intakeData.visitDuration)}{' '}
-                per visit
-              </p>
-              <div className="p-4 md:p-6 bg-gray-50 rounded-xl border border-gray-200">
-                <p className="font-semibold text-gray-800 mb-2">Example Schedule:</p>
-                {intakeData.visitFrequency === 'daily' && (
-                  <ul className="space-y-1.5 text-sm text-gray-600 pl-4 list-disc">
-                    <li>Monday - Friday: 10:00 AM - 11:00 AM</li>
-                    <li>Saturday - Sunday: 10:00 AM - 11:00 AM</li>
-                  </ul>
-                )}
-                {intakeData.visitFrequency === '3xweek' && (
-                  <ul className="space-y-1.5 text-sm text-gray-600 pl-4 list-disc">
-                    <li>Monday: 10:00 AM - 11:00 AM</li>
-                    <li>Wednesday: 10:00 AM - 11:00 AM</li>
-                    <li>Friday: 10:00 AM - 11:00 AM</li>
-                  </ul>
-                )}
-                {intakeData.visitFrequency === '2xweek' && (
-                  <ul className="space-y-1.5 text-sm text-gray-600 pl-4 list-disc">
-                    <li>Monday: 10:00 AM - 11:00 AM</li>
-                    <li>Thursday: 10:00 AM - 11:00 AM</li>
-                  </ul>
-                )}
-                {intakeData.visitFrequency === 'weekly' && (
-                  <ul className="space-y-1.5 text-sm text-gray-600 pl-4 list-disc">
-                    <li>Monday: 10:00 AM - 11:00 AM</li>
-                  </ul>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {currentStep === 5 && (
-          <div>
-            <h2 className="text-xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
               Consent & Signatures
             </h2>
 
@@ -1683,7 +1607,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
           </div>
         )}
 
-        {currentStep === 6 && (
+        {currentStep === 5 && (
           <div>
             <h2 className="text-xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">
               Review & Submit
@@ -1848,7 +1772,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
 
             <div className="p-4 md:p-5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm leading-relaxed mt-6">
               <p className="font-semibold mb-1">⚠️ Review all information carefully</p>
-              <p>Once submitted, the client record will be created and visits will be scheduled.</p>
+              <p>Once submitted, the client record will be created. Visits can be scheduled separately.</p>
             </div>
           </div>
         )}

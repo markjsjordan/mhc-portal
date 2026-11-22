@@ -142,10 +142,6 @@ describe('mapClientToIntakeData', () => {
           tasks: ['Bathing'],
           goals: 'Maintain independence',
         },
-        visitSchedule: {
-          scheduleStartDate: '2026-11-20',
-          visitSchedule: [{ dayOfWeek: 1, time: '09:00', duration: 2 }],
-        },
       })
     );
 
@@ -173,8 +169,6 @@ describe('mapClientToIntakeData', () => {
     expect(data.serviceTypes).toEqual(['Personal Care']);
     expect(data.visitFrequency).toBe('3xweek');
     expect(data.visitDuration).toBe('2');
-    expect(data.scheduleStartDate).toBe('2026-11-20');
-    expect(data.visitSchedule).toEqual([{ dayOfWeek: 1, time: '09:00', duration: 2 }]);
   });
 
   it('maps free-text visitFrequency and visitDuration and defaults to empty strings when absent', () => {
