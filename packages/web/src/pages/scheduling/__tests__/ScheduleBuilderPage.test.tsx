@@ -374,8 +374,9 @@ describe('ScheduleBuilderPage responsive header (wdvf3abp4v)', () => {
       expect(dayBtn).toHaveAttribute('aria-pressed', 'false');
       expect(weekBtn).toHaveAttribute('aria-pressed', 'true');
 
+    });
 
-it('sends horizonDays=90 and shows warning toast when duplicate visits are skipped', async () => {
+    it('sends horizonDays=90 and shows warning toast when duplicate visits are skipped', async () => {
       mockCreatePattern.mockResolvedValueOnce({
         generatedVisitsCount: 14,
         skippedVisitsCount: 21,
