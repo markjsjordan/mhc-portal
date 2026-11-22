@@ -12,6 +12,10 @@
     {
       "path": "/api/compliance/cron/scan",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/schedule-snapshots/cron/capture",
+      "schedule": "0 22 * * 5"
     }
   ],
   "rewrites": [

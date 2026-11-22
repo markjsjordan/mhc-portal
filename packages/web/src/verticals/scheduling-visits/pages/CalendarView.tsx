@@ -24,6 +24,7 @@ import {
   Calendar as CalendarIcon,
   Zap,
   Plus,
+  HardDriveDownload,
 } from 'lucide-react';
 import { useCalendarVisits, useVisitApi, useCaregiverAvailability } from '../hooks/useVisits';
 import { isVisitUnassigned } from '../types';
@@ -52,6 +53,7 @@ import {
   VisitDetailsPanel,
 } from '../components';
 import { CalendarVisitActionModal } from '../components/calendar/CalendarVisitActionModal.js';
+import { ScheduleBackupsModal } from '../components/ScheduleBackupsModal.js';
 import type { Visit } from '../types';
 import type { CaregiverAvailability } from '../services/visit-api.js';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -933,6 +935,7 @@ export const CalendarView: React.FC = () => {
 
   const [selectedBranches] = useState<string[]>([]);
   const [isCreateVisitModalOpen, setIsCreateVisitModalOpen] = useState(false);
+  const [isScheduleBackupsModalOpen, setIsScheduleBackupsModalOpen] = useState(false);
   const [createVisitSlotInfo, setCreateVisitSlotInfo] = useState<SlotInfo | null>(null);
 
   // Week view UX controls
@@ -1209,6 +1212,19 @@ export const CalendarView: React.FC = () => {
             >
               <List className="h-4 w-4 text-gray-600" />
               <span className="hidden md:inline">Availability</span>
+            </Button>
+
+            {/* Weekly Schedule Backups (Offline Resilience) */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsScheduleBackupsModalOpen(true)}
+              className="min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-semibold flex items-center gap-2"
+              aria-label="Weekly schedule backups"
+              data-testid="calendar-schedule-backups-btn"
+            >
+              <HardDriveDownload className="h-4 w-4 text-blue-600" />
+              <span className="hidden md:inline">Backups</span>
             </Button>
 
             {/* Refresh Button */}
@@ -1744,6 +1760,13 @@ export const CalendarView: React.FC = () => {
         preSelectedEndTime={
           createVisitSlotInfo ? moment(createVisitSlotInfo.end).format('HH:mm') : undefined
         }
+      />
+
+      {/* Weekly Schedule Backups Modal */}
+      <ScheduleBackupsModal
+        isOpen={isScheduleBackupsModalOpen}
+        onClose={() => setIsScheduleBackupsModalOpen(false)}
+        defaultWeekDate={moment(currentDate).format('YYYY-MM-DD')}
       />
     </div>
   );
