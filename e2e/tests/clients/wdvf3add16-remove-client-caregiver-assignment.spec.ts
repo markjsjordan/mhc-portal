@@ -21,8 +21,8 @@ async function fillStep1RequiredFields(page: Page, firstName: string, lastName: 
   await page.fill('#address-postal', '78701');
 }
 
-async function assertSixStepWizardWithoutCaregivers(page: Page): Promise<void> {
-  await expect(page.getByText('Step 1 of 6').last()).toBeVisible();
+async function assertFiveStepWizardWithoutCaregivers(page: Page): Promise<void> {
+  await expect(page.getByText('Step 1 of 5').last()).toBeVisible();
   await expect(page.getByText('Step 1 of 7')).toHaveCount(0);
   await expect(page.getByText('Assignment & Matching')).toHaveCount(0);
 
@@ -34,34 +34,30 @@ async function assertSixStepWizardWithoutCaregivers(page: Page): Promise<void> {
   await page.getByRole('button', { name: /Next →/i }).click();
   await expect(page.getByRole('heading', { name: 'Care Plan Creation' })).toBeVisible();
 
-  // Step 3 -> Step 4 (Initial Schedule, NOT Caregiver Assignment)
+  // Step 3 -> Step 4 (Consent & Signatures, NOT Caregiver Assignment)
   await page.getByRole('button', { name: /Next →/i }).click();
-  await expect(page.getByRole('heading', { name: 'Initial Schedule' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Consent & Signatures' })).toBeVisible();
   await expect(page.getByText('Caregiver Assignment')).toHaveCount(0);
   await expect(page.getByText('Primary Caregiver')).toHaveCount(0);
   await expect(page.getByText('Backup Caregivers')).toHaveCount(0);
 
-  // Step 4 -> Step 5 (Consent & Signatures)
-  await page.getByRole('button', { name: /Next →/i }).click();
-  await expect(page.getByRole('heading', { name: 'Consent & Signatures' })).toBeVisible();
-
-  // Step 5 -> Step 6 (Review & Submit)
+  // Step 4 -> Step 5 (Review & Submit)
   await page.getByRole('button', { name: /Next →/i }).click();
   await expect(page.getByRole('heading', { name: 'Review & Submit' })).toBeVisible();
   await expect(page.getByText('Assigned Caregivers')).toHaveCount(0);
 }
 
 test.describe('Remove Caregiver Assignment from Client Create and Edit Flows (wdvf3add16)', () => {
-  test('new client intake wizard has 6 steps and no caregiver assignment step', async ({ page }) => {
+  test('new client intake wizard has 5 steps and no caregiver assignment step', async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto('/clients/new/intake');
     await expect(page.getByRole('heading', { name: 'Demographics & Contact Information' })).toBeVisible();
 
     await fillStep1RequiredFields(page, 'E2ECreate', 'NoCaregiver');
-    await assertSixStepWizardWithoutCaregivers(page);
+    await assertFiveStepWizardWithoutCaregivers(page);
   });
 
-  test('client edit form has 6 steps and no caregiver assignment step', async ({ page }) => {
+  test('client edit form has 5 steps and no caregiver assignment step', async ({ page }) => {
     await loginAsAdmin(page);
 
     const clientId = '11111111-1111-4111-8111-111111111111';
@@ -99,6 +95,6 @@ test.describe('Remove Caregiver Assignment from Client Create and Edit Flows (wd
 
     await page.goto(`/clients/${clientId}/edit`);
     await expect(page.getByRole('heading', { name: 'Demographics & Contact Information' })).toBeVisible();
-    await assertSixStepWizardWithoutCaregivers(page);
+    await assertFiveStepWizardWithoutCaregivers(page);
   });
 });

@@ -48,8 +48,8 @@ function renderAtReview(initialData: Record<string, unknown>) {
       <ClientIntakeWorkflow initialData={initialData} />
     </BrowserRouter>
   );
-  // Step 1 -> 6
-  for (let i = 0; i < 5; i += 1) {
+  // Step 1 -> 5
+  for (let i = 0; i < 4; i += 1) {
     fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
   }
   expect(screen.getByText('Review & Submit')).toBeInTheDocument();
@@ -74,6 +74,7 @@ describe('ClientIntakeWorkflow submit payload', () => {
     expect(payload['email']).toBeUndefined();
     expect(payload['primaryPhone']).toBeUndefined();
     expect(payload['caregiverAssignment']).toBeUndefined();
+    expect(payload['visitSchedule']).toBeUndefined();
     expect((payload['primaryAddress'] as Record<string, unknown>)['line2']).toBeUndefined();
     expect(payload['firstName']).toBe('Jane');
   });

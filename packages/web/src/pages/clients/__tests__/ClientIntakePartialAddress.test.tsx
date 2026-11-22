@@ -44,7 +44,7 @@ function renderAtReview(props: Record<string, unknown>) {
       <ClientIntakeWorkflow {...props} />
     </BrowserRouter>
   );
-  for (let i = 0; i < 5; i += 1) {
+  for (let i = 0; i < 4; i += 1) {
     fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
   }
   expect(screen.getByText('Review & Submit')).toBeInTheDocument();
