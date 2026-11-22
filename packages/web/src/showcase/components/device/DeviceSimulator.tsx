@@ -19,6 +19,7 @@ export interface DeviceConfig {
   type: 'phone' | 'tablet';
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const DEVICE_CONFIGS: DeviceConfig[] = [
   {
     id: 'iphone-15-pro',

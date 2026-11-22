@@ -10,7 +10,7 @@
 let sessionKey: CryptoKey | null = null;
 
 function hasSubtle(): boolean {
-  return typeof window !== 'undefined' && !!window.crypto?.subtle;
+  return typeof window !== 'undefined' && typeof window.crypto.subtle !== 'undefined';
 }
 
 async function getSessionKey(): Promise<CryptoKey> {

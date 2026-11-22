@@ -222,7 +222,10 @@ export const UpdatePrompt: React.FC<UpdatePromptProps> = ({
               }}
               className="inline-flex items-center justify-center rounded-md bg-[#1E3A8A] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#1E3A8A]/90 focus:outline-none focus:ring-2 focus:ring-[#0284C7] focus:ring-offset-2 disabled:opacity-50"
             >
-              {isUpdating ? 'Updating...' : updateFailed ? 'Retry update' : 'Update now'}
+              {(() => {
+                if (isUpdating) return 'Updating...';
+                return updateFailed ? 'Retry update' : 'Update now';
+              })()}
             </Button>
             <Button
               type="button"

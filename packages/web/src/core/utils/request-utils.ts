@@ -11,6 +11,7 @@ const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(r
 /**
  * Generate random jitter between 0 and maxJitter milliseconds
  */
+// eslint-disable-next-line sonarjs/pseudo-random -- non-security retry backoff jitter
 const getJitter = (maxJitter: number): number => Math.random() * maxJitter;
 
 /**
