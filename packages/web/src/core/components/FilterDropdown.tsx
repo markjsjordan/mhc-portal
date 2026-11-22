@@ -125,7 +125,11 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = ({
           {/* Footer */}
           <div className="pt-3 border-t border-border flex justify-between items-center">
             <span className="text-xs text-muted-foreground">
-              {activeCount === 0 ? 'No filters applied' : `${activeCount} filter${activeCount > 1 ? 's' : ''} applied`}
+              {(() => {
+                if (activeCount === 0) return 'No filters applied';
+                const suffix = activeCount > 1 ? 's' : '';
+                return `${activeCount} filter${suffix} applied`;
+              })()}
             </span>
             <Button
               type="button"

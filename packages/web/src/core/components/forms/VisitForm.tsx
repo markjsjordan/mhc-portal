@@ -203,7 +203,7 @@ export const VisitForm: React.FC<VisitFormProps> = ({
     try {
       await onSubmit({
         ...formData,
-        caregiverId: formData.caregiverId || undefined,
+        caregiverId: formData.caregiverId && formData.caregiverId.length > 0 ? formData.caregiverId : undefined,
       });
     } catch {
       toast.error('Failed to create visit');
@@ -410,7 +410,7 @@ export const VisitForm: React.FC<VisitFormProps> = ({
           Caregiver
         </Label>
         <Select
-          value={formData.caregiverId || UNASSIGNED_VALUE}
+          value={formData.caregiverId && formData.caregiverId.length > 0 ? formData.caregiverId : UNASSIGNED_VALUE}
           onValueChange={(val) => handleChange('caregiverId', val === UNASSIGNED_VALUE ? '' : val)}
         >
           <SelectTrigger id="visit-caregiver">
