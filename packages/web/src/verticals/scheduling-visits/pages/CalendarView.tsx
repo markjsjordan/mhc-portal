@@ -53,7 +53,7 @@ import {
   VisitDetailsPanel,
 } from '../components';
 import { CalendarVisitActionModal } from '../components/calendar/CalendarVisitActionModal.js';
-import { ScheduleBackupsModal } from '../components/ScheduleBackupsModal.js';
+const ScheduleBackupsModal = React.lazy(() => import('../components/ScheduleBackupsModal.js').then(m => ({ default: m.ScheduleBackupsModal })));
 import type { Visit } from '../types';
 import type { CaregiverAvailability } from '../services/visit-api.js';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -1763,11 +1763,15 @@ export const CalendarView: React.FC = () => {
       />
 
       {/* Weekly Schedule Backups Modal */}
-      <ScheduleBackupsModal
-        isOpen={isScheduleBackupsModalOpen}
-        onClose={() => setIsScheduleBackupsModalOpen(false)}
-        defaultWeekDate={moment(currentDate).format('YYYY-MM-DD')}
-      />
+      {isScheduleBackupsModalOpen && (
+        <React.Suspense fallback={null}>
+          <ScheduleBackupsModal
+            isOpen={isScheduleBackupsModalOpen}
+            onClose={() => setIsScheduleBackupsModalOpen(false)}
+            defaultWeekDate={moment(currentDate).format('YYYY-MM-DD')}
+          />
+        </React.Suspense>
+      )}
     </div>
   );
 };
