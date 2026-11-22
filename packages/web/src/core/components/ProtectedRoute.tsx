@@ -79,6 +79,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to={redirect} replace />;
   };
 
+  // SUPER_ADMIN bypasses all permission and role checks (can access any route)
+  if (hasRole('SUPER_ADMIN')) {
+    return <>{children}</>;
+  }
+
   // Check single permission
   if (permission && !can(permission)) {
     return deny();

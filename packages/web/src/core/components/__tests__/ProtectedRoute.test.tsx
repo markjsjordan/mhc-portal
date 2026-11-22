@@ -117,7 +117,8 @@ describe('ProtectedRoute', () => {
       can: canMock,
       canAny: vi.fn(() => true),
       canAll: vi.fn(() => true),
-      hasRole: vi.fn(() => true),
+      // mockUser is COORDINATOR — SUPER_ADMIN bypass must not fire here
+      hasRole: vi.fn((role: string) => role === 'COORDINATOR'),
       hasAnyRole: vi.fn(() => true),
     });
 
