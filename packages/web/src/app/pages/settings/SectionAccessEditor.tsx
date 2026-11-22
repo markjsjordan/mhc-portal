@@ -138,7 +138,7 @@ const useSectionAccessEditorView: React.FC<SectionAccessEditorProps> = ({ orgId,
         </thead>
         <tbody>
           {SECTIONS.map((section) => {
-            const def = roleDefaults[section] ?? { read: false, write: false };
+            const def = (roleDefaults as Partial<typeof roleDefaults>)[section] ?? { read: false, write: false };
             return (
               <tr key={section}>
                 <td className="py-1">{section}</td>

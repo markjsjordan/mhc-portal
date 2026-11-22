@@ -239,7 +239,13 @@ export function generateExportFilename(
 ): string {
   const dateStr = period.startDate.split('T')[0];
   const prefix = type.toUpperCase();
-  return `${prefix}_Payroll_${dateStr}.${type === 'pdf' ? 'pdf' : type === 'quickbooks' ? 'iif' : 'csv'}`;
+  let ext = 'csv';
+  if (type === 'pdf') {
+    ext = 'pdf';
+  } else if (type === 'quickbooks') {
+    ext = 'iif';
+  }
+  return `${prefix}_Payroll_${dateStr}.${ext}`;
 }
 
 /**

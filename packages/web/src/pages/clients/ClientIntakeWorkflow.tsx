@@ -215,6 +215,52 @@ function isValidPhoneNumber(value: string): boolean {
   return phoneDigits.length === 10;
 }
 
+function formatVisitDuration(visitDuration: IntakeData['visitDuration'] | undefined): string {
+  if (typeof visitDuration === 'number') {
+    return `${visitDuration} minutes`;
+  }
+  const trimmed = blankToUndefined(visitDuration);
+  if (!trimmed) {
+    return 'not specified';
+  }
+  return /^\d+$/.test(trimmed) ? `${trimmed} minutes` : trimmed;
+}
+
+function validateIntakeRequiredFields(
+  intakeData: Partial<IntakeData>
+): { ok: true; firstName: string; lastName: string; dateOfBirth: string } | { ok: false; message: string; step: number } {
+  const firstName = intakeData.firstName?.trim();
+  if (!firstName) {
+    return { ok: false, message: 'First name is required', step: 1 };
+  }
+  const lastName = intakeData.lastName?.trim();
+  if (!lastName) {
+    return { ok: false, message: 'Last name is required', step: 1 };
+  }
+  if (!intakeData.dateOfBirth) {
+    return { ok: false, message: 'Date of birth is required', step: 1 };
+  }
+  const missingAddress = findMissingRequiredAddressField(intakeData.address);
+  if (missingAddress) {
+    return { ok: false, message: missingAddress.message, step: 1 };
+  }
+  return { ok: true, firstName, lastName, dateOfBirth: intakeData.dateOfBirth };
+}
+
+function resolveEffectiveBranchId(
+  activeBranchId: string,
+  userBranchId: string | undefined,
+  firstBranchId: string | undefined,
+  existingClientBranchId: string | undefined
+): string | undefined {
+  return (
+    blankToUndefined(activeBranchId) ??
+    blankToUndefined(userBranchId) ??
+    blankToUndefined(firstBranchId) ??
+    blankToUndefined(existingClientBranchId)
+  );
+}
+
 export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = {}) {
   const { initialData, isEditMode = false, clientId, currentStatus, onSuccess } = props;
   const [currentStep, setCurrentStep] = useState(1);
@@ -347,25 +393,10 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
 
   const handleSubmit = async () => {
     // Validate required demographic fields with user-friendly error feedback
-    if (!intakeData.firstName?.trim()) {
-      toast.error('First name is required');
-      setCurrentStep(1);
-      return;
-    }
-    if (!intakeData.lastName?.trim()) {
-      toast.error('Last name is required');
-      setCurrentStep(1);
-      return;
-    }
-    if (!intakeData.dateOfBirth) {
-      toast.error('Date of birth is required');
-      setCurrentStep(1);
-      return;
-    }
-    const missingAddress = findMissingRequiredAddressField(intakeData.address);
-    if (missingAddress) {
-      toast.error(missingAddress.message);
-      setCurrentStep(1);
+    const requiredFields = validateIntakeRequiredFields(intakeData);
+    if (!requiredFields.ok) {
+      toast.error(requiredFields.message);
+      setCurrentStep(requiredFields.step);
       return;
     }
 
@@ -393,12 +424,12 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
     // 3. Organization branch list
     // 4. Existing client branch
     // 5. Undefined (backend automatically auto-resolves or creates default branch)
-    const effectiveBranchId =
-      (activeBranchId && activeBranchId.trim() !== '' ? activeBranchId : undefined) ??
-      (user?.branchIds?.[0] && user.branchIds[0].trim() !== '' ? user.branchIds[0] : undefined) ??
-      (branches.length > 0 && branches[0]?.id ? branches[0].id : undefined) ??
-      (existingClients?.items[0]?.branchId && existingClients.items[0].branchId.trim() !== '' ? existingClients.items[0].branchId : undefined) ??
-      undefined;
+    const effectiveBranchId = resolveEffectiveBranchId(
+      activeBranchId,
+      user?.branchIds?.[0],
+      branches[0]?.id,
+      existingClients?.items[0]?.branchId
+    );
 
     // Build address only if all required address fields are provided
     const addr = intakeData.address;
@@ -436,9 +467,9 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
       if (effectiveClientId) {
         // Update mode (existing client in edit mode, or draft already created via mid-wizard Save)
         const updateInput: UpdateClientInput = {
-          firstName: intakeData.firstName.trim(),
-          lastName: intakeData.lastName.trim(),
-          dateOfBirth: intakeData.dateOfBirth,
+          firstName: requiredFields.firstName,
+          lastName: requiredFields.lastName,
+          dateOfBirth: requiredFields.dateOfBirth,
           email: blankToUndefined(intakeData.email),
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
@@ -482,9 +513,9 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
         const createInput: CreateClientInput = {
           organizationId: user!.organizationId,
           branchId: effectiveBranchId,
-          firstName: intakeData.firstName.trim(),
-          lastName: intakeData.lastName.trim(),
-          dateOfBirth: intakeData.dateOfBirth,
+          firstName: requiredFields.firstName,
+          lastName: requiredFields.lastName,
+          dateOfBirth: requiredFields.dateOfBirth,
           email: blankToUndefined(intakeData.email),
           primaryPhone: phoneInput,
           primaryAddress: addressInput,
@@ -1519,14 +1550,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
               </h3>
               <p className="text-sm text-gray-500 mb-4">
                 Based on {blankToUndefined(intakeData.visitFrequency) ?? 'selected'} frequency -{' '}
-                {typeof intakeData.visitDuration === 'number'
-                  ? `${intakeData.visitDuration} minutes`
-                  : // eslint-disable-next-line sonarjs/no-nested-conditional
-                    blankToUndefined(intakeData.visitDuration)
-                    ? /^\d+$/.test(intakeData.visitDuration!.trim())
-                      ? `${intakeData.visitDuration!.trim()} minutes`
-                      : intakeData.visitDuration!.trim()
-                    : 'not specified'}{' '}
+                {formatVisitDuration(intakeData.visitDuration)}{' '}
                 per visit
               </p>
               <div className="p-4 md:p-6 bg-gray-50 rounded-xl border border-gray-200">

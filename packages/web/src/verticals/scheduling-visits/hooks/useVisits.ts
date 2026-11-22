@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiClient } from '@/core/hooks';
-import { createVisitApiService, type UpdateVisitPayload } from '../services/visit-api';
+import { createVisitApiService, type UpdateVisitPayload, type CreateVisitNotePayload } from '../services/visit-api';
 import type { VisitSearchFilters } from '../types';
 
 export const useVisitApi = () => {
@@ -164,6 +164,36 @@ export const useUpdateVisit = () => {
       await queryClient.invalidateQueries({ queryKey: ['visits', 'detail', visitId] });
       await queryClient.invalidateQueries({ queryKey: ['visits'] });
       await queryClient.invalidateQueries({ queryKey: ['visits', 'calendar'] });
+    },
+  });
+};
+
+/**
+ * Hook to fetch notes/comments for a visit
+ */
+export const useVisitNotes = (visitId: string | undefined) => {
+  const visitApi = useVisitApi();
+
+  return useQuery({
+    queryKey: ['visits', 'notes', visitId],
+    queryFn: () => (visitId ? visitApi.getVisitNotes(visitId) : []),
+    enabled: Boolean(visitId),
+    staleTime: 30 * 1000,
+  });
+};
+
+/**
+ * Hook to create a new note/comment on a visit
+ */
+export const useCreateVisitNote = () => {
+  const queryClient = useQueryClient();
+  const visitApi = useVisitApi();
+
+  return useMutation({
+    mutationFn: ({ visitId, payload }: { visitId: string; payload: CreateVisitNotePayload }) =>
+      visitApi.createVisitNote(visitId, payload),
+    onSuccess: async (_, { visitId }) => {
+      await queryClient.invalidateQueries({ queryKey: ['visits', 'notes', visitId] });
     },
   });
 };

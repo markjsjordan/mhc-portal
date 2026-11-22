@@ -20,7 +20,7 @@ import {
   Edit3,
   Lock,
 } from 'lucide-react';
-import { useVisit, EditVisitModal } from '../../verticals/scheduling-visits';
+import { useVisit, EditVisitModal, VisitNotesSection } from '../../verticals/scheduling-visits';
 import { useClient } from '../../verticals/client-demographics';
 import { useCaregiver } from '../../verticals/caregivers';
 import { Badge } from '@/components/ui/badge.js';
@@ -877,6 +877,10 @@ export const VisitDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Visit Notes & Comments Section */}
+      <VisitNotesSection visitId={visit.id} />
+
       {/* Edit Visit Modal */}
       {isEditModalOpen && (
         <EditVisitModal

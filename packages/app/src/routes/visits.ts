@@ -2604,6 +2604,127 @@ export function createVisitRouter(db: Database): Router {
   });
 
   /**
+   * GET /api/visits/:id/notes
+   * List all non-deleted notes/comments for a visit, newest first
+   */
+  router.get('/:id/notes', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const context = getUserContext(req);
+      const { id: visitId } = req.params;
+
+      const isSuperAdmin = context.roles.includes('SUPER_ADMIN');
+      const visitCheck = await db.query(
+        `SELECT id, assigned_caregiver_id, organization_id, status
+         FROM visits
+         WHERE id = $1 AND deleted_at IS NULL`,
+        [visitId]
+      );
+
+      if (visitCheck.rows.length === 0) {
+        res.status(404).json({
+          success: false,
+          error: 'Visit not found',
+        });
+        return;
+      }
+
+      const visit = visitCheck.rows[0] as {
+        id: string;
+        assigned_caregiver_id: string | null;
+        organization_id: string;
+        status: string;
+      };
+
+      if (!isSuperAdmin && context.organizationId && visit.organization_id !== context.organizationId) {
+        res.status(404).json({
+          success: false,
+          error: 'Visit not found',
+        });
+        return;
+      }
+
+      const canReadNotes =
+        hasSchedulingAccess(context, 'read') ||
+        context.roles.includes('CAREGIVER') ||
+        context.permissions.some((p) => p === 'visit_notes:read' || p === 'visit_notes:*');
+
+      if (!canReadNotes) {
+        res.status(403).json({
+          success: false,
+          error: 'Access denied: insufficient permissions to view visit notes',
+          code: 'PERMISSION_DENIED',
+        });
+        return;
+      }
+
+      const result = await db.query(
+        `SELECT
+           vn.id,
+           vn.visit_id,
+           vn.caregiver_id,
+           vn.note_type,
+           vn.note_text,
+           vn.note_html,
+           vn.activities_performed,
+           vn.client_mood,
+           vn.client_condition_notes,
+           vn.is_incident,
+           vn.incident_severity,
+           vn.incident_description,
+           vn.created_at,
+           vn.updated_at,
+           vn.created_by,
+           u.first_name AS author_first_name,
+           u.last_name AS author_last_name,
+           u.email AS author_email,
+           u.roles AS author_roles
+         FROM visit_notes vn
+         LEFT JOIN users u ON vn.created_by = u.id
+         WHERE vn.visit_id = $1 AND vn.deleted_at IS NULL
+         ORDER BY vn.created_at DESC`,
+        [visitId]
+      );
+
+      const notes = result.rows.map((row) => {
+        const r = row as Record<string, unknown>;
+        const firstName = typeof r.author_first_name === 'string' ? r.author_first_name : '';
+        const lastName = typeof r.author_last_name === 'string' ? r.author_last_name : '';
+        const fullName = `${firstName} ${lastName}`.trim();
+        const authorEmail = typeof r.author_email === 'string' ? r.author_email : null;
+        const authorRoles = Array.isArray(r.author_roles) ? (r.author_roles as string[]) : [];
+
+        return {
+          id: r.id,
+          visitId: r.visit_id,
+          caregiverId: r.caregiver_id ?? null,
+          noteType: r.note_type ?? 'GENERAL',
+          noteText: r.note_text ?? '',
+          noteHtml: r.note_html ?? null,
+          activitiesPerformed: r.activities_performed ?? [],
+          clientMood: r.client_mood ?? null,
+          clientConditionNotes: r.client_condition_notes ?? null,
+          isIncident: Boolean(r.is_incident),
+          incidentSeverity: r.incident_severity ?? null,
+          incidentDescription: r.incident_description ?? null,
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+          createdBy: r.created_by,
+          authorName: fullName || authorEmail || 'Staff Member',
+          authorEmail,
+          authorRole: authorRoles[0] ?? null,
+        };
+      });
+
+      res.json({
+        success: true,
+        data: notes,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  /**
    * POST /api/visits/:id/notes
    * Create a new note for a visit
    * 
@@ -2644,10 +2765,19 @@ export function createVisitRouter(db: Database): Router {
         transcriptionConfidence,
       } = req.body;
 
-      if (noteText === undefined || noteText === null || noteText.trim() === '') {
+      if (noteText === undefined || noteText === null || typeof noteText !== 'string' || noteText.trim() === '') {
         res.status(400).json({
           success: false,
           error: 'noteText is required',
+        });
+        return;
+      }
+
+      const allowedNoteTypes = ['GENERAL', 'CLINICAL', 'INCIDENT', 'TASK'];
+      if (!allowedNoteTypes.includes(noteType)) {
+        res.status(400).json({
+          success: false,
+          error: `Invalid noteType. Must be one of: ${allowedNoteTypes.join(', ')}`,
         });
         return;
       }
@@ -2679,31 +2809,33 @@ export function createVisitRouter(db: Database): Router {
 
       const visit = visitCheck.rows[0] as { id: string; assigned_caregiver_id: string | null; organization_id: string; status: string };
 
-      // Verify user is the assigned caregiver or has admin access
-      // For now, we'll allow if user is the caregiver
-      // NOTE: Future enhancement - add organization-level access control
-      if (visit.assigned_caregiver_id == null) {
+      const isAdminOrCoordinator = hasSchedulingAccess(context, 'update');
+      let caregiverId: string | null = null;
+
+      if (visit.assigned_caregiver_id != null) {
+        const caregiverCheck = await db.query(
+          `SELECT id FROM caregivers WHERE id = $1 AND deleted_at IS NULL`,
+          [visit.assigned_caregiver_id]
+        );
+
+        if (caregiverCheck.rows.length === 0 && !isAdminOrCoordinator) {
+          res.status(403).json({
+            success: false,
+            error: 'Access denied',
+          });
+          return;
+        }
+
+        caregiverId = caregiverCheck.rows.length > 0
+          ? (caregiverCheck.rows[0] as { id: string }).id
+          : null;
+      } else if (!isAdminOrCoordinator) {
         res.status(400).json({
           success: false,
           error: 'Visit is not assigned to a caregiver',
         });
         return;
       }
-
-      const caregiverCheck = await db.query(
-        `SELECT id FROM caregivers WHERE id = $1 AND deleted_at IS NULL`,
-        [visit.assigned_caregiver_id]
-      );
-
-      if (caregiverCheck.rows.length === 0) {
-        res.status(403).json({
-          success: false,
-          error: 'Access denied',
-        });
-        return;
-      }
-
-      const caregiverId = (caregiverCheck.rows[0] as { id: string }).id;
 
       // Insert note
       const result = await db.query(
@@ -2749,9 +2881,19 @@ export function createVisitRouter(db: Database): Router {
         ]
       );
 
+      const created = result.rows[0] as Record<string, unknown>;
       res.status(201).json({
         success: true,
-        data: result.rows[0],
+        data: {
+          ...created,
+          visitId: created.visit_id,
+          caregiverId: created.caregiver_id ?? null,
+          noteType: created.note_type ?? 'GENERAL',
+          noteText: created.note_text ?? '',
+          createdAt: created.created_at,
+          updatedAt: created.updated_at,
+          createdBy: created.created_by,
+        },
       });
     } catch (error) {
       next(error);

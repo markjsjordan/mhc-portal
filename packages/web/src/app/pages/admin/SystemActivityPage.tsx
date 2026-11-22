@@ -276,7 +276,7 @@ export const SystemActivityPage: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
+              {loading && (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8">
                     <div className="flex items-center justify-center gap-2 text-gray-500">
@@ -285,13 +285,15 @@ export const SystemActivityPage: React.FC = () => {
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : filteredLogs.length === 0 ? (
+              )}
+              {!loading && filteredLogs.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                     No audit events in this range
                   </TableCell>
                 </TableRow>
-              ) : (
+              )}
+              {!loading && filteredLogs.length > 0 && (
                 filteredLogs.map((log) => (
                   <TableRow key={log.id}>
                     <TableCell className="font-mono text-xs text-gray-600 whitespace-nowrap">

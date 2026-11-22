@@ -386,42 +386,30 @@ export const ClaimsQueueTable: React.FC<ClaimsQueueTableProps> = ({
                     const isLocationNotCaptured = activeEvvModal.evvValidation.errors.some(
                       (e) => e.includes('LOCATION_NOT_CAPTURED')
                     );
+                    const getGpsBoxStyle = (passed: boolean) => {
+                      if (isLocationNotCaptured) return 'bg-gray-50 border-gray-200 text-gray-700';
+                      return passed ? 'bg-green-50 border-green-200 text-green-900' : 'bg-red-50 border-red-200 text-red-900';
+                    };
+                    const getGpsLabel = (passed: boolean) => {
+                      if (isLocationNotCaptured) return 'Not captured';
+                      return passed ? 'Confirmed within 100m geofence' : 'Outside geofence or missing';
+                    };
                     return (
                       <>
                         <div
-                          className={`p-2.5 rounded border ${
-                            isLocationNotCaptured
-                              ? 'bg-gray-50 border-gray-200 text-gray-700'
-                              : activeEvvModal.evvValidation.details.clockInGeofencePassed
-                              ? 'bg-green-50 border-green-200 text-green-900'
-                              : 'bg-red-50 border-red-200 text-red-900'
-                          }`}
+                          className={`p-2.5 rounded border ${getGpsBoxStyle(activeEvvModal.evvValidation.details.clockInGeofencePassed)}`}
                         >
                           <p className="font-semibold">Check-In GPS</p>
                           <p className="text-[11px] mt-0.5">
-                            {isLocationNotCaptured
-                              ? 'Not captured'
-                              : activeEvvModal.evvValidation.details.clockInGeofencePassed
-                              ? 'Confirmed within 100m geofence'
-                              : 'Outside geofence or missing'}
+                            {getGpsLabel(activeEvvModal.evvValidation.details.clockInGeofencePassed)}
                           </p>
                         </div>
                         <div
-                          className={`p-2.5 rounded border ${
-                            isLocationNotCaptured
-                              ? 'bg-gray-50 border-gray-200 text-gray-700'
-                              : activeEvvModal.evvValidation.details.clockOutGeofencePassed
-                              ? 'bg-green-50 border-green-200 text-green-900'
-                              : 'bg-red-50 border-red-200 text-red-900'
-                          }`}
+                          className={`p-2.5 rounded border ${getGpsBoxStyle(activeEvvModal.evvValidation.details.clockOutGeofencePassed)}`}
                         >
                           <p className="font-semibold">Check-Out GPS</p>
                           <p className="text-[11px] mt-0.5">
-                            {isLocationNotCaptured
-                              ? 'Not captured'
-                              : activeEvvModal.evvValidation.details.clockOutGeofencePassed
-                              ? 'Confirmed within 100m geofence'
-                              : 'Outside geofence or missing'}
+                            {getGpsLabel(activeEvvModal.evvValidation.details.clockOutGeofencePassed)}
                           </p>
                         </div>
                       </>

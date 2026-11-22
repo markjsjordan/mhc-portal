@@ -83,6 +83,31 @@ export interface EndPatternResult {
   retainedFutureVisits: number;
 }
 
+export type VisitNoteType = 'GENERAL' | 'CLINICAL' | 'INCIDENT' | 'TASK';
+
+export interface VisitNoteItem {
+  id: string;
+  visitId: string;
+  caregiverId?: string | null;
+  noteType: VisitNoteType;
+  noteText: string;
+  createdAt: string;
+  updatedAt?: string;
+  createdBy?: string;
+  authorName?: string;
+  authorEmail?: string | null;
+  authorRole?: string | null;
+  isIncident?: boolean;
+  incidentSeverity?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | null;
+}
+
+export interface CreateVisitNotePayload {
+  noteText: string;
+  noteType?: VisitNoteType;
+  isIncident?: boolean;
+  incidentSeverity?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+}
+
 export interface VisitApiService {
   getMyVisits(startDate: Date, endDate: Date): Promise<Visit[]>;
   getVisitsByFilters(filters: VisitSearchFilters): Promise<Visit[]>;
@@ -91,6 +116,8 @@ export interface VisitApiService {
   checkConflicts(visitId: string, caregiverId: string): Promise<ConflictCheckResult>;
   getCaregiverAvailability(date: Date, branchIds?: string[]): Promise<CaregiverAvailability[]>;
   getVisitById(visitId: string): Promise<Visit>;
+  getVisitNotes(visitId: string): Promise<VisitNoteItem[]>;
+  createVisitNote(visitId: string, payload: CreateVisitNotePayload): Promise<VisitNoteItem>;
   createVisit(data: CreateVisitPayload): Promise<Visit>;
   updateVisit(visitId: string, data: UpdateVisitPayload): Promise<Visit>;
   createPattern(data: CreatePatternPayload): Promise<{
@@ -263,6 +290,21 @@ export const createVisitApiService = (apiClient: ApiClient): VisitApiService => 
     async getVisitById(visitId: string): Promise<Visit> {
       const response = await apiClient.get<{ success: boolean; data: Visit }>(
         `/api/visits/${visitId}`
+      );
+      return response.data;
+    },
+
+    async getVisitNotes(visitId: string): Promise<VisitNoteItem[]> {
+      const response = await apiClient.get<{ success: boolean; data: VisitNoteItem[] }>(
+        `/api/visits/${visitId}/notes`
+      );
+      return response.data ?? [];
+    },
+
+    async createVisitNote(visitId: string, payload: CreateVisitNotePayload): Promise<VisitNoteItem> {
+      const response = await apiClient.post<{ success: boolean; data: VisitNoteItem }>(
+        `/api/visits/${visitId}/notes`,
+        payload
       );
       return response.data;
     },
