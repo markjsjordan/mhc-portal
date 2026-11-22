@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Lock, Save, RefreshCw, AlertCircle, Info } from 'lucide-react';
-import { AppShell } from '@/app/components/AppShell.js';
 import { Button } from '@/components/ui/button.js';
 import {
   WeekPicker,
@@ -148,8 +147,7 @@ export const MySchedulePage: React.FC = () => {
   };
 
   return (
-    <AppShell>
-      <div className="max-w-5xl mx-auto space-y-6 py-6 px-4 sm:px-6">
+    <div className="max-w-5xl mx-auto space-y-6 py-6 px-4 sm:px-6">
         {/* Header & required disclosures */}
         <div className="space-y-2">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -282,7 +280,6 @@ export const MySchedulePage: React.FC = () => {
           </Button>
         </div>
       </div>
-    </AppShell>
   );
 };
 export default MySchedulePage;

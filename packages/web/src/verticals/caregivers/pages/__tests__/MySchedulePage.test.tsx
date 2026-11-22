@@ -8,11 +8,6 @@ import { ProtectedRoute } from '@/core/components/ProtectedRoute.js';
 import * as caregiverAvailabilityModule from '../../services/caregiver-availability-api.js';
 import * as hooks from '@/core/hooks/index.js';
 
-// Mock AppShell to keep tests scoped and fast
-vi.mock('@/app/components/AppShell.js', () => ({
-  AppShell: ({ children }: { children: React.ReactNode }) => <div data-testid="app-shell">{children}</div>,
-}));
-
 // Mock auth and permissions
 vi.mock('@/core/hooks', async () => {
   const actual = await vi.importActual<Record<string, unknown>>('@/core/hooks');
@@ -108,6 +103,14 @@ describe('MySchedulePage', () => {
 
     expect(screen.getByText('Availability — not a confirmed shift')).toBeInTheDocument();
     expect(screen.getByText(/Worked time is recorded only through check-in\/check-out and is not set here/i)).toBeInTheDocument();
+  });
+
+  it('does not render an internal AppShell wrapper', () => {
+    const { container } = renderWithProviders(<MySchedulePage />);
+
+    expect(screen.queryByTestId('app-shell')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('app-shell-content')).not.toBeInTheDocument();
+    expect(container.querySelector('header')).not.toBeInTheDocument();
   });
 
   it('locked week shows cutoff and disables save', () => {
