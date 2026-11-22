@@ -76,6 +76,9 @@ vi.mock('../../../verticals/scheduling-visits', () => ({
       </div>
     ) : null,
   VisitClockControl: () => <div data-testid="mock-visit-clock-control">Clock Control</div>,
+  VisitNotesSection: ({ visitId }: { visitId: string }) => (
+    <div data-testid="mock-visit-notes-section">Notes for {visitId}</div>
+  ),
 }));
 
 describe('VisitDetailPage', () => {

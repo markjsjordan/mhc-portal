@@ -786,6 +786,163 @@ describe('Visit Routes', () => {
         })
       );
     });
+
+    it('should allow coordinator/admin to create note on unassigned visit', async () => {
+      mockRequest.user = {
+        userId: 'admin-123',
+        email: 'admin@example.com',
+        tokenVersion: 0,
+        organizationId: 'org-123',
+        branchIds: ['branch-123'],
+        roles: ['COORDINATOR'],
+        permissions: ['visits:update'],
+      };
+
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 'visit-123',
+            assigned_caregiver_id: null,
+            organization_id: 'org-123',
+            status: 'UNASSIGNED',
+          }],
+        } as any)
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 'note-999',
+            visit_id: 'visit-123',
+            caregiver_id: null,
+            note_type: 'GENERAL',
+            note_text: 'Client was happy and engaged during the visit.',
+            created_at: '2026-11-22T01:00:00Z',
+            created_by: 'admin-123',
+          }],
+        } as any);
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find((layer: any) => layer.route?.path === '/:id/notes' && layer.route?.methods?.post)?.route?.stack[0]?.handle;
+
+      if (!handler) {
+        throw new Error('Handler not found');
+      }
+
+      await handler(mockRequest as Request, mockResponse as Response, nextMock);
+
+      expect(statusMock).toHaveBeenCalledWith(201);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          data: expect.objectContaining({
+            id: 'note-999',
+            visitId: 'visit-123',
+            noteText: 'Client was happy and engaged during the visit.',
+          }),
+        })
+      );
+    });
+  });
+
+  describe('GET /:id/notes', () => {
+    beforeEach(() => {
+      mockRequest = {
+        params: { id: 'visit-123' },
+        user: {
+          userId: 'user-123',
+          email: 'coordinator@example.com',
+          tokenVersion: 0,
+          organizationId: 'org-123',
+          branchIds: ['branch-123'],
+          roles: ['COORDINATOR'],
+          permissions: ['visits:read'],
+        },
+      };
+    });
+
+    it('should return visit notes with author metadata', async () => {
+      vi.mocked(mockDb.query)
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 'visit-123',
+            assigned_caregiver_id: 'caregiver-456',
+            organization_id: 'org-123',
+            status: 'SCHEDULED',
+          }],
+        } as any)
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 'note-1',
+            visit_id: 'visit-123',
+            caregiver_id: 'caregiver-456',
+            note_type: 'CLINICAL',
+            note_text: 'Vitals stable.',
+            note_html: null,
+            activities_performed: [],
+            client_mood: 'GOOD',
+            client_condition_notes: null,
+            is_incident: false,
+            incident_severity: null,
+            incident_description: null,
+            created_at: '2026-11-22T01:00:00Z',
+            updated_at: '2026-11-22T01:00:00Z',
+            created_by: 'user-123',
+            author_first_name: 'Jane',
+            author_last_name: 'Coordinator',
+            author_email: 'coordinator@example.com',
+            author_roles: ['COORDINATOR'],
+          }],
+        } as any);
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find((layer: any) => layer.route?.path === '/:id/notes' && layer.route?.methods?.get)?.route?.stack[0]?.handle;
+
+      if (!handler) {
+        throw new Error('Handler not found');
+      }
+
+      await handler(mockRequest as Request, mockResponse as Response, nextMock);
+
+      expect(jsonMock).toHaveBeenCalledWith({
+        success: true,
+        data: [
+          expect.objectContaining({
+            id: 'note-1',
+            visitId: 'visit-123',
+            noteType: 'CLINICAL',
+            noteText: 'Vitals stable.',
+            authorName: 'Jane Coordinator',
+            authorRole: 'COORDINATOR',
+          }),
+        ],
+      });
+    });
+
+    it('should return 404 when visit belongs to another organization', async () => {
+      vi.mocked(mockDb.query).mockResolvedValueOnce({
+        rows: [{
+          id: 'visit-123',
+          assigned_caregiver_id: null,
+          organization_id: 'other-org-999',
+          status: 'SCHEDULED',
+        }],
+      } as any);
+
+      const router = createVisitRouter(mockDb);
+      const handler = router.stack.find((layer: any) => layer.route?.path === '/:id/notes' && layer.route?.methods?.get)?.route?.stack[0]?.handle;
+
+      if (!handler) {
+        throw new Error('Handler not found');
+      }
+
+      await handler(mockRequest as Request, mockResponse as Response, nextMock);
+
+      expect(statusMock).toHaveBeenCalledWith(404);
+      expect(jsonMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          error: 'Visit not found',
+        })
+      );
+    });
   });
 
   describe('PUT /:id and PATCH /:id (Edit Scheduled Visit)', () => {

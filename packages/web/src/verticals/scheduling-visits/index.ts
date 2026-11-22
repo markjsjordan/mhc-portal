@@ -6,11 +6,11 @@
 export { VisitList, CalendarView } from './pages';
 
 // Components
-export { VisitCard, EditVisitModal, VisitClockControl } from './components';
+export { VisitCard, EditVisitModal, VisitClockControl, VisitNotesSection } from './components';
 
 // Hooks
-export { useVisits, useVisit, useUpdateVisit, useMyVisits, useVisitApi, useCalendarVisits, useCaregiverAvailability } from './hooks/useVisits';
-export type { UpdateVisitPayload } from './services/visit-api';
+export { useVisits, useVisit, useUpdateVisit, useVisitNotes, useCreateVisitNote, useMyVisits, useVisitApi, useCalendarVisits, useCaregiverAvailability } from './hooks/useVisits';
+export type { UpdateVisitPayload, VisitNoteItem, VisitNoteType, CreateVisitNotePayload } from './services/visit-api';
 
 
 // Configuration
