@@ -108,6 +108,9 @@ class ApiClientImpl implements ApiClient {
 
     if (responseType === 'text') return response.text() as Promise<T>;
     if (responseType === 'blob') return response.blob() as Promise<T>;
+    if (response.status === 204 || response.headers?.get?.('content-length') === '0') {
+      return undefined as T;
+    }
     return response.json();
   }
 
