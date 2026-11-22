@@ -206,16 +206,6 @@ function isValidPhoneNumber(value: string): boolean {
   return phoneDigits.length === 10;
 }
 
-function formatVisitDuration(visitDuration: IntakeData['visitDuration'] | undefined): string {
-  if (typeof visitDuration === 'number') {
-    return `${visitDuration} minutes`;
-  }
-  const trimmed = blankToUndefined(visitDuration);
-  if (!trimmed) {
-    return 'not specified';
-  }
-  return /^\d+$/.test(trimmed) ? `${trimmed} minutes` : trimmed;
-}
 
 function validateIntakeRequiredFields(
   intakeData: Partial<IntakeData>
