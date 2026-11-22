@@ -13,6 +13,7 @@ import {
   ClientPortalAccessCard,
   VisitHistoryCard,
   ClientTimelineCard,
+  ClientIntakeDetailsCards,
 } from '../components';
 
 export const ClientDetail: React.FC = () => {
@@ -223,6 +224,9 @@ export const ClientDetail: React.FC = () => {
                             Authorized for healthcare decisions
                           </p>
                         )}
+                        {contact.notes && (
+                          <p className="text-xs text-gray-500">{contact.notes}</p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -230,6 +234,9 @@ export const ClientDetail: React.FC = () => {
               </CardContent>
             </Card>
           )}
+
+          {/* Intake Details: Physician, Insurance & Authorization, Assessment, Care Plan, Schedule, Consents */}
+          <ClientIntakeDetailsCards client={client} />
 
           {/* Portal Access (client + family) */}
           <ClientPortalAccessCard clientId={client.id} />
