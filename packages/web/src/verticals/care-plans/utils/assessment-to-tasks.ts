@@ -339,12 +339,12 @@ export function convertAssessmentFindingsToDraftTasks(
     findings.serviceTypes?.some((t) => t.toLowerCase().includes('skilled') || t.toLowerCase().includes('nursing')) ??
     (findings.conditions && findings.conditions.length > 2);
   const cadenceDays = isSkilled ? 60 : 90;
-  const citation =
-    stateCode === 'FL'
-      ? 'Florida AHCA Ch. 59A-8.0095'
-      : stateCode === 'TX'
-      ? 'Texas HHSC 26 TAC §558'
-      : 'State Licensure Home Health Standards';
+  let citation = 'State Licensure Home Health Standards';
+  if (stateCode === 'FL') {
+    citation = 'Florida AHCA Ch. 59A-8.0095';
+  } else if (stateCode === 'TX') {
+    citation = 'Texas HHSC 26 TAC §558';
+  }
 
   add(
     `RN Supervisory Visit Oversight (${cadenceDays}-Day Cadence)`,

@@ -18,6 +18,8 @@ interface TouchSimulatorProps {
   enabled?: boolean;
 }
 
+const removeTouchById = (id: number) => (prev: Touch[]) => prev.filter(t => t.id !== id);
+
 export const TouchSimulator: React.FC<TouchSimulatorProps> = ({
   children,
   enabled = true,
@@ -52,7 +54,7 @@ export const TouchSimulator: React.FC<TouchSimulatorProps> = ({
 
     // Remove touch after animation
     setTimeout(() => {
-      setTouches(prev => prev.filter(t => t.id !== touch.id));
+      setTouches(removeTouchById(touch.id));
     }, 1000);
   }, [enabled]);
 

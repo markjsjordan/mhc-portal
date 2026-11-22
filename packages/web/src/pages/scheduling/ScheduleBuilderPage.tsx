@@ -312,7 +312,7 @@ export default function ScheduleBuilderPage() {
     try {
       await visitApi.createVisit({
         clientId: createModalData.clientId,
-        caregiverId: createModalData.caregiverId || undefined,
+        caregiverId: createModalData.caregiverId && createModalData.caregiverId.length > 0 ? createModalData.caregiverId : undefined,
         serviceTypeId: DEFAULT_SERVICE_TYPES[0]!.id,
         visitType: createModalData.visitType as import('@/verticals/scheduling-visits/types').VisitType,
         scheduledDate: createModalData.date,
@@ -2077,7 +2077,7 @@ function CreateAppointmentModal({
         <div style={styles.formGroup}>
           <Label htmlFor="appointment-caregiver">Caregiver (Optional)</Label>
           <Select
-            value={data.caregiverId || 'unassigned'}
+            value={data.caregiverId && data.caregiverId.length > 0 ? data.caregiverId : 'unassigned'}
             onValueChange={(val) => onChange({ caregiverId: val === 'unassigned' ? undefined : val })}
           >
             <SelectTrigger id="appointment-caregiver">

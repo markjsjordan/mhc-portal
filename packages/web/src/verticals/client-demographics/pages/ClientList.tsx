@@ -125,7 +125,7 @@ export const ClientList: React.FC = () => {
 
       <ClientFilters filters={filters} onFiltersChange={setFilters} />
 
-      {totalClients === 0 && !hasActiveFilters ? (
+      {totalClients === 0 && !hasActiveFilters && (
         <EmptyState
           title="No clients found"
           description={
@@ -176,7 +176,8 @@ export const ClientList: React.FC = () => {
             ) : null
           }
         />
-      ) : totalClients > 0 && clients.length === 0 ? (
+      )}
+      {!(totalClients === 0 && !hasActiveFilters) && totalClients > 0 && clients.length === 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4 text-gray-500">
             <Search className="w-6 h-6" />
@@ -191,7 +192,8 @@ export const ClientList: React.FC = () => {
             </Button>
           </div>
         </div>
-      ) : (
+      )}
+      {!(totalClients === 0 && !hasActiveFilters) && !(totalClients > 0 && clients.length === 0) && (
         <div
           className={
             viewMode === 'grid'

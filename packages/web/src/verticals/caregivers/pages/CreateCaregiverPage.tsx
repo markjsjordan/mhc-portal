@@ -37,6 +37,7 @@ function parseBranchIds(raw: string): string[] {
 
 export const CAREGIVER_PHONE_REGEX = /^\+?[1-9]\d{1,14}$/;
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function validate(
   values: CaregiverFormValues,
   referenceDate: Date = new Date()

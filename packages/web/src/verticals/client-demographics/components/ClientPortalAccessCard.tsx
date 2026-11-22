@@ -177,7 +177,9 @@ export const ClientPortalAccessCard: React.FC<ClientPortalAccessCardProps> = ({ 
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleCopyInviteLink}
+                onClick={() => {
+                  void handleCopyInviteLink();
+                }}
                 disabled={inviteLinkMutation.isPending}
               >
                 Copy invite link
