@@ -29,6 +29,7 @@ import { useClient } from '@/verticals/client-demographics/hooks';
 import { useCaregiver } from '@/verticals/caregivers';
 import { usePermissions } from '@/core/hooks';
 import { EditVisitModal } from '../components/EditVisitModal';
+import { VisitNotesSection } from '../components/VisitNotesSection';
 import {
   calculateSupervisoryCadence,
   SupervisoryCadenceResult,
@@ -641,6 +642,9 @@ export const VisitDetail: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Visit Notes & Comments Section */}
+      <VisitNotesSection visitId={visit.id} />
 
       {/* DRAFT CARE PLAN TASKS MODAL */}
       {isTaskModalOpen && convertedTasks && (
