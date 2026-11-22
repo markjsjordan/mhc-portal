@@ -179,7 +179,7 @@ describe('ClientIntakeWorkflow - Mobile and Responsive Layout', () => {
     expect(nextBtn.className).toContain('min-h-[48px]');
   });
 
-  it('renders Visit Frequency and Visit Duration as free-text inputs and shows entered text on Step 7', () => {
+  it('renders Visit Frequency and Visit Duration as free-text inputs and shows entered text on Review step', () => {
     const initialData = {
       firstName: 'Jane',
       lastName: 'Doe',
@@ -217,8 +217,8 @@ describe('ClientIntakeWorkflow - Mobile and Responsive Layout', () => {
     fireEvent.change(freqInput!, { target: { value: '3x per week' } });
     fireEvent.change(durInput!, { target: { value: '45-60 min' } });
 
-    // Advance Step 3 -> Step 4 -> Step 5 -> Step 6 -> Step 7
-    for (let i = 0; i < 4; i += 1) {
+    // Advance Step 3 -> Step 4 -> Step 5 -> Step 6 (Review & Submit)
+    for (let i = 0; i < 3; i += 1) {
       fireEvent.click(screen.getByRole('button', { name: /Next →/i }));
     }
 
