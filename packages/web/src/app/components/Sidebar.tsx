@@ -149,6 +149,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isDesktopOpen
   const { logout, user } = useAuth();
   const { can, canSection } = usePermissions();
 
+  const isAdminRole = !!user?.roles.some((role) =>
+    ['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN'].includes(role)
+  );
+
   const handleNavClick = () => {
     // Only auto-close on navigation for mobile viewports (< 1024px)
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
@@ -247,11 +251,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isDesktopOpen
               if (item.path === '/tasks') id = 'tasks';
               if (item.path === '/time-tracking') id = 'evv-status';
 
+              const linkTo = item.path === '/' && isAdminRole ? '/dashboard' : item.path;
+
               return (
                 <NavLink
                   key={item.path}
                   id={id}
-                  to={item.path}
+                  to={linkTo}
                   end={item.path === '/scheduling' || item.path === '/'}
                   onClick={handleNavClick}
                   className={({ isActive }) =>

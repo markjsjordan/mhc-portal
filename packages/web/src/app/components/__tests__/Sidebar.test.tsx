@@ -183,4 +183,15 @@ describe('Sidebar component', () => {
     expect(visitsLink.className).not.toContain('bg-primary-50');
     expect(dashboardLink.className).not.toContain('bg-primary-50');
   });
+
+  it('links Dashboard to /dashboard for admin roles so SUPER_ADMIN is not redirected to /admin', () => {
+    render(
+      <MemoryRouter>
+        <Sidebar isOpen={true} onClose={vi.fn()} isDesktopOpen={true} />
+      </MemoryRouter>
+    );
+
+    const dashboardLink = screen.getByRole('link', { name: /dashboard/i });
+    expect(dashboardLink).toHaveAttribute('href', '/dashboard');
+  });
 });

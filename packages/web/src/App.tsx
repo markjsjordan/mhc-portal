@@ -596,7 +596,16 @@ function AppRoutes() {
       <Route
         path="/caregiver/schedule"
         element={
-          <ProtectedRoute requiredRoles={['CAREGIVER']}>
+          <ProtectedRoute
+            requiredRoles={[
+              'CAREGIVER',
+              'SUPER_ADMIN',
+              'ORG_ADMIN',
+              'BRANCH_ADMIN',
+              'ADMIN',
+              'COORDINATOR',
+            ]}
+          >
             <AppShell>
               <MySchedulePage />
             </AppShell>
