@@ -131,6 +131,9 @@ test.describe('Recurring Visit Generator Count & Duplicate Handling (wdvf3add0g)
     await page.getByRole('button', { name: /\+ Recurring Schedule/i }).click();
     await expect(page.getByText('Create Recurring Schedule')).toBeVisible();
 
+    await page.locator('#recurring-client').click();
+    await page.getByRole('option', { name: 'E2E RecurringClient' }).click();
+
     const dateInputs = page.locator('form input[type="date"]');
     await dateInputs.nth(0).fill(startStr);
     await dateInputs.nth(1).fill(endStr);
@@ -169,6 +172,9 @@ test.describe('Recurring Visit Generator Count & Duplicate Handling (wdvf3add0g)
     // --- Run 2: Create overlapping recurring schedule for same client/days/time ---
     await page.getByRole('button', { name: /\+ Recurring Schedule/i }).click();
     await expect(page.getByText('Create Recurring Schedule')).toBeVisible();
+
+    await page.locator('#recurring-client').click();
+    await page.getByRole('option', { name: 'E2E RecurringClient' }).click();
 
     await dateInputs.nth(0).fill(startStr);
     await dateInputs.nth(1).fill(endStr);
