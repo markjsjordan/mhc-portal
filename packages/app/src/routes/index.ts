@@ -51,6 +51,7 @@ import {
   MessageRepository
 } from '@folkcare/family-engagement';
 import { createVisitRouter } from './visits.js';
+import { createScheduleSnapshotsRouter } from './schedule-snapshots.js';
 import pushNotificationRouter from './push-notifications.js';
 import { createEVVRouter } from './evv.js';
 import { createUsageRouter } from './usage.js';
@@ -371,6 +372,9 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
   // Visit & Scheduling routes
   const visitRouter = createVisitRouter(db);
   app.use('/api/visits', generalApiLimiter, visitRouter);
+
+  const scheduleSnapshotsRouter = createScheduleSnapshotsRouter(db);
+  app.use('/api/schedule-snapshots', generalApiLimiter, scheduleSnapshotsRouter);
   console.log('  ✓ Visit & Scheduling routes registered (with rate limiting)');
 
   // Optimal Visit Frequency routes (AI-powered)
