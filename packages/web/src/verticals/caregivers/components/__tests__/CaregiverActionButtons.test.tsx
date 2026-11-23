@@ -336,4 +336,18 @@ describe('CaregiverActionButtons', () => {
     expect(screen.getByRole('button', { name: /edit/i })).toBeEnabled();
     expect(screen.getByRole('button', { name: /delete/i })).toBeEnabled();
   });
+
+  test('applies 44px minimum tap target height to Edit, Delete, and More actions buttons', () => {
+    render(
+      <CaregiverActionButtons
+        caregiver={mockCaregiver}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onDuplicate={vi.fn()}
+      />
+    );
+    expect(screen.getByRole('button', { name: /edit/i }).className).toContain('min-h-[44px]');
+    expect(screen.getByRole('button', { name: /delete/i }).className).toContain('min-h-[44px]');
+    expect(screen.getByRole('button', { name: /more actions/i }).className).toContain('min-h-[44px]');
+  });
 });
