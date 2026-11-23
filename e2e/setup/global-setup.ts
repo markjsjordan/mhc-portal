@@ -74,21 +74,37 @@ export default async function globalSetup() {
     const cleanConfig = parseDatabaseUrl(dbUrl);
     const cleanDb = new Database(cleanConfig);
     try {
-      // Delete E2E persona users by their known UUIDs
+      // Delete all E2E test data: audit_events are IMMUTABLE so CASCADE won't work;
+      // explicitly delete from dependent tables first, then users
+      await cleanDb.query(`DELETE FROM audit_events WHERE actor_id IN (
+        '00000000-e2e0-4000-8000-000000000100',
+        '00000000-e2e0-4000-8000-000000000101',
+        '00000000-e2e0-4000-8000-000000000102',
+        '00000000-e2e0-4000-8000-000000000103',
+        '00000000-e2e0-4000-8000-000000000104'
+      )`);
+      await cleanDb.query(`DELETE FROM auth_events WHERE user_id IN (
+        '00000000-e2e0-4000-8000-000000000100',
+        '00000000-e2e0-4000-8000-000000000101',
+        '00000000-e2e0-4000-8000-000000000102',
+        '00000000-e2e0-4000-8000-000000000103',
+        '00000000-e2e0-4000-8000-000000000104'
+      )`);
+      // Delete E2E persona users by their known UUIDs (CASCADE deletes caregivers, etc.)
       const e2eUserIds = [
-        '00000000-e2e0-4000-8000-000000000100', // DIRECT_CARE_WORKER
-        '00000000-e2e0-4000-8000-000000000101', // SUPERVISOR
-        '00000000-e2e0-4000-8000-000000000102', // COORDINATOR
-        '00000000-e2e0-4000-8000-000000000103', // MANAGER
-        '00000000-e2e0-4000-8000-000000000104', // SUPER_ADMIN
+        '00000000-e2e0-4000-8000-000000000100', // ADMIN_USER
+        '00000000-e2e0-4000-8000-000000000101', // ORG_ADMIN_USER
+        '00000000-e2e0-4000-8000-000000000102', // COORDINATOR_USER
+        '00000000-e2e0-4000-8000-000000000103', // CAREGIVER_USER
+        '00000000-e2e0-4000-8000-000000000104', // FAMILY_USER
       ];
       const deleteResult = await cleanDb.query(
         `DELETE FROM users WHERE id = ANY($1::uuid[])`,
         [e2eUserIds]
       );
-      console.log(`✅ Cleaned ${deleteResult.rowCount} E2E persona users`);
+      console.log(`✅ Cleaned ${deleteResult.rowCount} E2E persona users + dependent data`);
     } catch (error) {
-      console.warn('⚠️  Cleanup failed (table may not exist yet):', error);
+      console.warn('⚠️  Cleanup failed (tables may not exist yet):', error);
     } finally {
       await cleanDb.close();
     }
