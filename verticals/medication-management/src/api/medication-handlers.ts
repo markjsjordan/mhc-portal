@@ -41,15 +41,15 @@ function handleError(error: unknown, res: Response, operation: string): void {
     });
   } else if (isDomainError(error)) {
     if (error instanceof ValidationError) {
-      res.status(400).json({ error: error.message, details: error.context });
+      res.status(400).json({ error: error.message });
     } else if (error instanceof PermissionError) {
       res.status(403).json({ error: error.message });
     } else if (error instanceof NotFoundError) {
       res.status(404).json({ error: error.message });
     }
   } else if (error instanceof Error) {
-    console.error(`Error ${operation}:`, error);
-    res.status(500).json({ error: error.message });
+    console.error(`Error ${operation}:`, error.message);
+    res.status(500).json({ error: 'Internal server error' });
   } else {
     console.error(`Error ${operation}:`, error);
     res.status(500).json({ error: 'Internal server error' });

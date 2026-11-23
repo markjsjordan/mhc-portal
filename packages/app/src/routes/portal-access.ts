@@ -650,7 +650,6 @@ export function createPortalAccessRouter(db: Database): Router {
           familyMemberId: newFamilyMemberId,
           consentType: 'PORTAL_ACCESS',
           authorizedBy: data.consent.authorizedBy,
-          authorizerName: data.consent.authorizerName,
           consentDate: nowIso,
           portalAccessLevel: data.portalAccessLevel,
         },

@@ -30,8 +30,8 @@ function handleError(error: unknown, res: Response, operation: string): void {
   if (error instanceof ZodError) {
     res.status(400).json({ error: 'Validation error', details: error.issues });
   } else if (error instanceof Error) {
-    console.error(`Error ${operation}:`, error);
-    res.status(500).json({ error: error.message });
+    console.error(`Error ${operation}:`, error.message);
+    res.status(500).json({ error: 'Internal server error' });
   } else {
     console.error(`Error ${operation}:`, error);
     res.status(500).json({ error: 'Internal server error' });

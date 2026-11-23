@@ -126,8 +126,6 @@ export function createAuditEventsRouter(db: Database): Router {
           }
           throw permError;
         }
-        const canSeeClientNames = permissionService.hasPermission(actorContext, 'clients:read');
-
         // Log this audit log access (HIPAA § 164.312(b) - audit the audit)
         await auditService.logEvent(
           actorContext,
@@ -143,7 +141,7 @@ export function createAuditEventsRouter(db: Database): Router {
               filters: {
                 eventType: query.eventType,
                 phiOnly: query.phiOnly,
-                search: query.search,
+                hasSearch: Boolean(query.search?.trim()),
                 startDate: query.startDate,
                 endDate: query.endDate,
               },
@@ -274,10 +272,7 @@ export function createAuditEventsRouter(db: Database): Router {
             eventType: row['event_type'],
             resourceType: row['resource'],
             resourceId: row['resource_id'],
-            clientName:
-              canSeeClientNames && typeof metadata.clientName === 'string'
-                ? metadata.clientName
-                : undefined,
+            clientName: undefined,
             phiAccessed: metadata.phiAccessed === true,
             result: row['result'],
             ipAddress: row['ip_address'] ?? 'N/A',

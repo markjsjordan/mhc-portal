@@ -1027,7 +1027,11 @@ export function createVisitRouter(db: Database): Router {
           metadata: {
             count: patterns.length,
             total,
-            filters: q,
+            filters: {
+              ...q,
+              search: undefined,
+              hasSearch: Boolean(q.search?.trim()),
+            },
           },
           ipAddress: req.ip,
           userAgent: req.get('user-agent'),
@@ -1827,7 +1831,7 @@ export function createVisitRouter(db: Database): Router {
       const newServiceTypeName =
         serviceTypeName !== undefined ? serviceTypeName : existingVisit.service_type_name;
 
-      // Before snapshot for audit trail
+      // Before snapshot for audit trail (non-PHI scheduling fields only)
       const beforeSnapshot = {
         scheduledDate: existingDateStr,
         scheduledStartTime: existingVisit.scheduled_start_time,
@@ -1837,8 +1841,6 @@ export function createVisitRouter(db: Database): Router {
         visitType: existingVisit.visit_type,
         serviceTypeId: existingVisit.service_type_id,
         serviceTypeName: existingVisit.service_type_name,
-        notes: existingVisit.internal_notes ?? null,
-        clientInstructions: existingVisit.client_instructions,
         status: existingVisit.status,
       };
 
@@ -1892,8 +1894,6 @@ export function createVisitRouter(db: Database): Router {
         visitType: newVisitType,
         serviceTypeId: newServiceTypeId,
         serviceTypeName: newServiceTypeName,
-        notes: newNotes,
-        clientInstructions: newInstructions,
         status: newStatus,
       };
 
@@ -1910,6 +1910,8 @@ export function createVisitRouter(db: Database): Router {
             before: beforeSnapshot,
             after: afterSnapshot,
             clientId: existingVisit.client_id,
+            notesUpdated: newNotes !== (existingVisit.internal_notes ?? null),
+            clientInstructionsUpdated: newInstructions !== existingVisit.client_instructions,
           },
           ipAddress: req.ip,
           userAgent: req.get('user-agent'),
@@ -2172,7 +2174,6 @@ export function createVisitRouter(db: Database): Router {
             'SUCCESS',
             JSON.stringify({
               caregiverId,
-              caregiverName: `${caregiver.first_name} ${caregiver.last_name}`,
               complianceIssues,
               overrideReason,
               visitDate: visit.scheduled_date,

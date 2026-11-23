@@ -682,4 +682,94 @@ describe('AuditService', () => {
       }
     });
   });
+
+  describe('PHI Leakage Prevention (wdvf3adf74)', () => {
+    it('strips PHI keys and scrubs embedded SSNs from metadata in logEvent', async () => {
+      const mockResult = { rows: [], rowCount: 1, command: 'INSERT' as const, oid: 0, fields: [] };
+      mockDatabase.query.mockResolvedValue(mockResult);
+
+      await auditService.logEvent(mockUserContext, {
+        eventType: 'DATA_ACCESS',
+        resource: 'CLIENT',
+        resourceId: 'client-123',
+        action: 'READ',
+        result: 'SUCCESS',
+        metadata: {
+          ssn: '123-45-6789',
+          medicalRecordNumber: 'MRN-9999',
+          mrn: 'MRN-8888',
+          firstName: 'Jane',
+          lastName: 'Doe',
+          clientName: 'Jane Doe',
+          caregiverName: 'Bob Smith',
+          authorizerName: 'Alice Doe',
+          dateOfBirth: '1950-01-01',
+          dob: '1950-01-01',
+          primaryAddress: { line1: '123 Main St', city: 'Austin' },
+          address: '123 Main St',
+          phone: '512-555-0100',
+          email: 'jane@example.com',
+          insurance: { policyNumber: 'POL-123' },
+          notes: 'Patient has diabetes',
+          clientInstructions: 'Gate code 1234',
+          summary: 'Checked record with 123-45-6789',
+          visitCount: 3,
+          status: 'ACTIVE',
+          duration: 45,
+          phiAccessed: true,
+        },
+      });
+
+      const insertCall = mockDatabase.query.mock.calls[0];
+      const params = insertCall?.[1] as unknown[];
+      expect(params).toHaveLength(12);
+      expect(params[6]).toBe('client-123');
+      const storedMetadata = JSON.parse(params[9] as string) as Record<string, unknown>;
+
+      // All PHI keys stripped
+      for (const key of [
+        'ssn', 'medicalRecordNumber', 'mrn', 'firstName', 'lastName',
+        'clientName', 'caregiverName', 'authorizerName', 'dateOfBirth', 'dob',
+        'primaryAddress', 'address', 'phone', 'email', 'insurance', 'notes', 'clientInstructions',
+      ]) {
+        expect(storedMetadata).not.toHaveProperty(key);
+      }
+
+      // Embedded SSN scrubbed, non-PHI preserved
+      expect(storedMetadata.summary).toBe('Checked record with [SSN-REDACTED]');
+      expect(storedMetadata.visitCount).toBe(3);
+      expect(storedMetadata.status).toBe('ACTIVE');
+      expect(storedMetadata.duration).toBe(45);
+      expect(storedMetadata.phiAccessed).toBe(true);
+    });
+
+    it('strips PHI from logDataAccess, logDataModification, and logSecurityEvent', async () => {
+      const mockResult = { rows: [], rowCount: 1, command: 'INSERT' as const, oid: 0, fields: [] };
+      mockDatabase.query.mockResolvedValue(mockResult);
+
+      await auditService.logDataAccess(mockUserContext, 'CLIENT', 'client-123', 'READ', {
+        clientName: 'Jane Doe',
+        ssn: '123-45-6789',
+        phiAccessed: true,
+      });
+      await auditService.logDataModification(mockUserContext, 'VISIT', 'visit-456', 'UPDATE', {
+        notes: 'Sensitive clinical note',
+        clientInstructions: 'Door code 4321',
+        status: 'COMPLETED',
+      });
+      await auditService.logSecurityEvent(mockUserContext, 'ACCESS_DENIED', 'FAILURE', {
+        ssn: '123-45-6789',
+        reason: 'Forbidden for 123-45-6789',
+      });
+
+      expect(mockDatabase.query).toHaveBeenCalledTimes(3);
+      const m0 = JSON.parse((mockDatabase.query.mock.calls[0]?.[1] as unknown[])[9] as string);
+      const m1 = JSON.parse((mockDatabase.query.mock.calls[1]?.[1] as unknown[])[9] as string);
+      const m2 = JSON.parse((mockDatabase.query.mock.calls[2]?.[1] as unknown[])[9] as string);
+
+      expect(m0).toEqual({ phiAccessed: true });
+      expect(m1).toEqual({ status: 'COMPLETED' });
+      expect(m2).toEqual({ reason: 'Forbidden for [SSN-REDACTED]' });
+    });
+  });
 });
