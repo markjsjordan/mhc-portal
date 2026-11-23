@@ -164,12 +164,16 @@ export async function seedDatabase(db: Database): Promise<void> {
   ] as const) {
     await db.query(
       `INSERT INTO visits (
-        id, organization_id, branch_id, client_id, assigned_caregiver_id,
-        service_type_id, scheduled_date, scheduled_start_time, scheduled_end_time,
-        duration_minutes, status, created_at, created_by, updated_at, updated_by, version
+        id, organization_id, branch_id, client_id, visit_number, visit_type,
+        service_type_id, service_type_name, scheduled_date,
+        scheduled_start_time, scheduled_end_time, scheduled_duration, timezone,
+        assigned_caregiver_id, assigned_at, assigned_by, assignment_method,
+        address, status, status_history,
+        created_at, created_by, updated_at, updated_by, version
       ) VALUES (
-        $1, $2, $3, $4, $5, 'PERSONAL_CARE', $6, $7, $8, 120, 'ASSIGNED',
-        NOW(), $9, NOW(), $9, 1
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 120, $12, $13,
+        NOW(), $14, $15, $16::jsonb, $17, $18::jsonb,
+        NOW(), $14, NOW(), $14, 1
       )
       ON CONFLICT (id) DO UPDATE SET
         scheduled_date = EXCLUDED.scheduled_date,
@@ -179,11 +183,20 @@ export async function seedDatabase(db: Database): Promise<void> {
         ORG_ID,
         BRANCH_ID,
         MOBILE_CLIENT_ID,
-        MOBILE_CAREGIVER_ID,
+        visitId === MOBILE_VISIT_IN_ID ? 'VIS-MOB-001' : 'VIS-MOB-002',
+        'REGULAR',
+        '00000000-0000-4000-8000-00000005ec01', // PERSONAL_CARE placeholder; no FK on visits.service_type_id
+        'PERSONAL_CARE',
         today,
         startHour,
         endHour,
+        'America/New_York',
+        MOBILE_CAREGIVER_ID,
         ADMIN_USER_ID,
+        'MANUAL',
+        JSON.stringify({ line1: '100 Main St', city: 'New York', state: 'NY', postalCode: '10001', country: 'USA' }),
+        'ASSIGNED',
+        JSON.stringify([]),
       ]
     );
   }
