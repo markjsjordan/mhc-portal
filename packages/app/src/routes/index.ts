@@ -67,6 +67,8 @@ import { createVisitNotesRouter } from './visit-notes.js';
 import { validationRouter } from './validation';
 import { createClientVisitHistoryRouter } from './client-visit-history.js';
 import { createAuditEventsRouter } from './audit-events.js';
+import { createAuditLogsRouter } from './audit-logs.js';
+import { createPhiAccessAuditMiddleware } from '../middleware/phi-access-audit.js';
 import { createScheduleBackupRouter } from './schedule-backup.js';
 
 /**
@@ -246,6 +248,9 @@ function createFamilyEngagementRouter(handlers: ReturnType<typeof createFamilyEn
  */
 export async function setupRoutes(app: Express, db: Database): Promise<void> {
   console.log('Setting up API routes...');
+
+  // HIPAA E6: Automatic PHI access audit logging for client/visit routes
+  app.use(createPhiAccessAuditMiddleware(db));
 
   // Health check route is registered in server.ts BEFORE hardening middleware
   // to ensure it remains accessible even if environment validation fails
@@ -561,6 +566,11 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
   const auditEventsRouter = createAuditEventsRouter(db);
   app.use('/api/audit-events', generalApiLimiter, auditEventsRouter);
   console.log('  ✓ Audit Events routes registered (with rate limiting)');
+
+  // Audit Logs routes (HIPAA E6 GET /api/audit/logs)
+  const auditLogsRouter = createAuditLogsRouter(db);
+  app.use('/api/audit', generalApiLimiter, auditLogsRouter);
+  console.log('  ✓ Audit Logs routes registered (with rate limiting)');
 
   // Schedule Backup routes (weekly snapshots for offline resilience)
   const scheduleBackupRouter = createScheduleBackupRouter(db);
