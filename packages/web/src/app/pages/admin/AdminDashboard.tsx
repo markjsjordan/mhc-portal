@@ -13,6 +13,7 @@ import {
   DataGridPanel,
   ComplianceCenter,
   LoginAsModal,
+  ForceUpdateLinkCard,
 } from './components';
 import { X } from 'lucide-react';
 
@@ -179,6 +180,9 @@ export const AdminDashboard: React.FC = () => {
           </TabsContent>
         </div>
       </Tabs>
+
+      {/* PWA Force Update Link */}
+      <ForceUpdateLinkCard />
 
       {/* Login As Modal */}
       <LoginAsModal
