@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { codecovVitePlugin } from '@codecov/vite-plugin';
@@ -7,13 +8,25 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { visualizer } from 'rollup-plugin-visualizer';
 
 const isAnalyze = process.env.ANALYZE === 'true';
-const appVersion = process.env.GITHUB_SHA || 'dev';
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const pkgJson = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf8'),
+) as { version?: string };
+const appVersion =
+  process.env.VITE_APP_VERSION ||
+  process.env.REACT_APP_VERSION ||
+  pkgJson.version ||
+  '0.1.0';
+const buildSha = (
+  process.env.VERCEL_GIT_COMMIT_SHA ||
+  process.env.GITHUB_SHA ||
+  ''
+).slice(0, 7);
 
 export default defineConfig({
   define: {
     'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion),
+    'import.meta.env.VITE_APP_BUILD_SHA': JSON.stringify(buildSha),
   },
   plugins: [
     react({
@@ -71,6 +84,11 @@ export default defineConfig({
         // Runtime caching rules
         runtimeCaching: [
           {
+            // Explicit NetworkOnly for /force-update - always bypass cache
+            urlPattern: /\/force-update(\/|$|\?)/i,
+            handler: 'NetworkOnly',
+          },
+          {
             // Explicit NetworkOnly for /api/* - never cache PHI responses
             urlPattern: /\/api\/.*/i,
             handler: 'NetworkOnly',
@@ -93,6 +111,7 @@ export default defineConfig({
           /^\/health(\/|$)/,
           /^\/metrics(\/|$)/,
           /^\/webhooks(\/|$)/,
+          /^\/force-update(\/|$)/,
         ],
         cleanupOutdatedCaches: true
       },

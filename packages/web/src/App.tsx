@@ -19,6 +19,7 @@ const Dashboard = React.lazy(() => import('./app/pages/Dashboard').then((m) => (
 const DashboardSelector = React.lazy(() => import('./app/pages/DashboardSelector').then((m) => ({ default: m.DashboardSelector })));
 const Login = React.lazy(() => import('./app/pages/Login').then((m) => ({ default: m.Login })));
 const Logout = React.lazy(() => import('./app/pages/Logout').then((m) => ({ default: m.Logout })));
+const ForceUpdate = React.lazy(() => import('./app/pages/ForceUpdate').then((m) => ({ default: m.ForceUpdate })));
 const Onboarding = React.lazy(() => import('./app/pages/Onboarding').then((m) => ({ default: m.Onboarding })));
 const NotFound = React.lazy(() => import('./app/pages/NotFound').then((m) => ({ default: m.NotFound })));
 import { DemoModeBar } from './demo';
@@ -205,6 +206,10 @@ function AppRoutes() {
       <Route
         path="/logout"
         element={<Logout />}
+      />
+      <Route
+        path="/force-update"
+        element={<ForceUpdate />}
       />
       <Route
         path="/onboarding"

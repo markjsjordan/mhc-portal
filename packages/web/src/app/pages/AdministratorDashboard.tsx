@@ -28,7 +28,11 @@ import {
   FileSpreadsheet,
   LogIn,
   X,
+  RefreshCw,
+  Copy,
+  Check,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   useOperationalKPIs,
   useComplianceAlerts,
@@ -162,6 +166,25 @@ export const AdministratorDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isLoginAsOpen, setIsLoginAsOpen] = useState(false);
+  const [copiedForceUpdateLink, setCopiedForceUpdateLink] = useState(false);
+
+  const forceUpdateUrl = useMemo(() => {
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      return `${window.location.origin}/force-update`;
+    }
+    return 'https://mhc-family-portal.vercel.app/force-update';
+  }, []);
+
+  const handleCopyForceUpdateLink = async () => {
+    try {
+      await navigator.clipboard.writeText(forceUpdateUrl);
+      setCopiedForceUpdateLink(true);
+      toast.success('Force-update link copied to clipboard');
+      setTimeout(() => setCopiedForceUpdateLink(false), 2000);
+    } catch {
+      toast.error('Failed to copy link');
+    }
+  };
 
   // Memoize filters to prevent infinite re-renders
   const kpiFilters = useMemo(() => {
@@ -451,6 +474,54 @@ export const AdministratorDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Force Update Link */}
+      <Card data-testid="force-update-link-section">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <RefreshCw className="h-5 w-5 text-primary" />
+            <CardTitle className="text-lg font-semibold text-gray-900">
+              Force Update Link
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-600 mb-3">
+            Share this public link with staff or families after a release to
+            immediately clear cached PWA files and load the latest version.
+          </p>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <code
+              data-testid="force-update-url"
+              className="flex-1 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800 break-all"
+            >
+              {forceUpdateUrl}
+            </code>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              data-testid="copy-force-update-link"
+              onClick={() => {
+                void handleCopyForceUpdateLink();
+              }}
+              className="shrink-0"
+            >
+              {copiedForceUpdateLink ? (
+                <>
+                  <Check className="h-4 w-4 mr-1.5 text-green-600" />
+                  Copied
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4 mr-1.5" />
+                  Copy Link
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Recent Activity */}
       <Card>

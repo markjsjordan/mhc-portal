@@ -97,4 +97,34 @@ router.post('/cache/clear', requireAdminRole, async (req, res) => {
   }
 });
 
+/**
+ * Get the deterministic public PWA force-update link
+ *
+ * @route GET /admin/force-update-link
+ * @security Requires admin role
+ */
+router.get('/force-update-link', requireAdminRole, (req, res) => {
+  const configuredOrigin = process.env.APP_URL || process.env.FRONTEND_URL;
+  const host = req.get('host');
+  const protocol = req.protocol || 'https';
+
+  let origin = 'https://mhc-family-portal.vercel.app';
+  if (configuredOrigin) {
+    origin = configuredOrigin;
+    while (origin.endsWith('/')) {
+      origin = origin.slice(0, -1);
+    }
+  } else if (host) {
+    origin = `${protocol}://${host}`;
+  }
+
+  res.json({
+    success: true,
+    data: {
+      path: '/force-update',
+      url: `${origin}/force-update`,
+    },
+  });
+});
+
 export default router;
