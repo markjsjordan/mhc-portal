@@ -71,7 +71,8 @@ export default async function globalSetup() {
 
     // Step 2: Clean E2E test data before migrations (removes personas with known UUIDs)
     console.log('\n🧹 Cleaning E2E test data...');
-    const cleanDb = new Database(config);
+    const cleanConfig = parseDatabaseUrl(dbUrl);
+    const cleanDb = new Database(cleanConfig);
     try {
       // Delete E2E persona users by their known UUIDs
       const e2eUserIds = [
