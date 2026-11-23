@@ -12,6 +12,10 @@ description = "Allowlisted files and patterns"
 
 # Ignore test files with placeholder secrets
 paths = [
+  '''.*\.e2e-results.*\.json$''',
+  '''e2e-results.*\.json$''',
+  '''\.gitleaksignore$''',
+  '''VERCEL_ENV_SETUP\.md$''',
   '''.*test\.ts$''',
   '''.*test\.tsx$''',
   '''.*\.test\.js$''',

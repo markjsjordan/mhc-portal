@@ -251,3 +251,7 @@ ui-screenshots-production-comprehensive/
 session-ses_*.md
 .discord-secrets
 .env*
+
+# Playwright E2E test results
+e2e-results*.json
+.e2e-results-*.json
