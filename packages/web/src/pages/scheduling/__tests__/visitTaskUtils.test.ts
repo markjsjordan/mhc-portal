@@ -81,14 +81,14 @@ describe('visitTaskUtils', () => {
       expect(tasks.some((t) => t.category === 'Assessment')).toBe(true);
     });
 
-    it('derives Respite / Companion tasks for RESPITE visit type', () => {
-      const respiteVisit: Visit = {
+    it('derives Concierge / Companion tasks for CONCIERGE visit type', () => {
+      const conciergeVisit: Visit = {
         ...baseVisit,
-        visitType: 'RESPITE',
-        serviceTypeName: 'Respite Care Support',
+        visitType: 'CONCIERGE',
+        serviceTypeName: 'Concierge Visit Support',
       };
 
-      const tasks = deriveVisitTasks(respiteVisit);
+      const tasks = deriveVisitTasks(conciergeVisit);
       expect(tasks.length).toBe(4);
       expect(tasks.some((t) => t.category === 'Companionship')).toBe(true);
     });

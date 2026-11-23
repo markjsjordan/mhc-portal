@@ -4,20 +4,21 @@ import { VisitTypeSelector } from '../VisitTypeSelector';
 import type { VisitType } from '../../types';
 
 describe('VisitTypeSelector', () => {
-  test('renders all visit types', () => {
+  test('renders all 5 target visit types', () => {
     const onChange = vi.fn();
     render(<VisitTypeSelector value={null} onChange={onChange} />);
 
-    expect(screen.getByText('Regular Visit')).toBeInTheDocument();
-    expect(screen.getByText('Initial Visit')).toBeInTheDocument();
-    expect(screen.getByText('Assessment Visit')).toBeInTheDocument();
-    expect(screen.getByText('Respite Care')).toBeInTheDocument();
-    expect(screen.getByText('Supervisory Nurse Visit')).toBeInTheDocument();
-    expect(screen.getByText('Emergency Response')).toBeInTheDocument();
-    expect(screen.getByText('Discharge Visit')).toBeInTheDocument();
-    expect(screen.getByText('Make-up Visit')).toBeInTheDocument();
+    expect(screen.getByText('Home Care Visit')).toBeInTheDocument();
+    expect(screen.getByText('Med Check')).toBeInTheDocument();
+    expect(screen.getByText('Nurse Visit')).toBeInTheDocument();
+    expect(screen.getByText('Care Management')).toBeInTheDocument();
     expect(screen.getByText('Concierge Visit')).toBeInTheDocument();
-    expect(screen.getByText('Ongoing Support')).toBeInTheDocument();
+
+    expect(screen.queryByText('Respite Care')).not.toBeInTheDocument();
+    expect(screen.queryByText('Emergency Response')).not.toBeInTheDocument();
+    expect(screen.queryByText('Discharge Visit')).not.toBeInTheDocument();
+    expect(screen.queryByText('Make-up Visit')).not.toBeInTheDocument();
+    expect(screen.queryByText('Ongoing Support')).not.toBeInTheDocument();
   });
 
   test('calls onChange when type selected', () => {
@@ -36,7 +37,7 @@ describe('VisitTypeSelector', () => {
 
     rerender(<VisitTypeSelector value="INITIAL" onChange={onChange} />);
 
-    const initialLabel = screen.getByText('Initial Visit').closest('label');
+    const initialLabel = screen.getByText('Med Check').closest('label');
     expect(initialLabel).toHaveClass('border-blue-500', 'bg-blue-50');
   });
 
@@ -53,8 +54,8 @@ describe('VisitTypeSelector', () => {
     render(<VisitTypeSelector value={null} onChange={onChange} />);
 
     const allRequireTexts = screen.getAllByText(/Requires:/);
-    // Should only be 3: INITIAL (RN, LPN), ASSESSMENT (RN, LPN), SUPERVISION (RN)
-    expect(allRequireTexts.length).toBeGreaterThanOrEqual(3);
+    // Should be 3: INITIAL (RN, LPN), ASSESSMENT (RN, LPN), SUPERVISION (RN)
+    expect(allRequireTexts).toHaveLength(3);
   });
 
   test('disables when disabled prop is true', () => {
@@ -67,25 +68,20 @@ describe('VisitTypeSelector', () => {
 
   test('respects controlled value prop', () => {
     const onChange = vi.fn();
-    render(<VisitTypeSelector value="RESPITE" onChange={onChange} />);
+    render(<VisitTypeSelector value="CONCIERGE" onChange={onChange} />);
 
-    const respiteLabel = screen.getByText('Respite Care').closest('label');
-    expect(respiteLabel).toHaveClass('border-blue-500', 'bg-blue-50');
+    const conciergeLabel = screen.getByText('Concierge Visit').closest('label');
+    expect(conciergeLabel).toHaveClass('border-blue-500', 'bg-blue-50');
   });
 
-  test('handles all visit types selection', () => {
+  test('handles all 5 visit types selection', () => {
     const onChange = vi.fn();
     const visitTypes: VisitType[] = [
       'REGULAR',
       'INITIAL',
-      'ASSESSMENT',
-      'RESPITE',
       'SUPERVISION',
-      'EMERGENCY',
-      'DISCHARGE',
-      'MAKEUP',
+      'ASSESSMENT',
       'CONCIERGE',
-      'ONGOING_SUPPORT',
     ];
 
     visitTypes.forEach(type => {
@@ -96,7 +92,6 @@ describe('VisitTypeSelector', () => {
       unmount();
     });
 
-    // Every visit type must emit its own value exactly once
     expect(onChange.mock.calls.map(c => c[0])).toEqual(visitTypes);
   });
 
@@ -105,9 +100,7 @@ describe('VisitTypeSelector', () => {
     render(<VisitTypeSelector value={null} onChange={onChange} showDescription={true} />);
 
     expect(
-      screen.getByText(
-        'Standard recurring home care visit (ADL assistance, medication reminders)'
-      )
+      screen.getByText('Standard recurring ADL assistance, medication reminders')
     ).toBeInTheDocument();
   });
 
@@ -116,9 +109,7 @@ describe('VisitTypeSelector', () => {
     render(<VisitTypeSelector value={null} onChange={onChange} showDescription={false} />);
 
     expect(
-      screen.queryByText(
-        'Standard recurring home care visit (ADL assistance, medication reminders)'
-      )
+      screen.queryByText('Standard recurring ADL assistance, medication reminders')
     ).not.toBeInTheDocument();
   });
 
@@ -127,6 +118,7 @@ describe('VisitTypeSelector', () => {
     render(<VisitTypeSelector value={null} onChange={onChange} />);
 
     const radios = screen.getAllByRole('radio');
+    expect(radios).toHaveLength(5);
     radios.forEach(radio => {
       expect(radio).toHaveAttribute('name', 'visit_type');
     });
@@ -139,19 +131,12 @@ describe('VisitTypeSelector', () => {
     const expectedValues = [
       'REGULAR',
       'INITIAL',
-      'ASSESSMENT',
-      'RESPITE',
       'SUPERVISION',
-      'EMERGENCY',
-      'DISCHARGE',
-      'MAKEUP',
+      'ASSESSMENT',
       'CONCIERGE',
-      'ONGOING_SUPPORT',
     ];
 
-    const radios = screen.getAllByRole('radio');
-    radios.forEach((radio, index) => {
-      expect(radio).toHaveAttribute('value', expectedValues[index]);
-    });
+    const radios = screen.getAllByRole('radio') as HTMLInputElement[];
+    expect(radios.map(r => r.value)).toEqual(expectedValues);
   });
 });

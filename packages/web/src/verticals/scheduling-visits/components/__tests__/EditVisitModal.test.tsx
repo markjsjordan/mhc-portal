@@ -43,7 +43,7 @@ const mockVisit: Visit = {
   scheduledStartTime: '18:10',
   scheduledEndTime: '21:10',
   scheduledDuration: 180,
-  visitType: 'RESPITE',
+  visitType: 'CONCIERGE',
   serviceTypeId: 'svc-respite',
   serviceTypeName: 'Respite Care',
   status: 'SCHEDULED',
@@ -147,7 +147,7 @@ describe('EditVisitModal', () => {
           scheduledStartTime: '09:00',
           scheduledEndTime: '11:00',
           duration: 120,
-          visitType: 'RESPITE',
+          visitType: 'CONCIERGE',
         }),
       });
       expect(handleSaved).toHaveBeenCalled();

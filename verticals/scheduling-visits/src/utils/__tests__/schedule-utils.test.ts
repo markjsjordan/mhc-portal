@@ -104,7 +104,7 @@ describe('Schedule Utils', () => {
   describe('getVisitTypeDisplay', () => {
     it('should return display info for visit type', () => {
       const display = getVisitTypeDisplay('REGULAR');
-      expect(display.label).toBe('Regular Visit');
+      expect(display.label).toBe('Home Care Visit');
       expect(typeof display.description).toBe('string');
     });
   });

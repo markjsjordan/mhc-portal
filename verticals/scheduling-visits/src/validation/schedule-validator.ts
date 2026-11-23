@@ -48,14 +48,9 @@ const dayOfWeekSchema = z.enum([
 const visitTypeSchema = z.enum([
   'REGULAR',
   'INITIAL',
-  'DISCHARGE',
-  'RESPITE',
-  'EMERGENCY',
-  'MAKEUP',
   'SUPERVISION',
   'ASSESSMENT',
   'CONCIERGE',
-  'ONGOING_SUPPORT',
 ]);
 
 const visitStatusSchema = z.enum([

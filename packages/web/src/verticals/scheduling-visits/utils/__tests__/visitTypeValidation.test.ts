@@ -15,19 +15,23 @@ describe('visitTypeValidation', () => {
       const validTypes = [
         'REGULAR',
         'INITIAL',
-        'ASSESSMENT',
-        'RESPITE',
         'SUPERVISION',
-        'EMERGENCY',
-        'DISCHARGE',
-        'MAKEUP',
+        'ASSESSMENT',
         'CONCIERGE',
-        'ONGOING_SUPPORT',
       ];
 
       validTypes.forEach(type => {
         const result = validateVisitType(type);
         expect(result).toBeUndefined();
+      });
+    });
+
+    test('rejects deprecated visit types', () => {
+      const deprecatedTypes = ['DISCHARGE', 'RESPITE', 'EMERGENCY', 'MAKEUP', 'ONGOING_SUPPORT'];
+      deprecatedTypes.forEach(type => {
+        const result = validateVisitType(type);
+        expect(result).toBeDefined();
+        expect(result?.message).toContain('Invalid visit type');
       });
     });
 
@@ -125,9 +129,9 @@ describe('visitTypeValidation', () => {
       expect(validateVisitDuration(120, 'REGULAR')).toBeUndefined();
     });
 
-    test('accepts long durations for respite care', () => {
-      expect(validateVisitDuration(480, 'RESPITE')).toBeUndefined(); // 8 hours
-      expect(validateVisitDuration(720, 'RESPITE')).toBeUndefined(); // 12 hours
+    test('accepts long durations for concierge visits', () => {
+      expect(validateVisitDuration(480, 'CONCIERGE')).toBeUndefined(); // 8 hours
+      expect(validateVisitDuration(720, 'CONCIERGE')).toBeUndefined(); // 12 hours
     });
 
     test('handles undefined duration', () => {
@@ -204,8 +208,7 @@ describe('visitTypeValidation', () => {
     test('returns non-nurse types when caregiver has no certifications', () => {
       const eligible = getEligibleVisitTypesForCaregiver([]);
       expect(eligible).toContain('REGULAR');
-      expect(eligible).toContain('RESPITE');
-      expect(eligible).toContain('EMERGENCY');
+      expect(eligible).toContain('CONCIERGE');
       expect(eligible).not.toContain('INITIAL');
       expect(eligible).not.toContain('SUPERVISION');
     });
@@ -251,51 +254,36 @@ describe('visitTypeValidation', () => {
       const validTypes = [
         'REGULAR',
         'INITIAL',
-        'ASSESSMENT',
-        'RESPITE',
         'SUPERVISION',
-        'EMERGENCY',
-        'DISCHARGE',
-        'MAKEUP',
+        'ASSESSMENT',
         'CONCIERGE',
-        'ONGOING_SUPPORT',
       ];
       eligible.forEach(type => {
         expect(validTypes).toContain(type);
       });
     });
 
-    test('RN-only caregiver gets the 8 types whose requirements RN satisfies', () => {
+    test('RN-only caregiver gets the 3 types whose requirements RN satisfies', () => {
       // INITIAL/ASSESSMENT need RN+LPN, so they are excluded for RN-only.
-      // Remaining: 7 no-cert types + SUPERVISION (RN) = 8.
+      // Remaining: 2 no-cert types (REGULAR, CONCIERGE) + SUPERVISION (RN) = 3.
       const eligible = getEligibleVisitTypesForCaregiver(['RN']);
       const expectedWithRN = [
         'REGULAR',
-        'RESPITE',
         'SUPERVISION',
-        'EMERGENCY',
-        'DISCHARGE',
-        'MAKEUP',
         'CONCIERGE',
-        'ONGOING_SUPPORT',
       ];
       expect([...eligible].sort((a, b) => a.localeCompare(b))).toEqual([...expectedWithRN].sort((a, b) => a.localeCompare(b)));
     });
 
-    test('exactly 7 types available without certification', () => {
+    test('exactly 2 types available without certification', () => {
       const eligible = getEligibleVisitTypesForCaregiver([]);
       expect(eligible).toEqual(
         expect.arrayContaining([
           'REGULAR',
-          'RESPITE',
-          'EMERGENCY',
-          'DISCHARGE',
-          'MAKEUP',
           'CONCIERGE',
-          'ONGOING_SUPPORT',
         ])
       );
-      expect(eligible.length).toBe(7);
+      expect(eligible.length).toBe(2);
     });
   });
 
@@ -311,7 +299,7 @@ describe('visitTypeValidation', () => {
     });
 
     test('warns when duration is much less than typical', () => {
-      validateVisitDuration(20, 'RESPITE'); // Typical is 240
+      validateVisitDuration(20, 'CONCIERGE'); // Typical is 120
       expect(warnSpy).toHaveBeenCalled();
     });
 

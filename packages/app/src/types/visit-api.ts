@@ -5,19 +5,14 @@
  */
 
 /**
- * Visit type enumeration - 10 distinct visit types for scheduling
+ * Visit type enumeration - 5 canonical visit types for scheduling
  */
 export type VisitType =
-  | 'REGULAR'           // Standard recurring home care visit
-  | 'INITIAL'           // First visit for a new client
-  | 'DISCHARGE'         // Final visit before client completion
-  | 'RESPITE'           // Temporary relief care for caregiver
-  | 'EMERGENCY'         // Unplanned urgent care visit
-  | 'MAKEUP'            // Rescheduled visit to cover missed appointment
-  | 'SUPERVISION'       // RN supervision for unlicensed caregiver
-  | 'ASSESSMENT'        // Care assessment or evaluation visit
-  | 'CONCIERGE'         // Non-medical concierge services
-  | 'ONGOING_SUPPORT';  // Continuous ongoing support visits
+  | 'REGULAR'           // Home Care Visit: Standard recurring ADL assistance, medication reminders
+  | 'INITIAL'           // Med Check: Medical check & comprehensive assessment with new client
+  | 'SUPERVISION'       // Nurse Visit: RN supervision, wound care, complex medical needs
+  | 'ASSESSMENT'        // Care Management: Periodic care management and re-assessment
+  | 'CONCIERGE';        // Concierge Visit: Premium companion care, errands, social engagement
 
 /**
  * CreateVisitPayload - Request body for POST /api/visits
@@ -75,30 +70,20 @@ export interface Visit {
 export const ALLOWED_VISIT_TYPES: VisitType[] = [
   'REGULAR',
   'INITIAL',
-  'DISCHARGE',
-  'RESPITE',
-  'EMERGENCY',
-  'MAKEUP',
   'SUPERVISION',
   'ASSESSMENT',
   'CONCIERGE',
-  'ONGOING_SUPPORT',
 ];
 
 /**
  * Visit type labels for UI display
  */
 export const VISIT_TYPE_LABELS: Record<VisitType, string> = {
-  REGULAR: 'Regular',
-  INITIAL: 'Initial',
-  DISCHARGE: 'Discharge',
-  RESPITE: 'Respite',
-  EMERGENCY: 'Emergency',
-  MAKEUP: 'Makeup',
-  SUPERVISION: 'Supervision',
-  ASSESSMENT: 'Assessment',
-  CONCIERGE: 'Concierge',
-  ONGOING_SUPPORT: 'Ongoing Support',
+  REGULAR: 'Home Care Visit',
+  INITIAL: 'Med Check',
+  SUPERVISION: 'Nurse Visit',
+  ASSESSMENT: 'Care Management',
+  CONCIERGE: 'Concierge Visit',
 };
 
 export interface PausePatternPayload {

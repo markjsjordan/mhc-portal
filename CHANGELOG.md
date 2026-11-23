@@ -5,6 +5,17 @@ All notable changes to Folk will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-11-23
+
+### Changed
+- **Visit Type Restriction & Enumeration Consolidation**: Consolidated visit types across database, backend API, scheduling vertical, and web frontend to 5 canonical types:
+  - `REGULAR` → Home Care Visit
+  - `INITIAL` → Med Check
+  - `SUPERVISION` → Nurse Visit
+  - `ASSESSMENT` → Care Management
+  - `CONCIERGE` → Concierge Visit
+- Removed deprecated visit types (`DISCHARGE`, `RESPITE`, `EMERGENCY`, `MAKEUP`, `ONGOING_SUPPORT`). Existing database rows with deprecated types are migrated to `REGULAR` via migration `20261123000000_restrict_visit_types_to_five.ts`.
+
 ## [1.0.0] - 2025-12-01
 
 ### Added
