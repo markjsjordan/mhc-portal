@@ -67,6 +67,7 @@ import { createVisitNotesRouter } from './visit-notes.js';
 import { validationRouter } from './validation';
 import { createClientVisitHistoryRouter } from './client-visit-history.js';
 import { createAuditEventsRouter } from './audit-events.js';
+import { createScheduleBackupRouter } from './schedule-backup.js';
 
 /**
  * Helper to create router from care plan handlers object
@@ -560,6 +561,11 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
   const auditEventsRouter = createAuditEventsRouter(db);
   app.use('/api/audit-events', generalApiLimiter, auditEventsRouter);
   console.log('  ✓ Audit Events routes registered (with rate limiting)');
+
+  // Schedule Backup routes (weekly snapshots for offline resilience)
+  const scheduleBackupRouter = createScheduleBackupRouter(db);
+  app.use('/api/schedule', generalApiLimiter, scheduleBackupRouter);
+  console.log('  ✓ Schedule Backup routes registered (with rate limiting)');
 
   console.log('API routes setup complete\n');
 }

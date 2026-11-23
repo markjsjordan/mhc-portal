@@ -85,6 +85,7 @@ export const SECTION_PREFIX_TABLE: readonly PrefixRule[] = [
   { prefix: 'caregivers', section: 'caregivers' },
   { prefix: 'burnout', section: 'caregivers' },
   { prefix: 'staff', section: 'staff' },
+  { prefix: 'schedule', section: 'scheduling' },
   { prefix: 'schedules', section: 'scheduling' },
   { prefix: 'schedule-snapshots', section: 'scheduling' },
   { prefix: 'scheduling', section: 'scheduling' },
