@@ -13,6 +13,7 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
+import { randomUUID } from 'node:crypto';
 import { Database, AuthMiddleware, UserContext, AuditService, createClientProvider, createCaregiverProvider } from '@folkcare/core';
 import { ScheduleRepository } from '@folkcare/scheduling-visits';
 
@@ -485,7 +486,7 @@ export function createScheduleBackupRouter(db: Database): Router {
         : [];
       
       // Generate backup ID
-      const backupId = `backup-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 7)}`;
+      const backupId = `backup-${Date.now()}-${randomUUID().replace(/-/g, '').slice(0, 7)}`;
       
       // Create backup metadata
       const metadata: ScheduleBackupMetadata = {
