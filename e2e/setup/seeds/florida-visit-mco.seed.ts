@@ -116,7 +116,7 @@ export async function seedDatabase(db: Database): Promise<void> {
 
   await db.query(
     `INSERT INTO visits (
-      id, organization_id, branch_id, client_id, caregiver_id,
+      id, organization_id, branch_id, client_id, assigned_caregiver_id,
       service_type, scheduled_date, scheduled_time, duration_hours,
       status, tasks, created_at, created_by, updated_at, updated_by, version
     )
