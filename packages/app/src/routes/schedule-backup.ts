@@ -461,7 +461,7 @@ export function createScheduleBackupRouter(db: Database): Router {
         new Set(
           visits
             .map((v) => (v as unknown as { caregiverId?: string }).caregiverId)
-            .filter((id): id is string => id !== undefined && id !== null)
+            .filter((id): id is string => id !== undefined)
         )
       );
       
@@ -469,7 +469,6 @@ export function createScheduleBackupRouter(db: Database): Router {
         new Set(
           visits
             .map((v) => (v as unknown as { clientId: string }).clientId)
-            .filter((id): id is string => id !== undefined)
         )
       );
       
@@ -486,7 +485,7 @@ export function createScheduleBackupRouter(db: Database): Router {
         : [];
       
       // Generate backup ID
-      const backupId = `backup-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      const backupId = `backup-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').slice(0, 7)}`;
       
       // Create backup metadata
       const metadata: ScheduleBackupMetadata = {
@@ -612,7 +611,7 @@ export function createScheduleBackupRouter(db: Database): Router {
           new Set(
             visits
               .map((v) => (v as unknown as { caregiverId?: string }).caregiverId)
-              .filter((id): id is string => id !== undefined && id !== null)
+              .filter((id): id is string => id !== undefined)
           )
         );
         
@@ -620,7 +619,6 @@ export function createScheduleBackupRouter(db: Database): Router {
           new Set(
             visits
               .map((v) => (v as unknown as { clientId: string }).clientId)
-              .filter((id): id is string => id !== undefined)
           )
         );
         

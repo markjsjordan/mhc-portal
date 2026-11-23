@@ -71,20 +71,22 @@ vi.mock('@folkcare/core', async () => {
         },
       ]),
     }),
-    AuthMiddleware: vi.fn().mockImplementation(() => ({
-      requireAuth: vi.fn((req, _res, next) => {
-        req.user = {
-          userId: 'user-123',
-          organizationId: 'org-456',
-          branchIds: ['branch-789'],
-          roles: ['ORG_ADMIN'],
-          permissions: ['*:*'],
-          email: 'admin@example.com',
-          tokenVersion: 1,
-        };
-        next();
-      }),
-    })),
+    AuthMiddleware: vi.fn().mockImplementation(function () {
+      return {
+        requireAuth: vi.fn((req: Record<string, unknown>, _res: unknown, next: () => void) => {
+          req['user'] = {
+            userId: 'user-123',
+            organizationId: 'org-456',
+            branchIds: ['branch-789'],
+            roles: ['ORG_ADMIN'],
+            permissions: ['*:*'],
+            email: 'admin@example.com',
+            tokenVersion: 1,
+          };
+          next();
+        }),
+      };
+    }),
   };
 });
 
