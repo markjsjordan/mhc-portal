@@ -221,4 +221,27 @@ describe('FilterDropdown', () => {
     const panel = container.querySelector('[class*="w-96"]');
     expect(panel).toBeInTheDocument();
   });
+
+  it('applies mobile-safe responsive alignment and max-width classes', () => {
+    const onClearAll = vi.fn();
+    const { container } = render(
+      <FilterDropdown
+        title="Filter Test"
+        activeCount={0}
+        onClearAll={onClearAll}
+      >
+        <div>Test Content</div>
+      </FilterDropdown>
+    );
+
+    const button = screen.getByRole('button', { name: /filters/i });
+    fireEvent.click(button);
+
+    const panel = container.querySelector('[class*="left-0"]');
+    expect(panel).toBeInTheDocument();
+    expect(panel?.className).toContain('left-0');
+    expect(panel?.className).toContain('sm:left-auto');
+    expect(panel?.className).toContain('sm:right-0');
+    expect(panel?.className).toContain('max-w-[calc(100vw-2rem)]');
+  });
 });
