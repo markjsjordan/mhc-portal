@@ -95,7 +95,7 @@ vi.mock('@folkcare/core', async () => {
 });
 
 // Import after mocking
-import { createEVVRouter } from '../evv.js';
+import { createEVVRouter, createEVVVisitsRouter } from '../evv.js';
 
 describe('EVV Routes', () => {
   let mockDb: Database;
@@ -251,5 +251,125 @@ describe('EVV Routes', () => {
       const paginationParams = ['page', 'limit'];
       expect(paginationParams.length).toBe(2);
     });
+  });
+});
+
+describe('EVV Visits Routes (/api/evv-visits)', () => {
+  let mockDb: Database;
+  let router: Router;
+
+  beforeEach(() => {
+    mockDb = {
+      query: vi.fn().mockResolvedValue({ rows: [] }),
+      getPool: vi.fn().mockReturnValue({}),
+    } as unknown as Database;
+
+    router = createEVVVisitsRouter(mockDb);
+  });
+
+  it('should register POST / and PATCH /:id/clock-out routes', () => {
+    const routes = router.stack
+      .filter((layer: RouterLayer) => layer.route)
+      .map((layer: RouterLayer) => ({
+        path: layer.route.path,
+        methods: Object.keys(layer.route.methods),
+      }));
+
+    const postRoute = routes.find((r: any) => r.path === '/' && r.methods.includes('post'));
+    const patchRoute = routes.find((r: any) => r.path === '/:id/clock-out' && r.methods.includes('patch'));
+
+    expect(postRoute).toBeDefined();
+    expect(patchRoute).toBeDefined();
+  });
+
+  it('POST / should return 400 when visit_id is missing', async () => {
+    const postLayer: RouterLayer = router.stack.find(
+      (layer: RouterLayer) => layer.route?.path === '/' && layer.route?.methods?.post
+    );
+    const handler = postLayer.route.stack[0].handle;
+
+    const req = {
+      body: { caregiver_id: 'cg-1', clock_in_time: '2026-11-23T09:00:00.000Z' },
+      params: {},
+      query: {},
+      user: { userId: 'cg-1', organizationId: 'org-1', roles: ['caregiver'] },
+    } as any;
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+    } as any;
+    const next = vi.fn();
+
+    await handler(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'visit_id is required' });
+  });
+
+  it('POST / should normalize EVV payload and return visit_id, caregiver_id, clock_in_time, clock_out_time', async () => {
+    const postLayer: RouterLayer = router.stack.find(
+      (layer: RouterLayer) => layer.route?.path === '/' && layer.route?.methods?.post
+    );
+    const handler = postLayer.route.stack[0].handle;
+
+    const req = {
+      body: {
+        visit_id: 'visit-123',
+        caregiver_id: 'cg-456',
+        clock_in_time: '2026-11-23T09:00:00.000Z',
+        clock_out_time: null,
+      },
+      params: {},
+      query: {},
+      user: { userId: 'cg-456', organizationId: 'org-1', roles: ['caregiver'] },
+    } as any;
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+    } as any;
+    const next = vi.fn();
+
+    await handler(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        visit_id: 'visit-123',
+        caregiver_id: 'cg-456',
+        clock_in_time: '2026-11-23T09:00:00.000Z',
+        clock_out_time: null,
+      })
+    );
+  });
+
+  it('PATCH /:id/clock-out should return clock_out_time and visit metadata', async () => {
+    const patchLayer: RouterLayer = router.stack.find(
+      (layer: RouterLayer) => layer.route?.path === '/:id/clock-out' && layer.route?.methods?.patch
+    );
+    const handler = patchLayer.route.stack[0].handle;
+
+    const req = {
+      body: {
+        visit_id: 'visit-123',
+        caregiver_id: 'cg-456',
+        clock_out_time: '2026-11-23T11:00:00.000Z',
+      },
+      params: { id: 'evv-789' },
+      query: {},
+      user: { userId: 'cg-456', organizationId: 'org-1', roles: ['caregiver'] },
+    } as any;
+    const res = {
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn().mockReturnThis(),
+    } as any;
+    const next = vi.fn();
+
+    await handler(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        visit_id: 'visit-123',
+        caregiver_id: 'cg-456',
+        clock_out_time: '2026-11-23T11:00:00.000Z',
+      })
+    );
   });
 });

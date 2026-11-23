@@ -267,3 +267,161 @@ export function createEVVRouter(db: Database): Router {
 
   return router;
 }
+
+function pickNonEmptyString(body: Record<string, unknown>, ...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const val = body[key];
+    if (typeof val === 'string' && val.trim() !== '') {
+      return val.trim();
+    }
+  }
+  return undefined;
+}
+
+async function fetchVisitDataSafe(visitProvider: unknown, visitId: string | undefined): Promise<unknown> {
+  if (visitId === undefined) {
+    return null;
+  }
+  const provider = visitProvider as { getVisit?: (id: string) => Promise<unknown> };
+  if (typeof provider.getVisit !== 'function') {
+    return null;
+  }
+  try {
+    return await provider.getVisit(visitId);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * EVV Visits Router (/api/evv-visits)
+ *
+ * Mobile-first EVV endpoints (wdvf3adf63):
+ * - POST /api/evv-visits                — Clock in with snake_case/camelCase EVV payload, returning visit data
+ * - PATCH /api/evv-visits/:id/clock-out — Clock out with timestamp, returning updated EVV & visit data
+ */
+export function createEVVVisitsRouter(db: Database): Router {
+  const router = Router();
+  const authMiddleware = new AuthMiddleware(db);
+  const evvRepository = new EVVRepository(db);
+  const pool = db.getPool();
+  const integrationService = new IntegrationService(db);
+  const visitProvider = createVisitProvider(pool, db);
+  const clientProvider = createClientProvider(db);
+  const caregiverProvider = createCaregiverProvider(db);
+  const evvService = new EVVService(
+    evvRepository,
+    integrationService,
+    visitProvider,
+    clientProvider,
+    caregiverProvider,
+    db
+  );
+  const evvHandlers = new EVVHandlers(evvService);
+
+  router.use(authMiddleware.requireAuth);
+  if (authMiddleware.auditImpersonatedActions) {
+    router.use((req, res, next) => authMiddleware.auditImpersonatedActions(req, res, next));
+  }
+
+  /**
+   * POST /api/evv-visits
+   * Clock in to a visit with EVV payload (visit_id, caregiver_id, clock_in_time, clock_out_time)
+   */
+  router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const visitId = pickNonEmptyString(body, 'visit_id', 'visitId');
+
+      if (visitId === undefined) {
+        res.status(400).json({ error: 'visit_id is required' });
+        return;
+      }
+
+      const caregiverId = pickNonEmptyString(body, 'caregiver_id', 'caregiverId') ?? req.user?.userId ?? '';
+      const clockInTime =
+        pickNonEmptyString(body, 'clock_in_time', 'clockInTime', 'timestamp') ?? new Date().toISOString();
+      const clockOutTime = pickNonEmptyString(body, 'clock_out_time', 'clockOutTime') ?? null;
+
+      const apiReq = {
+        body: { ...body, visitId, caregiverId, timestamp: clockInTime } as unknown as Parameters<
+          typeof evvHandlers.clockIn
+        >[0]['body'],
+        params: req.params,
+        query: req.query as Record<string, string>,
+        user: req.user!,
+      };
+      const result = await evvHandlers.clockIn(apiReq);
+
+      if (result.error !== undefined) {
+        res.status(result.status).json({ error: result.error });
+        return;
+      }
+
+      const visitData = await fetchVisitDataSafe(visitProvider, visitId);
+      const evvData = (result.data && typeof result.data === 'object' ? result.data : {}) as Record<string, unknown>;
+      res.status(result.status).json({
+        ...evvData,
+        visit_id: visitId,
+        caregiver_id: caregiverId,
+        clock_in_time: clockInTime,
+        clock_out_time: clockOutTime,
+        visit: visitData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  /**
+   * PATCH /api/evv-visits/:id/clock-out
+   * Clock out of an EVV visit, returning updated EVV & visit data
+   */
+  router.patch('/:id/clock-out', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const evvRecordId = req.params.id;
+      if (evvRecordId === undefined || evvRecordId.trim() === '') {
+        res.status(400).json({ error: 'EVV visit ID is required' });
+        return;
+      }
+
+      const body = (req.body ?? {}) as Record<string, unknown>;
+      const visitId = pickNonEmptyString(body, 'visit_id', 'visitId');
+      const caregiverId = pickNonEmptyString(body, 'caregiver_id', 'caregiverId') ?? req.user?.userId ?? '';
+      const clockOutTime =
+        pickNonEmptyString(body, 'clock_out_time', 'clockOutTime', 'timestamp') ?? new Date().toISOString();
+
+      const apiReq = {
+        body: { ...body, evvRecordId, visitId, caregiverId, timestamp: clockOutTime } as unknown as Parameters<
+          typeof evvHandlers.clockOut
+        >[0]['body'],
+        params: req.params,
+        query: req.query as Record<string, string>,
+        user: req.user!,
+      };
+      const result = await evvHandlers.clockOut(apiReq);
+
+      if (result.error !== undefined) {
+        res.status(result.status).json({ error: result.error });
+        return;
+      }
+
+      const evvData = (result.data && typeof result.data === 'object' ? result.data : {}) as Record<string, unknown>;
+      const resolvedVisitId = visitId ?? pickNonEmptyString(evvData, 'visitId', 'visit_id');
+      const visitData = await fetchVisitDataSafe(visitProvider, resolvedVisitId);
+
+      res.status(result.status).json({
+        ...evvData,
+        visit_id: resolvedVisitId ?? null,
+        caregiver_id: caregiverId,
+        clock_in_time: evvData.clockInTime ?? evvData.clock_in_time ?? null,
+        clock_out_time: clockOutTime,
+        visit: visitData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  return router;
+}
