@@ -34,12 +34,12 @@ describe('errorHandler', () => {
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('should handle 400-level client errors with specific message', () => {
+  it('should handle 400-level client errors with specific message and sanitized details', () => {
     const err: AppError = {
       name: 'ValidationError',
       message: 'Invalid input',
       statusCode: 400,
-      details: { field: 'email' },
+      details: { errors: [{ field: 'email', message: 'Invalid format', value: 'jane@example.com' }] },
     };
 
     errorHandler(err, mockReq as Request, mockRes as Response, mockNext);
@@ -48,9 +48,36 @@ describe('errorHandler', () => {
     expect(mockRes.json).toHaveBeenCalledWith({
       success: false,
       error: 'Invalid input',
-      details: { field: 'email' },
+      details: { errors: [{ field: 'email', message: 'Invalid format' }] },
     });
     expect(consoleErrorSpy).toHaveBeenCalled();
+  });
+
+  it('never leaks raw PHI details or SSNs in error responses or logs (wdvf3adf74)', () => {
+    const err: AppError = {
+      name: 'ValidationError',
+      message: 'Failed for SSN 123-45-6789',
+      statusCode: 400,
+      stack: 'Error: Failed for SSN 123-45-6789\n    at handler.ts:10',
+      details: {
+        address: { line1: '123 Main St' },
+        ssn: '123-45-6789',
+      },
+    };
+
+    errorHandler(err, mockReq as Request, mockRes as Response, mockNext);
+
+    expect(mockRes.status).toHaveBeenCalledWith(400);
+    const jsonPayload = vi.mocked(mockRes.json!).mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(jsonPayload.error).toBe('Failed for SSN [SSN-REDACTED]');
+    expect(jsonPayload.details).toBeUndefined();
+    expect(jsonPayload.stack).toBeUndefined();
+    expect(JSON.stringify(jsonPayload)).not.toContain('123 Main St');
+    expect(JSON.stringify(jsonPayload)).not.toContain('123-45-6789');
+
+    const loggedPayload = consoleErrorSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(JSON.stringify(loggedPayload)).not.toContain('123-45-6789');
+    expect(JSON.stringify(loggedPayload)).not.toContain('123 Main St');
   });
 
   it('should handle 500-level server errors with generic message in production', () => {
@@ -122,13 +149,13 @@ describe('errorHandler', () => {
     );
   });
 
-  it('should log error details server-side', () => {
+  it('should log sanitized error details server-side', () => {
     const err: AppError = {
       name: 'TestError',
       message: 'Test error message',
       statusCode: 400,
       stack: 'Error stack trace',
-      details: { test: 'data' },
+      details: { errors: [{ field: 'status', message: 'Invalid' }] },
     };
 
     errorHandler(err, mockReq as Request, mockRes as Response, mockNext);
@@ -141,7 +168,7 @@ describe('errorHandler', () => {
         statusCode: 400,
         message: 'Test error message',
         stack: 'Error stack trace',
-        details: { test: 'data' },
+        details: [{ field: 'status', message: 'Invalid' }],
         userAgent: 'test-agent',
         ip: '127.0.0.1',
       })

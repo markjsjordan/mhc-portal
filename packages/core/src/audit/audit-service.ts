@@ -44,6 +44,106 @@ export type CreateAuditEvent = Omit<
   'eventId' | 'timestamp' | 'userId' | 'organizationId'
 >;
 
+const SENSITIVE_AUDIT_METADATA_KEYS = new Set([
+  'ssn',
+  'socialsecuritynumber',
+  'mrn',
+  'medicalrecordnumber',
+  'medicaidid',
+  'medicareid',
+  'dateofbirth',
+  'dob',
+  'firstname',
+  'lastname',
+  'middlename',
+  'preferredname',
+  'fullname',
+  'clientname',
+  'patientname',
+  'caregivername',
+  'authorizername',
+  'address',
+  'primaryaddress',
+  'secondaryaddresses',
+  'serviceaddress',
+  'street',
+  'street1',
+  'street2',
+  'line1',
+  'line2',
+  'postalcode',
+  'zipcode',
+  'phone',
+  'phonenumber',
+  'primaryphone',
+  'alternatephone',
+  'email',
+  'emergencycontacts',
+  'authorizedcontacts',
+  'insurance',
+  'payrollinfo',
+  'diagnosis',
+  'medicaldiagnosis',
+  'medicalhistory',
+  'allergies',
+  'medications',
+  'subjectivenotes',
+  'objectivenotes',
+  'assessment',
+  'plan',
+  'narrativenote',
+  'notetext',
+  'notehtml',
+  'notes',
+  'clientinstructions',
+  'internalnotes',
+  'specialinstructions',
+  'accessinstructions',
+  'password',
+  'passwordhash',
+  'token',
+  'accesstoken',
+  'refreshtoken',
+]);
+
+const SSN_PATTERN = /\b\d{3}-\d{2}-\d{4}\b/g;
+
+function normalizeAuditKey(key: string): string {
+  return key.toLowerCase().replace(/[_-]/g, '');
+}
+
+function sanitizeAuditValue(value: unknown): unknown {
+  if (typeof value === 'string') {
+    return value.replace(SSN_PATTERN, '[SSN-REDACTED]');
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeAuditValue(item));
+  }
+  if (value !== null && typeof value === 'object' && !(value instanceof Date)) {
+    return sanitizeAuditMetadata(value as Record<string, unknown>);
+  }
+  return value;
+}
+
+/**
+ * Recursively strip PHI/PII keys and scrub embedded SSN patterns from audit metadata.
+ */
+export function sanitizeAuditMetadata(
+  metadata?: Record<string, unknown>
+): Record<string, unknown> {
+  if (metadata === undefined) {
+    return {};
+  }
+  const sanitized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(metadata)) {
+    if (SENSITIVE_AUDIT_METADATA_KEYS.has(normalizeAuditKey(key))) {
+      continue;
+    }
+    sanitized[key] = sanitizeAuditValue(value);
+  }
+  return sanitized;
+}
+
 /**
  * Audit service for tracking security and compliance events
  */
@@ -90,7 +190,7 @@ export class AuditService {
       resourceId,
       event.action,
       event.result,
-      JSON.stringify(event.metadata ?? {}),
+      JSON.stringify(sanitizeAuditMetadata(event.metadata)),
       event.ipAddress,
       event.userAgent,
     ]);

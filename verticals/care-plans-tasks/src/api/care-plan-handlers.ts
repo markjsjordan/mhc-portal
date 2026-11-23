@@ -23,7 +23,7 @@ function isDomainError(error: unknown): error is ValidationError | PermissionErr
 function handleError(error: unknown, res: Response, operation: string): void {
   if (isDomainError(error)) {
     if (error instanceof ValidationError) {
-      res.status(400).json({ error: error.message, details: error.context });
+      res.status(400).json({ error: error.message });
     } else if (error instanceof PermissionError) {
       res.status(403).json({ error: error.message });
     } else if (error instanceof NotFoundError) {

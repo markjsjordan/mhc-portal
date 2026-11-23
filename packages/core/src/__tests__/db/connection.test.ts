@@ -135,19 +135,41 @@ describe('Database Connection', () => {
   });
 
   describe('Query Execution', () => {
-    it('should execute query successfully', async () => {
-      const mockResult = { rows: [{ id: 1, name: 'test' }], rowCount: 1 };
-      mockQuery.mockResolvedValue(mockResult);
+    it('should execute query successfully without logging when LOG_QUERIES is unset', async () => {
+      const prev = process.env.LOG_QUERIES;
+      delete process.env.LOG_QUERIES;
+      try {
+        const mockResult = { rows: [{ id: 1, name: 'test' }], rowCount: 1 };
+        mockQuery.mockResolvedValue(mockResult);
 
-      const result = await database.query('SELECT * FROM test');
+        const result = await database.query('SELECT * FROM test');
 
-      expect(mockQuery).toHaveBeenCalledWith('SELECT * FROM test', undefined);
-      expect(result).toEqual(mockResult);
-      expect(console.log).toHaveBeenCalledWith('Executed query', {
-        text: 'SELECT * FROM test',
-        duration: expect.any(Number),
-        rows: 1,
-      });
+        expect(mockQuery).toHaveBeenCalledWith('SELECT * FROM test', undefined);
+        expect(result).toEqual(mockResult);
+        expect(console.log).not.toHaveBeenCalledWith('Executed query', expect.anything());
+      } finally {
+        if (prev !== undefined) process.env.LOG_QUERIES = prev;
+      }
+    });
+
+    it('should sanitize SQL literals when LOG_QUERIES=true', async () => {
+      const prev = process.env.LOG_QUERIES;
+      process.env.LOG_QUERIES = 'true';
+      try {
+        const mockResult = { rows: [{ id: 1 }], rowCount: 1 };
+        mockQuery.mockResolvedValue(mockResult);
+
+        await database.query("SELECT * FROM clients WHERE ssn = '123-45-6789'");
+
+        expect(console.log).toHaveBeenCalledWith('Executed query', {
+          text: "SELECT * FROM clients WHERE ssn = '?'",
+          duration: expect.any(Number),
+          rows: 1,
+        });
+      } finally {
+        if (prev !== undefined) process.env.LOG_QUERIES = prev;
+        else delete process.env.LOG_QUERIES;
+      }
     });
 
     it('should execute query with parameters', async () => {
@@ -159,31 +181,41 @@ describe('Database Connection', () => {
       expect(mockQuery).toHaveBeenCalledWith('SELECT * FROM test WHERE id = $1', [1]);
     });
 
-    it('should handle query errors', async () => {
-      const error = new Error('Database error');
+    it('should handle query errors without logging raw SQL literals or PHI', async () => {
+      const error = Object.assign(new Error('Duplicate key 123-45-6789'), { code: '23505' });
       mockQuery.mockRejectedValue(error);
 
-      await expect(database.query('INVALID SQL')).rejects.toThrow('Database error');
+      await expect(
+        database.query("INSERT INTO clients (ssn) VALUES ('123-45-6789')")
+      ).rejects.toThrow('Duplicate key 123-45-6789');
       expect(console.error).toHaveBeenCalledWith('Query error', {
-        text: 'INVALID SQL',
-        error,
+        text: "INSERT INTO clients (ssn) VALUES ('?')",
+        code: '23505',
+        message: 'Duplicate key [SSN-REDACTED]',
       });
     });
 
-    it('should log query execution time', async () => {
-      const mockResult = { rows: [], rowCount: 0 };
-      mockQuery.mockImplementation(async () => {
-        await new Promise(resolve => setTimeout(resolve, 10));
-        return mockResult;
-      });
+    it('should log query execution time when LOG_QUERIES=true', async () => {
+      const prev = process.env.LOG_QUERIES;
+      process.env.LOG_QUERIES = 'true';
+      try {
+        const mockResult = { rows: [], rowCount: 0 };
+        mockQuery.mockImplementation(async () => {
+          await new Promise(resolve => setTimeout(resolve, 10));
+          return mockResult;
+        });
 
-      await database.query('SELECT 1');
+        await database.query('SELECT 1');
 
-      expect(console.log).toHaveBeenCalledWith('Executed query', {
-        text: 'SELECT 1',
-        duration: expect.any(Number),
-        rows: 0,
-      });
+        expect(console.log).toHaveBeenCalledWith('Executed query', {
+          text: 'SELECT 1',
+          duration: expect.any(Number),
+          rows: 0,
+        });
+      } finally {
+        if (prev !== undefined) process.env.LOG_QUERIES = prev;
+        else delete process.env.LOG_QUERIES;
+      }
     });
   });
 

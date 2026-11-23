@@ -245,8 +245,6 @@ export class EmailService implements IEmailService {
   private async sendEmail(params: { to: string; subject: string; html: string }): Promise<void> {
     if (this.resend === null) {
       console.log('[EmailService] Email would be sent:', {
-        to: params.to,
-        subject: params.subject,
         from: `${this.fromName} <${this.fromAddress}>`,
       });
       return;
@@ -262,15 +260,11 @@ export class EmailService implements IEmailService {
       });
 
       console.log('[EmailService] Email sent successfully:', {
-        to: params.to,
-        subject: params.subject,
         messageId: result.data?.id,
       });
     } catch (error) {
       console.error('[EmailService] Failed to send email:', {
-        to: params.to,
-        subject: params.subject,
-        error,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }

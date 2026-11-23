@@ -3,11 +3,13 @@ import logger from '../utils/logger';
 
 export function requestLogger(req: Request, res: Response, next: NextFunction): void {
   const start = Date.now();
+  const rawUrl = typeof req.originalUrl === 'string' && req.originalUrl !== '' ? req.originalUrl : req.url;
+  const safeUrl = rawUrl.split('?')[0];
 
-  // Log request
+  // Log request (strip query parameters to prevent PHI leakage)
   logger.info({
     method: req.method,
-    url: req.url,
+    url: safeUrl,
     ip: req.ip,
     userId: req.user?.userId,
     userAgent: req.get('user-agent')
@@ -19,7 +21,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
 
     const logData = {
       method: req.method,
-      url: req.url,
+      url: safeUrl,
       statusCode: res.statusCode,
       duration,
       userId: req.user?.userId

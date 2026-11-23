@@ -24,7 +24,81 @@ import {
   encryptAuditChanges,
   encryptAuditData,
   encryptRow,
+  isEncryptedEnvelope,
 } from '../security/field-encryption.js';
+
+const AUDIT_REVISION_PHI_COLUMNS = new Set([
+  'ssn',
+  'ssn_bidx',
+  'medical_record_number',
+  'medical_record_number_bidx',
+  'first_name',
+  'last_name',
+  'middle_name',
+  'preferred_name',
+  'date_of_birth',
+  'primary_address',
+  'secondary_addresses',
+  'primary_phone',
+  'alternate_phone',
+  'email',
+  'emergency_contacts',
+  'authorized_contacts',
+  'primary_physician',
+  'pharmacy',
+  'insurance',
+  'allergies',
+  'special_instructions',
+  'access_instructions',
+  'notes',
+  'assessment_data',
+  'care_plan_summary',
+  'medical_diagnosis',
+  'assessment_summary',
+  'description',
+  'injury_description',
+  'medical_attention_provided',
+  'family_notification_notes',
+  'physician_orders',
+  'investigation_findings',
+  'payroll_info',
+]);
+
+function redactIfUnencryptedPhi(key: string, value: unknown): unknown {
+  if (value === null || value === undefined) {
+    return value;
+  }
+  if (!AUDIT_REVISION_PHI_COLUMNS.has(key.toLowerCase())) {
+    return value;
+  }
+  if (isEncryptedEnvelope(value)) {
+    return value;
+  }
+  return '[REDACTED]';
+}
+
+export function sanitizeAuditRevisionPayload(
+  data: Record<string, unknown>
+): Record<string, unknown> {
+  const sanitized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data)) {
+    sanitized[key] = redactIfUnencryptedPhi(key, value);
+  }
+  return sanitized;
+}
+
+export function sanitizeAuditRevisionChanges(
+  changes: Record<string, { from: unknown; to: unknown }>
+): Record<string, { from: unknown; to: unknown }> {
+  const sanitized: Record<string, { from: unknown; to: unknown }> = {};
+  for (const [key, diff] of Object.entries(changes)) {
+    sanitized[key] = {
+      from: redactIfUnencryptedPhi(key, diff.from),
+      to: redactIfUnencryptedPhi(key, diff.to),
+    };
+  }
+  return sanitized;
+}
 
 export interface RepositoryConfig {
   tableName: string;
@@ -295,9 +369,12 @@ export abstract class Repository<T extends Entity> {
   ): Promise<void> {
     const revisionId = uuidv4();
     const now = new Date();
-    // HIPAA-007: audit trail stores ciphertext only for sensitive fields
-    const safeChanges = encryptAuditChanges(changes, this.encryption);
-    const safeSnapshot = encryptAuditData(newData, this.encryption);
+    // HIPAA-007 & wdvf3adf74: audit trail stores ciphertext only for encrypted fields
+    // and strips/redacts any remaining unencrypted PHI columns so audit_revisions never stores raw PHI dumps.
+    const encryptedChanges = encryptAuditChanges(changes, this.encryption);
+    const encryptedSnapshot = encryptAuditData(newData, this.encryption);
+    const safeChanges = sanitizeAuditRevisionChanges(encryptedChanges);
+    const safeSnapshot = sanitizeAuditRevisionPayload(encryptedSnapshot);
 
     const query = `
       INSERT INTO audit_revisions (

@@ -60,16 +60,28 @@ describe('audit-events router (wdvf3acxk9)', () => {
   it('allows ORG_ADMIN, scopes by org, caps limit at 200, logs the view, shows stored id for deleted actor', async () => {
     const h = getHandler(createAuditEventsRouter({ query } as unknown as Database), '/', 'get');
     const res = makeRes();
-    await h(req(['ORG_ADMIN'], { limit: '99999' }), res);
+    await h(req(['ORG_ADMIN'], { limit: '99999', search: 'Jane Doe 123-45-6789' }), res);
     expect(res.statusCode).toBe(200);
-    expect(logEvent).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ action: 'VIEW_AUDIT_LOGS' }));
+    expect(logEvent).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        action: 'VIEW_AUDIT_LOGS',
+        metadata: expect.objectContaining({
+          filters: expect.objectContaining({
+            hasSearch: true,
+          }),
+        }),
+      })
+    );
+    const loggedMeta = (logEvent.mock.calls[0]?.[1] as { metadata?: { filters?: Record<string, unknown> } })?.metadata;
+    expect(loggedMeta?.filters).not.toHaveProperty('search');
     const dataCall = query.mock.calls[1]!;
     expect(dataCall[0]).not.toMatch(/SELECT \*/);
     expect(dataCall[1][0]).toBe('org-A');
     expect(dataCall[1]).toContain(200);
     const body = res.body as { data: { events: Array<{ actor: { name: string }; clientName?: string }> } };
     expect(body.data.events[0]!.actor.name).toBe('gone-user');
-    expect(body.data.events[0]!.clientName).toBe('Jane');
+    expect(body.data.events[0]!.clientName).toBeUndefined();
   });
 
   it('export-log writes an EXPORT_AUDIT_LOGS row and rejects non-admins', async () => {

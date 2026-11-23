@@ -171,13 +171,19 @@ interface ErrorResponse {
   stack?: string;
 }
 
+const SSN_ERROR_PATTERN = /\b\d{3}-\d{2}-\d{4}\b/g;
+
+function scrubErrorMessage(message: string): string {
+  return message.replace(SSN_ERROR_PATTERN, '[SSN-REDACTED]');
+}
+
 /**
  * Build error response from AppError
  */
 function buildAppErrorResponse(err: AppError): ErrorResponse {
   const response: ErrorResponse = {
     error: err.code !== undefined && err.code !== '' ? err.code : 'ERROR',
-    message: err.message,
+    message: scrubErrorMessage(err.message),
   };
 
   // Include details for errors that have them
@@ -189,32 +195,37 @@ function buildAppErrorResponse(err: AppError): ErrorResponse {
     response.details = (err as ValidationError | UnprocessableEntityError).details;
   }
 
-  // Include stack trace in development
-  if (process.env.NODE_ENV === 'development') {
-    response.stack = err.stack;
-  }
-
   return response;
 }
 
 /**
  * Log error based on type
  */
+function getSafeRequestPath(req: Request): string {
+  if (typeof req.path === 'string' && req.path !== '') {
+    return req.path;
+  }
+  const rawUrl = typeof req.url === 'string' ? req.url : '';
+  return rawUrl.split('?')[0] ?? '';
+}
+
 function logError(err: AppError, req: Request): void {
+  const safePath = getSafeRequestPath(req);
   if (err.isOperational) {
     console.warn('Operational error:', {
       code: err.code,
-      message: err.message,
+      message: scrubErrorMessage(err.message),
       statusCode: err.statusCode,
-      url: req.url,
+      url: safePath,
       method: req.method,
     });
   } else {
     console.error('Non-operational error:', {
-      error: err,
-      url: req.url,
+      code: err.code,
+      message: scrubErrorMessage(err.message),
+      statusCode: err.statusCode,
+      url: safePath,
       method: req.method,
-      body: req.body,
     });
   }
 }
@@ -244,16 +255,19 @@ export function errorHandler(
   }
 
   // Handle unexpected errors
-  console.error('Unexpected error:', err);
+  console.error('Unexpected error:', {
+    name: err.name,
+    message: scrubErrorMessage(err.message),
+    path: getSafeRequestPath(req),
+    method: req.method,
+  });
 
   const response: ErrorResponse = {
     error: 'INTERNAL_SERVER_ERROR',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'An unexpected error occurred',
+    message: process.env.NODE_ENV === 'development'
+      ? scrubErrorMessage(err.message)
+      : 'An unexpected error occurred',
   };
-
-  if (process.env.NODE_ENV === 'development') {
-    response.stack = err.stack;
-  }
 
   res.status(500).json(response);
 }

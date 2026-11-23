@@ -6,6 +6,7 @@
  */
 
 import type { Knex } from 'knex';
+import { sanitizeSqlForLog, scrubPhiFromMessage } from './connection';
 
 export interface QueryLogConfig {
   /**
@@ -79,7 +80,7 @@ export class QueryLogger {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     knex.on('query', (query: { sql: string; bindings?: any[] }) => {
       if (this.config.verbose) {
-        console.log('📝 Query:', query.sql);
+        console.log('📝 Query:', sanitizeSqlForLog(query.sql));
         if (query.bindings !== undefined && query.bindings.length > 0) {
           console.log('📌 Bindings count:', query.bindings.length);
         }
@@ -97,7 +98,7 @@ export class QueryLogger {
       this.recordQueryDuration(duration);
 
       if (duration > this.config.slowQueryThreshold) {
-        console.warn(`🐌 Slow query (${duration}ms):`, query.sql);
+        console.warn(`🐌 Slow query (${duration}ms):`, sanitizeSqlForLog(query.sql));
         if (query.bindings !== undefined && query.bindings.length > 0) {
           console.warn('📌 Bindings count:', query.bindings.length);
         }
@@ -106,15 +107,15 @@ export class QueryLogger {
       }
 
       if (this.config.logResponses && this.config.verbose) {
-        console.log('📦 Response:', response);
+        console.log('📦 Response rows:', Array.isArray(response) ? response.length : 1);
       }
     });
 
     // Log query errors
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     knex.on('query-error', (error: Error, query: any) => {
-      console.error('❌ Query error:', error.message);
-      console.error('📝 Failed query:', query.sql);
+      console.error('❌ Query error:', scrubPhiFromMessage(error.message));
+      console.error('📝 Failed query:', sanitizeSqlForLog(query.sql));
       if (query.bindings !== undefined && query.bindings.length > 0) {
         console.error('📌 Bindings count:', query.bindings.length);
       }
