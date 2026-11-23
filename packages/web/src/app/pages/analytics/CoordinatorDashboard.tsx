@@ -135,38 +135,6 @@ export function CoordinatorDashboard() {
             />
           </div>
 
-          {/* Caregiver Status (Mock Data) */}
-          <Card className="mb-6">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold text-gray-900">Caregiver Status</CardTitle>
-              <CardDescription className="text-sm text-gray-600">Current availability</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <Users className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-900">12</div>
-                  <div className="text-sm text-gray-600">Available</div>
-                </div>
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <Activity className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-900">8</div>
-                  <div className="text-sm text-gray-600">On Visit</div>
-                </div>
-                <div className="text-center p-4 bg-gray-50 rounded-lg">
-                  <Clock className="h-8 w-8 text-gray-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-900">5</div>
-                  <div className="text-sm text-gray-600">Off Duty</div>
-                </div>
-                <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <AlertCircle className="h-8 w-8 text-red-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-900">2</div>
-                  <div className="text-sm text-gray-600">Sick/PTO</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Client Alerts */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-4">
