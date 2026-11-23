@@ -79,7 +79,7 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = ({
       {/* Dropdown Panel */}
       {isOpen && (
         <div
-          className={`absolute right-0 mt-2 ${widthClasses[width]} bg-card text-card-foreground rounded-xl shadow-xl border border-border p-5 z-30`}
+          className={`absolute left-0 sm:left-auto sm:right-0 max-w-[calc(100vw-2rem)] mt-2 ${widthClasses[width]} bg-card text-card-foreground rounded-xl shadow-xl border border-border p-5 z-30`}
         >
           {/* Header */}
           <div className="flex items-center justify-between pb-3 border-b border-border">
