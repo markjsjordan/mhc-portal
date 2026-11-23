@@ -120,6 +120,8 @@ export interface VisitApiService {
   createVisitNote(visitId: string, payload: CreateVisitNotePayload): Promise<VisitNoteItem>;
   createVisit(data: CreateVisitPayload): Promise<Visit>;
   updateVisit(visitId: string, data: UpdateVisitPayload): Promise<Visit>;
+  updateVisitStatus(visitId: string, status: string, options?: { reason?: string; notes?: string }): Promise<Visit>;
+  searchVisits(filters: { clientId?: string; startDate?: string; endDate?: string; status?: string }): Promise<Visit[]>;
   createPattern(data: CreatePatternPayload): Promise<{
     pattern: unknown;
     visits: Visit[];
@@ -321,6 +323,37 @@ export const createVisitApiService = (apiClient: ApiClient): VisitApiService => 
       const response = await apiClient.put<{ success: boolean; data: Visit }>(
         `/api/visits/${visitId}`,
         data
+      );
+      return response.data;
+    },
+
+    async updateVisitStatus(
+      visitId: string,
+      status: string,
+      options?: { reason?: string; notes?: string }
+    ): Promise<Visit> {
+      const response = await apiClient.patch<{ success: boolean; data: Visit }>(
+        `/api/visits/${visitId}/status`,
+        { status, ...options }
+      );
+      return response.data;
+    },
+
+    async searchVisits(filters: {
+      clientId?: string;
+      startDate?: string;
+      endDate?: string;
+      status?: string;
+    }): Promise<Visit[]> {
+      const params = new URLSearchParams();
+      if (filters.clientId) params.append('client_id', filters.clientId);
+      if (filters.startDate) params.append('start_date', filters.startDate);
+      if (filters.endDate) params.append('end_date', filters.endDate);
+      if (filters.status) params.append('status', filters.status);
+
+      const query = params.toString();
+      const response = await apiClient.get<{ success: boolean; data: Visit[] }>(
+        `/api/visits${query ? `?${query}` : ''}`
       );
       return response.data;
     },

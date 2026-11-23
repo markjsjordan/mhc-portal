@@ -2,6 +2,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { Database, DatabaseConfig } from '../../packages/core/src/db/connection.js';
 import { seedE2EPersonas } from './seed-personas.js';
+import { seedDatabase as seedMobileCaregiver } from './seeds/mobile-caregiver.seed.js';
 
 const execAsync = promisify(exec);
 
@@ -106,6 +107,16 @@ export default async function globalSetup() {
       console.log('✅ E2E persona accounts ready (admin, orgAdmin, coordinator, caregiver, family)');
     } finally {
       await seedDb.close();
+    }
+
+    // Step 5: Seed mobile caregiver fixture (caregiver.mobile@e2e-test.com)
+    console.log('\n📱 Seeding mobile caregiver fixture...');
+    const mobileDb = new Database(parseDatabaseUrl(dbUrl));
+    try {
+      await seedMobileCaregiver(mobileDb);
+      console.log('✅ Mobile caregiver fixture ready');
+    } finally {
+      await mobileDb.close();
     }
 
     console.log('\n✨ E2E test environment ready!\n');
