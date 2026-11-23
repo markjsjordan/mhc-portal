@@ -10,7 +10,7 @@ import { Database } from '../../../packages/core/src/db/connection.js';
  * - Creates a geocoded TX client (100 Congress Ave, Austin, TX: 30.2672, -97.7431).
  * - Creates two `ASSIGNED` visits for today (one for in-geofence clock-in, one for
  *   out-of-geofence clock-in) with no leftover EVV records.
- * - Creates a scheduled `care_plan_tasks` row for the caregiver tasks page.
+ * - [DISABLED] Creates a scheduled `care_plan_tasks` row for the caregiver tasks page (table does not exist yet).
  */
 
 const ORG_ID = '00000000-e2e0-4000-8000-000000000001';
@@ -201,7 +201,9 @@ export async function seedDatabase(db: Database): Promise<void> {
     );
   }
 
+  // TODO: Re-enable when care_plan_tasks table exists (migration needed)
   // Scheduled care_plan_tasks row
+  /*
   await db.query(
     `INSERT INTO care_plan_tasks (
       id, organization_id, client_id, title, description, category,
@@ -213,4 +215,5 @@ export async function seedDatabase(db: Database): Promise<void> {
     ON CONFLICT (id) DO NOTHING`,
     [MOBILE_TASK_ID, ORG_ID, MOBILE_CLIENT_ID, ADMIN_USER_ID]
   );
+  */
 }
