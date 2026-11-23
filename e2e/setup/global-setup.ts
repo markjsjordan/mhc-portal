@@ -69,7 +69,30 @@ export default async function globalSetup() {
       }
     }
 
-    // Step 2: Run migrations
+    // Step 2: Clean E2E test data before migrations (removes personas with known UUIDs)
+    console.log('\n🧹 Cleaning E2E test data...');
+    const cleanDb = new Database(config);
+    try {
+      // Delete E2E persona users by their known UUIDs
+      const e2eUserIds = [
+        '00000000-e2e0-4000-8000-000000000100', // DIRECT_CARE_WORKER
+        '00000000-e2e0-4000-8000-000000000101', // SUPERVISOR
+        '00000000-e2e0-4000-8000-000000000102', // COORDINATOR
+        '00000000-e2e0-4000-8000-000000000103', // MANAGER
+        '00000000-e2e0-4000-8000-000000000104', // SUPER_ADMIN
+      ];
+      const deleteResult = await cleanDb.query(
+        `DELETE FROM users WHERE id = ANY($1::uuid[])`,
+        [e2eUserIds]
+      );
+      console.log(`✅ Cleaned ${deleteResult.rowCount} E2E persona users`);
+    } catch (error) {
+      console.warn('⚠️  Cleanup failed (table may not exist yet):', error);
+    } finally {
+      await cleanDb.close();
+    }
+
+    // Step 3: Run migrations
     console.log('\n🔄 Running database migrations...');
     const migrationCommand = `DATABASE_URL=${dbUrl} npm run db:migrate --workspace=@folkcare/core`;
     try {
@@ -85,7 +108,7 @@ export default async function globalSetup() {
       throw error;
     }
 
-    // Step 3: Verify connection
+    // Step 4: Verify connection
     console.log('\n🔌 Verifying database connection...');
     const config = parseDatabaseUrl(dbUrl);
     const db = new Database(config);
@@ -97,7 +120,7 @@ export default async function globalSetup() {
     console.log(`✅ Connected to PostgreSQL: ${result.rows[0]?.version.split(',')[0]}`);
     await db.close();
 
-    // Step 4: Seed all E2E persona accounts (admin, orgAdmin, coordinator,
+    // Step 5: Seed all E2E persona accounts (admin, orgAdmin, coordinator,
     // caregiver, family) and their required portal links. Idempotent via
     // ON CONFLICT DO NOTHING so reruns against a shared DB are safe.
     console.log('\n👤 Seeding E2E persona accounts...');
@@ -109,7 +132,7 @@ export default async function globalSetup() {
       await seedDb.close();
     }
 
-    // Step 5: Seed mobile caregiver fixture (caregiver.mobile@e2e-test.com)
+    // Step 6: Seed mobile caregiver fixture (caregiver.mobile@e2e-test.com)
     console.log('\n📱 Seeding mobile caregiver fixture...');
     const mobileDb = new Database(parseDatabaseUrl(dbUrl));
     try {
