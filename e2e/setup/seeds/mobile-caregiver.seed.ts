@@ -116,10 +116,10 @@ export async function seedDatabase(db: Database): Promise<void> {
     `INSERT INTO clients (
       id, organization_id, branch_id, client_number, first_name, last_name,
       date_of_birth, gender, primary_phone, primary_address,
-      emergency_contacts, status, created_at, created_by, updated_at, updated_by, version
+      emergency_contacts, service_eligibility, status, created_at, created_by, updated_at, updated_by, version
     ) VALUES (
       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
-      NOW(), $13, NOW(), $13, 1
+      $13, NOW(), $14, NOW(), $14, 1
     )
     ON CONFLICT (id) DO UPDATE SET
       primary_address = EXCLUDED.primary_address,
@@ -144,6 +144,7 @@ export async function seedDatabase(db: Database): Promise<void> {
         longitude: -97.7431,
       }),
       JSON.stringify([]),
+      JSON.stringify({}),
       'ACTIVE',
       ADMIN_USER_ID,
     ]
