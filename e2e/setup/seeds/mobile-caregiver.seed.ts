@@ -13,9 +13,9 @@ import { Database } from '../../../packages/core/src/db/connection.js';
  * - Creates a scheduled `care_plan_tasks` row for the caregiver tasks page.
  */
 
-const ORG_ID = '00000000-0000-0000-0000-000000000001';
-const BRANCH_ID = '00000000-0000-0000-0000-000000000002';
-const ADMIN_USER_ID = '00000000-0000-0000-0000-000000000003';
+const ORG_ID = '00000000-e2e0-4000-8000-000000000001';
+const BRANCH_ID = '00000000-e2e0-4000-8000-000000000010';
+const ADMIN_USER_ID = '00000000-e2e0-4000-8000-000000000100';
 
 export const MOBILE_CAREGIVER_USER_ID = '00000000-ee50-4000-8000-00000000a001';
 export const MOBILE_CAREGIVER_ID = '00000000-ee50-4000-8000-0000000ca001';
