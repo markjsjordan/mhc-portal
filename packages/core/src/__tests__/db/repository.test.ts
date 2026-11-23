@@ -691,4 +691,51 @@ describe('Repository Pattern', () => {
       expect(mockDatabase.query).not.toHaveBeenCalled();
     });
   });
+
+  describe('PHI Leakage Prevention in Audit Revisions (wdvf3adf74)', () => {
+    it('redacts unencrypted PHI fields from audit_revisions changes and snapshot on create and update', async () => {
+      const entityId = '33333333-3333-4333-8333-333333333333';
+      const createdRow = {
+        id: entityId,
+        name: 'Record',
+        email: 'jane@example.com',
+        first_name: 'Jane',
+        last_name: 'Doe',
+        ssn: '123-45-6789',
+        medical_record_number: 'MRN-100',
+        date_of_birth: '1950-01-01',
+        primary_address: { line1: '123 Main St' },
+        primary_phone: '512-555-0100',
+        allergies: 'Penicillin',
+        notes: 'Private clinical notes',
+        status: 'ACTIVE',
+        created_at: new Date(),
+        created_by: mockUserContext.userId,
+        updated_at: new Date(),
+        updated_by: mockUserContext.userId,
+        version: 1,
+      };
+
+      mockDatabase.query
+        .mockResolvedValueOnce({ rows: [createdRow], rowCount: 1, command: 'INSERT' as const, oid: 0, fields: [] })
+        .mockResolvedValueOnce({ rows: [], rowCount: 1, command: 'INSERT' as const, oid: 0, fields: [] });
+
+      await repository.create(
+        { name: 'Record', email: 'jane@example.com', status: 'ACTIVE' as const },
+        mockUserContext
+      );
+
+      const auditCall = mockDatabase.query.mock.calls.find(
+        (call) => typeof call[0] === 'string' && call[0].includes('INSERT INTO audit_revisions')
+      );
+      expect(auditCall).toBeDefined();
+      const params = auditCall?.[1] as unknown[];
+      const snapshotJson = params[7] as string;
+      const snapshot = JSON.parse(snapshotJson) as Record<string, unknown>;
+
+      expect(snapshot.email).toBe('[REDACTED]');
+      expect(snapshot.status).toBe('ACTIVE');
+      expect(snapshotJson).not.toContain('jane@example.com');
+    });
+  });
 });

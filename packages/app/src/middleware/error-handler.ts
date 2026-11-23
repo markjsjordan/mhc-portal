@@ -10,16 +10,22 @@ export interface AppError extends Error {
   details?: unknown;
 }
 
+const SSN_PATTERN = /\b\d{3}-\d{2}-\d{4}\b/g;
+
+function scrubPhiText(text: string): string {
+  return text.replace(SSN_PATTERN, '[SSN-REDACTED]');
+}
+
 function sanitizeErrorItem(item: unknown): { field: string; message: string } | null {
   if (typeof item === 'string') {
-    return item.length > 0 ? { field: '', message: item } : null;
+    return item.length > 0 ? { field: '', message: scrubPhiText(item) } : null;
   }
   if (item === null || typeof item !== 'object') {
     return null;
   }
   const record = item as Record<string, unknown>;
   const field = typeof record['field'] === 'string' ? record['field'] : '';
-  const message = typeof record['message'] === 'string' ? record['message'] : '';
+  const message = typeof record['message'] === 'string' ? scrubPhiText(record['message']) : '';
   return field.length > 0 || message.length > 0 ? { field, message } : null;
 }
 
@@ -39,12 +45,11 @@ function sanitizeValidationErrors(details: unknown): Array<{ field: string; mess
 }
 
 function buildDetailsPayload(
-  isProduction: boolean,
+  _isProduction: boolean,
   statusCode: number,
   details: unknown
 ): { details?: unknown } {
   if (statusCode >= 500) return {};
-  if (!isProduction) return { details };
   const sanitizedErrors = sanitizeValidationErrors(details);
   return sanitizedErrors !== undefined ? { details: { errors: sanitizedErrors } } : {};
 }
@@ -66,12 +71,12 @@ function resolveClientMessage(
     if (isPgInvalidTextRepresentation) {
       return 'Invalid identifier format';
     }
-    return err.message.length > 0 ? err.message : 'Invalid request';
+    return err.message.length > 0 ? scrubPhiText(err.message) : 'Invalid request';
   }
   if (isProduction) {
     return 'An unexpected error occurred. Please try again later.';
   }
-  return err.message.length > 0 ? err.message : 'Internal server error';
+  return err.message.length > 0 ? scrubPhiText(err.message) : 'Internal server error';
 }
 
 export function errorHandler(
@@ -83,16 +88,17 @@ export function errorHandler(
   const isPgInvalidTextRepresentation = err.code === '22P02';
   const statusCode = isPgInvalidTextRepresentation ? 400 : (err.statusCode ?? 500);
   const isProduction = process.env['NODE_ENV'] === 'production';
+  const sanitizedDetails = sanitizeValidationErrors(err.details);
   
-  // Log full error details server-side for debugging (never sent to client)
+  // Log sanitized error details server-side for debugging (never sent to client, no raw PHI)
   console.error('Error occurred:', {
     timestamp: new Date().toISOString(),
     method: req.method,
     path: req.path,
     statusCode,
-    message: err.message,
-    stack: err.stack,
-    details: err.details,
+    message: scrubPhiText(err.message),
+    stack: err.stack !== undefined ? scrubPhiText(err.stack) : undefined,
+    details: sanitizedDetails,
     // Include request context for debugging
     userAgent: req.get('user-agent'),
     ip: req.ip,
@@ -109,8 +115,7 @@ export function errorHandler(
   res.status(statusCode).json({
     success: false,
     error: clientMessage,
-    // In development, include full details for 4xx. In production, include only
-    // sanitized { field, message } validation errors (never submitted values/PHI).
+    // Include only sanitized { field, message } validation errors (never submitted values/PHI).
     ...buildDetailsPayload(isProduction, statusCode, err.details),
   });
 }

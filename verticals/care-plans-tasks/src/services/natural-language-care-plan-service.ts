@@ -144,7 +144,7 @@ export class NaturalLanguageCarePlanService {
     try {
       parsedResult = JSON.parse(content.text);
     } catch (parseError) {
-      console.error('Failed to parse AI response:', content.text, parseError);
+      console.error('Failed to parse AI response:', parseError instanceof Error ? parseError.message : 'Invalid JSON');
       throw new Error('Failed to parse care plan generation results');
     }
 

@@ -42,12 +42,11 @@ export class EmailProvider implements NotificationProvider {
 
     // MVP: Console logging (SendGrid ready but not configured)
     if (!this.isConfigured()) {
-      console.log('[EMAIL NOTIFICATION] (SendGrid not configured - logging only)');
-      console.log(`  To: ${recipient.email}`);
-      console.log(`  Subject: ${payload.subject}`);
-      console.log(`  Message: ${payload.message}`);
-      console.log(`  Priority: ${payload.priority}`);
-      console.log(`  Event: ${payload.eventType}`);
+      console.log('[EMAIL NOTIFICATION] (SendGrid not configured - logging only)', {
+        recipientId: recipient.userId,
+        eventType: payload.eventType,
+        priority: payload.priority,
+      });
 
       return {
         success: true,
@@ -63,8 +62,8 @@ export class EmailProvider implements NotificationProvider {
       // Future: Implement SendGrid API call when needed
       // When ready, use @sendgrid/mail npm package
       console.log('[EMAIL] SendGrid configured but not fully implemented:', {
-        to: recipient.email,
-        subject: payload.subject,
+        recipientId: recipient.userId,
+        eventType: payload.eventType,
         priority: payload.priority,
       });
 

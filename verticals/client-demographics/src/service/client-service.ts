@@ -115,7 +115,7 @@ export class ClientService {
             geocodingFailed: false
           };
         } else {
-          console.warn(`Failed to geocode address for new client: ${input.primaryAddress.line1}`);
+          console.warn('Failed to geocode address for new client');
           geocodingData = {
             geocodingFailed: true
           };
@@ -333,7 +333,7 @@ export class ClientService {
           (updates as Partial<Client>).geocodedAt = new Date();
           (updates as Partial<Client>).geocodingFailed = false;
         } else {
-          console.warn(`Failed to geocode updated address for client ${id}: ${updates.primaryAddress.line1}`);
+          console.warn(`Failed to geocode updated address for client ${id}`);
           (updates as Partial<Client>).geocodingFailed = true;
         }
       } catch (error) {

@@ -892,7 +892,7 @@ export class CarePlanRepository extends Repository<CarePlan> {
       try {
         return JSON.parse(value as string);
       } catch {
-        console.warn('Failed to parse JSON field:', value);
+        console.warn('Failed to parse JSON field in care plan record');
         return defaultValue;
       }
     };

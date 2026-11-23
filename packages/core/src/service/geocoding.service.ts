@@ -82,7 +82,7 @@ export class GeocodingService {
         };
       }
 
-      console.warn('Geocoding failed for address:', address, 'status:', data.status);
+      console.warn('Geocoding failed (status:', data.status, ')');
       return null;
     } catch (error) {
       console.error('Geocoding error:', error);
@@ -133,7 +133,7 @@ export class GeocodingService {
         };
       }
 
-      console.warn('Geocoding failed for address:', address);
+      console.warn('Geocoding failed for provider:', this.provider);
       return null;
     } catch (error) {
       console.error('Geocoding error:', error);
@@ -187,7 +187,7 @@ export class GeocodingService {
         };
       }
 
-      console.warn('Geocoding failed for address:', address);
+      console.warn('Geocoding failed for provider:', this.provider);
       return null;
     } catch (error) {
       console.error('Geocoding error:', error);
@@ -213,10 +213,10 @@ export class GeocodingService {
    * Reverse geocode: get address from lat/lng
    * Useful for verifying GPS coordinates
    */
-  async reverseGeocode(lat: number, lng: number): Promise<Address | null> {
+  async reverseGeocode(_lat: number, _lng: number): Promise<Address | null> {
     // Implementation depends on provider
     // This is a placeholder for future implementation
-    console.log(`Reverse geocoding not yet implemented for ${this.provider}: ${lat}, ${lng}`);
+    console.log(`Reverse geocoding not yet implemented for ${this.provider}`);
     return null;
   }
 }

@@ -5,10 +5,16 @@ const isDevelopment = (process.env.NODE_ENV ?? '') === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
 
 const REDACTED_PATHS = [
-  '*.ssn', '*.dateOfBirth', '*.dob', '*.medicalRecordNumber', '*.medicaidId',
+  '*.ssn', '*.dateOfBirth', '*.dob', '*.medicalRecordNumber', '*.mrn', '*.medicaidId',
   '*.password', '*.passwordHash', '*.token', '*.accessToken', '*.refreshToken',
-  '*.firstName', '*.lastName', '*.primaryAddress', '*.payrollInfo',
+  '*.firstName', '*.lastName', '*.middleName', '*.preferredName', '*.fullName', '*.clientName',
+  '*.address', '*.primaryAddress', '*.secondaryAddresses',
+  '*.phone', '*.phoneNumber', '*.primaryPhone', '*.alternatePhone', '*.email',
+  '*.emergencyContacts', '*.authorizedContacts', '*.insurance', '*.payrollInfo',
+  '*.allergies', '*.medications', '*.diagnosis', '*.medicalDiagnosis',
   '*.subjectiveNotes', '*.objectiveNotes', '*.assessment', '*.plan', '*.narrativeNote',
+  '*.notes', '*.noteText', '*.noteHtml', '*.clientInstructions',
+  'req.body', '*.body',
   'req.headers.authorization', 'req.headers.cookie'
 ];
 

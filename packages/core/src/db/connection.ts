@@ -4,6 +4,23 @@
 
 import { Pool, PoolClient, QueryResult } from 'pg';
 
+const SQL_STRING_LITERAL_PATTERN = /'(?:''|[^'])*'/g;
+const SSN_LOG_PATTERN = /\b\d{3}-\d{2}-\d{4}\b/g;
+
+/**
+ * Redact single-quoted SQL string literals before logging.
+ */
+export function sanitizeSqlForLog(sql: string): string {
+  return sql.replace(SQL_STRING_LITERAL_PATTERN, "'?'");
+}
+
+/**
+ * Scrub PHI patterns (e.g. SSNs) from log/error messages.
+ */
+export function scrubPhiFromMessage(message: string): string {
+  return message.replace(SSN_LOG_PATTERN, '[SSN-REDACTED]');
+}
+
 export interface DatabaseConfig {
   host: string;
   port: number;
@@ -88,11 +105,26 @@ export class Database {
     const start = Date.now();
     try {
       const result = await this.pool.query<T>(text, params);
-      const duration = Date.now() - start;
-      console.log('Executed query', { text, duration, rows: result.rowCount });
+      if (process.env.LOG_QUERIES === 'true') {
+        const duration = Date.now() - start;
+        console.log('Executed query', {
+          text: sanitizeSqlForLog(text),
+          duration,
+          rows: result.rowCount,
+        });
+      }
       return result;
     } catch (error) {
-      console.error('Query error', { text, error });
+      const pgCode =
+        typeof error === 'object' && error !== null && 'code' in error
+          ? (error as { code?: string }).code
+          : undefined;
+      const rawMessage = error instanceof Error ? error.message : 'Unknown database error';
+      console.error('Query error', {
+        text: sanitizeSqlForLog(text),
+        code: pgCode,
+        message: scrubPhiFromMessage(rawMessage),
+      });
       throw error;
     }
   }

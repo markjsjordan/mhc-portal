@@ -233,8 +233,7 @@ export class CarePlanEffectivenessService {
       const textContent = content as { type: 'text'; text: string };
       analysisResult = JSON.parse(textContent.text);
     } catch (parseError) {
-      const textContent = content as { type: 'text'; text: string };
-      console.error('Failed to parse AI response:', textContent.text, parseError);
+      console.error('Failed to parse AI response:', parseError instanceof Error ? parseError.message : 'Invalid JSON');
       throw new Error('Failed to parse care plan effectiveness analysis');
     }
 

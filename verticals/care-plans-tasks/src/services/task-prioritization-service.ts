@@ -506,8 +506,7 @@ Order tasks by urgency (highest urgency first). Consider:
         criticalAlerts: parsed.criticalAlerts || [],
       };
     } catch (error) {
-      console.error('Failed to parse AI response:', error);
-      console.error('Response text:', responseText);
+      console.error('Failed to parse AI response:', error instanceof Error ? error.message : 'Invalid JSON');
 
       // Return tasks in original order with default prioritization on error
       return {
