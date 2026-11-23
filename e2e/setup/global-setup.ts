@@ -76,7 +76,7 @@ export default async function globalSetup() {
     try {
       // Delete all E2E test data: audit_events are IMMUTABLE so CASCADE won't work;
       // explicitly delete from dependent tables first, then users
-      await cleanDb.query(`DELETE FROM audit_events WHERE actor_id IN (
+      await cleanDb.query(`DELETE FROM audit_events WHERE user_id IN (
         '00000000-e2e0-4000-8000-000000000100',
         '00000000-e2e0-4000-8000-000000000101',
         '00000000-e2e0-4000-8000-000000000102',
