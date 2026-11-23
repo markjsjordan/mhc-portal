@@ -89,14 +89,19 @@ export async function seedE2EPersonas(db: Database): Promise<void> {
   ];
 
   for (const p of personaRows) {
+    // DELETE then INSERT to ensure correct UUID mapping (ON CONFLICT DO NOTHING
+    // silently skips if email already exists with wrong UUID, breaking foreign keys)
+    await db.query(
+      `DELETE FROM users WHERE email = $1 OR id = $2`,
+      [p.email, p.userId]
+    );
     await db.query(
       `INSERT INTO users (
         id, organization_id, username, email, password_hash,
         first_name, last_name, status, roles, permissions, branch_ids,
         created_at, created_by, updated_at, updated_by, version
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, 'ACTIVE', $8, $9, $10, NOW(), $1, NOW(), $1, 1)
-      ON CONFLICT DO NOTHING`,
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'ACTIVE', $8, $9, $10, NOW(), $1, NOW(), $1, 1)`,
       [
         p.userId,
         orgId,
