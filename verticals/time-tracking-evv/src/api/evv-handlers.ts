@@ -92,9 +92,6 @@ export class EVVHandlers {
    *         description: Unauthorized
    *       500:
    *         description: Server error
-   *
-   * POST /api/evv/clock-in
-   * Clock in to start a visit
    */
   async clockIn(req: APIRequest<ClockInInput>): Promise<APIResponse> {
     try {
@@ -183,9 +180,6 @@ export class EVVHandlers {
    *         description: Unauthorized
    *       500:
    *         description: Server error
-   *
-   * POST /api/evv/clock-out
-   * Clock out to end a visit
    */
   async clockOut(req: APIRequest<ClockOutInput>): Promise<APIResponse> {
     try {

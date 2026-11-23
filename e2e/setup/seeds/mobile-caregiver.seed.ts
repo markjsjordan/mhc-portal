@@ -13,9 +13,9 @@ import { Database } from '../../../packages/core/src/db/connection.js';
  * - Creates a scheduled `care_plan_tasks` row for the caregiver tasks page.
  */
 
-const ORG_ID = '00000000-0000-0000-0000-000000000001';
-const BRANCH_ID = '00000000-0000-0000-0000-000000000002';
-const ADMIN_USER_ID = '00000000-0000-0000-0000-000000000003';
+const ORG_ID = '00000000-e2e0-4000-8000-000000000001';
+const BRANCH_ID = '00000000-e2e0-4000-8000-000000000010';
+const ADMIN_USER_ID = '00000000-e2e0-4000-8000-000000000100';
 
 export const MOBILE_CAREGIVER_USER_ID = '00000000-ee50-4000-8000-00000000a001';
 export const MOBILE_CAREGIVER_ID = '00000000-ee50-4000-8000-0000000ca001';
@@ -39,10 +39,11 @@ export async function seedDatabase(db: Database): Promise<void> {
 
   await db.query(
     `INSERT INTO users (
-      id, organization_id, email, password_hash, first_name, last_name,
-      role, status, email_verified, created_at, updated_at
+      id, organization_id, username, email, password_hash, first_name, last_name,
+      roles, status, email_verified, created_at, created_by, updated_at, updated_by, version
     ) VALUES (
-      $1, $2, $3, $4, $5, $6, 'CAREGIVER', 'ACTIVE', true, NOW(), NOW()
+      $1, $2, $3, $4, $5, $6, $7, ARRAY['CAREGIVER']::VARCHAR(50)[], 'ACTIVE', true,
+      NOW(), $1, NOW(), $1, 1
     )
     ON CONFLICT (id) DO UPDATE SET
       email = EXCLUDED.email,
@@ -50,6 +51,7 @@ export async function seedDatabase(db: Database): Promise<void> {
     [
       MOBILE_CAREGIVER_USER_ID,
       ORG_ID,
+      'caregiver.mobile',
       'caregiver.mobile@e2e-test.com',
       passwordHash,
       'Mobile',

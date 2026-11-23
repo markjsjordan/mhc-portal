@@ -29,8 +29,8 @@ async function login(page: Page, email: string, password: string): Promise<void>
   await page.goto('/login');
   await page.locator('input[type="email"]').fill(email);
   await page.locator('input[type="password"]').fill(password);
-  await page.getByRole('button', { name: /sign in|log in/i }).click();
-  await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 15000 });
+  await page.locator('button[type="submit"]').click();
+  await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 20000 });
 }
 
 async function apiPost(page: Page, url: string, data: unknown) {

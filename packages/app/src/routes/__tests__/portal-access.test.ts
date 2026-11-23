@@ -31,6 +31,7 @@ vi.mock('@folkcare/core', async () => {
   const actual = await vi.importActual('@folkcare/core');
   return {
     ...actual,
+    ADMIN_ROLES: (actual as any).ADMIN_ROLES ?? ['ADMIN', 'ORG_ADMIN'],
     createEmailService: vi.fn(() => ({
       sendInvitation: mockSendInvitation,
     })),

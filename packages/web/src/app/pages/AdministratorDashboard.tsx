@@ -33,7 +33,7 @@ import {
   useOperationalKPIs,
   useComplianceAlerts,
 } from '@/verticals/analytics-reporting/hooks/useAnalytics';
-import { LoginAsModal } from './admin/components/index.js';
+import { LoginAsModal, ForceUpdateLinkCard } from './admin/components/index.js';
 
 interface StatCardProps {
   label: string;
@@ -451,6 +451,9 @@ export const AdministratorDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* PWA Force Update Link */}
+      <ForceUpdateLinkCard />
 
       {/* Recent Activity */}
       <Card>

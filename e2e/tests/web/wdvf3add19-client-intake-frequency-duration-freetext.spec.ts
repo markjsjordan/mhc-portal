@@ -22,6 +22,8 @@ test.describe('Client Intake Visit Frequency & Duration Free-Text (wdvf3add19)',
     await page.fill('#address-line1', '123 Main Street');
     await page.fill('#address-city', 'Austin');
     await page.click('#address-state');
+    // Wait for shadcn Select dropdown portal to open before clicking option
+    await page.locator('[role="listbox"]').waitFor({ state: 'visible', timeout: 5000 });
     await page.getByRole('option', { name: /Texas|TX/i }).first().click();
     await page.fill('#address-postal', '78701');
 
