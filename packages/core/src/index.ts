@@ -17,6 +17,7 @@ export * from './db/query-logger';
 export * from './db/scoped-queries';
 export * from './db/scoped-database';
 export * from './permissions/permission-service';
+export * from './permissions/data-projections';
 export * from './permissions/section-access';
 export * from './permissions/section-access-service';
 export * from './audit/audit-service';

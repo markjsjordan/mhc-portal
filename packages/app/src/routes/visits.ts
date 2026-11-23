@@ -5,7 +5,17 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { Database, isValidUUID, ComplianceAutopilotService, AuditService, UserContext, AuthMiddleware, UUID } from '@folkcare/core';
+import {
+  Database,
+  isValidUUID,
+  ComplianceAutopilotService,
+  AuditService,
+  UserContext,
+  AuthMiddleware,
+  UUID,
+  PermissionService,
+  projectVisitForRole,
+} from '@folkcare/core';
 import {
   ScheduleRepository,
   StaffingDemandPredictionService,
@@ -29,11 +39,67 @@ const SCHEDULING_ROLES = [
   'SUPER_ADMIN',
   'ORG_ADMIN',
   'BRANCH_ADMIN',
+  'ADMIN',
   'COORDINATOR',
   'SCHEDULER',
   'SUPERVISOR',
   'ADMINISTRATOR',
 ];
+
+function checkVisitReadScope(
+  visit: { clientId: string; assignedCaregiverId?: string | null },
+  context: UserContext
+): { status: number; error: string; code?: string } | null {
+  const permService = new PermissionService();
+  if (!permService.check(context, 'visits', 'read')) {
+    return {
+      status: 403,
+      error: 'Access denied: visits:read permission required',
+      code: 'PERMISSION_DENIED',
+    };
+  }
+
+  const isElevated = context.roles.some((r) => SCHEDULING_ROLES.includes(r));
+  if (
+    !isElevated &&
+    (context.roles.includes('FAMILY') || context.roles.includes('FAMILY_MEMBER'))
+  ) {
+    const familyClientIds = context.familyClientIds ?? [];
+    if (!familyClientIds.includes(visit.clientId)) {
+      return {
+        status: 403,
+        error: 'Access denied: You can only view visits for your own linked clients',
+        code: 'FAMILY_SCOPE_VIOLATION',
+      };
+    }
+  }
+
+  if (!isElevated && context.roles.includes('CAREGIVER')) {
+    if (
+      context.caregiverId !== undefined &&
+      context.caregiverId !== '' &&
+      visit.assignedCaregiverId !== context.caregiverId
+    ) {
+      return {
+        status: 403,
+        error: 'Access denied: Caregivers can only view their own assigned visits',
+        code: 'CAREGIVER_SCOPE_VIOLATION',
+      };
+    }
+  }
+
+  if (context.roles.includes('CLIENT') && context.roles.every((r) => r === 'CLIENT')) {
+    if (
+      context.directClientId === undefined ||
+      context.directClientId === '' ||
+      context.directClientId !== visit.clientId
+    ) {
+      return { status: 404, error: 'Visit not found' };
+    }
+  }
+
+  return null;
+}
 
 export function hasSchedulingAccess(context: UserContext, action: 'read' | 'update'): boolean {
   const hasRole = context.roles.some((role) => SCHEDULING_ROLES.includes(role));
@@ -1532,24 +1598,24 @@ export function createVisitRouter(db: Database): Router {
         return;
       }
 
-      // CLIENT self-scoping: may only view their own visits
-      if (context.roles.includes('CLIENT') && context.roles.every((r) => r === 'CLIENT')) {
-        if (
-          context.directClientId === undefined ||
-          context.directClientId === '' ||
-          context.directClientId !== visit.clientId
-        ) {
-          res.status(404).json({
-            success: false,
-            error: 'Visit not found',
-          });
-          return;
-        }
+      const scopeError = checkVisitReadScope(visit, context);
+      if (scopeError !== null) {
+        res.status(scopeError.status).json({
+          success: false,
+          error: scopeError.error,
+          ...(scopeError.code !== undefined ? { code: scopeError.code } : {}),
+        });
+        return;
       }
+
+      const projectedVisit = projectVisitForRole(
+        visit as unknown as Record<string, unknown>,
+        context
+      );
 
       res.json({
         success: true,
-        data: visit,
+        data: projectedVisit,
       });
     } catch (error) {
       next(error);
