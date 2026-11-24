@@ -68,6 +68,7 @@ import { validationRouter } from './validation';
 import { createClientVisitHistoryRouter } from './client-visit-history.js';
 import { createAuditEventsRouter } from './audit-events.js';
 import { createAuditLogsRouter } from './audit-logs.js';
+import { createAssignmentsRouter } from './assignments.js';
 import { createPhiAccessAuditMiddleware } from '../middleware/phi-access-audit.js';
 import { createScheduleBackupRouter } from './schedule-backup.js';
 
@@ -579,6 +580,11 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
   const scheduleBackupRouter = createScheduleBackupRouter(db);
   app.use('/api/schedule', generalApiLimiter, scheduleBackupRouter);
   console.log('  ✓ Schedule Backup routes registered (with rate limiting)');
+
+  // Caregiver Assignment & Routing routes (E2 / wdvf3adf61)
+  const assignmentsRouter = createAssignmentsRouter(db);
+  app.use('/api/assignments', generalApiLimiter, assignmentsRouter);
+  console.log('  ✓ Caregiver Assignments routes registered (with rate limiting)');
 
   console.log('API routes setup complete\n');
 }
