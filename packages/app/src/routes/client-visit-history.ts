@@ -7,7 +7,15 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { Database, AuthMiddleware, UserContext, AuditService, PermissionService, isValidUUID } from '@folkcare/core';
+import {
+  Database,
+  AuthMiddleware,
+  UserContext,
+  AuditService,
+  PermissionService,
+  isValidUUID,
+  projectVisitsForRole,
+} from '@folkcare/core';
 import { ScheduleRepository } from '@folkcare/scheduling-visits';
 
 /**
@@ -100,8 +108,8 @@ export function createClientVisitHistoryRouter(db: Database): Router {
           return;
         }
 
-        // FAMILY scoping: can only access their own linked clients
-        if (context.roles.includes('FAMILY')) {
+        // FAMILY / FAMILY_MEMBER scoping: can only access their own linked clients
+        if (context.roles.includes('FAMILY') || context.roles.includes('FAMILY_MEMBER')) {
           const familyClientIds = context.familyClientIds ?? [];
           if (!familyClientIds.includes(clientId)) {
             res.status(403).json({
@@ -180,9 +188,17 @@ export function createClientVisitHistoryRouter(db: Database): Router {
           ipAddress: req.ip,
         });
 
+        const projectedItems = projectVisitsForRole(
+          result.items as unknown as Record<string, unknown>[],
+          context
+        );
+
         res.json({
           success: true,
-          data: result,
+          data: {
+            ...result,
+            items: projectedItems,
+          },
         });
       } catch (error) {
         next(error);

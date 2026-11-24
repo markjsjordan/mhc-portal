@@ -1,5 +1,6 @@
 import type { Knex } from 'knex';
 import dotenv from 'dotenv';
+import { resolvePostgresSsl } from './src/db/ssl-config.js';
 
 dotenv.config({ path: '.env', quiet: true });
 
@@ -21,8 +22,34 @@ function getConnectionConfig(): string {
   const user = process.env.DB_USER ?? 'postgres';
   const password = process.env.DB_PASSWORD ?? 'postgres';
   const ssl = process.env.DB_SSL === 'true';
-  
+
   return `postgresql://${user}:${password}@${host}:${port}/${database}${ssl ? '?sslmode=require' : ''}`;
+}
+
+/**
+ * Connection config for non-dev/test environments (staging, preview, production).
+ * Requires certificate-verified TLS 1.2+ whenever a DATABASE_URL sslmode of
+ * require/verify-ca/verify-full is set, or NODE_ENV is production/staging/preview.
+ * Delegates to the shared `resolvePostgresSsl` helper so there is exactly one
+ * place in the codebase that can disable TLS certificate verification (none).
+ */
+function getNonDevConnectionConfig(): Knex.StaticConnectionConfig {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (databaseUrl !== undefined && databaseUrl !== '') {
+    return {
+      connectionString: databaseUrl,
+      ssl: resolvePostgresSsl({ connectionString: databaseUrl }),
+    };
+  }
+
+  return {
+    host: process.env.DB_HOST ?? 'localhost',
+    port: parseInt(process.env.DB_PORT ?? '5432'),
+    database: process.env.DB_NAME ?? 'folkcare',
+    user: process.env.DB_USER ?? 'postgres',
+    password: process.env.DB_PASSWORD ?? 'postgres',
+    ssl: resolvePostgresSsl(),
+  };
 }
 
 const config: { [key: string]: Knex.Config } = {
@@ -54,7 +81,33 @@ const config: { [key: string]: Knex.Config } = {
 
   staging: {
     client: 'postgresql',
-    connection: getConnectionConfig(),
+    connection: getNonDevConnectionConfig(),
+    migrations: {
+      directory: './packages/core/migrations',
+      tableName: 'knex_migrations',
+      extension: 'ts',
+      loadExtensions: ['.ts'],
+    },
+    seeds: {
+      directory: './seeds',
+    },
+    pool: {
+      // Optimized for Neon serverless with connection pooling
+      min: 0, // No minimum connections in serverless
+      max: 1, // Single connection per serverless function
+      acquireTimeoutMillis: 10000,
+      createTimeoutMillis: 10000,
+      destroyTimeoutMillis: 5000,
+      idleTimeoutMillis: 1000, // Quick cleanup in serverless
+      reapIntervalMillis: 1000,
+      createRetryIntervalMillis: 200,
+      propagateCreateError: false,
+    },
+  },
+
+  preview: {
+    client: 'postgresql',
+    connection: getNonDevConnectionConfig(),
     migrations: {
       directory: './packages/core/migrations',
       tableName: 'knex_migrations',
@@ -80,7 +133,7 @@ const config: { [key: string]: Knex.Config } = {
 
   production: {
     client: 'postgresql',
-    connection: getConnectionConfig(),
+    connection: getNonDevConnectionConfig(),
     migrations: {
       directory: './packages/core/migrations',
       tableName: 'knex_migrations',
@@ -112,16 +165,7 @@ const config: { [key: string]: Knex.Config } = {
       database: (process.env.DB_NAME ?? 'folkcare') + '_test',
       user: process.env.DB_USER ?? 'postgres',
       password: process.env.DB_PASSWORD ?? 'postgres',
-      ssl: process.env.DB_SSL === 'true'
-        ? {
-            rejectUnauthorized: true,
-            minVersion: 'TLSv1.2',
-            ...((process.env.DB_CA_CERT ?? process.env.REDIS_CA_CERT) !== undefined &&
-            (process.env.DB_CA_CERT ?? process.env.REDIS_CA_CERT) !== ''
-              ? { ca: process.env.DB_CA_CERT ?? process.env.REDIS_CA_CERT }
-              : {}),
-          }
-        : false,
+      ssl: resolvePostgresSsl({ nodeEnv: 'test' }),
     },
     migrations: {
       directory: './packages/core/migrations',
