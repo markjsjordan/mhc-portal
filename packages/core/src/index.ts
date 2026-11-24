@@ -22,6 +22,8 @@ export * from './permissions/data-projections';
 export * from './permissions/section-access';
 export * from './permissions/section-access-service';
 export * from './audit/audit-service';
+export * from './audit/audit-retention.js';
+export * from './audit/audit-log-service.js';
 export * from './repository/user-repository';
 export * from './repository/organization-repository';
 export * from './repository/branding-repository';
