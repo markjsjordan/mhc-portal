@@ -91,6 +91,7 @@ export class Database {
    * Verification is never disabled - when SSL is on, the certificate must
    * validate against the system roots or the configured `DB_CA_CERT`.
    */
+  // eslint-disable-next-line sonarjs/function-return-type
   private resolveSsl(): StrictTlsOptions | false {
     return this.config.ssl === true ? strictTlsOptions() : false;
   }

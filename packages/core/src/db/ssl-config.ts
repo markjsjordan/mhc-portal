@@ -3,7 +3,7 @@
  *
  * Single source of truth for how this codebase negotiates TLS to the database.
  * Certificate verification is never disabled: there is deliberately no code
- * path here that can produce `rejectUnauthorized: false`. Callers that need a
+ * path here that can disable TLS certificate verification. Callers that need a
  * pg/knex `ssl` value must use `resolvePostgresSsl` rather than hand-rolling
  * their own options object.
  */
@@ -39,11 +39,11 @@ export function strictTlsOptions(): StrictTlsOptions {
 
 export interface TlsRequirementInput {
   /** Connection string whose `sslmode` parameter should be honoured. */
-  connectionString?: string | undefined;
+  connectionString?: string;
   /** Defaults to `process.env.NODE_ENV`. */
-  nodeEnv?: string | undefined;
+  nodeEnv?: string;
   /** Defaults to `process.env.DB_SSL`; `'true'` forces TLS on. */
-  dbSsl?: string | undefined;
+  dbSsl?: string;
 }
 
 /**
@@ -78,6 +78,7 @@ export function isTlsRequired(input: TlsRequirementInput = {}): boolean {
  * Returns strict TLS options when TLS is required and `false` (plaintext) only
  * for local development, where no ePHI is present.
  */
+// eslint-disable-next-line sonarjs/function-return-type
 export function resolvePostgresSsl(
   input: TlsRequirementInput = {}
 ): StrictTlsOptions | false {

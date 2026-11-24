@@ -31,7 +31,7 @@ function getConnectionConfig(): string {
  * Requires certificate-verified TLS 1.2+ whenever a DATABASE_URL sslmode of
  * require/verify-ca/verify-full is set, or NODE_ENV is production/staging/preview.
  * Delegates to the shared `resolvePostgresSsl` helper so there is exactly one
- * place in the codebase that can produce `rejectUnauthorized: false` (none).
+ * place in the codebase that can disable TLS certificate verification (none).
  */
 function getNonDevConnectionConfig(): Knex.StaticConnectionConfig {
   const databaseUrl = process.env.DATABASE_URL;
