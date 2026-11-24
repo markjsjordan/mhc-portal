@@ -226,44 +226,24 @@ export function getVisitTypeDisplay(type: VisitType): {
 } {
   const typeMap: Record<VisitType, ReturnType<typeof getVisitTypeDisplay>> = {
     REGULAR: {
-      label: 'Regular Visit',
-      description: 'Standard scheduled visit',
+      label: 'Home Care Visit',
+      description: 'Standard recurring ADL assistance, medication reminders',
     },
     INITIAL: {
-      label: 'Initial Visit',
-      description: 'First visit for new client',
-    },
-    DISCHARGE: {
-      label: 'Discharge Visit',
-      description: 'Final visit before discharge',
-    },
-    RESPITE: {
-      label: 'Respite Care',
-      description: 'Temporary respite care',
-    },
-    EMERGENCY: {
-      label: 'Emergency Visit',
-      description: 'Unscheduled emergency visit',
-    },
-    MAKEUP: {
-      label: 'Makeup Visit',
-      description: 'Makeup for missed visit',
+      label: 'Med Check',
+      description: 'Medical check & comprehensive assessment with new client',
     },
     SUPERVISION: {
-      label: 'Supervision',
-      description: 'Supervisor visit',
+      label: 'Nurse Visit',
+      description: 'RN supervision, wound care, complex medical needs',
     },
     ASSESSMENT: {
-      label: 'Assessment',
-      description: 'Client assessment or evaluation',
+      label: 'Care Management',
+      description: 'Periodic care management and re-assessment',
     },
     CONCIERGE: {
-      label: 'Concierge Service',
-      description: 'Premium personal services',
-    },
-    ONGOING_SUPPORT: {
-      label: 'Ongoing Support',
-      description: 'Continued monitoring and support',
+      label: 'Concierge Visit',
+      description: 'Premium companion care, errands, social engagement',
     },
   };
   

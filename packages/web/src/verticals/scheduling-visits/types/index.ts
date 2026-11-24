@@ -87,14 +87,9 @@ export interface VisitAddress {
 export type VisitType =
   | 'REGULAR'
   | 'INITIAL'
-  | 'DISCHARGE'
-  | 'RESPITE'
-  | 'EMERGENCY'
-  | 'MAKEUP'
   | 'SUPERVISION'
   | 'ASSESSMENT'
-  | 'CONCIERGE'
-  | 'ONGOING_SUPPORT';
+  | 'CONCIERGE';
 
 export type VisitStatus =
   | 'DRAFT'
@@ -154,16 +149,11 @@ export const VISIT_STATUS_LABELS: Record<VisitStatus, string> = {
 };
 
 export const VISIT_TYPE_LABELS: Record<VisitType, string> = {
-  REGULAR: 'Regular',
-  INITIAL: 'Initial',
-  DISCHARGE: 'Discharge',
-  RESPITE: 'Respite',
-  EMERGENCY: 'Emergency',
-  MAKEUP: 'Makeup',
-  SUPERVISION: 'Supervision',
-  ASSESSMENT: 'Assessment',
-  CONCIERGE: 'Concierge',
-  ONGOING_SUPPORT: 'Ongoing Support',
+  REGULAR: 'Home Care Visit',
+  INITIAL: 'Med Check',
+  SUPERVISION: 'Nurse Visit',
+  ASSESSMENT: 'Care Management',
+  CONCIERGE: 'Concierge Visit',
 };
 
 export const VISIT_STATUS_COLORS: Record<VisitStatus, string> = {

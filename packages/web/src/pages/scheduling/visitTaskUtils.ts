@@ -107,19 +107,12 @@ export function deriveVisitTasks(
       { title: 'Environmental home safety & fall risk hazard inspection', category: 'Safety', required: true },
       { title: 'Establish baseline vital signs and care plan orientation', category: 'Clinical', required: true },
     ];
-  } else if (vType === 'RESPITE' || serviceName.includes('respite') || serviceName.includes('companion')) {
+  } else if (vType === 'CONCIERGE' || serviceName.includes('concierge') || serviceName.includes('companion')) {
     baseTasks = [
       { title: 'Companionship & cognitive stimulation engagement', category: 'Companionship', required: true },
       { title: 'Nutritious meal preparation & hydration encouragement', category: 'Nutrition', required: true },
       { title: 'Assist with light housekeeping & clear pathways', category: 'Environment', required: false },
       { title: 'Ambulatory accompaniment & safety precaution monitoring', category: 'Mobility', required: true },
-    ];
-  } else if (vType === 'DISCHARGE') {
-    baseTasks = [
-      { title: 'Final client clinical status & vital signs evaluation', category: 'Clinical', required: true },
-      { title: 'Review discharge orders and caregiver handoff instructions', category: 'Care Coordination', required: true },
-      { title: 'Reconcile discharge medications & DME equipment transfer', category: 'Medication', required: true },
-      { title: 'Complete formal discharge summary documentation', category: 'Administration', required: true },
     ];
   } else {
     // Personal care / default

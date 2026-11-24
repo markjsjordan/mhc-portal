@@ -959,8 +959,8 @@ describe('Visit Routes', () => {
           scheduledEndTime: '21:10',
           duration: 180,
           caregiverId: validCaregiverId,
-          visitType: 'RESPITE',
-          notes: 'Respite care visit - Margaret Thompson',
+          visitType: 'CONCIERGE',
+          notes: 'Concierge visit - Margaret Thompson',
         },
         user: {
           userId: 'user-coordinator-1',
@@ -1013,13 +1013,13 @@ describe('Visit Routes', () => {
             assignment_method: 'MANUAL',
             service_type_id: 'svc-respite',
             service_type_name: 'Respite Care',
-            visit_type: 'RESPITE',
+            visit_type: 'CONCIERGE',
             scheduled_date: '2026-10-25',
             scheduled_start_time: '18:10',
             scheduled_end_time: '21:10',
             scheduled_duration: 180,
             status: 'ASSIGNED',
-            internal_notes: 'Respite care visit - Margaret Thompson',
+            internal_notes: 'Concierge visit - Margaret Thompson',
           }],
         } as any)
         // Mock audit event insert
@@ -1041,7 +1041,7 @@ describe('Visit Routes', () => {
           success: true,
           data: expect.objectContaining({
             id: validVisitId,
-            visit_type: 'RESPITE',
+            visit_type: 'CONCIERGE',
             scheduled_duration: 180,
             status: 'ASSIGNED',
           }),
@@ -1103,7 +1103,7 @@ describe('Visit Routes', () => {
         .filter((column): column is string => column !== undefined && column !== '');
       expect(writtenColumns).toContain('internal_notes');
       expect(writtenColumns).not.toContain('notes');
-      expect(params).toContain('Respite care visit - Margaret Thompson');
+      expect(params).toContain('Concierge visit - Margaret Thompson');
       expect(nextMock).not.toHaveBeenCalled();
     });
 

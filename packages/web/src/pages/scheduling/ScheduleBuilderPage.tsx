@@ -2106,16 +2106,11 @@ function CreateAppointmentModal({
               <SelectValue placeholder="Select visit type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="REGULAR">Regular Visit</SelectItem>
-              <SelectItem value="INITIAL">Initial Visit</SelectItem>
-              <SelectItem value="ASSESSMENT">Assessment Visit</SelectItem>
-              <SelectItem value="RESPITE">Respite Care</SelectItem>
-              <SelectItem value="SUPERVISION">Supervisory Nurse Visit</SelectItem>
-              <SelectItem value="EMERGENCY">Emergency Response</SelectItem>
-              <SelectItem value="DISCHARGE">Discharge Visit</SelectItem>
-              <SelectItem value="MAKEUP">Make-up Visit</SelectItem>
+              <SelectItem value="REGULAR">Home Care Visit</SelectItem>
+              <SelectItem value="INITIAL">Med Check</SelectItem>
+              <SelectItem value="SUPERVISION">Nurse Visit</SelectItem>
+              <SelectItem value="ASSESSMENT">Care Management</SelectItem>
               <SelectItem value="CONCIERGE">Concierge Visit</SelectItem>
-              <SelectItem value="ONGOING_SUPPORT">Ongoing Support</SelectItem>
             </SelectContent>
           </Select>
         </div>

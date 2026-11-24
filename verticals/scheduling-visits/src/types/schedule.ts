@@ -255,16 +255,11 @@ export interface Visit extends Entity, SoftDeletable {
 }
 
 export type VisitType =
-  | 'REGULAR' // Standard scheduled visit
-  | 'INITIAL' // First visit for new client
-  | 'DISCHARGE' // Final visit
-  | 'RESPITE' // Respite care
-  | 'EMERGENCY' // Unscheduled emergency visit
-  | 'MAKEUP' // Makeup for missed visit
-  | 'SUPERVISION' // Supervisor visit
-  | 'ASSESSMENT' // Assessment or evaluation
-  | 'CONCIERGE' // Concierge service
-  | 'ONGOING_SUPPORT'; // Ongoing support
+  | 'REGULAR' // Home Care Visit
+  | 'INITIAL' // Med Check
+  | 'SUPERVISION' // Nurse Visit
+  | 'ASSESSMENT' // Care Management
+  | 'CONCIERGE'; // Concierge Visit
 
 export type AssignmentMethod =
   | 'MANUAL' // Manually assigned by scheduler

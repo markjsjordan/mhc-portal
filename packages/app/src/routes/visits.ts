@@ -151,7 +151,7 @@ function validateVisitFormats(input: {
   if (!timeRegex.test(input.scheduledStartTime) || !timeRegex.test(input.scheduledEndTime)) {
     return 'scheduledStartTime and scheduledEndTime must be in HH:MM format (24-hour)';
   }
-  const ALLOWED_VISIT_TYPES = ['REGULAR', 'INITIAL', 'DISCHARGE', 'RESPITE', 'EMERGENCY', 'MAKEUP', 'SUPERVISION', 'ASSESSMENT', 'CONCIERGE', 'ONGOING_SUPPORT'];
+  const ALLOWED_VISIT_TYPES = ['REGULAR', 'INITIAL', 'SUPERVISION', 'ASSESSMENT', 'CONCIERGE'];
   if (input.visitType && !ALLOWED_VISIT_TYPES.includes(input.visitType)) {
     return `Invalid visitType. Must be one of: ${ALLOWED_VISIT_TYPES.join(', ')}`;
   }
@@ -1758,7 +1758,7 @@ export function createVisitRouter(db: Database): Router {
    * - scheduledEndTime: string (HH:MM or HH:MM:SS)
    * - duration / scheduledDuration: number (minutes, 15..1440)
    * - caregiverId / assignedCaregiverId: UUID or null
-   * - visitType: string (REGULAR, INITIAL, DISCHARGE, RESPITE, EMERGENCY, MAKEUP, SUPERVISION, ASSESSMENT, etc.)
+   * - visitType: string (REGULAR, INITIAL, SUPERVISION, ASSESSMENT, CONCIERGE)
    * - serviceTypeId: string
    * - serviceTypeName: string
    * - notes / internalNotes: string
@@ -1939,14 +1939,9 @@ export function createVisitRouter(db: Database): Router {
       const ALLOWED_VISIT_TYPES = [
         'REGULAR',
         'INITIAL',
-        'DISCHARGE',
-        'RESPITE',
-        'EMERGENCY',
-        'MAKEUP',
         'SUPERVISION',
         'ASSESSMENT',
         'CONCIERGE',
-        'ONGOING_SUPPORT',
       ];
       const newVisitType = visitType !== undefined ? visitType : existingVisit.visit_type;
       if (visitType !== undefined && !ALLOWED_VISIT_TYPES.includes(visitType)) {

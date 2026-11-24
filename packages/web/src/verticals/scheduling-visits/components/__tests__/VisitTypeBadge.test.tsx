@@ -6,21 +6,16 @@ import type { VisitType } from '../../types';
 describe('VisitTypeBadge', () => {
   test('renders with correct label', () => {
     render(<VisitTypeBadge type="INITIAL" />);
-    expect(screen.getByText('Initial Visit')).toBeInTheDocument();
+    expect(screen.getByText('Med Check')).toBeInTheDocument();
   });
 
-  test('displays all visit types correctly', () => {
+  test('displays all 5 visit types correctly', () => {
     const visitTypes: VisitType[] = [
       'REGULAR',
       'INITIAL',
-      'ASSESSMENT',
-      'RESPITE',
       'SUPERVISION',
-      'EMERGENCY',
-      'DISCHARGE',
-      'MAKEUP',
+      'ASSESSMENT',
       'CONCIERGE',
-      'ONGOING_SUPPORT',
     ];
 
     visitTypes.forEach(type => {
@@ -33,12 +28,12 @@ describe('VisitTypeBadge', () => {
 
   test('hides label when showLabel false', () => {
     render(<VisitTypeBadge type="INITIAL" showLabel={false} />);
-    expect(screen.queryByText('Initial Visit')).not.toBeInTheDocument();
+    expect(screen.queryByText('Med Check')).not.toBeInTheDocument();
   });
 
   test('shows label when showLabel true', () => {
     render(<VisitTypeBadge type="INITIAL" showLabel={true} />);
-    expect(screen.getByText('Initial Visit')).toBeInTheDocument();
+    expect(screen.getByText('Med Check')).toBeInTheDocument();
   });
 
   test('applies correct size classes', () => {
@@ -71,8 +66,8 @@ describe('VisitTypeBadge', () => {
     const { container: initialContainer } = render(<VisitTypeBadge type="INITIAL" />);
     expect(initialContainer.firstChild).toHaveClass('bg-emerald-100', 'text-emerald-800');
 
-    const { container: emergencyContainer } = render(<VisitTypeBadge type="EMERGENCY" />);
-    expect(emergencyContainer.firstChild).toHaveClass('bg-red-100', 'text-red-800');
+    const { container: conciergeContainer } = render(<VisitTypeBadge type="CONCIERGE" />);
+    expect(conciergeContainer.firstChild).toHaveClass('bg-pink-100', 'text-pink-800');
   });
 
   test('accepts custom className', () => {
@@ -85,7 +80,7 @@ describe('VisitTypeBadge', () => {
   test('has description in title attribute', () => {
     const { container } = render(<VisitTypeBadge type="INITIAL" />);
     const badge = container.firstChild as HTMLElement;
-    expect(badge.getAttribute('title')).toContain('First visit with new client');
+    expect(badge.getAttribute('title')).toContain('Medical check & comprehensive assessment');
   });
 
   test('renders as inline-flex', () => {
@@ -102,7 +97,7 @@ describe('VisitTypeBadge', () => {
     const { container } = render(<VisitTypeBadge type="INITIAL" />);
     const svgs = container.querySelectorAll('svg');
     expect(svgs.length).toBeGreaterThan(0);
-    expect(screen.getByText('Initial Visit')).toBeInTheDocument();
+    expect(screen.getByText('Med Check')).toBeInTheDocument();
   });
 
   test('md size is default', () => {
@@ -114,23 +109,18 @@ describe('VisitTypeBadge', () => {
     expect(mdContainer.firstChild).toHaveClass('text-sm');
   });
 
-  test('supports all visit types with correct styling', () => {
+  test('supports all 5 visit types with correct styling', () => {
     const typeColorMap: Record<VisitType, { bgClass: string; textClass: string }> = {
       REGULAR: { bgClass: 'bg-green-100', textClass: 'text-green-800' },
       INITIAL: { bgClass: 'bg-emerald-100', textClass: 'text-emerald-800' },
-      ASSESSMENT: { bgClass: 'bg-teal-100', textClass: 'text-teal-800' },
-      RESPITE: { bgClass: 'bg-rose-100', textClass: 'text-rose-800' },
       SUPERVISION: { bgClass: 'bg-indigo-100', textClass: 'text-indigo-800' },
-      EMERGENCY: { bgClass: 'bg-red-100', textClass: 'text-red-800' },
-      DISCHARGE: { bgClass: 'bg-purple-100', textClass: 'text-purple-800' },
-      MAKEUP: { bgClass: 'bg-amber-100', textClass: 'text-amber-800' },
+      ASSESSMENT: { bgClass: 'bg-teal-100', textClass: 'text-teal-800' },
       CONCIERGE: { bgClass: 'bg-pink-100', textClass: 'text-pink-800' },
-      ONGOING_SUPPORT: { bgClass: 'bg-cyan-100', textClass: 'text-cyan-800' },
     };
 
-    Object.entries(typeColorMap).forEach(([type, colors]) => {
+    Object.entries(typeColorMap).forEach(([type, classes]) => {
       const { container, unmount } = render(<VisitTypeBadge type={type as VisitType} />);
-      expect(container.firstChild).toHaveClass(colors.bgClass, colors.textClass);
+      expect(container.firstChild).toHaveClass(classes.bgClass, classes.textClass);
       unmount();
     });
   });
