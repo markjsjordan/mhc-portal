@@ -12,6 +12,7 @@ export * from './types/domain-mappings';
 export * from './types/email-templates';
 export * from './types/onboarding';
 export * from './db/connection';
+export * from './db/ssl-config';
 export * from './db/repository';
 export * from './db/query-logger';
 export * from './db/scoped-queries';
