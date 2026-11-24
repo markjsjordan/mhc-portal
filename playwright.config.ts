@@ -22,6 +22,9 @@ process.env['JWT_REFRESH_SECRET'] = TEST_JWT_REFRESH_SECRET;
 export default defineConfig({
   // Test directory structure
   testDir: './e2e/tests',
+  // visual-showcase.spec.ts requires a separate showcase server (port 5174)
+  // and has its own playwright.visual.config.ts — exclude from main suite.
+  testIgnore: ['**/visual-showcase.spec.ts'],
 
   // Timeout for each test - 30 seconds is plenty for most tests
   // Tests should fail fast, not hang forever

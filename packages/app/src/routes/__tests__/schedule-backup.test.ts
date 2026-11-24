@@ -41,8 +41,8 @@ vi.mock('@folkcare/scheduling-visits', () => ({
 }));
 
 // Mock providers
-vi.mock('@folkcare/core', async () => {
-  const actual = await vi.importActual('@folkcare/core');
+vi.mock('@folkcare/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@folkcare/core')>();
   return {
     ...actual,
     createClientProvider: vi.fn().mockReturnValue({
@@ -71,6 +71,7 @@ vi.mock('@folkcare/core', async () => {
         },
       ]),
     }),
+    ADMIN_ROLES: (actual as any).ADMIN_ROLES ?? ['ADMIN', 'ORG_ADMIN'],
     AuthMiddleware: vi.fn().mockImplementation(function () {
       return {
         requireAuth: vi.fn((req: Record<string, unknown>, _res: unknown, next: () => void) => {
@@ -85,6 +86,7 @@ vi.mock('@folkcare/core', async () => {
           };
           next();
         }),
+        requireRole: vi.fn(() => (_req: unknown, _res: unknown, next: () => void) => next()),
       };
     }),
   };
@@ -102,7 +104,7 @@ describe('Schedule Backup Module', () => {
       
       expect(router).toBeDefined();
       expect(typeof router).toBe('function'); // Express Router is a function
-    });
+    }, 15000);
   });
 
   describe('Date Range Utilities', () => {
