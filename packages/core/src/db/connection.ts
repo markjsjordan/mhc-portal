@@ -3,6 +3,8 @@
  */
 
 import { Pool, PoolClient, QueryResult } from 'pg';
+import knexBuilder, { Knex } from 'knex';
+import { strictTlsOptions, type StrictTlsOptions } from './ssl-config.js';
 
 const SQL_STRING_LITERAL_PATTERN = /'(?:''|[^'])*'/g;
 const SSN_LOG_PATTERN = /\b\d{3}-\d{2}-\d{4}\b/g;
@@ -40,22 +42,18 @@ export interface DatabaseConfig {
 
 export class Database {
   private pool: Pool;
+  private config: DatabaseConfig;
+  private knexInstance: Knex | null = null;
 
   constructor(config: DatabaseConfig) {
-    const caCert = process.env.DB_CA_CERT ?? process.env.REDIS_CA_CERT;
+    this.config = config;
     this.pool = new Pool({
       host: config.host,
       port: config.port,
       database: config.database,
       user: config.user,
       password: config.password,
-      ssl: config.ssl === true
-        ? {
-            rejectUnauthorized: true,
-            minVersion: 'TLSv1.2',
-            ...(caCert !== undefined && caCert !== '' ? { ca: caCert } : {}),
-          }
-        : false,
+      ssl: this.resolveSsl(),
       // Connection pool settings
       max: config.max ?? 20, // Maximum number of clients in the pool
       min: config.min ?? 2, // Minimum number of clients in the pool
@@ -89,10 +87,42 @@ export class Database {
   }
 
   /**
+   * HIPAA-004: TLS settings shared by the pg Pool and the Knex instance.
+   * Verification is never disabled - when SSL is on, the certificate must
+   * validate against the system roots or the configured `DB_CA_CERT`.
+   */
+  private resolveSsl(): StrictTlsOptions | false {
+    return this.config.ssl === true ? strictTlsOptions() : false;
+  }
+
+  /**
    * Get the underlying connection pool
    */
   getPool(): Pool {
     return this.pool;
+  }
+
+  /**
+   * Get a shared Knex instance for services that require the query builder.
+   * Lazily created once per Database instance, reusing the same TLS-verified
+   * connection settings as the pg Pool above. Route handlers must use this
+   * instead of constructing their own ad-hoc Knex/Pool connections.
+   */
+  getKnex(): Knex {
+    if (this.knexInstance === null) {
+      this.knexInstance = knexBuilder({
+        client: 'pg',
+        connection: {
+          host: this.config.host,
+          port: this.config.port,
+          database: this.config.database,
+          user: this.config.user,
+          password: this.config.password,
+          ssl: this.resolveSsl(),
+        },
+      });
+    }
+    return this.knexInstance;
   }
 
   /**
@@ -160,6 +190,10 @@ export class Database {
    * Close all connections
    */
   async close(): Promise<void> {
+    if (this.knexInstance !== null) {
+      await this.knexInstance.destroy();
+      this.knexInstance = null;
+    }
     await this.pool.end();
   }
 
