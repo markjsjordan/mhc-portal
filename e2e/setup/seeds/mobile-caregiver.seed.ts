@@ -10,7 +10,7 @@ import { Database } from '../../../packages/core/src/db/connection.js';
  * - Creates a geocoded TX client (100 Congress Ave, Austin, TX: 30.2672, -97.7431).
  * - Creates two `ASSIGNED` visits for today (one for in-geofence clock-in, one for
  *   out-of-geofence clock-in) with no leftover EVV records.
- * - Creates a scheduled `care_plan_tasks` row for the caregiver tasks page.
+ * - [DISABLED] Creates a scheduled `care_plan_tasks` row for the caregiver tasks page (table does not exist yet).
  */
 
 const ORG_ID = '00000000-e2e0-4000-8000-000000000001';
@@ -164,12 +164,16 @@ export async function seedDatabase(db: Database): Promise<void> {
   ] as const) {
     await db.query(
       `INSERT INTO visits (
-        id, organization_id, branch_id, client_id, assigned_caregiver_id,
-        service_type_id, scheduled_date, scheduled_start_time, scheduled_end_time,
-        duration_minutes, status, created_at, created_by, updated_at, updated_by, version
+        id, organization_id, branch_id, client_id, visit_number, visit_type,
+        service_type_id, service_type_name, scheduled_date,
+        scheduled_start_time, scheduled_end_time, scheduled_duration, timezone,
+        assigned_caregiver_id, assigned_at, assigned_by, assignment_method,
+        address, status, status_history,
+        created_at, created_by, updated_at, updated_by, version
       ) VALUES (
-        $1, $2, $3, $4, $5, 'PERSONAL_CARE', $6, $7, $8, 120, 'ASSIGNED',
-        NOW(), $9, NOW(), $9, 1
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 120, $12, $13,
+        NOW(), $14, $15, $16::jsonb, $17, $18::jsonb,
+        NOW(), $14, NOW(), $14, 1
       )
       ON CONFLICT (id) DO UPDATE SET
         scheduled_date = EXCLUDED.scheduled_date,
@@ -179,16 +183,27 @@ export async function seedDatabase(db: Database): Promise<void> {
         ORG_ID,
         BRANCH_ID,
         MOBILE_CLIENT_ID,
-        MOBILE_CAREGIVER_ID,
+        visitId === MOBILE_VISIT_IN_ID ? 'VIS-MOB-001' : 'VIS-MOB-002',
+        'REGULAR',
+        '00000000-0000-4000-8000-00000005ec01', // PERSONAL_CARE placeholder; no FK on visits.service_type_id
+        'PERSONAL_CARE',
         today,
         startHour,
         endHour,
+        'America/New_York',
+        MOBILE_CAREGIVER_ID,
         ADMIN_USER_ID,
+        'MANUAL',
+        JSON.stringify({ line1: '100 Main St', city: 'New York', state: 'NY', postalCode: '10001', country: 'USA' }),
+        'ASSIGNED',
+        JSON.stringify([]),
       ]
     );
   }
 
+  // TODO: Re-enable when care_plan_tasks table exists (migration needed)
   // Scheduled care_plan_tasks row
+  /*
   await db.query(
     `INSERT INTO care_plan_tasks (
       id, organization_id, client_id, title, description, category,
@@ -200,4 +215,5 @@ export async function seedDatabase(db: Database): Promise<void> {
     ON CONFLICT (id) DO NOTHING`,
     [MOBILE_TASK_ID, ORG_ID, MOBILE_CLIENT_ID, ADMIN_USER_ID]
   );
+  */
 }

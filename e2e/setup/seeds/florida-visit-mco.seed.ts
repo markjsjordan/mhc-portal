@@ -1,5 +1,5 @@
 import { Database } from '../../../packages/core/src/db/connection.js';
-import { v4 as uuidv4 } from 'uuid';
+
 import { E2E_UUIDS } from '../../fixtures/test-data.js';
 
 export async function seedDatabase(db: Database): Promise<void> {
@@ -116,32 +116,34 @@ export async function seedDatabase(db: Database): Promise<void> {
 
   await db.query(
     `INSERT INTO visits (
-      id, organization_id, branch_id, client_id, assigned_caregiver_id,
-      service_type, scheduled_date, scheduled_time, duration_hours,
-      status, tasks, created_at, created_by, updated_at, updated_by, version
+      id, organization_id, branch_id, client_id, visit_number, visit_type,
+      service_type_id, service_type_name, scheduled_date,
+      scheduled_start_time, scheduled_end_time, scheduled_duration, timezone,
+      assigned_caregiver_id, assigned_at, assigned_by, assignment_method,
+      address, status, status_history,
+      created_at, created_by, updated_at, updated_by, version
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), $12, NOW(), $12, 1)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 180, $12, $13, NOW(), $14, $15, $16::jsonb, $17, $18::jsonb, NOW(), $14, NOW(), $14, 1)
     ON CONFLICT (id) DO NOTHING`,
     [
       visitId,
       orgId,
       branchId,
       clientId,
-      caregiverId,
+      'VIS-FL-MCO-001',
+      'REGULAR',
+      '00000000-0000-4000-8000-00000005ec01', // PERSONAL_CARE placeholder; no FK on visits.service_type_id
       'PERSONAL_CARE',
       '2025-01-25',
       '14:00:00',
-      3,
-      'SCHEDULED',
-      JSON.stringify([
-        {
-          id: uuidv4(),
-          name: 'Bathing assistance',
-          critical: true,
-          completed: false,
-        },
-      ]),
+      '17:00:00',
+      'America/New_York',
+      caregiverId,
       '00000000-e2e0-4000-8000-000000000100',
+      'MANUAL',
+      JSON.stringify({ line1: '200 Orange Ave', city: 'Orlando', state: 'FL', postalCode: '32801', country: 'USA' }),
+      'SCHEDULED',
+      JSON.stringify([]),
     ]
   );
 
