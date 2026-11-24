@@ -73,15 +73,51 @@ export class TestDatabase {
   }
 
   /**
-   * Seed database with scenario-specific data
+   * Check whether an import error indicates the target scenario seed file itself is missing
+   */
+  private static isMissingSeedModuleError(error: unknown, scenarioName: string): boolean {
+    if (!(error instanceof Error)) {
+      return false;
+    }
+    const code = (error as NodeJS.ErrnoException).code;
+    const isNotFoundCode = code === 'MODULE_NOT_FOUND' || code === 'ERR_MODULE_NOT_FOUND';
+    const isNotFoundMessage =
+      /Cannot find module/i.test(error.message) || /Cannot find package/i.test(error.message);
+
+    if (!isNotFoundCode && !isNotFoundMessage) {
+      return false;
+    }
+
+    // Ensure the missing module is the scenario seed file itself, not a broken import inside an existing seed
+    return error.message.includes(`${scenarioName}.seed`);
+  }
+
+  /**
+   * Seed database with scenario-specific data, falling back to base E2E personas
+   * if the scenario seed file does not exist yet.
    */
   static async seed(scenarioName: string): Promise<void> {
     console.log(`🌱 Seeding test data for scenario: ${scenarioName}...`);
 
+    let seedModule: { seedDatabase?: (db: Database) => Promise<void> };
     try {
-      // Dynamic import of seed module
-      const seedModule = await import(`./seeds/${scenarioName}.seed.js`);
+      seedModule = (await import(/* @vite-ignore */ `./seeds/${scenarioName}.seed.js`)) as {
+        seedDatabase?: (db: Database) => Promise<void>;
+      };
+    } catch (error: unknown) {
+      if (this.isMissingSeedModuleError(error, scenarioName)) {
+        console.warn(
+          `⚠️ Seed file for scenario "${scenarioName}" not found, falling back to base E2E personas`
+        );
+        await seedE2EPersonas(this.getInstance());
+        return;
+      }
+      const err = error as Error;
+      console.error(`❌ Failed to load seed module ${scenarioName}:`, err.message);
+      throw error;
+    }
 
+    try {
       if (typeof seedModule.seedDatabase !== 'function') {
         throw new Error(`Seed module ${scenarioName} does not export seedDatabase function`);
       }
