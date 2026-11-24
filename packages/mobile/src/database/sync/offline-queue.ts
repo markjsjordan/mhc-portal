@@ -30,6 +30,8 @@ export enum QueuePriority {
 export type QueuedActionType =
   | 'visit-check-in'
   | 'visit-check-out'
+  | 'evv-clock-in'
+  | 'evv-clock-out'
   | 'task-complete'
   | 'care-note'
   | 'attachment-upload'
@@ -82,6 +84,8 @@ export class OfflineQueue {
     switch (type) {
       case 'visit-check-in':
       case 'visit-check-out':
+      case 'evv-clock-in':
+      case 'evv-clock-out':
       case 'signature-upload':
         return QueuePriority.CRITICAL; // EVV compliance
       case 'care-note':
@@ -119,7 +123,28 @@ export class OfflineQueue {
   }
 
   /**
-   * Enqueue an action with priority support
+   * Build a timestamp-based deduplication key for an action payload when
+   * both an entity/visit identifier and an event timestamp are present.
+   */
+  private static getDeduplicationKey(type: QueuedActionType, payload: any): string | null {
+    if (!payload || typeof payload !== 'object') {
+      return null;
+    }
+    const entityId = payload.visit_id ?? payload.visitId ?? payload.evvVisitId ?? payload.id;
+    const eventTime =
+      payload.clock_in_time ??
+      payload.clock_out_time ??
+      payload.clockInTime ??
+      payload.clockOutTime ??
+      payload.eventTimestamp;
+    if (entityId && eventTime) {
+      return `${type}:${String(entityId)}:${String(eventTime)}`;
+    }
+    return null;
+  }
+
+  /**
+   * Enqueue an action with priority support and timestamp-based deduplication
    */
   static async enqueue(
     action: Omit<
@@ -133,6 +158,19 @@ export class OfflineQueue {
     } = {}
   ): Promise<string> {
     const queue = await this.getQueue();
+
+    const incomingDedupKey = this.getDeduplicationKey(action.type, action.payload);
+    if (incomingDedupKey !== null) {
+      const existing = queue.find(
+        (item) => this.getDeduplicationKey(item.type, item.payload) === incomingDedupKey
+      );
+      if (existing) {
+        console.log(
+          `[OfflineQueue] Deduplicated ${action.type} (${incomingDedupKey}), reusing ${existing.id}`
+        );
+        return existing.id;
+      }
+    }
 
     const queuedAction: QueuedAction = {
       ...action,
@@ -258,13 +296,40 @@ export class OfflineQueue {
   }
 
   /**
+   * Subscribe to network reconnect events to automatically flush queued EVV & visit actions
+   */
+  static subscribeReconnectSync(): () => void {
+    let wasConnected: boolean | null = null;
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      const isConnected = Boolean(state.isConnected);
+      if (isConnected && wasConnected === false) {
+        void this.processQueue();
+      }
+      wasConnected = isConnected;
+    });
+    return typeof unsubscribe === 'function' ? unsubscribe : () => {};
+  }
+
+  /**
    * Execute a queued action
    */
   private static async executeAction(action: QueuedAction): Promise<void> {
     const token = await getAuthToken();
 
-    const response = await fetch(`${API_URL}/${action.type}`, {
-      method: 'POST',
+    let url = `${API_URL}/${action.type}`;
+    let method: 'POST' | 'PATCH' = 'POST';
+
+    if (action.type === 'evv-clock-in') {
+      url = `${API_URL}/evv-visits`;
+      method = 'POST';
+    } else if (action.type === 'evv-clock-out') {
+      const evvId = action.payload?.evvVisitId ?? action.payload?.id ?? action.payload?.visit_id;
+      url = `${API_URL}/evv-visits/${encodeURIComponent(String(evvId ?? ''))}/clock-out`;
+      method = 'PATCH';
+    }
+
+    const response = await fetch(url, {
+      method,
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
