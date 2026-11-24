@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
-import { AppFooter } from './AppFooter';
+import { AppFooter } from '@/core/components';
 import { useIdleLogout } from '@/core/hooks';
 import { cn } from '@/core/utils';
 
@@ -94,7 +94,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
       <div
         data-testid="app-shell-content"
-        className={cn('flex min-h-screen flex-col transition-all duration-200', isDesktopSidebarOpen && 'lg:pl-64')}
+        className={cn('min-h-screen flex flex-col transition-all duration-200', isDesktopSidebarOpen && 'lg:pl-64')}
       >
         <Header onMenuClick={handleToggleSidebar} />
 

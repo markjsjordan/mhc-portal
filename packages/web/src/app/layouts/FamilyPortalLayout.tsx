@@ -8,8 +8,8 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { Home, Settings, LogOut, X, Menu, MessageCircle, Calendar, ClipboardList, Heart, Bell } from 'lucide-react';
 import { useAuth } from '@/core/hooks';
+import { AppFooter } from '@/core/components';
 import { Button } from '@/components/ui/button.js';
-import { AppFooter } from '@/app/components/AppFooter';
 
 interface NavItem {
   label: string;
@@ -125,7 +125,7 @@ export const FamilyPortalLayout: React.FC = () => {
       </aside>
 
       {/* Main content area */}
-      <div className="flex min-h-screen flex-col lg:pl-64">
+      <div className="min-h-screen flex flex-col lg:pl-64">
         {/* Top header bar for mobile menu button */}
         <header className="bg-white border-b border-gray-200 lg:hidden">
           <div className="flex items-center justify-between h-16 px-4">

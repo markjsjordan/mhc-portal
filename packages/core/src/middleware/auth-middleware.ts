@@ -222,16 +222,28 @@ export class AuthMiddleware {
    * Usage:
    *   router.delete('/clients/:id',
    *     authMiddleware.requireAuth,
-   *     authMiddleware.requirePermission(['clients:delete']),
+   *     authMiddleware.requirePermission('clients:delete'),
    *     handler
    *   )
    * 
-   * @param permissions - Array of permissions, user must have at least one
+   * @param permissions - Permission string or array of permissions, user must have at least one
    */
-  requirePermission = (permissions: string[]) => {
+  requirePermission = (permissions: string | string[]) => {
+    const requiredPermissions = Array.isArray(permissions) ? permissions : [permissions];
     return (req: Request, res: Response, next: NextFunction): void => {
-      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-      if (!req.user) {
+      const effectiveContext: UserContext | undefined =
+        req.userContext ??
+        (req.user !== undefined
+          ? {
+              userId: req.user.userId,
+              organizationId: req.user.organizationId,
+              roles: req.user.roles,
+              permissions: req.user.permissions,
+              branchIds: req.user.branchIds,
+            }
+          : undefined);
+
+      if (effectiveContext === undefined) {
         res.status(401).json({
           success: false,
           error: 'Authentication required',
@@ -240,16 +252,8 @@ export class AuthMiddleware {
         return;
       }
 
-      const effectiveContext: UserContext = req.userContext ?? {
-        userId: req.user.userId,
-        organizationId: req.user.organizationId,
-        roles: req.user.roles,
-        permissions: req.user.permissions,
-        branchIds: req.user.branchIds,
-      };
-
       const permService = new PermissionService();
-      const hasPermission = permissions.some((permission) =>
+      const hasPermission = requiredPermissions.some((permission) =>
         permService.hasPermission(effectiveContext, permission)
       );
 
@@ -257,21 +261,21 @@ export class AuthMiddleware {
         // Log unauthorized access attempt
         void this.auditService.logEvent(
           {
-            userId: req.user.userId,
-            organizationId: req.user.organizationId,
-            roles: req.user.roles,
-            permissions: req.user.permissions,
-            branchIds: []
+            userId: effectiveContext.userId,
+            organizationId: effectiveContext.organizationId,
+            roles: effectiveContext.roles,
+            permissions: effectiveContext.permissions,
+            branchIds: effectiveContext.branchIds,
           },
           {
             eventType: 'AUTHORIZATION',
             resource: req.path,
-            resourceId: req.user.userId,
+            resourceId: effectiveContext.userId,
             action: 'UNAUTHORIZED_ACCESS_ATTEMPT',
             result: 'FAILURE',
             metadata: {
-              requiredPermissions: permissions,
-              userPermissions: req.user.permissions,
+              requiredPermissions,
+              userPermissions: effectiveContext.permissions,
               method: req.method,
               path: req.path
             },
@@ -286,8 +290,8 @@ export class AuthMiddleware {
           success: false,
           error: 'Insufficient permissions',
           code: 'INSUFFICIENT_PERMISSIONS',
-          requiredPermissions: permissions,
-          userPermissions: req.user.permissions
+          requiredPermissions,
+          userPermissions: effectiveContext.permissions
         });
         return;
       }

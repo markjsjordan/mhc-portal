@@ -1,5 +1,5 @@
 import { Database } from '../../../packages/core/src/db/connection.js';
-import { v4 as uuidv4 } from 'uuid';
+
 import { E2E_UUIDS } from '../../fixtures/test-data.js';
 
 /**
@@ -183,47 +183,34 @@ export async function seedDatabase(db: Database): Promise<void> {
   // Create scheduled visit with tasks
   await db.query(
     `INSERT INTO visits (
-      id, organization_id, branch_id, client_id, caregiver_id,
-      service_type, scheduled_date, scheduled_time, duration_hours,
-      status, tasks, created_at, created_by, updated_at, updated_by, version
+      id, organization_id, branch_id, client_id, visit_number, visit_type,
+      service_type_id, service_type_name, scheduled_date,
+      scheduled_start_time, scheduled_end_time, scheduled_duration, timezone,
+      assigned_caregiver_id, assigned_at, assigned_by, assignment_method,
+      address, status, status_history,
+      created_at, created_by, updated_at, updated_by, version
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), $12, NOW(), $12, 1)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 120, $12, $13, NOW(), $14, $15, $16::jsonb, $17, $18::jsonb, NOW(), $14, NOW(), $14, 1)
     ON CONFLICT (id) DO NOTHING`,
     [
       visitId,
       orgId,
       branchId,
       clientId,
-      caregiverId,
+      'VIS-LIFECYCLE-001',
+      'REGULAR',
+      '00000000-0000-4000-8000-00000005ec01', // PERSONAL_CARE placeholder; no FK on visits.service_type_id
       'PERSONAL_CARE',
       '2025-01-15',
       '09:00:00',
-      2,
-      'SCHEDULED',
-      JSON.stringify([
-        {
-          id: uuidv4(),
-          name: 'Assist with bathing',
-          description: 'Help client with morning bath',
-          critical: true,
-          completed: false,
-        },
-        {
-          id: uuidv4(),
-          name: 'Medication reminder',
-          description: 'Remind client to take medications',
-          critical: true,
-          completed: false,
-        },
-        {
-          id: uuidv4(),
-          name: 'Meal preparation',
-          description: 'Prepare breakfast',
-          critical: false,
-          completed: false,
-        },
-      ]),
+      '11:00:00',
+      'America/New_York',
+      caregiverId,
       '00000000-e2e0-4000-8000-000000000100',
+      'MANUAL',
+      JSON.stringify({ line1: '456 Healthcare Blvd', city: 'Austin', state: 'TX', postalCode: '78701', country: 'USA' }),
+      'SCHEDULED',
+      JSON.stringify([]),
     ]
   );
 

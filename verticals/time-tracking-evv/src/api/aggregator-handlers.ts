@@ -57,9 +57,6 @@ export class AggregatorHandlers {
    *         description: EVV record not found
    *       500:
    *         description: Server error
-   *
-   * GET /api/evv/aggregator/submissions/:evvRecordId
-   * Get submission history for an EVV record
    */
   async getSubmissionsByRecord(req: APIRequest): Promise<APIResponse> {
     try {
@@ -107,9 +104,6 @@ export class AggregatorHandlers {
    *         description: Submission not found
    *       500:
    *         description: Server error
-   *
-   * POST /api/evv/aggregator/submissions/:submissionId/retry
-   * Manually retry a failed submission
    */
   async retrySubmission(req: APIRequest): Promise<APIResponse> {
     try {
@@ -145,9 +139,6 @@ export class AggregatorHandlers {
    *         description: Pending submissions retrieved
    *       500:
    *         description: Server error
-   *
-   * GET /api/evv/aggregator/submissions/pending
-   * Get all pending submissions that need retry
    */
   async getPendingSubmissions(_req: APIRequest): Promise<APIResponse> {
     try {
@@ -178,9 +169,6 @@ export class AggregatorHandlers {
    *         description: Retry process triggered
    *       500:
    *         description: Server error
-   *
-   * POST /api/evv/aggregator/submissions/retry-all
-   * Trigger retry for all pending submissions
    */
   async retryAllPending(_req: APIRequest): Promise<APIResponse> {
     try {
@@ -229,9 +217,6 @@ export class AggregatorHandlers {
    *         description: Statistics retrieved
    *       500:
    *         description: Server error
-   *
-   * GET /api/evv/aggregator/submissions/stats
-   * Get submission statistics
    */
   async getSubmissionStats(_req: APIRequest): Promise<APIResponse> {
     try {

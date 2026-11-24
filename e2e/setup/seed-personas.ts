@@ -96,7 +96,18 @@ export async function seedE2EPersonas(db: Database): Promise<void> {
         created_at, created_by, updated_at, updated_by, version
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, 'ACTIVE', $8, $9, $10, NOW(), $1, NOW(), $1, 1)
-      ON CONFLICT DO NOTHING`,
+      ON CONFLICT (id) DO UPDATE SET
+        username = EXCLUDED.username,
+        email = EXCLUDED.email,
+        password_hash = EXCLUDED.password_hash,
+        first_name = EXCLUDED.first_name,
+        last_name = EXCLUDED.last_name,
+        roles = EXCLUDED.roles,
+        permissions = EXCLUDED.permissions,
+        branch_ids = EXCLUDED.branch_ids,
+        updated_at = NOW(),
+        updated_by = EXCLUDED.id,
+        version = users.version + 1`,
       [
         p.userId,
         orgId,

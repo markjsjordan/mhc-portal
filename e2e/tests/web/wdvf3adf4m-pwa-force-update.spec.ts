@@ -1,32 +1,36 @@
 import { test, expect } from "@playwright/test";
+import { STORAGE_STATE_PATHS } from "../../fixtures/auth.fixture.js";
 
 test.describe("wdvf3adf4m: PWA Force-Update Link + Version Display", () => {
-  test("admin dashboard shows Force Update Link and footer displays app version", async ({
-    page,
-  }) => {
-    await page.goto("/login");
-    await page.locator('input[type="email"]').fill("admin@folkcare.example");
-    await page.locator('input[type="password"]').fill("Admin123!");
-    await page.locator('button[type="submit"]').click();
+  test.describe("Authenticated admin view", () => {
+    test.use({
+      storageState: STORAGE_STATE_PATHS.admin,
+    });
 
-    await page.waitForURL(/\/admin/, { timeout: 15000 });
+    test("admin dashboard shows Force Update Link and footer displays app version", async ({
+      page,
+    }) => {
+      await page.goto("/admin");
+      await page.waitForURL(/\/(admin|dashboard)/, { timeout: 15000 });
 
-    const section = page.getByTestId("force-update-link-section");
-    await expect(section).toBeVisible();
-    await expect(section).toContainText("Force Update Link");
+      const section = page.getByTestId("force-update-link-section");
+      await expect(section).toBeVisible({ timeout: 15000 });
+      await expect(section).toContainText("Force Update Link");
 
-    const urlEl = page.getByTestId("force-update-url");
-    await expect(urlEl).toBeVisible();
-    await expect(urlEl).toContainText("/force-update");
+      const urlInput = page.getByTestId("force-update-url-input");
+      await expect(urlInput).toBeVisible();
+      const urlValue = await urlInput.inputValue();
+      expect(urlValue).toMatch(/\/force-update$/);
 
-    const copyBtn = page.getByTestId("copy-force-update-link");
-    await expect(copyBtn).toBeVisible();
+      const copyBtn = page.getByTestId("copy-force-update-link-btn");
+      await expect(copyBtn).toBeVisible();
 
-    const footer = page.getByTestId("app-footer");
-    await expect(footer).toBeVisible();
-    const versionEl = page.getByTestId("app-version");
-    await expect(versionEl).toBeVisible();
-    await expect(versionEl).toHaveText(/^v\d+\.\d+\.\d+/);
+      const footer = page.getByTestId("app-version-footer");
+      await expect(footer).toBeVisible();
+      const versionEl = page.getByTestId("app-version-text");
+      await expect(versionEl).toBeVisible();
+      await expect(versionEl).toHaveText(/^v\d+\.\d+\.\d+/);
+    });
   });
 
   test("public /force-update route clears caches and redirects without authentication", async ({
@@ -48,7 +52,7 @@ test.describe("wdvf3adf4m: PWA Force-Update Link + Version Display", () => {
     // Navigate directly to the public /force-update route
     await page.goto("/force-update");
 
-    // Should redirect away from /force-update (to /?_updated=... -> /login when unauthenticated)
+    // Should redirect away from /force-update (to /?updated=... -> /login when unauthenticated)
     await page.waitForURL((url) => !url.pathname.startsWith("/force-update"), {
       timeout: 15000,
     });

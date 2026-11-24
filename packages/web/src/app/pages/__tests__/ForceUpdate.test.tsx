@@ -2,12 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { ForceUpdate, performForceUpdate } from '../ForceUpdate';
 
-describe('performForceUpdate', () => {
+describe('ForceUpdate', () => {
   const originalCaches = globalThis.caches;
   const originalServiceWorker = navigator.serviceWorker;
 
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -19,26 +19,24 @@ describe('performForceUpdate', () => {
     Object.defineProperty(navigator, 'serviceWorker', {
       value: originalServiceWorker,
       configurable: true,
+      writable: true,
     });
   });
 
-  it('unregisters all service workers and clears all caches including precache', async () => {
+  it('unregisters service workers and clears all caches including precache', async () => {
     const unregisterMock = vi.fn().mockResolvedValue(true);
     Object.defineProperty(navigator, 'serviceWorker', {
       value: {
-        getRegistrations: vi
-          .fn()
-          .mockResolvedValue([{ unregister: unregisterMock }]),
+        getRegistrations: vi.fn().mockResolvedValue([{ unregister: unregisterMock }]),
       },
       configurable: true,
+      writable: true,
     });
 
     const deleteMock = vi.fn().mockResolvedValue(true);
     Object.defineProperty(globalThis, 'caches', {
       value: {
-        keys: vi
-          .fn()
-          .mockResolvedValue(['workbox-precache-v2-abc', 'image-cache']),
+        keys: vi.fn().mockResolvedValue(['workbox-precache-v2', 'image-cache']),
         delete: deleteMock,
       },
       configurable: true,
@@ -48,30 +46,23 @@ describe('performForceUpdate', () => {
     const result = await performForceUpdate();
 
     expect(unregisterMock).toHaveBeenCalledTimes(1);
-    expect(deleteMock).toHaveBeenCalledWith('workbox-precache-v2-abc');
+    expect(result.unregisteredCount).toBe(1);
+    expect(deleteMock).toHaveBeenCalledWith('workbox-precache-v2');
     expect(deleteMock).toHaveBeenCalledWith('image-cache');
-    expect(result.unregisteredWorkers).toBe(1);
-    expect(result.cachesCleared).toEqual([
-      'workbox-precache-v2-abc',
-      'image-cache',
-    ]);
+    expect(result.cachesCleared).toEqual(['workbox-precache-v2', 'image-cache']);
   });
-});
 
-describe('ForceUpdate component', () => {
-  it('renders updating status and redirects to root with cache-busting query', async () => {
+  it('runs cleanup and invokes redirect on mount', async () => {
     const onRedirect = vi.fn();
 
     render(<ForceUpdate onRedirect={onRedirect} />);
 
     expect(screen.getByTestId('force-update-page')).toBeInTheDocument();
-    expect(screen.getByText('Updating MHC Portal...')).toBeInTheDocument();
+    expect(screen.getByTestId('force-update-version')).toHaveTextContent(/v\S+/);
 
     await waitFor(() => {
       expect(onRedirect).toHaveBeenCalledTimes(1);
     });
-
-    const redirectUrl = onRedirect.mock.calls[0]?.[0] as string;
-    expect(redirectUrl).toMatch(/^\/\?_updated=\d+$/);
+    expect(onRedirect.mock.calls[0]?.[0]).toMatch(/^\/\?updated=\d+$/);
   });
 });

@@ -37,26 +37,33 @@ export class PermissionService {
     this.rolePermissions.set('SUPER_ADMIN', new Set(['*:*']));
 
     // Org Admin - organization-wide access
-    this.rolePermissions.set(
-      'ORG_ADMIN',
-      new Set([
-        'clients:*',
-        'caregivers:*',
-        'staff:*',
-        'schedules:*',
-        'billing:*',
-        'reports:*',
-        'settings:*',
-        'compliance:read',
-        'compliance:write',
-        'audit-logs:read',
-        'admin:access',
-        'admin:state-config',
-        'admin:data-access',
-        'admin:compliance',
-        'messages:*',
-      ])
-    );
+    const orgAdminPermissions = new Set([
+      'clients:*',
+      'caregivers:*',
+      'staff:*',
+      'schedules:*',
+      'visits:*',
+      'assignments:*',
+      'care-plans:*',
+      'tasks:*',
+      'notes:*',
+      'billing:*',
+      'payroll:*',
+      'reports:*',
+      'settings:*',
+      'compliance:read',
+      'compliance:write',
+      'audit-logs:read',
+      'admin:access',
+      'admin:state-config',
+      'admin:data-access',
+      'admin:compliance',
+      'messages:*',
+    ]);
+    this.rolePermissions.set('ORG_ADMIN', orgAdminPermissions);
+
+    // ADMIN - MVP canonical alias for organization-wide full access
+    this.rolePermissions.set('ADMIN', new Set(orgAdminPermissions));
 
     // Branch Admin - branch-level access
     this.rolePermissions.set(
@@ -74,14 +81,19 @@ export class PermissionService {
       ])
     );
 
-    // Coordinator - operational access
+    // Coordinator - operational access (visits, assignments, caregiver management, client records)
     this.rolePermissions.set(
       'COORDINATOR',
       new Set([
+        'clients:create',
         'clients:read',
         'clients:update',
         'clients:delete',
+        'caregivers:create',
         'caregivers:read',
+        'caregivers:update',
+        'caregivers:delete',
+        'assignments:*',
         'schedules:*',
         'visits:*',
         'care-plans:*',
@@ -101,13 +113,17 @@ export class PermissionService {
       ])
     );
 
-    // Caregiver - field staff access
+    // Caregiver - field staff access (assigned visits, complete visits, own profile)
     this.rolePermissions.set(
       'CAREGIVER',
       new Set([
         'clients:read',
         'schedules:read',
+        'visits:read',
         'visits:update',
+        'visits:complete',
+        'caregivers:read-own',
+        'profile:read',
         'care-plans:read',
         'tasks:read',
         'tasks:update',
@@ -122,23 +138,24 @@ export class PermissionService {
       ])
     );
 
-    // Family - limited client access + family portal features
-    this.rolePermissions.set(
-      'FAMILY',
-      new Set([
-        'clients:read',
-        'care-plans:read',
-        'notes:read',
-        'visits:read',
-        'family-portal:view',
-        'activity-feed:view',
-        'notifications:view',
-        'notifications:send',
-        'messages:view',
-        'messages:send',
-        'messages:create',
-      ])
-    );
+    // Family - limited client access + family portal features (linked client only)
+    const familyPermissions = new Set([
+      'clients:read',
+      'care-plans:read',
+      'notes:read',
+      'visits:read',
+      'family-portal:view',
+      'activity-feed:view',
+      'notifications:view',
+      'notifications:send',
+      'messages:view',
+      'messages:send',
+      'messages:create',
+    ]);
+    this.rolePermissions.set('FAMILY', familyPermissions);
+
+    // FAMILY_MEMBER - MVP canonical alias for family portal access (linked client only)
+    this.rolePermissions.set('FAMILY_MEMBER', new Set(familyPermissions));
 
     // CLIENT - direct client portal access (self-view only).
     // Least privilege / HIPAA minimum necessary: every endpoint granted here
@@ -271,6 +288,13 @@ export class PermissionService {
         'messages:send',
       ])
     );
+  }
+
+  /**
+   * Check if user has permission for a (resource, action) pair
+   */
+  check(context: UserContext, resource: string, action: string): boolean {
+    return this.hasPermission(context, `${resource}:${action}`);
   }
 
   /**
