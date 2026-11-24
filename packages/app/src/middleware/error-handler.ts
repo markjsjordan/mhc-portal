@@ -11,21 +11,38 @@ export interface AppError extends Error {
 }
 
 const SSN_PATTERN = /\b\d{3}-\d{2}-\d{4}\b/g;
+const UNIX_SENSITIVE_PATH_PATTERN =
+  /\/(?:Users|home|var|app|opt|etc|srv|root|tmp|private|workspace|vercel)\/[^\s"'),:\]}]+/g;
+const WINDOWS_PATH_PATTERN = /\b[A-Za-z]:\\[^\s"'),:\]}]+/g;
 
 function scrubPhiText(text: string): string {
   return text.replace(SSN_PATTERN, '[SSN-REDACTED]');
 }
 
+export function sanitizeClientErrorText(text: string): string {
+  const withoutPhi = scrubPhiText(text);
+  const withoutStack = withoutPhi
+    .split('\n')
+    .filter((line) => !line.trimStart().startsWith('at '))
+    .join('\n');
+  const withoutPaths = withoutStack
+    .replace(UNIX_SENSITIVE_PATH_PATTERN, '[path]')
+    .replace(WINDOWS_PATH_PATTERN, '[path]');
+  return withoutPaths.trim();
+}
+
 function sanitizeErrorItem(item: unknown): { field: string; message: string } | null {
   if (typeof item === 'string') {
-    return item.length > 0 ? { field: '', message: scrubPhiText(item) } : null;
+    const cleaned = sanitizeClientErrorText(item);
+    return cleaned.length > 0 ? { field: '', message: cleaned } : null;
   }
   if (item === null || typeof item !== 'object') {
     return null;
   }
   const record = item as Record<string, unknown>;
   const field = typeof record['field'] === 'string' ? record['field'] : '';
-  const message = typeof record['message'] === 'string' ? scrubPhiText(record['message']) : '';
+  const message =
+    typeof record['message'] === 'string' ? sanitizeClientErrorText(record['message']) : '';
   return field.length > 0 || message.length > 0 ? { field, message } : null;
 }
 
@@ -71,12 +88,14 @@ function resolveClientMessage(
     if (isPgInvalidTextRepresentation) {
       return 'Invalid identifier format';
     }
-    return err.message.length > 0 ? scrubPhiText(err.message) : 'Invalid request';
+    const sanitized = sanitizeClientErrorText(err.message);
+    return sanitized.length > 0 ? sanitized : 'Invalid request';
   }
   if (isProduction) {
     return 'An unexpected error occurred. Please try again later.';
   }
-  return err.message.length > 0 ? scrubPhiText(err.message) : 'Internal server error';
+  const sanitized = sanitizeClientErrorText(err.message);
+  return sanitized.length > 0 ? sanitized : 'Internal server error';
 }
 
 export function errorHandler(
