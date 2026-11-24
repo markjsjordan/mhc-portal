@@ -104,6 +104,7 @@ export type Role =
   | 'SCHEDULER'
   | 'CAREGIVER'
   | 'FAMILY'
+  | 'FAMILY_MEMBER'
   | 'CLIENT'
   | 'BILLING'
   | 'HR'
@@ -118,6 +119,16 @@ export type Role =
  * Admin roles allowed to manage organization team & settings
  */
 export const ADMIN_ROLES = ['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN'] as const;
+
+/**
+ * Family portal roles (canonical FAMILY and MVP alias FAMILY_MEMBER)
+ */
+export const FAMILY_ROLES = ['FAMILY', 'FAMILY_MEMBER'] as const;
+
+/**
+ * Core MVP RBAC roles
+ */
+export const MVP_ROLES = ['ADMIN', 'COORDINATOR', 'CAREGIVER', 'FAMILY_MEMBER'] as const;
 export type AdminRole = (typeof ADMIN_ROLES)[number];
 
 /**
