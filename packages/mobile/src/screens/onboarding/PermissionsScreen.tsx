@@ -134,6 +134,19 @@ export function PermissionsScreen({ navigation }: PermissionsScreenProps) {
               )}
             </View>
           </View>
+
+          {/* Camera Permission (Optional - Future) */}
+          <View style={styles.permissionCard}>
+            <View style={styles.permissionIcon}>
+              <Text style={styles.permissionIconText}>📷</Text>
+            </View>
+            <View style={styles.permissionContent}>
+              <Text style={styles.permissionTitle}>Camera (Optional)</Text>
+              <Text style={styles.permissionDescription}>
+                Optional (future) - Not required for clock-in/out; reserved for future photo documentation
+              </Text>
+            </View>
+          </View>
         </View>
 
         <TouchableOpacity
