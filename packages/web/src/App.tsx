@@ -102,6 +102,7 @@ const VisitList = React.lazy(() => import('./verticals/scheduling-visits/pages/V
 const CalendarView = React.lazy(() => import('./verticals/scheduling-visits/pages/CalendarView').then((m) => ({ default: m.CalendarView })));
 const ScheduleBuilderPage = React.lazy(() => import('./pages/scheduling/ScheduleBuilderPage'));
 const RecurringPatternsPage = React.lazy(() => import('./pages/scheduling/RecurringPatternsPage'));
+const CaregiverAssignmentsPage = React.lazy(() => import('./pages/scheduling/CaregiverAssignmentsPage'));
 const VisitDetailPage = React.lazy(() => import('./pages/scheduling/VisitDetailPage').then((m) => ({ default: m.VisitDetailPage })));
 
 
@@ -423,6 +424,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <AppShell>
               <RecurringPatternsPage />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/scheduling/assignments"
+        element={
+          <ProtectedRoute>
+            <AppShell>
+              <CaregiverAssignmentsPage />
             </AppShell>
           </ProtectedRoute>
         }
