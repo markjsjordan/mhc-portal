@@ -5,7 +5,17 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { Database, isValidUUID, ComplianceAutopilotService, AuditService, UserContext, AuthMiddleware, UUID } from '@folkcare/core';
+import {
+  Database,
+  isValidUUID,
+  ComplianceAutopilotService,
+  AuditService,
+  UserContext,
+  AuthMiddleware,
+  UUID,
+  PermissionService,
+  projectVisitForRole,
+} from '@folkcare/core';
 import {
   ScheduleRepository,
   StaffingDemandPredictionService,
@@ -29,11 +39,67 @@ const SCHEDULING_ROLES = [
   'SUPER_ADMIN',
   'ORG_ADMIN',
   'BRANCH_ADMIN',
+  'ADMIN',
   'COORDINATOR',
   'SCHEDULER',
   'SUPERVISOR',
   'ADMINISTRATOR',
 ];
+
+function checkVisitReadScope(
+  visit: { clientId: string; assignedCaregiverId?: string | null },
+  context: UserContext
+): { status: number; error: string; code?: string } | null {
+  const permService = new PermissionService();
+  if (!permService.check(context, 'visits', 'read')) {
+    return {
+      status: 403,
+      error: 'Access denied: visits:read permission required',
+      code: 'PERMISSION_DENIED',
+    };
+  }
+
+  const isElevated = context.roles.some((r) => SCHEDULING_ROLES.includes(r));
+  if (
+    !isElevated &&
+    (context.roles.includes('FAMILY') || context.roles.includes('FAMILY_MEMBER'))
+  ) {
+    const familyClientIds = context.familyClientIds ?? [];
+    if (!familyClientIds.includes(visit.clientId)) {
+      return {
+        status: 403,
+        error: 'Access denied: You can only view visits for your own linked clients',
+        code: 'FAMILY_SCOPE_VIOLATION',
+      };
+    }
+  }
+
+  if (!isElevated && context.roles.includes('CAREGIVER')) {
+    if (
+      context.caregiverId !== undefined &&
+      context.caregiverId !== '' &&
+      visit.assignedCaregiverId !== context.caregiverId
+    ) {
+      return {
+        status: 403,
+        error: 'Access denied: Caregivers can only view their own assigned visits',
+        code: 'CAREGIVER_SCOPE_VIOLATION',
+      };
+    }
+  }
+
+  if (context.roles.includes('CLIENT') && context.roles.every((r) => r === 'CLIENT')) {
+    if (
+      context.directClientId === undefined ||
+      context.directClientId === '' ||
+      context.directClientId !== visit.clientId
+    ) {
+      return { status: 404, error: 'Visit not found' };
+    }
+  }
+
+  return null;
+}
 
 export function hasSchedulingAccess(context: UserContext, action: 'read' | 'update'): boolean {
   const hasRole = context.roles.some((role) => SCHEDULING_ROLES.includes(role));
@@ -266,6 +332,43 @@ async function fetchCreatedVisit(
   }
 }
 
+const ALLOWED_VISIT_STATUS_TRANSITIONS: Record<string, readonly string[]> = {
+  SCHEDULED: ['COMPLETED', 'CANCELLED', 'NO_SHOW', 'NO_SHOW_CLIENT', 'NO_SHOW_CAREGIVER'],
+  UNASSIGNED: ['SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'NO_SHOW_CLIENT', 'NO_SHOW_CAREGIVER'],
+  ASSIGNED: ['SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'NO_SHOW_CLIENT', 'NO_SHOW_CAREGIVER'],
+  CONFIRMED: ['COMPLETED', 'CANCELLED', 'NO_SHOW', 'NO_SHOW_CLIENT', 'NO_SHOW_CAREGIVER'],
+  IN_PROGRESS: ['COMPLETED', 'CANCELLED', 'NO_SHOW', 'NO_SHOW_CLIENT', 'NO_SHOW_CAREGIVER'],
+  COMPLETED: [],
+  CANCELLED: [],
+  NO_SHOW: [],
+  NO_SHOW_CLIENT: [],
+  NO_SHOW_CAREGIVER: [],
+};
+
+export function isValidVisitStatusTransition(fromStatus: string, toStatus: string): boolean {
+  const allowed = ALLOWED_VISIT_STATUS_TRANSITIONS[fromStatus.toUpperCase()];
+  if (!allowed) return false;
+  return allowed.includes(toStatus.toUpperCase());
+}
+
+export const visitSearchQuerySchema = z.object({
+  client_id: z.string().uuid('client_id must be a valid UUID').optional(),
+  clientId: z.string().uuid('clientId must be a valid UUID').optional(),
+  start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'start_date must be YYYY-MM-DD').optional(),
+  end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'end_date must be YYYY-MM-DD').optional(),
+  dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'dateFrom must be YYYY-MM-DD').optional(),
+  dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'dateTo must be YYYY-MM-DD').optional(),
+  status: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(500).optional(),
+  offset: z.coerce.number().int().min(0).optional(),
+});
+
+export const visitStatusTransitionSchema = z.object({
+  status: z.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'NO_SHOW_CLIENT', 'NO_SHOW_CAREGIVER']),
+  reason: z.string().max(1000).optional(),
+  notes: z.string().max(2000).optional(),
+});
+
 export function createVisitRouter(db: Database): Router {
   const router = Router();
   const authMiddleware = new AuthMiddleware(db);
@@ -275,6 +378,94 @@ export function createVisitRouter(db: Database): Router {
   if (authMiddleware.auditImpersonatedActions) {
     router.use((req: Request, res: Response, next: NextFunction) => authMiddleware.auditImpersonatedActions(req, res, next));
   }
+
+  /**
+   * GET /api/visits
+   * Search visits for the authenticated organization by client, date range, and status.
+   */
+  router.get('/', requireSchedulingAccess('read'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const context = getUserContext(req);
+      const parsed = visitSearchQuerySchema.safeParse(req.query);
+      if (!parsed.success) {
+        res.status(400).json({
+          success: false,
+          error: parsed.error.issues[0]?.message ?? 'Invalid query parameters',
+        });
+        return;
+      }
+
+      const clientId = parsed.data.client_id ?? parsed.data.clientId;
+      const startDate = parsed.data.start_date ?? parsed.data.dateFrom;
+      const endDate = parsed.data.end_date ?? parsed.data.dateTo;
+      const statusParam = parsed.data.status;
+      const limit = parsed.data.limit ?? 100;
+      const offset = parsed.data.offset ?? 0;
+
+      if (startDate && endDate && startDate > endDate) {
+        res.status(400).json({
+          success: false,
+          error: 'End date must be on or after start date',
+        });
+        return;
+      }
+
+      const conditions: string[] = ['v.organization_id = $1', 'v.deleted_at IS NULL'];
+      const params: unknown[] = [context.organizationId];
+      let paramIndex = 2;
+
+      if (clientId) {
+        conditions.push(`v.client_id = $${paramIndex++}`);
+        params.push(clientId);
+      }
+      if (startDate) {
+        conditions.push(`v.scheduled_date >= $${paramIndex++}`);
+        params.push(startDate);
+      }
+      if (endDate) {
+        conditions.push(`v.scheduled_date <= $${paramIndex++}`);
+        params.push(endDate);
+      }
+      if (statusParam) {
+        const rawStatuses = statusParam
+          .split(',')
+          .map((s) => s.trim().toUpperCase())
+          .filter(Boolean);
+        const expandedStatuses = rawStatuses.flatMap((s) =>
+          s === 'NO_SHOW' ? ['NO_SHOW', 'NO_SHOW_CLIENT', 'NO_SHOW_CAREGIVER'] : [s]
+        );
+        if (expandedStatuses.length > 0) {
+          conditions.push(`v.status = ANY($${paramIndex++}::text[])`);
+          params.push(expandedStatuses);
+        }
+      }
+
+      params.push(limit, offset);
+      const result = await db.query(
+        `SELECT v.*,
+                c.first_name AS client_first_name,
+                c.last_name AS client_last_name
+         FROM visits v
+         LEFT JOIN clients c ON c.id = v.client_id
+         WHERE ${conditions.join(' AND ')}
+         ORDER BY v.scheduled_date ASC, v.scheduled_start_time ASC
+         LIMIT $${paramIndex++} OFFSET $${paramIndex++}`,
+        params
+      );
+
+      res.json({
+        success: true,
+        data: result.rows,
+        meta: {
+          count: result.rows.length,
+          limit,
+          offset,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
 
   /**
    * GET /api/visits/my-visits
@@ -1532,24 +1723,24 @@ export function createVisitRouter(db: Database): Router {
         return;
       }
 
-      // CLIENT self-scoping: may only view their own visits
-      if (context.roles.includes('CLIENT') && context.roles.every((r) => r === 'CLIENT')) {
-        if (
-          context.directClientId === undefined ||
-          context.directClientId === '' ||
-          context.directClientId !== visit.clientId
-        ) {
-          res.status(404).json({
-            success: false,
-            error: 'Visit not found',
-          });
-          return;
-        }
+      const scopeError = checkVisitReadScope(visit, context);
+      if (scopeError !== null) {
+        res.status(scopeError.status).json({
+          success: false,
+          error: scopeError.error,
+          ...(scopeError.code !== undefined ? { code: scopeError.code } : {}),
+        });
+        return;
       }
+
+      const projectedVisit = projectVisitForRole(
+        visit as unknown as Record<string, unknown>,
+        context
+      );
 
       res.json({
         success: true,
-        data: visit,
+        data: projectedVisit,
       });
     } catch (error) {
       next(error);
@@ -1945,6 +2136,96 @@ export function createVisitRouter(db: Database): Router {
 
   router.put('/:id', handleUpdateVisit);
   router.patch('/:id', handleUpdateVisit);
+
+  /**
+   * PATCH /api/visits/:id/status
+   * Transition a visit's status with lifecycle validation.
+   * Allowed transitions: SCHEDULED -> COMPLETED | CANCELLED | NO_SHOW
+   */
+  router.patch('/:id/status', requireSchedulingAccess('update'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const context = getUserContext(req);
+      const visitId = req.params.id;
+      if (!visitId || !isValidUUID(visitId)) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid visit ID format',
+        });
+        return;
+      }
+
+      const parsed = visitStatusTransitionSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          success: false,
+          error: parsed.error.issues[0]?.message ?? 'Invalid status transition payload',
+        });
+        return;
+      }
+
+      const { status: targetStatus, reason, notes } = parsed.data;
+
+      const existingResult = await db.query(
+        'SELECT id, organization_id, status FROM visits WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL',
+        [visitId, context.organizationId]
+      );
+
+      if (existingResult.rows.length === 0) {
+        res.status(404).json({
+          success: false,
+          error: 'Visit not found',
+        });
+        return;
+      }
+
+      const existing = existingResult.rows[0] as { id: string; organization_id: string; status: string };
+      if (!isValidVisitStatusTransition(existing.status, targetStatus)) {
+        res.status(409).json({
+          success: false,
+          error: `Invalid visit status transition from ${existing.status} to ${targetStatus}`,
+          code: 'INVALID_STATUS_TRANSITION',
+        });
+        return;
+      }
+
+      const setClauses = ['status = $1', 'updated_by = $2', 'updated_at = NOW()'];
+      const updateParams: unknown[] = [targetStatus, context.userId];
+      let idx = 3;
+
+      if (targetStatus === 'CANCELLED') {
+        setClauses.push(`cancelled_at = NOW()`, `cancelled_by = $${idx++}`);
+        updateParams.push(context.userId);
+        if (reason) {
+          setClauses.push(`cancellation_reason = $${idx++}`);
+          updateParams.push(reason);
+        }
+      } else if (targetStatus === 'COMPLETED') {
+        setClauses.push(`actual_end_time = COALESCE(actual_end_time, NOW())`);
+      }
+
+      if (notes) {
+        setClauses.push(`internal_notes = $${idx++}`);
+        updateParams.push(notes);
+      }
+
+      updateParams.push(visitId, context.organizationId);
+      const updatedResult = await db.query(
+        `UPDATE visits
+         SET ${setClauses.join(', ')}
+         WHERE id = $${idx++} AND organization_id = $${idx++} AND deleted_at IS NULL
+         RETURNING *`,
+        updateParams
+      );
+
+      const updatedVisit = await fetchCreatedVisit(db, visitId, updatedResult.rows[0]);
+      res.json({
+        success: true,
+        data: updatedVisit,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
 
   /**
    * PUT /api/visits/:id/assign

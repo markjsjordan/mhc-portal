@@ -1,5 +1,5 @@
 import { Database } from '../../../packages/core/src/db/connection.js';
-import { v4 as uuidv4 } from 'uuid';
+
 import { E2E_UUIDS } from '../../fixtures/test-data.js';
 
 /**
@@ -139,46 +139,34 @@ export async function seedDatabase(db: Database): Promise<void> {
   // Create visit
   await db.query(
     `INSERT INTO visits (
-      id, organization_id, branch_id, client_id, caregiver_id,
-      service_type, scheduled_date, scheduled_time, duration_hours,
-      status, tasks, evv_requirements, created_at, created_by, updated_at, updated_by, version
+      id, organization_id, branch_id, client_id, visit_number, visit_type,
+      service_type_id, service_type_name, scheduled_date,
+      scheduled_start_time, scheduled_end_time, scheduled_duration, timezone,
+      assigned_caregiver_id, assigned_at, assigned_by, assignment_method,
+      address, status, status_history,
+      created_at, created_by, updated_at, updated_by, version
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), $13, NOW(), $13, 1)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 120, $12, $13, NOW(), $14, $15, $16::jsonb, $17, $18::jsonb, NOW(), $14, NOW(), $14, 1)
     ON CONFLICT (id) DO NOTHING`,
     [
       visitId,
       orgId,
       branchId,
       clientId,
-      caregiverId,
+      'VIS-TX-001',
+      'REGULAR',
+      '00000000-0000-4000-8000-00000005ec01', // PERSONAL_CARE placeholder; no FK on visits.service_type_id
       'PERSONAL_CARE',
       '2025-01-20',
       '10:00:00',
-      2,
-      'SCHEDULED',
-      JSON.stringify([
-        {
-          id: uuidv4(),
-          name: 'Personal care assistance',
-          critical: true,
-          completed: false,
-        },
-        {
-          id: uuidv4(),
-          name: 'Medication reminder',
-          critical: true,
-          completed: false,
-        },
-      ]),
-      JSON.stringify({
-        state: 'TX',
-        aggregator: 'HHAEEXCHANGE',
-        requiresGPS: true,
-        requiresSignature: false,
-        gpsAccuracyThreshold: 50,
-        vmurRequired: false,
-      }),
+      '12:00:00',
+      'America/Chicago',
+      caregiverId,
       '00000000-e2e0-4000-8000-000000000100',
+      'MANUAL',
+      JSON.stringify({ line1: '100 Congress Ave', city: 'Austin', state: 'TX', postalCode: '78701', country: 'USA' }),
+      'SCHEDULED',
+      JSON.stringify([]),
     ]
   );
 

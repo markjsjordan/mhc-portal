@@ -91,6 +91,7 @@ export const SECTION_PREFIX_TABLE: readonly PrefixRule[] = [
   { prefix: 'scheduling', section: 'scheduling' },
   { prefix: 'shift-matching', section: 'scheduling' },
   { prefix: 'visits', section: 'visits' },
+  { prefix: 'evv-visits', section: 'visits' },
   { prefix: 'evv', section: 'visits' },
   { prefix: 'time-tracking', section: 'visits' },
   { prefix: 'care-plans', section: 'care-plans' },

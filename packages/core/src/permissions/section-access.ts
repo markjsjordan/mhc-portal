@@ -71,6 +71,8 @@ export const RESOURCE_TO_SECTION: ReadonlyMap<string, Section> = new Map<string,
   'qa-audits': 'compliance',
   export: 'reports',
   availability: 'scheduling',
+  assignments: 'scheduling',
+  profile: 'caregivers',
 }) as [string, Section][]);
 
 const READ_ACTIONS = new Set(['read', 'view']);

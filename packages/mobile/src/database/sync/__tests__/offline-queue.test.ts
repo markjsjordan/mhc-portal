@@ -536,4 +536,80 @@ describe('OfflineQueue - Comprehensive Coverage', () => {
       expect(items[0].priority).toBe(QueuePriority.NORMAL);
     });
   });
+
+  describe('EVV Endpoints, Timestamp Deduplication & Reconnect Sync (wdvf3adf63)', () => {
+    it('should deduplicate identical EVV actions with the same visit_id and timestamp', async () => {
+      const payload = {
+        visit_id: 'visit-100',
+        caregiver_id: 'cg-200',
+        clock_in_time: '2026-11-23T09:00:00.000Z',
+        clock_out_time: null,
+      };
+
+      const firstId = await OfflineQueue.enqueue({ type: 'evv-clock-in', payload });
+      const secondId = await OfflineQueue.enqueue({ type: 'evv-clock-in', payload });
+
+      expect(secondId).toBe(firstId);
+      const items = await OfflineQueue.getQueueItems();
+      expect(items).toHaveLength(1);
+      expect(items[0].priority).toBe(QueuePriority.CRITICAL);
+    });
+
+    it('should send evv-clock-in to POST /evv-visits and evv-clock-out to PATCH /evv-visits/:id/clock-out', async () => {
+      (global.fetch as any).mockResolvedValue({ ok: true, status: 200 });
+
+      await OfflineQueue.enqueue({
+        type: 'evv-clock-in',
+        payload: {
+          visit_id: 'visit-101',
+          caregiver_id: 'cg-200',
+          clock_in_time: '2026-11-23T09:00:00.000Z',
+        },
+      });
+      await OfflineQueue.enqueue({
+        type: 'evv-clock-out',
+        payload: {
+          evvVisitId: 'evv-555',
+          visit_id: 'visit-101',
+          caregiver_id: 'cg-200',
+          clock_out_time: '2026-11-23T10:30:00.000Z',
+        },
+      });
+
+      const result = await OfflineQueue.processQueue();
+      expect(result.processed).toBe(2);
+      expect(result.failed).toBe(0);
+
+      const calls = (global.fetch as any).mock.calls;
+      expect(calls[0][0]).toMatch(/\/evv-visits$/);
+      expect(calls[0][1].method).toBe('POST');
+      expect(calls[1][0]).toMatch(/\/evv-visits\/evv-555\/clock-out$/);
+      expect(calls[1][1].method).toBe('PATCH');
+    });
+
+    it('should trigger processQueue on network reconnect', async () => {
+      let listener: ((state: { isConnected: boolean }) => void) | undefined;
+      (NetInfo.addEventListener as any).mockImplementation((cb: any) => {
+        listener = cb;
+        return vi.fn();
+      });
+      const processSpy = vi.spyOn(OfflineQueue, 'processQueue').mockResolvedValue({
+        processed: 0,
+        failed: 0,
+        skipped: 0,
+      });
+
+      const unsubscribe = OfflineQueue.subscribeReconnectSync();
+      expect(listener).toBeDefined();
+
+      listener?.({ isConnected: false });
+      expect(processSpy).not.toHaveBeenCalled();
+
+      listener?.({ isConnected: true });
+      expect(processSpy).toHaveBeenCalledTimes(1);
+
+      unsubscribe();
+      processSpy.mockRestore();
+    });
+  });
 });

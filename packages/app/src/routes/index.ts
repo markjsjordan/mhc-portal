@@ -53,7 +53,7 @@ import {
 import { createVisitRouter } from './visits.js';
 import { createScheduleSnapshotsRouter } from './schedule-snapshots.js';
 import pushNotificationRouter from './push-notifications.js';
-import { createEVVRouter } from './evv.js';
+import { createEVVRouter, createEVVVisitsRouter } from './evv.js';
 import { createUsageRouter } from './usage.js';
 import { createVerificationRouter } from './verification.js';
 import { createImportRoutes } from './import-routes.js';
@@ -506,6 +506,9 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
   app.use('/api/evv', evvLimiter, evvRouter);
   // Alias for backwards compatibility with frontend
   app.use('/api/time-tracking', evvLimiter, evvRouter);
+  // Mobile EVV Visits routes (POST /api/evv-visits, PATCH /api/evv-visits/:id/clock-out)
+  const evvVisitsRouter = createEVVVisitsRouter(db);
+  app.use('/api/evv-visits', evvLimiter, evvVisitsRouter);
   console.log('  ✓ EVV & Time Tracking routes registered (with rate limiting)');
 
   // Usage Statistics routes
