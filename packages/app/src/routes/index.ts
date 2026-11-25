@@ -30,8 +30,7 @@ import {
   authLimiter, 
   generalApiLimiter, 
   syncLimiter, 
-  reportLimiter,
-  evvLimiter 
+  reportLimiter 
 } from '../middleware/rate-limit';
 import { createSyncRouter } from '../api/sync/sync-routes';
 import docsRoutes from './docs.routes';
@@ -53,7 +52,6 @@ import {
 import { createVisitRouter } from './visits.js';
 import { createScheduleSnapshotsRouter } from './schedule-snapshots.js';
 import pushNotificationRouter from './push-notifications.js';
-import { createEVVRouter, createEVVVisitsRouter } from './evv.js';
 import { createUsageRouter } from './usage.js';
 import { createVerificationRouter } from './verification.js';
 import { createImportRoutes } from './import-routes.js';
@@ -394,7 +392,7 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
   app.use('/api/shift-matching', generalApiLimiter, shiftMatchingRouter);
   console.log('  ✓ Shift Matching & Assignment routes registered (with rate limiting)');
 
-  // Demo routes (interactive demo system) - includes EVV clock-in/out
+  // Demo routes (interactive demo system)
   // Blocked in production unless DEMO_MODE === 'true'
   const demoRouter = createDemoRouter(db);
   app.use('/api/demo', (_req, res, next) => {
@@ -406,8 +404,8 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
       return;
     }
     next();
-  }, evvLimiter, demoRouter);
-  console.log('  ✓ Demo routes registered (with EVV rate limiting)');
+  }, generalApiLimiter, demoRouter);
+  console.log('  ✓ Demo routes registered (with rate limiting)');
 
   // Analytics & Reporting routes
   const analyticsRouter = createAnalyticsRouter(db);
@@ -501,16 +499,6 @@ export async function setupRoutes(app: Express, db: Database): Promise<void> {
   // Push Notifications routes (for mobile device token registration)
   app.use('/api/push', generalApiLimiter, pushNotificationRouter);
   console.log('  ✓ Push Notifications routes registered (with rate limiting)');
-
-  // EVV & Time Tracking routes
-  const evvRouter = createEVVRouter(db);
-  app.use('/api/evv', evvLimiter, evvRouter);
-  // Alias for backwards compatibility with frontend
-  app.use('/api/time-tracking', evvLimiter, evvRouter);
-  // Mobile EVV Visits routes (POST /api/evv-visits, PATCH /api/evv-visits/:id/clock-out)
-  const evvVisitsRouter = createEVVVisitsRouter(db);
-  app.use('/api/evv-visits', evvLimiter, evvVisitsRouter);
-  console.log('  ✓ EVV & Time Tracking routes registered (with rate limiting)');
 
   // Usage Statistics routes
   const usageRouter = createUsageRouter(db);

@@ -77,10 +77,6 @@ const CaregiverTasksPage = React.lazy(() => import('./verticals/care-plans/pages
 const TaskDetailPage = React.lazy(() => import('./verticals/care-plans/pages/caregiver/TaskDetailPage').then((m) => ({ default: m.TaskDetailPage })));
 const ProgressNotesPage = React.lazy(() => import('./verticals/care-plans/pages/ProgressNotesPage').then((m) => ({ default: m.ProgressNotesPage })));
 
-const EVVRecordList = React.lazy(() => import('./verticals/time-tracking-evv/pages/EVVRecordList').then((m) => ({ default: m.EVVRecordList })));
-const EVVRecordDetail = React.lazy(() => import('./verticals/time-tracking-evv/pages/EVVRecordDetail').then((m) => ({ default: m.EVVRecordDetail })));
-const SubmissionTrackingDashboard = React.lazy(() => import('./verticals/time-tracking-evv/components/SubmissionTrackingDashboard').then((m) => ({ default: m.SubmissionTrackingDashboard })));
-
 const InvoiceList = React.lazy(() => import('./verticals/billing-invoicing/pages/InvoiceList').then((m) => ({ default: m.InvoiceList })));
 const InvoiceDetail = React.lazy(() => import('./verticals/billing-invoicing/pages/InvoiceDetail').then((m) => ({ default: m.InvoiceDetail })));
 const InvoiceForm = React.lazy(() => import('./verticals/billing-invoicing/pages/InvoiceForm').then((m) => ({ default: m.InvoiceForm })));
@@ -634,38 +630,6 @@ function AppRoutes() {
           <ProtectedRoute permission="tasks:read">
             <AppShell>
               <TaskDetailPage />
-            </AppShell>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/time-tracking"
-        element={
-          <ProtectedRoute>
-            <AppShell>
-              <EVVRecordList />
-            </AppShell>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/time-tracking/:id"
-        element={
-          <ProtectedRoute>
-            <AppShell>
-              <EVVRecordDetail />
-            </AppShell>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/time-tracking/aggregator-submissions"
-        element={
-          <ProtectedRoute
-            requiredRoles={['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN', 'COORDINATOR']}
-          >
-            <AppShell>
-              <SubmissionTrackingDashboard />
             </AppShell>
           </ProtectedRoute>
         }

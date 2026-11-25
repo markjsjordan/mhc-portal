@@ -249,7 +249,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isDesktopOpen
               if (item.path === '/scheduling') id = 'scheduling';
               if (item.path === '/care-plans') id = 'care-plan';
               if (item.path === '/tasks') id = 'tasks';
-              if (item.path === '/time-tracking') id = 'evv-status';
 
               const linkTo = item.path === '/' && isAdminRole ? '/dashboard' : item.path;
 

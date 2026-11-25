@@ -1,0 +1,466 @@
+{
+  "config": {
+    "configFile": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3adf73-1795565895/playwright.config.ts",
+    "rootDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3adf73-1795565895/e2e/tests",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3adf73-1795565895/e2e/setup/global-setup.ts",
+    "globalTeardown": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3adf73-1795565895/e2e/setup/global-teardown.ts",
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 4
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3adf73-1795565895/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3adf73-1795565895/e2e/setup",
+        "testIgnore": [
+          "**/visual-showcase.spec.ts"
+        ],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3adf73-1795565895/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3adf73-1795565895/e2e/tests",
+        "testIgnore": [
+          "**/visual-showcase.spec.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3adf73-1795565895/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3adf73-1795565895/e2e/tests",
+        "testIgnore": [
+          "**/visual-showcase.spec.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3adf73-1795565895/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3adf73-1795565895/e2e/tests",
+        "testIgnore": [
+          "**/visual-showcase.spec.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3adf73-1795565895/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3adf73-1795565895/e2e/tests",
+        "testIgnore": [
+          "**/visual-showcase.spec.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3adf73-1795565895/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3adf73-1795565895/e2e/tests",
+        "testIgnore": [
+          "**/visual-showcase.spec.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3adf73-1795565895/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "tablet",
+        "name": "tablet",
+        "testDir": "/Users/markjordan/.hermes/cache/scratch/impl-wdvf3adf73-1795565895/e2e/tests",
+        "testIgnore": [
+          "**/visual-showcase.spec.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.57.0",
+    "workers": 4,
+    "webServer": {
+      "command": "npm run test:e2e:server",
+      "port": 3000,
+      "timeout": 30000,
+      "reuseExistingServer": true,
+      "stdout": "pipe",
+      "stderr": "pipe",
+      "env": {
+        "NODE_ENV": "test",
+        "DATABASE_URL": "postgresql://markjordan:local@localhost:5432/e2e_wdvf3adf73_1795566805",
+        "PORT": "3000",
+        "CORS_ORIGIN": "http://localhost:5173,http://localhost:3000",
+        "JWT_SECRET": "e2e-test-jwt-secret-minimum-32-characters-required-for-testing",
+        "JWT_REFRESH_SECRET": "e2e-test-jwt-refresh-secret-minimum-32-characters-required-for-testing",
+        "DEMO_READ_ONLY": "false"
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "../setup/auth.setup.ts",
+      "file": "../setup/auth.setup.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "authenticate as admin (admin@folkcare.example)",
+          "ok": true,
+          "tags": [
+            "folkcare.example)"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "setup",
+              "projectName": "setup",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6270,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-25T00:33:56.909Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "17e3fe6f4d9d8bd79c6b-55ee7c425e3901a2ec66",
+          "file": "../setup/auth.setup.ts",
+          "line": 9,
+          "column": 3
+        },
+        {
+          "title": "authenticate as orgAdmin (orgadmin@e2e-test.invalid)",
+          "ok": true,
+          "tags": [
+            "e2e-test.invalid)"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "setup",
+              "projectName": "setup",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 5996,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-25T00:33:56.094Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "17e3fe6f4d9d8bd79c6b-383024d213e9d7831242",
+          "file": "../setup/auth.setup.ts",
+          "line": 9,
+          "column": 3
+        },
+        {
+          "title": "authenticate as coordinator (coordinator@e2e-test.invalid)",
+          "ok": true,
+          "tags": [
+            "e2e-test.invalid)"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "setup",
+              "projectName": "setup",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 5997,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-25T00:33:56.601Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "17e3fe6f4d9d8bd79c6b-4c18046f43a24cafb947",
+          "file": "../setup/auth.setup.ts",
+          "line": 9,
+          "column": 3
+        },
+        {
+          "title": "authenticate as caregiver (caregiver@e2e-test.invalid)",
+          "ok": true,
+          "tags": [
+            "e2e-test.invalid)"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "setup",
+              "projectName": "setup",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "passed",
+                  "duration": 6137,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-25T00:33:57.002Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "17e3fe6f4d9d8bd79c6b-87875f0439bb8a9f583c",
+          "file": "../setup/auth.setup.ts",
+          "line": 9,
+          "column": 3
+        },
+        {
+          "title": "authenticate as family (family@e2e-test.invalid)",
+          "ok": true,
+          "tags": [
+            "e2e-test.invalid)"
+          ],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "setup",
+              "projectName": "setup",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 3288,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-25T00:34:03.761Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "17e3fe6f4d9d8bd79c6b-6cc26419af12f4eab337",
+          "file": "../setup/auth.setup.ts",
+          "line": 9,
+          "column": 3
+        }
+      ]
+    },
+    {
+      "title": "evv/wdvf3adf73-evv-removal.spec.ts",
+      "file": "evv/wdvf3adf73-evv-removal.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "EVV/Geofencing Removal (wdvf3adf73)",
+          "file": "evv/wdvf3adf73-evv-removal.spec.ts",
+          "line": 6,
+          "column": 6,
+          "specs": [
+            {
+              "title": "EVV API endpoints return 404 after removal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3266,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-25T00:34:10.339Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9ac06cc070dfd49235b9-098acb63a19dbe37858e",
+              "file": "evv/wdvf3adf73-evv-removal.spec.ts",
+              "line": 7,
+              "column": 3
+            },
+            {
+              "title": "navigating to /time-tracking does not render EVV records page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2438,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-25T00:34:10.451Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9ac06cc070dfd49235b9-a6ee88d30fac4cc15c5c",
+              "file": "evv/wdvf3adf73-evv-removal.spec.ts",
+              "line": 43,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-25T00:33:41.844Z",
+    "duration": 32761.792999999998,
+    "expected": 7,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
