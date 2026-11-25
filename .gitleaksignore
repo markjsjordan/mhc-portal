@@ -22,4 +22,5 @@ fa04eded416f3d66da952864df62f59d4f3f4bb8:.e2e-results-wdvf3add19.json:generic-ap
 # The two commits below contain .gitleaksignore with a secret value in the fingerprint entry
 # (a mistake: gitleaks uses *** not the actual value). These are config file changes, not credentials.
 752c90fb782f5e0bdc65c4f40aa9b73b97517d37:.gitleaksignore:generic-api-key:***
-394655315370dd7a01986068a3b851aab1fc6765:.gitleaksignore:generic-api-key:***
+394655315370dd7a01986068a3b851aab1fc6765:.gitleaksignore:generic-api-key:***# Test environment JWT in gitleaks-report.json from scanning E2E test artifacts
+ce1cc795d59de94365a36bbf7fde5d823565f91b:gitleaks-report.json:generic-api-key:***
