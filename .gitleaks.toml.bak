@@ -1,0 +1,51 @@
+# Gitleaks configuration for Folk Care
+# https://github.com/gitleaks/gitleaks
+
+title = "Folk Care Secrets Scanning"
+
+[extend]
+# Use default Gitleaks rules as base
+useDefault = true
+
+[allowlist]
+description = "Allowlisted files and patterns"
+
+# Ignore test files with placeholder secrets
+paths = [
+  '''.*test\.ts$''',
+  '''.*test\.tsx$''',
+  '''.*\.test\.js$''',
+  '''.*\.spec\.ts$''',
+  '''.*/fixtures/.*''',
+  '''.*/mocks/.*''',
+  '''.*/__tests__/.*''',
+  # Ignore third-party dependencies
+  '''packages/mobile/ios/Pods/.*''',
+  '''packages/mobile/android/.*''',
+  '''node_modules/.*''',
+]
+
+# Ignore example/template files and false positive patterns
+regexes = [
+  # Example/template files
+  '''\.env\.example''',
+  '''\.env\.template''',
+  '''example.*password.*''',
+  '''demo.*token.*''',
+  '''placeholder.*key.*''',
+  # Example tokens in documentation
+  '''ghp_example.*''',
+  '''sk-example.*''',
+  # Test/demo database URLs
+  '''postgresql://postgres:postgres@localhost''',
+  '''DATABASE_URL_TEST''',
+  '''DATABASE_URL_EXAMPLE''',
+  # Placeholder API keys in docs
+  '''your-api-key-here''',
+  '''YOUR_.*_KEY''',
+  '''YOUR_TOKEN''',
+  '''REPLACE_WITH_YOUR_.*''',
+  # Curl example auth headers with placeholder tokens
+  '''Authorization: Bearer YOUR_TOKEN''',
+  '''Bearer YOUR_TOKEN''',
+]

@@ -20,6 +20,7 @@ import { OrganizationRepository } from '../repository/organization-repository';
 import { UserRepository, CreateUserRequest } from '../repository/user-repository';
 import { Database } from '../db/connection';
 import { findPortalDerivedRoles, PORTAL_DERIVED_ROLE_MESSAGE } from './portal-link-resolver';
+import { createEmailService } from './email-service.js';
 
 export interface StaffOption {
   id: UUID;
@@ -592,8 +593,25 @@ export class OrganizationService implements IOrganizationService {
       });
     }
 
-    // Extend invitation expiration (URL generation flow — no email sent)
+    // Extend invitation expiration
     await this.userRepo.resendInviteToken(invitationId, organizationId, resendBy);
+
+    // Send the invitation email
+    const organization = await this.getOrganizationById(organizationId);
+    
+    // Get the user who is resending (to use their name as inviter)
+    const resender = await this.userRepo.getUserById(resendBy);
+    const inviterName = resender != null ? `${resender.firstName} ${resender.lastName}` : 'Administrator';
+
+    const emailService = createEmailService();
+    await emailService.sendInvitation({
+      recipientEmail: invite.email,
+      recipientName: (invite.firstName ?? '').length > 0 ? `${invite.firstName} ${invite.lastName}` : undefined,
+      inviterName,
+      organizationName: organization.name,
+      invitationToken: invite.token,
+      expiresAt: invite.expiresAt,
+    });
   }
 
   async revokeInvitationById(invitationId: UUID, organizationId: UUID, revokedBy: UUID): Promise<void> {

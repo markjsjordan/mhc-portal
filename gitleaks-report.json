@@ -1,0 +1,22 @@
+[
+ {
+  "Description": "Detected a Generic API Key, potentially exposing access to various services and sensitive operations.",
+  "StartLine": 147,
+  "EndLine": 147,
+  "StartColumn": 13,
+  "EndColumn": 77,
+  "Match": "T_REFRESH_SECRET\": \"1dXVWMs5SbSYWOjiEQ9OSXzaUnvhsE8EH9DkH8PtWT4=\"",
+  "Secret": "1dXVWMs5SbSYWOjiEQ9OSXzaUnvhsE8EH9DkH8PtWT4=",
+  "File": ".e2e-results-wdvf3add19.json",
+  "SymlinkFile": "",
+  "Commit": "fa04eded416f3d66da952864df62f59d4f3f4bb8",
+  "Entropy": 4.8625073,
+  "Author": "Mark Jordan",
+  "Email": "markjordan@example.com",
+  "Date": "2026-11-21T00:30:26Z",
+  "Message": "feat(web): change client intake frequency and duration to free-text (#wdvf3add19)",
+  "Tags": [],
+  "RuleID": "generic-api-key",
+  "Fingerprint": "fa04eded416f3d66da952864df62f59d4f3f4bb8:.e2e-results-wdvf3add19.json:generic-api-key:147"
+ }
+]

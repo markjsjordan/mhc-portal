@@ -248,7 +248,7 @@ jobs:
       - name: Deploy to Vercel Preview
         id: deploy
         run: |
-          DEPLOYMENT_URL=$(vercel deploy --force --token=${{ secrets.VERCEL_TOKEN }} --env DATABASE_URL="${{ secrets.PREVIEW_DATABASE_URL }}" --env ENVIRONMENT="preview")
+          DEPLOYMENT_URL=$(vercel deploy --force --token=${{ secrets.VERCEL_TOKEN }} --env ENVIRONMENT="preview")
           echo "url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
           echo "✅ Preview deployment complete: $DEPLOYMENT_URL"
         env:
@@ -374,7 +374,6 @@ jobs:
         id: deploy
         run: |
           DEPLOYMENT_URL=$(vercel deploy --prod --force --token=${{ secrets.VERCEL_TOKEN }} \
-            --env DATABASE_URL="${{ secrets.DATABASE_URL }}" \
             --env STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY }}" \
             --env STRIPE_WEBHOOK_SECRET="${{ secrets.STRIPE_WEBHOOK_SECRET }}" \
             --env RESEND_API_KEY="${{ secrets.RESEND_API_KEY }}" \
