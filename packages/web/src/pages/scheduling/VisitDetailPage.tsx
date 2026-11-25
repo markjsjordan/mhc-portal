@@ -21,6 +21,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { useVisit, EditVisitModal, VisitNotesSection } from '../../verticals/scheduling-visits';
+import { VisitCompletionSection } from '../../verticals/scheduling-visits/components/VisitCompletionSection';
 import { useClient } from '../../verticals/client-demographics';
 import { useCaregiver } from '../../verticals/caregivers';
 import { Badge } from '@/components/ui/badge.js';
@@ -877,6 +878,20 @@ export const VisitDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Visit Documentation & Completion Section (E3 / wdvf3adf62) */}
+      <VisitCompletionSection
+        visit={visit}
+        initialTasks={tasks.map((t) => ({
+          id: t.id,
+          title: t.title,
+          completed: Boolean(t.completed),
+        }))}
+        canEditCompletion={canEditVisit}
+        onCompleted={() => {
+          void refetch();
+        }}
+      />
 
       {/* Visit Notes & Comments Section */}
       <VisitNotesSection visitId={visit.id} />

@@ -32,6 +32,12 @@ import { ClientRepository } from '@folkcare/client-demographics';
 import { ComplianceCheckingService, complianceCheckRequestSchema, DocumentationQualityService, HospitalizationRiskService, VitalsAnomalyService, SentimentAnalysisService, ReportGenerationService } from '@folkcare/visit-notes';
 import { VisitDurationPredictionService } from '@folkcare/scheduling-visits';
 import { findServiceType } from './service-types.js';
+import {
+  VisitCompletionService,
+  CompleteVisitSchema,
+  EditVisitCompletionSchema,
+  VisitCompletionError,
+} from '../services/visit-completion-service.js';
 import knex from 'knex';
 import { z } from 'zod';
 
@@ -2140,6 +2146,10 @@ export function createVisitRouter(db: Database): Router {
   router.patch('/:id/status', requireSchedulingAccess('update'), async (req: Request, res: Response, next: NextFunction) => {
     try {
       const context = getUserContext(req);
+      if (!context.organizationId) {
+        res.status(400).json({ success: false, error: 'Organization context required' });
+        return;
+      }
       const visitId = req.params.id;
       if (!visitId || !isValidUUID(visitId)) {
         res.status(400).json({
@@ -2218,6 +2228,218 @@ export function createVisitRouter(db: Database): Router {
         data: updatedVisit,
       });
     } catch (error) {
+      next(error);
+    }
+  });
+
+  /**
+   * PATCH /api/visits/:id/complete
+   * E3 (wdvf3adf62): Complete a visit with tasks, observations, adverse events,
+   * time in/out, actual vs scheduled duration, and caregiver PIN/signature confirmation.
+   * Accessible to coordinators/admins OR the assigned caregiver.
+   */
+  router.patch('/:id/complete', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const context = getUserContext(req);
+      if (!context.organizationId || !context.userId) {
+        res.status(401).json({ success: false, error: 'Unauthorized' });
+        return;
+      }
+
+      const visitId = req.params.id;
+      if (!visitId || !isValidUUID(visitId)) {
+        res.status(400).json({ success: false, error: 'Invalid visit ID format' });
+        return;
+      }
+
+      const isElevated = hasSchedulingAccess(context, 'update');
+      const isCaregiver = context.roles.includes('CAREGIVER');
+      if (!isElevated && !isCaregiver) {
+        res.status(403).json({
+          success: false,
+          error: 'Access denied: Caregiver or scheduling update permission required to complete visits',
+          code: 'PERMISSION_DENIED',
+        });
+        return;
+      }
+
+      if (!isElevated && isCaregiver) {
+        const assignCheck = await db.query<{ assigned_caregiver_id: string | null }>(
+          'SELECT assigned_caregiver_id FROM visits WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL',
+          [visitId, context.organizationId]
+        );
+        if (assignCheck.rows.length === 0) {
+          res.status(404).json({ success: false, error: 'Visit not found' });
+          return;
+        }
+        const assignedCg = assignCheck.rows[0]?.assigned_caregiver_id;
+        if (context.caregiverId && assignedCg && assignedCg !== context.caregiverId) {
+          res.status(403).json({
+            success: false,
+            error: 'Access denied: Caregivers can only complete their own assigned visits',
+            code: 'CAREGIVER_SCOPE_VIOLATION',
+          });
+          return;
+        }
+      }
+
+      const parsed = CompleteVisitSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          success: false,
+          error: parsed.error.issues[0]?.message ?? 'Invalid visit completion payload',
+          issues: parsed.error.issues,
+        });
+        return;
+      }
+
+      const completionService = new VisitCompletionService(db);
+      const completion = await completionService.completeVisit(
+        context.organizationId,
+        visitId,
+        parsed.data,
+        {
+          userId: context.userId,
+          roles: context.roles,
+          caregiverId: context.caregiverId,
+        }
+      );
+
+      res.json({
+        success: true,
+        data: completion,
+      });
+    } catch (error) {
+      if (error instanceof VisitCompletionError) {
+        res.status(error.statusCode).json({
+          success: false,
+          error: error.message,
+          code: error.code,
+        });
+        return;
+      }
+      next(error);
+    }
+  });
+
+  /**
+   * GET /api/visits/:id/completion
+   * E3 (wdvf3adf62): Retrieve visit completion documentation and audit trail.
+   */
+  router.get('/:id/completion', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const context = getUserContext(req);
+      if (!context.organizationId) {
+        res.status(401).json({ success: false, error: 'Unauthorized' });
+        return;
+      }
+
+      const visitId = req.params.id;
+      if (!visitId || !isValidUUID(visitId)) {
+        res.status(400).json({ success: false, error: 'Invalid visit ID format' });
+        return;
+      }
+
+      const visitResult = await db.query<{ client_id: string; assigned_caregiver_id: string | null }>(
+        'SELECT client_id, assigned_caregiver_id FROM visits WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL',
+        [visitId, context.organizationId]
+      );
+
+      const visitRow = visitResult.rows[0];
+      if (!visitRow) {
+        res.status(404).json({ success: false, error: 'Visit not found' });
+        return;
+      }
+
+      const scopeError = checkVisitReadScope(
+        {
+          clientId: visitRow.client_id,
+          assignedCaregiverId: visitRow.assigned_caregiver_id,
+        },
+        context
+      );
+      if (scopeError) {
+        res.status(scopeError.status).json({
+          success: false,
+          error: scopeError.error,
+          code: scopeError.code,
+        });
+        return;
+      }
+
+      const completionService = new VisitCompletionService(db);
+      const completion = await completionService.getCompletion(context.organizationId, visitId);
+      if (!completion) {
+        res.status(404).json({
+          success: false,
+          error: 'Visit completion record not found',
+          code: 'COMPLETION_NOT_FOUND',
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        data: completion,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  /**
+   * PATCH /api/visits/:id/completion
+   * E3 (wdvf3adf62): Coordinator/admin post-submit review & correction of visit completion details.
+   * Appends an immutable edit entry to completion.auditHistory.
+   */
+  router.patch('/:id/completion', requireSchedulingAccess('update'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const context = getUserContext(req);
+      if (!context.organizationId) {
+        res.status(400).json({ success: false, error: 'Organization context required' });
+        return;
+      }
+      const visitId = req.params.id;
+      if (!visitId || !isValidUUID(visitId)) {
+        res.status(400).json({ success: false, error: 'Invalid visit ID format' });
+        return;
+      }
+
+      const parsed = EditVisitCompletionSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          success: false,
+          error: parsed.error.issues[0]?.message ?? 'Invalid completion edit payload',
+          issues: parsed.error.issues,
+        });
+        return;
+      }
+
+      const completionService = new VisitCompletionService(db);
+      const updated = await completionService.editCompletion(
+        context.organizationId,
+        visitId,
+        parsed.data,
+        {
+          userId: context.userId,
+          roles: context.roles,
+          caregiverId: context.caregiverId,
+        }
+      );
+
+      res.json({
+        success: true,
+        data: updated,
+      });
+    } catch (error) {
+      if (error instanceof VisitCompletionError) {
+        res.status(error.statusCode).json({
+          success: false,
+          error: error.message,
+          code: error.code,
+        });
+        return;
+      }
       next(error);
     }
   });
