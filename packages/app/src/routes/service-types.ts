@@ -8,7 +8,7 @@
 import { Router, Request, Response } from 'express';
 import type { Database } from '@folkcare/core';
 
-export type ServiceTypeCode = 'SN' | 'PT' | 'OT' | 'ST' | 'HHA' | 'PC';
+export type ServiceTypeCode = 'SN' | 'HHA' | 'PC';
 export type ServiceCategory = 'SKILLED' | 'NON_SKILLED';
 export type SupportedBillingState = 'TX' | 'FL';
 
@@ -65,87 +65,6 @@ export const HOME_CARE_SERVICE_TYPES: ServiceTypeDefinition[] = [
         state: 'FL',
         taxonomyCode: '163W00000X',
         billingCodes: ['S9123', 'S9124', 'T1002', 'T1003', 'G0299', 'G0300'],
-        program: 'Florida AHCA / SMMC LTC',
-        evvRequired: true,
-      },
-    },
-  },
-  {
-    id: '00000000-0000-4000-8000-00000005ec04',
-    slug: 'physical-therapy',
-    code: 'PT',
-    name: 'Physical Therapy',
-    category: 'SKILLED',
-    qualifications: ['PT', 'PTA'],
-    description: 'Rehabilitative physical therapy services and functional mobility restoration.',
-    defaultTaxonomyCode: '225100000X',
-    billingCodes: ['G0151', 'G0157', 'S9131'],
-    stateBilling: {
-      TX: {
-        state: 'TX',
-        taxonomyCode: '225100000X',
-        billingCodes: ['G0151', 'G0157', 'S9131'],
-        program: 'Texas HHSC Home Health / STAR+PLUS',
-        evvRequired: true,
-      },
-      FL: {
-        state: 'FL',
-        taxonomyCode: '225100000X',
-        billingCodes: ['G0151', 'G0157', 'S9131'],
-        program: 'Florida AHCA / SMMC LTC',
-        evvRequired: true,
-      },
-    },
-  },
-  {
-    id: '00000000-0000-4000-8000-00000005ec05',
-    slug: 'occupational-therapy',
-    code: 'OT',
-    name: 'Occupational Therapy',
-    category: 'SKILLED',
-    qualifications: ['OT', 'COTA'],
-    description: 'Occupational therapy to restore daily living skills, upper extremity function, and adaptive device training.',
-    defaultTaxonomyCode: '225X00000X',
-    billingCodes: ['G0152', 'G0158', 'S9129'],
-    stateBilling: {
-      TX: {
-        state: 'TX',
-        taxonomyCode: '225X00000X',
-        billingCodes: ['G0152', 'G0158', 'S9129'],
-        program: 'Texas HHSC Home Health / STAR+PLUS',
-        evvRequired: true,
-      },
-      FL: {
-        state: 'FL',
-        taxonomyCode: '225X00000X',
-        billingCodes: ['G0152', 'G0158', 'S9129'],
-        program: 'Florida AHCA / SMMC LTC',
-        evvRequired: true,
-      },
-    },
-  },
-  {
-    id: '00000000-0000-4000-8000-00000005ec06',
-    slug: 'speech-therapy',
-    code: 'ST',
-    name: 'Speech Therapy',
-    category: 'SKILLED',
-    qualifications: ['SLP', 'ST'],
-    description: 'Speech-language pathology, cognitive-communication, and swallowing disorder therapy.',
-    defaultTaxonomyCode: '235Z00000X',
-    billingCodes: ['G0153', 'S9128'],
-    stateBilling: {
-      TX: {
-        state: 'TX',
-        taxonomyCode: '235Z00000X',
-        billingCodes: ['G0153', 'S9128'],
-        program: 'Texas HHSC Home Health / STAR+PLUS',
-        evvRequired: true,
-      },
-      FL: {
-        state: 'FL',
-        taxonomyCode: '235Z00000X',
-        billingCodes: ['G0153', 'S9128'],
         program: 'Florida AHCA / SMMC LTC',
         evvRequired: true,
       },
