@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `SUPERVISION` → Nurse Visit
   - `ASSESSMENT` → Care Management
   - `CONCIERGE` → Concierge Visit
-- Removed deprecated visit types (`DISCHARGE`, `RESPITE`, `EMERGENCY`, `MAKEUP`, `ONGOING_SUPPORT`). Existing database rows with deprecated types are migrated to `REGULAR` via migration `20261123000000_restrict_visit_types_to_five.ts`.
+- Removed deprecated visit types (`DISCHARGE`, `RESPITE`, `EMERGENCY`, `MAKEUP`, `ONGOING_SUPPORT`). Existing database rows with deprecated types are migrated to `REGULAR` via migration `20261123010000_restrict_visit_types_to_five.ts`.
 
 ## [1.0.0] - 2025-12-01
 
