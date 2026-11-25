@@ -20,6 +20,7 @@ import { OrganizationRepository } from '../repository/organization-repository';
 import { UserRepository, CreateUserRequest } from '../repository/user-repository';
 import { Database } from '../db/connection';
 import { findPortalDerivedRoles, PORTAL_DERIVED_ROLE_MESSAGE } from './portal-link-resolver';
+import { createEmailService } from './email-service';
 
 export interface StaffOption {
   id: UUID;
@@ -592,8 +593,39 @@ export class OrganizationService implements IOrganizationService {
       });
     }
 
-    // Extend invitation expiration (URL generation flow — no email sent)
+    // Extend invitation expiration in database
     await this.userRepo.resendInviteToken(invitationId, organizationId, resendBy);
+
+    // Fetch organization details for email context
+    const organization = await this.organizationRepo.getOrganizationById(organizationId);
+    const organizationName = organization?.name ?? 'MHC Portal';
+
+    // Fetch the user who is resending for inviter name
+    const resender = await this.userRepo.getUserById(resendBy);
+    const inviterParts = [resender?.firstName, resender?.lastName].filter(
+      (part): part is string => part != null && part.trim().length > 0
+    );
+    const inviterName = inviterParts.length > 0 ? inviterParts.join(' ') : 'An administrator';
+
+    // Build recipient name if available
+    const recipientParts = [invite.firstName, invite.lastName].filter(
+      (part): part is string => part != null && part.trim().length > 0
+    );
+    const recipientName = recipientParts.length > 0 ? recipientParts.join(' ') : undefined;
+
+    // New expiry matches the 7-day extension applied by resendInviteToken
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    // Dispatch invitation email via email service
+    const emailService = createEmailService();
+    await emailService.sendInvitation({
+      recipientEmail: invite.email,
+      ...(recipientName != null ? { recipientName } : {}),
+      inviterName,
+      organizationName,
+      invitationToken: invite.token,
+      expiresAt,
+    });
   }
 
   async revokeInvitationById(invitationId: UUID, organizationId: UUID, revokedBy: UUID): Promise<void> {
