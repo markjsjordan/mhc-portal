@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import fs from 'node:fs';
+import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { codecovVitePlugin } from '@codecov/vite-plugin';
@@ -12,9 +13,23 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkgJson = JSON.parse(
   fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf8')
 ) as { version?: string };
+
+// Derive version from git tag first, then env vars, then package.json
+function getVersionFromGit(): string | undefined {
+  try {
+    return execSync('git describe --tags --abbrev=0', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim()
+      .replace(/^v/, '');
+  } catch {
+    return undefined;
+  }
+}
+
 const appVersion =
   process.env.VITE_APP_VERSION ||
   process.env.REACT_APP_VERSION ||
+  getVersionFromGit() ||
   pkgJson.version ||
   '1.5.0';
 
