@@ -2,6 +2,7 @@ import type { ApiClient } from '@/core/services';
 import type { PaginatedResult, SearchParams } from '@/core/types';
 import type {
   Client,
+  ClientStatus,
   CreateClientInput,
   UpdateClientInput,
   ClientSearchFilters,
@@ -80,6 +81,7 @@ export interface ClientApiService {
   getClientById(id: string): Promise<Client>;
   createClient(input: CreateClientInput): Promise<Client>;
   updateClient(id: string, input: UpdateClientInput): Promise<Client>;
+  updateClientStatus(id: string, status: ClientStatus, reason?: string): Promise<Client>;
   deleteClient(id: string): Promise<void>;
   getBranches(): Promise<Array<{ id: string; name: string; code?: string; status?: string }>>;
   getFamilyPortalAccess(clientId: string): Promise<FamilyPortalAccessRow[]>;
@@ -169,6 +171,19 @@ export const createClientApiService = (apiClient: ApiClient): ClientApiService =
 
     async updateClient(id: string, input: UpdateClientInput): Promise<Client> {
       const response = await apiClient.patch<{ success?: boolean; data?: Client } | Client>(`/api/clients/${id}`, input);
+      if ('data' in response && response.data) {
+        return response.data;
+      }
+      return response as Client;
+    },
+
+    async updateClientStatus(id: string, status: ClientStatus, reason?: string): Promise<Client> {
+      const trimmedReason = typeof reason === 'string' ? reason.trim() : undefined;
+      const body = trimmedReason ? { status, reason: trimmedReason } : { status };
+      const response = await apiClient.patch<{ success?: boolean; data?: Client } | Client>(
+        `/api/clients/${id}/status`,
+        body
+      );
       if ('data' in response && response.data) {
         return response.data;
       }

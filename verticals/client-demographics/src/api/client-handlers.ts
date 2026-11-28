@@ -5,9 +5,17 @@
  */
 
 import { Request, Response, NextFunction, Router } from 'express';
-import { UserContext, Database, AuthMiddleware, getPermissionService, isValidUUID } from '@folkcare/core';
+import { UserContext, Database, AuthMiddleware, getPermissionService, isValidUUID, ADMIN_ROLES, PermissionError } from '@folkcare/core';
 import { ClientService } from '../service/client-service';
-import { CreateClientInput, UpdateClientInput, ClientSearchFilters, ClientStatus, RiskType } from '../types/client';
+import {
+  CreateClientInput,
+  UpdateClientInput,
+  ClientSearchFilters,
+  ClientStatus,
+  RiskType,
+  MANUALLY_SETTABLE_CLIENT_STATUSES,
+  ManuallySettableClientStatus,
+} from '../types/client';
 
 /**
  * Extract user context from authenticated request
@@ -757,7 +765,35 @@ export class ClientHandlers {
       });
     }
 
-    const client = await this.clientService.updateClientStatus(id, status, context, reason);
+    // Enforce clients:update permission and restrict manual status updates to admin roles
+    this.permissionService.requirePermission(context, 'clients:update');
+    if (!context.roles.some((r) => (ADMIN_ROLES as readonly string[]).includes(r))) {
+      throw new PermissionError('Only administrators can manually update client status');
+    }
+
+    if (
+      typeof status !== 'string' ||
+      !(MANUALLY_SETTABLE_CLIENT_STATUSES as readonly string[]).includes(status)
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid status. Allowed values: ACTIVE, INACTIVE, ON_HOLD, DISCHARGED, DECEASED',
+      });
+    }
+
+    if (reason !== undefined && typeof reason !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Reason must be a string',
+      });
+    }
+
+    const client = await this.clientService.updateClientStatus(
+      id,
+      status as ManuallySettableClientStatus,
+      context,
+      reason
+    );
 
     return res.json({
       success: true,

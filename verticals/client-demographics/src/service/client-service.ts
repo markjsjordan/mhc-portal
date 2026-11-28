@@ -11,11 +11,18 @@ import {
   PaginatedResult,
   GeocodingService,
   ClientStatus as CoreClientStatus,
+  ADMIN_ROLES,
 } from '@folkcare/core';
 import { getPermissionService } from '@folkcare/core';
 import { getCacheService } from '@folkcare/core/service/cache.service';
 import { CacheKeys, CacheTTL } from '@folkcare/core/constants/cache-keys';
-import { Client, CreateClientInput, UpdateClientInput, ClientSearchFilters } from '../types/client';
+import {
+  Client,
+  CreateClientInput,
+  UpdateClientInput,
+  ClientSearchFilters,
+  MANUALLY_SETTABLE_CLIENT_STATUSES,
+} from '../types/client';
 import { ClientRepository } from '../repository/client-repository';
 import { ClientValidator } from '../validation/client-validator';
 import type { ClientAuditService, AuditQuery, AuditReport } from './client-audit-service';
@@ -386,6 +393,7 @@ export class ClientService {
     // Invalidate cache
     const cache = getCacheService();
     await cache.delPattern(CacheKeys.patterns.client(id));
+    await cache.del(CacheKeys.clientsByOrganization(existing.organizationId));
 
     return updated;
   }
@@ -616,17 +624,27 @@ export class ClientService {
     context: UserContext,
     reason?: string
   ): Promise<Client> {
+    this.permissionService.requirePermission(context, 'clients:update');
+    if (!context.roles.some((r) => (ADMIN_ROLES as readonly string[]).includes(r))) {
+      throw new PermissionError('Only administrators can manually update client status');
+    }
+
+    if (!(MANUALLY_SETTABLE_CLIENT_STATUSES as readonly string[]).includes(status)) {
+      throw new ValidationError(
+        'Invalid status. Allowed values: ACTIVE, INACTIVE, ON_HOLD, DISCHARGED, DECEASED'
+      );
+    }
+
     // Internal existence check feeding a mutation, not a standalone PHI read — skip audit log
     const client = await this.getClientById(clientId, context, true);
 
     const updates: UpdateClientInput = { status };
+    const trimmedReason = typeof reason === 'string' ? reason.trim() : undefined;
 
-    if (status === 'DISCHARGED') {
-      if (reason !== undefined) {
-        updates.notes = `${client.notes || ''}\n\nDischarged: ${reason}`;
-      } else if (client.notes !== undefined) {
-        updates.notes = client.notes;
-      }
+    if (status === 'DISCHARGED' && trimmedReason) {
+      updates.notes = client.notes
+        ? `${client.notes}\n\nDischarged: ${trimmedReason}`
+        : `Discharged: ${trimmedReason}`;
     }
 
     return await this.updateClient(clientId, updates, context);

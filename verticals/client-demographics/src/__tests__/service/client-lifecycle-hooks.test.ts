@@ -115,6 +115,78 @@ describe('Client Lifecycle Hooks', () => {
       await service.updateClient('client-1', { status: 'ACTIVE' }, mockContext);
       expect(mockHook.handleClientStatusChange).not.toHaveBeenCalled();
     });
+
+    it('fires the hook when client is DECEASED via updateClientStatus', async () => {
+      const service = new ClientService(mockRepo, undefined, mockHook);
+      const existing: Partial<Client> = {
+        id: 'client-1',
+        organizationId: 'org-123',
+        status: 'ACTIVE',
+        firstName: 'Alice',
+        lastName: 'Smith',
+        notes: 'Existing note',
+      };
+
+      vi.spyOn(service, 'getClientById').mockResolvedValue(existing as Client);
+      vi.spyOn(mockRepo, 'update').mockResolvedValue({
+        ...existing,
+        status: 'DECEASED',
+      } as Client);
+
+      await service.updateClientStatus('client-1', 'DECEASED', mockContext);
+
+      expect(mockHook.handleClientStatusChange).toHaveBeenCalledTimes(1);
+      expect(mockHook.handleClientStatusChange).toHaveBeenCalledWith(
+        'client-1',
+        'ACTIVE',
+        'DECEASED',
+        mockContext
+      );
+    });
+
+    it('trims DISCHARGED reason and omits notes update when reason is blank', async () => {
+      const service = new ClientService(mockRepo, undefined, mockHook);
+      const existing: Partial<Client> = {
+        id: 'client-1',
+        organizationId: 'org-123',
+        status: 'ACTIVE',
+        firstName: 'Alice',
+        lastName: 'Smith',
+        notes: 'Initial note',
+      };
+
+      vi.spyOn(service, 'getClientById').mockResolvedValue(existing as Client);
+      const updateSpy = vi.spyOn(mockRepo, 'update').mockResolvedValue({
+        ...existing,
+        status: 'DISCHARGED',
+      } as Client);
+
+      await service.updateClientStatus('client-1', 'DISCHARGED', mockContext, '   ');
+      expect(updateSpy.mock.calls.at(-1)?.[1]).not.toHaveProperty('notes');
+
+      await service.updateClientStatus('client-1', 'DISCHARGED', mockContext, '  Completed care  ');
+      expect(updateSpy.mock.calls.at(-1)?.[1]).toEqual(
+        expect.objectContaining({
+          status: 'DISCHARGED',
+          notes: 'Initial note\n\nDischarged: Completed care',
+        })
+      );
+    });
+
+    it('rejects COORDINATOR in updateClientStatus with PermissionError', async () => {
+      const service = new ClientService(mockRepo, undefined, mockHook);
+      const coordinatorContext: UserContext = {
+        userId: 'user-coord',
+        organizationId: 'org-123',
+        branchIds: ['branch-123'],
+        roles: ['COORDINATOR'],
+        permissions: ['clients:read', 'clients:update'],
+      };
+
+      await expect(
+        service.updateClientStatus('client-1', 'INACTIVE', coordinatorContext)
+      ).rejects.toThrow('Only administrators can manually update client status');
+    });
   });
 
   describe('ClientService.deleteClient access revocation', () => {

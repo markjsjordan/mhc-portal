@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { ADMIN_ROLES } from '@folkcare/core/browser';
 import { useCreateClient, useClients, useUpdateClient, useBranches } from '@/verticals/client-demographics/hooks';
 import type { CreateClientInput, UpdateClientInput } from '@/verticals/client-demographics/types';
 import { useAuth } from '@/core/hooks';
 import { US_STATES } from '@/core/constants/us-states';
+import { ClientStatusSection } from './ClientStatusSection.js';
 
 // Intake Step 1 offers the 50 U.S. states only (no DC, no territories).
 // Derived from the shared list so codes stay in one source of truth.
@@ -244,6 +246,10 @@ function resolveEffectiveBranchId(
 
 export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = {}) {
   const { initialData, isEditMode = false, clientId, currentStatus, onSuccess } = props;
+  const [effectiveStatus, setEffectiveStatus] = useState<string | undefined>(currentStatus);
+  useEffect(() => {
+    setEffectiveStatus(currentStatus);
+  }, [currentStatus]);
   const [currentStep, setCurrentStep] = useState(1);
   const [intakeData, setIntakeData] = useState<Partial<IntakeData>>(
     (initialData && {
@@ -459,7 +465,7 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
 
         const activate = !isEditMode
           ? true
-          : shouldActivateOnEdit(currentStatus, {
+          : shouldActivateOnEdit(effectiveStatus, {
               firstName: updateInput.firstName,
               lastName: updateInput.lastName,
               dateOfBirth: updateInput.dateOfBirth,
@@ -745,8 +751,19 @@ export default function ClientIntakeWorkflow(props: ClientIntakeWorkflowProps = 
     }
   };
 
+  const isStatusAdmin = Boolean(
+    user?.roles?.some((r) => (ADMIN_ROLES as readonly string[]).includes(r))
+  );
+
   return (
     <div className="max-w-[1200px] mx-auto px-4 py-6 md:px-5 md:py-10 font-sans min-w-0 w-full box-border overflow-x-hidden">
+      {isEditMode && Boolean(clientId) && isStatusAdmin && (
+        <ClientStatusSection
+          clientId={clientId!}
+          currentStatus={effectiveStatus}
+          onStatusUpdated={setEffectiveStatus}
+        />
+      )}
       {/* Desktop Progress Stepper (>= 768px) */}
       <div className="hidden md:flex justify-between mb-10 px-5">
         {STEPS.map((step, index) => (

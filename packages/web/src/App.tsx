@@ -301,7 +301,7 @@ function AppRoutes() {
       <Route
         path="/clients/:id/edit"
         element={
-          <ProtectedRoute permission="clients:write">
+          <ProtectedRoute requiredRoles={['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN', 'COORDINATOR']}>
             <AppShell>
               <ClientEditPage />
             </AppShell>

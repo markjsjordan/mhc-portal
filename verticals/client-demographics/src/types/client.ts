@@ -319,6 +319,17 @@ export type ClientStatus =
   | 'DISCHARGED'
   | 'DECEASED';
 
+export const MANUALLY_SETTABLE_CLIENT_STATUSES = [
+  'ACTIVE',
+  'INACTIVE',
+  'ON_HOLD',
+  'DISCHARGED',
+  'DECEASED',
+] as const;
+
+export type ManuallySettableClientStatus =
+  (typeof MANUALLY_SETTABLE_CLIENT_STATUSES)[number];
+
 export interface Phone {
   number: string;
   type: 'MOBILE' | 'HOME' | 'WORK';

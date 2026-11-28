@@ -5,6 +5,7 @@ import { useApiClient } from '@/core/hooks';
 import { createClientApiService } from '../services/client-api';
 import type {
   ClientSearchFilters,
+  ClientStatus,
   CreateClientInput,
   UpdateClientInput,
   CreateFamilyMemberInput,
@@ -67,6 +68,42 @@ export const useUpdateClient = () => {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to update client');
+    },
+  });
+};
+
+const CLIENT_STATUS_LABELS: Record<ClientStatus, string> = {
+  INQUIRY: 'Inquiry',
+  PENDING_INTAKE: 'Pending Intake',
+  ACTIVE: 'Active',
+  INACTIVE: 'Inactive',
+  ON_HOLD: 'On Hold',
+  DISCHARGED: 'Discharged',
+  DECEASED: 'Deceased',
+};
+
+export const useUpdateClientStatus = () => {
+  const clientApi = useClientApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, status, reason }: { id: string; status: ClientStatus; reason?: string }) =>
+      clientApi.updateClientStatus(id, status, reason),
+    onSuccess: (data, variables) => {
+      const targetId = data?.id ?? variables.id;
+      void queryClient.invalidateQueries({ queryKey: ['clients'] });
+      void queryClient.invalidateQueries({ queryKey: ['clients', targetId] });
+      void queryClient.invalidateQueries({ queryKey: ['family-portal-access', targetId] });
+      void queryClient.invalidateQueries({ queryKey: ['client-portal-access', targetId] });
+      const label = CLIENT_STATUS_LABELS[variables.status] ?? variables.status;
+      if (variables.status === 'DISCHARGED' || variables.status === 'DECEASED') {
+        toast.success(`Client status updated to ${label}. Portal access has been revoked.`);
+      } else {
+        toast.success(`Client status updated to ${label}`);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update client status');
     },
   });
 };
