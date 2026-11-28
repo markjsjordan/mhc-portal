@@ -4,9 +4,18 @@
 
 import { UserContext, /* Permission, */ PermissionError } from '../types/base';
 
+export const VISIT_PERMISSIONS = {
+  CREATE: 'visits:create',
+  READ: 'visits:read',
+  UPDATE: 'visits:update',
+  COMPLETE: 'visits:complete',
+  CANCEL: 'visits:cancel',
+  DELETE: 'visits:delete',
+} as const;
+
 export interface PermissionRule {
   resource: string;
-  action: 'create' | 'read' | 'update' | 'delete';
+  action: 'create' | 'read' | 'update' | 'delete' | 'cancel' | 'complete';
   conditions?: PermissionCondition[];
 }
 
@@ -43,6 +52,8 @@ export class PermissionService {
       'staff:*',
       'schedules:*',
       'visits:*',
+      'visits:cancel',
+      'visits:delete',
       'assignments:*',
       'care-plans:*',
       'tasks:*',
@@ -75,6 +86,11 @@ export class PermissionService {
         'caregivers:*',
         'staff:read',
         'schedules:*',
+        'visits:read',
+        'visits:create',
+        'visits:update',
+        'visits:cancel',
+        'visits:delete',
         'reports:read',
         'compliance:read',
         'messages:*',
@@ -96,6 +112,8 @@ export class PermissionService {
         'assignments:*',
         'schedules:*',
         'visits:*',
+        'visits:cancel',
+        'visits:delete',
         'care-plans:*',
         'compliance:read',
         'messages:*',

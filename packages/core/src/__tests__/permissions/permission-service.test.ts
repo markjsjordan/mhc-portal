@@ -520,6 +520,41 @@ describe('PermissionService', () => {
         ).toBe(true);
       }
     });
+
+    it('should grant visits:cancel and visits:delete only to Coordinator and Admin roles', () => {
+      const allowedRoles = ['SUPER_ADMIN', 'ORG_ADMIN', 'ADMIN', 'BRANCH_ADMIN', 'COORDINATOR'];
+      for (const role of allowedRoles) {
+        const context = createMockUserContext({ roles: [role], permissions: [] });
+        expect(permissionService.hasPermission(context, 'visits:cancel'), `${role} should have visits:cancel`).toBe(true);
+        expect(permissionService.hasPermission(context, 'visits:delete'), `${role} should have visits:delete`).toBe(true);
+        if (role !== 'SUPER_ADMIN') {
+          const rolePerms = permissionService.getPermissionsForRoles([role]);
+          expect(rolePerms).toContain('visits:cancel');
+          expect(rolePerms).toContain('visits:delete');
+        }
+      }
+
+      const deniedRoles = [
+        'CAREGIVER',
+        'FAMILY',
+        'FAMILY_MEMBER',
+        'CLIENT',
+        'SCHEDULER',
+        'BILLING',
+        'HR',
+        'AUDITOR',
+        'READ_ONLY',
+        'NURSE',
+        'NURSE_RN',
+        'NURSE_LPN',
+        'CLINICAL',
+      ];
+      for (const role of deniedRoles) {
+        const context = createMockUserContext({ roles: [role], permissions: [] });
+        expect(permissionService.hasPermission(context, 'visits:cancel'), `${role} should NOT have visits:cancel`).toBe(false);
+        expect(permissionService.hasPermission(context, 'visits:delete'), `${role} should NOT have visits:delete`).toBe(false);
+      }
+    });
   });
 });
 

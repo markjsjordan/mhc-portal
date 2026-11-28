@@ -459,6 +459,25 @@ export class VisitPatternRepository {
   }
 
   /**
+   * Look up a single visit's scheduled_date (YYYY-MM-DD) for resolving ALL_FUTURE fromDate
+   */
+  async getVisitScheduledDate(
+    visitId: UUID,
+    organizationId: UUID
+  ): Promise<string | null> {
+    const result = await this.pool.query(
+      `SELECT scheduled_date FROM visits WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL`,
+      [visitId, organizationId]
+    );
+    if (result.rows.length === 0) return null;
+    const raw = result.rows[0].scheduled_date;
+    if (raw instanceof Date) {
+      return raw.toISOString().slice(0, 10);
+    }
+    return typeof raw === 'string' ? raw.slice(0, 10) : null;
+  }
+
+  /**
    * Update future instances of visits for a pattern
    */
   async updateFutureVisitsForPattern(
@@ -470,6 +489,7 @@ export class VisitPatternRepository {
       duration?: number;
       caregiverId?: UUID | null;
       notes?: string;
+      status?: 'ACTIVE' | 'PAUSED' | 'CANCELLED';
     },
     context: UserContext
   ): Promise<number> {
@@ -501,13 +521,21 @@ export class VisitPatternRepository {
       values.push(updates.caregiverId);
       const caregiverIdx = values.length;
       setClauses.push(`assigned_caregiver_id = $${caregiverIdx}`);
-      setClauses.push(`status = CASE WHEN $${caregiverIdx}::uuid IS NOT NULL THEN 'ASSIGNED' ELSE 'UNASSIGNED' END`);
+      if (updates.status !== 'CANCELLED') {
+        setClauses.push(`status = CASE WHEN $${caregiverIdx}::uuid IS NOT NULL THEN 'ASSIGNED' ELSE 'UNASSIGNED' END`);
+      }
+    }
+
+    if (updates.status === 'CANCELLED') {
+      setClauses.push(`status = 'CANCELLED'`);
     }
 
     if (updates.notes !== undefined) {
       values.push(updates.notes);
       setClauses.push(`internal_notes = $${values.length}`);
     }
+
+    const extraWhere = updates.status === 'CANCELLED' ? '\n        AND actual_start_time IS NULL' : '';
 
     const query = `
       UPDATE visits
@@ -516,7 +544,7 @@ export class VisitPatternRepository {
         AND organization_id = $2
         AND scheduled_date >= $3
         AND status IN ('UNASSIGNED', 'SCHEDULED', 'ASSIGNED', 'CONFIRMED')
-        AND deleted_at IS NULL
+        AND deleted_at IS NULL${extraWhere}
     `;
 
     const result = await this.pool.query(query, values);
@@ -535,6 +563,7 @@ export class VisitPatternRepository {
       caregiverId?: UUID | null;
       scheduledDate?: Date | string;
       notes?: string;
+      status?: 'ACTIVE' | 'PAUSED' | 'CANCELLED';
     },
     context: UserContext
   ): Promise<Visit> {
@@ -570,7 +599,13 @@ export class VisitPatternRepository {
       values.push(updates.caregiverId);
       const caregiverIdx = values.length;
       setClauses.push(`assigned_caregiver_id = $${caregiverIdx}`);
-      setClauses.push(`status = CASE WHEN $${caregiverIdx}::uuid IS NOT NULL THEN 'ASSIGNED' ELSE 'UNASSIGNED' END`);
+      if (updates.status !== 'CANCELLED') {
+        setClauses.push(`status = CASE WHEN $${caregiverIdx}::uuid IS NOT NULL THEN 'ASSIGNED' ELSE 'UNASSIGNED' END`);
+      }
+    }
+
+    if (updates.status === 'CANCELLED') {
+      setClauses.push(`status = 'CANCELLED'`);
     }
 
     if (updates.notes !== undefined) {
@@ -578,10 +613,15 @@ export class VisitPatternRepository {
       setClauses.push(`internal_notes = $${values.length}`);
     }
 
+    const statusGuard =
+      updates.status === 'CANCELLED'
+        ? ` AND status IN ('UNASSIGNED', 'SCHEDULED', 'ASSIGNED', 'CONFIRMED')`
+        : '';
+
     const query = `
       UPDATE visits
       SET ${setClauses.join(', ')}
-      WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL
+      WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL${statusGuard}
       RETURNING *
     `;
 

@@ -266,7 +266,7 @@ describe('E1 Scheduling Infrastructure (wdvf3adf60)', () => {
 
       await runHandlers(handlers, req, mockRes, nextMock);
 
-      expect(queryMock).toHaveBeenCalledTimes(2);
+      expect(queryMock).toHaveBeenCalledTimes(3);
       expect(jsonMock).toHaveBeenCalledWith({
         success: true,
         data: expect.objectContaining({ id: VISIT_ID, status: 'CANCELLED' }),

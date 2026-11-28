@@ -4,6 +4,7 @@
  * Handles visit and scheduling endpoints for mobile and web applications
  */
 
+import { randomUUID } from 'node:crypto';
 import { Router, Request, Response, NextFunction } from 'express';
 import {
   Database,
@@ -131,6 +132,70 @@ export function requireSchedulingAccess(action: 'read' | 'update') {
       res.status(403).json({
         success: false,
         error: `Access denied: Scheduling ${action} permission required`,
+        code: 'PERMISSION_DENIED',
+      });
+      return;
+    }
+    next();
+  };
+}
+
+const VISIT_ADMIN_OR_COORDINATOR_ROLES = new Set([
+  'SUPER_ADMIN',
+  'ORG_ADMIN',
+  'BRANCH_ADMIN',
+  'ADMIN',
+  'COORDINATOR',
+]);
+
+type NullableDateValue = string | Date | null;
+
+function rejectDisallowedPatternStatusUpdate(
+  requestedStatus: unknown,
+  context: UserContext,
+  res: Response
+): boolean {
+  if (requestedStatus === undefined) return false;
+  if (requestedStatus !== 'CANCELLED') {
+    res.status(400).json({
+      success: false,
+      error: 'Cannot update pattern status via PUT. Use /pause, /resume, or /end endpoints.',
+      code: 'STATUS_UPDATE_DISALLOWED',
+    });
+    return true;
+  }
+  if (!canManageVisitLifecycle(context, 'cancel')) {
+    res.status(403).json({
+      success: false,
+      error: 'Access denied: Coordinator or Admin role with visits:cancel permission required',
+      code: 'PERMISSION_DENIED',
+    });
+    return true;
+  }
+  return false;
+}
+
+export function canManageVisitLifecycle(
+  context: UserContext,
+  action: 'cancel' | 'delete'
+): boolean {
+  const hasAllowedRole = context.roles.some((r) => VISIT_ADMIN_OR_COORDINATOR_ROLES.has(r));
+  if (!hasAllowedRole) return false;
+  const permService = new PermissionService();
+  return permService.hasPermission(context, `visits:${action}`);
+}
+
+export function requireVisitLifecycleAccess(action: 'cancel' | 'delete') {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const context = getUserContext(req);
+    if (!context.organizationId) {
+      res.status(400).json({ success: false, error: 'Organization ID is required' });
+      return;
+    }
+    if (!canManageVisitLifecycle(context, action)) {
+      res.status(403).json({
+        success: false,
+        error: `Access denied: Coordinator or Admin role with visits:${action} permission required`,
         code: 'PERMISSION_DENIED',
       });
       return;
@@ -373,6 +438,12 @@ export const visitStatusTransitionSchema = z.object({
   status: z.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'NO_SHOW_CLIENT', 'NO_SHOW_CAREGIVER']),
   reason: z.string().max(1000).optional(),
   notes: z.string().max(2000).optional(),
+  updateMode: z.enum(['THIS_VISIT', 'ALL_FUTURE']).optional(),
+});
+
+export const deleteVisitBodySchema = z.object({
+  updateMode: z.enum(['THIS_VISIT', 'ALL_FUTURE']).optional(),
+  reason: z.string().max(1000).optional(),
 });
 
 export function createVisitRouter(db: Database): Router {
@@ -1603,13 +1674,8 @@ export function createVisitRouter(db: Database): Router {
         return;
       }
 
-      // Reject updates.status changes through PUT
-      if (req.body?.updates?.status !== undefined) {
-        res.status(400).json({
-          success: false,
-          error: 'Cannot update pattern status via PUT. Use /pause, /resume, or /end endpoints.',
-          code: 'STATUS_UPDATE_DISALLOWED',
-        });
+      // Reject non-CANCELLED updates.status changes through PUT
+      if (rejectDisallowedPatternStatusUpdate(req.body?.updates?.status, context, res)) {
         return;
       }
 
@@ -2142,8 +2208,9 @@ export function createVisitRouter(db: Database): Router {
    * PATCH /api/visits/:id/status
    * Transition a visit's status with lifecycle validation.
    * Allowed transitions: SCHEDULED -> COMPLETED | CANCELLED | NO_SHOW
+   * Role guard: Coordinator + Admin only (visits:cancel).
    */
-  router.patch('/:id/status', requireSchedulingAccess('update'), async (req: Request, res: Response, next: NextFunction) => {
+  router.patch('/:id/status', requireVisitLifecycleAccess('cancel'), async (req: Request, res: Response, next: NextFunction) => {
     try {
       const context = getUserContext(req);
       if (!context.organizationId) {
@@ -2168,10 +2235,11 @@ export function createVisitRouter(db: Database): Router {
         return;
       }
 
-      const { status: targetStatus, reason, notes } = parsed.data;
+      const { status: targetStatus, reason, notes, updateMode } = parsed.data;
+      const effectiveMode = updateMode ?? 'THIS_VISIT';
 
       const existingResult = await db.query(
-        'SELECT id, organization_id, status FROM visits WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL',
+        'SELECT id, organization_id, status, pattern_id, scheduled_date, client_id FROM visits WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL',
         [visitId, context.organizationId]
       );
 
@@ -2183,7 +2251,14 @@ export function createVisitRouter(db: Database): Router {
         return;
       }
 
-      const existing = existingResult.rows[0] as { id: string; organization_id: string; status: string };
+      const existing = existingResult.rows[0] as {
+        id: string;
+        organization_id: string;
+        status: string;
+        pattern_id?: string | null;
+        scheduled_date?: NullableDateValue;
+        client_id?: string | null;
+      };
       if (!isValidVisitStatusTransition(existing.status, targetStatus)) {
         res.status(409).json({
           success: false,
@@ -2193,18 +2268,28 @@ export function createVisitRouter(db: Database): Router {
         return;
       }
 
-      const setClauses = ['status = $1', 'updated_by = $2', 'updated_at = NOW()'];
-      const updateParams: unknown[] = [targetStatus, context.userId];
-      let idx = 3;
+      const statusHistoryEntry = JSON.stringify({
+        id: randomUUID(),
+        fromStatus: existing.status,
+        toStatus: targetStatus,
+        timestamp: new Date().toISOString(),
+        changedBy: context.userId,
+        reason: reason ?? null,
+        notes: notes ?? null,
+        automatic: false,
+      });
 
-      if (targetStatus === 'CANCELLED') {
-        setClauses.push(`cancelled_at = NOW()`, `cancelled_by = $${idx++}`);
-        updateParams.push(context.userId);
-        if (reason) {
-          setClauses.push(`cancellation_reason = $${idx++}`);
-          updateParams.push(reason);
-        }
-      } else if (targetStatus === 'COMPLETED') {
+      const setClauses = [
+        'status = $1',
+        "status_history = COALESCE(status_history, '[]'::jsonb) || jsonb_build_array($2::jsonb)",
+        'updated_by = $3',
+        'updated_at = NOW()',
+        'version = COALESCE(version, 1) + 1',
+      ];
+      const updateParams: unknown[] = [targetStatus, statusHistoryEntry, context.userId];
+      let idx = 4;
+
+      if (targetStatus === 'COMPLETED') {
         setClauses.push(`actual_end_time = COALESCE(actual_end_time, NOW())`);
       }
 
@@ -2222,10 +2307,207 @@ export function createVisitRouter(db: Database): Router {
         updateParams
       );
 
+      let cancelledFutureCount = 0;
+      if (targetStatus === 'CANCELLED' && effectiveMode === 'ALL_FUTURE' && existing.pattern_id) {
+        const seriesHistoryEntry = JSON.stringify({
+          id: randomUUID(),
+          fromStatus: existing.status,
+          toStatus: 'CANCELLED',
+          timestamp: new Date().toISOString(),
+          changedBy: context.userId,
+          reason: reason ?? null,
+          notes: notes ?? null,
+          automatic: false,
+        });
+        const seriesResult = await db.query(
+          `UPDATE visits
+           SET status = 'CANCELLED',
+               status_history = COALESCE(status_history, '[]'::jsonb) || jsonb_build_array($1::jsonb),
+               updated_by = $2,
+               updated_at = NOW(),
+               version = COALESCE(version, 1) + 1
+           WHERE organization_id = $3
+             AND pattern_id = $4
+             AND scheduled_date >= $5
+             AND id != $6
+             AND deleted_at IS NULL
+             AND status IN ('SCHEDULED', 'UNASSIGNED', 'ASSIGNED', 'CONFIRMED')
+             AND actual_start_time IS NULL`,
+          [
+            seriesHistoryEntry,
+            context.userId,
+            context.organizationId,
+            existing.pattern_id,
+            existing.scheduled_date,
+            visitId,
+          ]
+        );
+        cancelledFutureCount = seriesResult.rowCount ?? 0;
+      }
+
+      try {
+        const auditService = new AuditService(db);
+        await auditService.logEvent(context, {
+          eventType: 'DATA_MODIFICATION',
+          resource: 'VISIT',
+          resourceId: visitId,
+          action: targetStatus === 'CANCELLED' ? 'CANCEL' : 'STATUS_UPDATE',
+          result: 'SUCCESS',
+          metadata: {
+            fromStatus: existing.status,
+            toStatus: targetStatus,
+            updateMode: effectiveMode,
+            cancelledFutureCount,
+          },
+        });
+      } catch {
+        // Non-blocking audit logging
+      }
+
       const updatedVisit = await fetchCreatedVisit(db, visitId, updatedResult.rows[0]);
       res.json({
         success: true,
         data: updatedVisit,
+        ...(effectiveMode === 'ALL_FUTURE'
+          ? { meta: { updateMode: effectiveMode, cancelledCount: 1 + cancelledFutureCount } }
+          : {}),
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  async function executeSoftDeleteVisits(
+    existing: { id: string; pattern_id?: string | null; scheduled_date?: NullableDateValue },
+    updateMode: 'THIS_VISIT' | 'ALL_FUTURE',
+    deletedBy: string | null,
+    organizationId: string
+  ): Promise<{ deletedIds: string[]; deletedCount: number }> {
+    const deleteResult =
+      updateMode === 'ALL_FUTURE' && existing.pattern_id != null
+        ? await db.query(
+            `UPDATE visits
+             SET deleted_at = NOW(),
+                 deleted_by = $1,
+                 updated_by = COALESCE($1, updated_by),
+                 updated_at = NOW(),
+                 version = COALESCE(version, 1) + 1
+             WHERE organization_id = $2
+               AND deleted_at IS NULL
+               AND (
+                 id = $3
+                 OR (
+                   pattern_id = $4
+                   AND scheduled_date >= $5
+                   AND status NOT IN ('COMPLETED', 'IN_PROGRESS')
+                   AND actual_start_time IS NULL
+                 )
+               )
+             RETURNING id`,
+            [deletedBy, organizationId, existing.id, existing.pattern_id, existing.scheduled_date]
+          )
+        : await db.query(
+            `UPDATE visits
+             SET deleted_at = NOW(),
+                 deleted_by = $1,
+                 updated_by = COALESCE($1, updated_by),
+                 updated_at = NOW(),
+                 version = COALESCE(version, 1) + 1
+             WHERE id = $2 AND organization_id = $3 AND deleted_at IS NULL
+             RETURNING id`,
+            [deletedBy, existing.id, organizationId]
+          );
+
+    const deletedIds = (deleteResult.rows as Array<{ id: string }>).map((r) => r.id);
+    const deletedCount = deletedIds.length > 0 ? deletedIds.length : (deleteResult.rowCount ?? 1);
+    return { deletedIds: deletedIds.length > 0 ? deletedIds : [existing.id], deletedCount };
+  }
+
+  /**
+   * DELETE /api/visits/:id
+   * Soft-delete a visit (sets deleted_at = NOW(), never hard-deletes).
+   * Supports series soft-delete via updateMode: 'THIS_VISIT' | 'ALL_FUTURE'.
+   * Role guard: Coordinator + Admin only (visits:delete).
+   */
+  router.delete('/:id', requireVisitLifecycleAccess('delete'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const context = getUserContext(req);
+      const visitId = req.params.id;
+      if (!visitId || !isValidUUID(visitId)) {
+        res.status(400).json({ success: false, error: 'Invalid visit ID format' });
+        return;
+      }
+
+      const rawBody = (req.body && typeof req.body === 'object' ? req.body : {}) as Record<string, unknown>;
+      const queryUpdateMode = typeof req.query['updateMode'] === 'string' ? req.query['updateMode'] : undefined;
+      const parsed = deleteVisitBodySchema.safeParse({
+        ...rawBody,
+        ...(rawBody.updateMode === undefined && queryUpdateMode !== undefined ? { updateMode: queryUpdateMode } : {}),
+      });
+      if (!parsed.success) {
+        res.status(400).json({
+          success: false,
+          error: parsed.error.issues[0]?.message ?? 'Invalid delete visit payload',
+        });
+        return;
+      }
+
+      const updateMode = parsed.data.updateMode ?? 'THIS_VISIT';
+      const existingResult = await db.query(
+        `SELECT id, organization_id, client_id, pattern_id, scheduled_date, status, actual_start_time
+         FROM visits
+         WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL`,
+        [visitId, context.organizationId]
+      );
+
+      if (existingResult.rows.length === 0) {
+        res.status(404).json({ success: false, error: 'Visit not found' });
+        return;
+      }
+
+      const existing = existingResult.rows[0] as {
+        id: string;
+        organization_id: string;
+        client_id?: string | null;
+        pattern_id?: string | null;
+        scheduled_date?: NullableDateValue;
+      };
+
+      const deletedBy = isValidUUID(context.userId) ? context.userId : null;
+      const { deletedIds, deletedCount } = await executeSoftDeleteVisits(
+        existing,
+        updateMode,
+        deletedBy,
+        context.organizationId ?? ''
+      );
+
+      try {
+        const auditService = new AuditService(db);
+        await auditService.logEvent(context, {
+          eventType: 'DATA_MODIFICATION',
+          resource: 'VISIT',
+          resourceId: visitId,
+          action: 'DELETE',
+          result: 'SUCCESS',
+          metadata: {
+            clientId: existing.client_id ?? null,
+            patternId: existing.pattern_id ?? null,
+            updateMode,
+            deletedCount,
+          },
+        });
+      } catch {
+        // Non-blocking audit logging
+      }
+
+      res.json({
+        success: true,
+        data: {
+          id: visitId,
+          deletedCount,
+          deletedIds,
+          updateMode,
+        },
       });
     } catch (error) {
       next(error);

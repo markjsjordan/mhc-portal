@@ -308,6 +308,7 @@ export class RecurringVisitPatternEngine {
           caregiverId: input.updates?.caregiverId,
           scheduledDate: input.updates?.scheduledDate,
           notes: input.updates?.notes,
+          status: input.updates?.status,
         },
         context
       );
@@ -335,7 +336,11 @@ export class RecurringVisitPatternEngine {
       context
     );
 
-    const fromDate = input.fromDate ?? this.formatDateOnly(new Date());
+    let fromDate = input.fromDate;
+    if (!fromDate && input.targetVisitId && typeof this.repository.getVisitScheduledDate === 'function') {
+      fromDate = (await this.repository.getVisitScheduledDate(input.targetVisitId, context.organizationId!)) ?? undefined;
+    }
+    fromDate = fromDate ?? this.formatDateOnly(new Date());
 
     const updatedVisitsCount = await this.repository.updateFutureVisitsForPattern(
       patternId,
@@ -346,6 +351,7 @@ export class RecurringVisitPatternEngine {
         duration: input.updates?.duration,
         caregiverId: input.updates?.caregiverId,
         notes: input.updates?.notes,
+        status: input.updates?.status,
       },
       context
     );
