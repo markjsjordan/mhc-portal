@@ -1051,7 +1051,7 @@ function App() {
         <OnlineStatus />
         <DemoModeBar />
         <AppRoutes />
-        <Toaster position="top-right" />
+        <Toaster position="bottom-right" />
         <UpdatePrompt />
       </BrowserRouter>
       <React.Suspense fallback={null}>
