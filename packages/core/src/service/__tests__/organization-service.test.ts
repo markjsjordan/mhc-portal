@@ -6,6 +6,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { OrganizationService } from '../organization-service.js';
+import * as emailServiceModule from '../email-service.js';
 import type { Database } from '../../db/connection.js';
 import type { AcceptInviteRequest } from '../../types/organization.js';
 
@@ -190,5 +191,140 @@ describe('OrganizationService - Invitation Accept (Caregiver Linking)', () => {
     const calls = vi.mocked(mockDb.query).mock.calls;
     const caregiverQuery = calls.find((c) => typeof c[0] === 'string' && c[0].includes('caregivers'));
     expect(caregiverQuery).toBeUndefined();
+  });
+});
+
+describe('OrganizationService - resendInvitation', () => {
+  let service: OrganizationService;
+  let mockDb: Database;
+  let mockSendInvitation: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    mockDb = {
+      query: vi.fn(),
+      transaction: vi.fn(async (callback) => {
+        return await callback(mockDb);
+      }),
+    } as unknown as Database;
+
+    service = new OrganizationService(mockDb);
+    mockSendInvitation = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(emailServiceModule, 'createEmailService').mockReturnValue({
+      sendInvitation: mockSendInvitation,
+    } as unknown as emailServiceModule.EmailService);
+  });
+
+  it('extends token expiry and dispatches invitation email with organization and inviter context', async () => {
+    const invite = {
+      id: 'invite-1',
+      token: 'tok-resend-123',
+      organizationId: 'org-1',
+      email: 'newuser@example.com',
+      firstName: 'Alex',
+      lastName: 'Morgan',
+      roles: ['COORDINATOR'],
+      branchIds: [],
+      expiresAt: new Date('2026-01-01T00:00:00Z'),
+      status: 'PENDING',
+      acceptedUserId: null,
+      acceptedAt: null,
+    };
+
+    (service as any).userRepo.getOrganizationInvites = vi.fn().mockResolvedValue([invite]);
+    (service as any).userRepo.resendInviteToken = vi.fn().mockResolvedValue(undefined);
+    (service as any).organizationRepo.getOrganizationById = vi.fn().mockResolvedValue({
+      id: 'org-1',
+      name: 'Sunrise Home Health',
+    });
+    (service as any).userRepo.getUserById = vi.fn().mockResolvedValue({
+      id: 'admin-1',
+      firstName: 'Jordan',
+      lastName: 'Admin',
+    });
+
+    await service.resendInvitation('invite-1', 'org-1', 'admin-1');
+
+    expect((service as any).userRepo.resendInviteToken).toHaveBeenCalledWith('invite-1', 'org-1', 'admin-1');
+    expect(mockSendInvitation).toHaveBeenCalledTimes(1);
+    expect(mockSendInvitation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recipientEmail: 'newuser@example.com',
+        recipientName: 'Alex Morgan',
+        inviterName: 'Jordan Admin',
+        organizationName: 'Sunrise Home Health',
+        invitationToken: 'tok-resend-123',
+        expiresAt: expect.any(Date),
+      })
+    );
+  });
+
+  it('falls back gracefully when organization or resender details are missing', async () => {
+    const invite = {
+      id: 'invite-2',
+      token: 'tok-resend-456',
+      organizationId: 'org-2',
+      email: 'noname@example.com',
+      firstName: null,
+      lastName: null,
+      roles: ['CAREGIVER'],
+      branchIds: [],
+      expiresAt: new Date('2026-01-01T00:00:00Z'),
+      status: 'PENDING',
+      acceptedUserId: null,
+      acceptedAt: null,
+    };
+
+    (service as any).userRepo.getOrganizationInvites = vi.fn().mockResolvedValue([invite]);
+    (service as any).userRepo.resendInviteToken = vi.fn().mockResolvedValue(undefined);
+    (service as any).organizationRepo.getOrganizationById = vi.fn().mockResolvedValue(null);
+    (service as any).userRepo.getUserById = vi.fn().mockResolvedValue(null);
+
+    await service.resendInvitation('invite-2', 'org-2', 'missing-admin');
+
+    expect(mockSendInvitation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recipientEmail: 'noname@example.com',
+        inviterName: 'An administrator',
+        organizationName: 'MHC Portal',
+        invitationToken: 'tok-resend-456',
+        expiresAt: expect.any(Date),
+      })
+    );
+    expect(mockSendInvitation.mock.calls[0]?.[0]).not.toHaveProperty('recipientName');
+  });
+
+  it('throws NotFoundError and does not send email when invitation does not exist', async () => {
+    (service as any).userRepo.getOrganizationInvites = vi.fn().mockResolvedValue([]);
+
+    await expect(service.resendInvitation('missing-id', 'org-1', 'admin-1')).rejects.toThrow(
+      'Invitation not found'
+    );
+    expect(mockSendInvitation).not.toHaveBeenCalled();
+  });
+
+  it('throws ValidationError and does not send email when invitation is not PENDING', async () => {
+    (service as any).userRepo.getOrganizationInvites = vi.fn().mockResolvedValue([
+      {
+        id: 'invite-accepted',
+        token: 'tok-accepted',
+        organizationId: 'org-1',
+        email: 'accepted@example.com',
+        firstName: 'Sam',
+        lastName: 'User',
+        roles: ['CAREGIVER'],
+        branchIds: [],
+        expiresAt: new Date('2026-01-01T00:00:00Z'),
+        status: 'ACCEPTED',
+        acceptedUserId: 'user-1',
+        acceptedAt: new Date('2026-01-01T00:00:00Z'),
+      },
+    ]);
+
+    await expect(service.resendInvitation('invite-accepted', 'org-1', 'admin-1')).rejects.toThrow(
+      'Only pending invitations can be resent'
+    );
+    expect(mockSendInvitation).not.toHaveBeenCalled();
   });
 });
