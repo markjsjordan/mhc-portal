@@ -904,7 +904,7 @@ function generateVisit(
     actualStart,
     actualEnd,
     status,
-    visitType: randomElement(['REGULAR', 'INITIAL', 'RESPITE', 'SUPERVISION', 'ASSESSMENT']),
+    visitType: randomElement(['REGULAR', 'INITIAL', 'CONCIERGE', 'SUPERVISION', 'ASSESSMENT']),
     notes,
     evvClockInGPS,
     evvClockOutGPS,
