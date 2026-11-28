@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { PermissionError, UserContext } from '@folkcare/core';
+import { PermissionError, ValidationError, UserContext } from '@folkcare/core';
 import { ClientService } from '../../service/client-service';
 import { ClientRepository } from '../../repository/client-repository';
 import { Client } from '../../types/client';
@@ -206,6 +206,99 @@ describe('ClientService - HIPAA-003 Tenant Isolation & Minimum-Necessary RBAC', 
       expect(result.ssn).toBe('123-45-6789');
       expect(result.insurance).toHaveLength(1);
       expect(result.fundingSources).toHaveLength(1);
+    });
+  });
+
+  describe('Manual Client Status Management RBAC & Validation', () => {
+    const adminRoles = ['SUPER_ADMIN', 'ORG_ADMIN', 'BRANCH_ADMIN', 'ADMIN'] as const;
+
+    for (const role of adminRoles) {
+      it(`allows ${role} to update client status via updateClientStatus`, async () => {
+        const ctx: UserContext = {
+          userId: `user-${role.toLowerCase()}`,
+          organizationId: ORG_A,
+          branchIds: [BRANCH_A],
+          roles: [role],
+          permissions: ['clients:read', 'clients:update'],
+        };
+        const existing = createFixtureClient({ status: 'ACTIVE' });
+        mockRepo.findById.mockResolvedValue(existing);
+        mockRepo.update.mockResolvedValue({ ...existing, status: 'ON_HOLD' });
+
+        const updated = await service.updateClientStatus('client-org-a', 'ON_HOLD', ctx);
+        expect(updated.status).toBe('ON_HOLD');
+      });
+    }
+
+    it('rejects COORDINATOR calling updateClientStatus with PermissionError (403)', async () => {
+      const coordinatorCtx: UserContext = {
+        userId: 'user-coord',
+        organizationId: ORG_A,
+        branchIds: [BRANCH_A],
+        roles: ['COORDINATOR'],
+        permissions: ['clients:read', 'clients:update'],
+      };
+
+      await expect(
+        service.updateClientStatus('client-org-a', 'INACTIVE', coordinatorCtx)
+      ).rejects.toThrow(PermissionError);
+      expect(mockRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects CAREGIVER calling updateClientStatus with PermissionError (403)', async () => {
+      const caregiverCtx: UserContext = {
+        userId: 'user-cg',
+        organizationId: ORG_A,
+        branchIds: [BRANCH_A],
+        roles: ['CAREGIVER'],
+        permissions: ['clients:read'],
+      };
+
+      await expect(
+        service.updateClientStatus('client-org-a', 'INACTIVE', caregiverCtx)
+      ).rejects.toThrow(PermissionError);
+    });
+
+    it('rejects PENDING_INTAKE and INQUIRY with ValidationError (400)', async () => {
+      const adminCtx: UserContext = {
+        userId: 'user-admin',
+        organizationId: ORG_A,
+        branchIds: [BRANCH_A],
+        roles: ['ADMIN'],
+        permissions: ['clients:read', 'clients:update'],
+      };
+
+      await expect(
+        service.updateClientStatus('client-org-a', 'PENDING_INTAKE', adminCtx)
+      ).rejects.toThrow(ValidationError);
+
+      await expect(
+        service.updateClientStatus('client-org-a', 'INQUIRY', adminCtx)
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('blocks COORDINATOR from changing status via updateClient except PENDING_INTAKE -> ACTIVE', async () => {
+      const coordinatorCtx: UserContext = {
+        userId: 'user-coord',
+        organizationId: ORG_A,
+        branchIds: [BRANCH_A],
+        roles: ['COORDINATOR'],
+        permissions: ['clients:read', 'clients:update'],
+      };
+
+      // Non-intake status change is blocked
+      const activeClient = createFixtureClient({ status: 'ACTIVE' });
+      mockRepo.findById.mockResolvedValue(activeClient);
+      await expect(
+        service.updateClient('client-org-a', { status: 'DISCHARGED' }, coordinatorCtx)
+      ).rejects.toThrow(PermissionError);
+
+      // Intake auto-promotion PENDING_INTAKE -> ACTIVE is allowed
+      const pendingClient = createFixtureClient({ status: 'PENDING_INTAKE' });
+      mockRepo.findById.mockResolvedValue(pendingClient);
+      mockRepo.update.mockResolvedValue({ ...pendingClient, status: 'ACTIVE' });
+      const promoted = await service.updateClient('client-org-a', { status: 'ACTIVE' }, coordinatorCtx);
+      expect(promoted.status).toBe('ACTIVE');
     });
   });
 });

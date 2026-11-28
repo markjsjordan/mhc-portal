@@ -291,7 +291,7 @@ function AppRoutes() {
       <Route
         path="/clients/new/intake"
         element={
-          <ProtectedRoute permission="clients:write">
+          <ProtectedRoute anyPermissions={['clients:create', 'clients:write']}>
             <AppShell>
               <ClientIntakeWorkflow />
             </AppShell>
@@ -301,7 +301,7 @@ function AppRoutes() {
       <Route
         path="/clients/:id/edit"
         element={
-          <ProtectedRoute permission="clients:write">
+          <ProtectedRoute anyPermissions={['clients:update', 'clients:write']}>
             <AppShell>
               <ClientEditPage />
             </AppShell>

@@ -22,6 +22,10 @@ export interface ProtectedRouteProps {
    */
   permissions?: string[];
   /**
+   * Required permissions (at least one must be satisfied)
+   */
+  anyPermissions?: string[];
+  /**
    * Required role to access this route
    */
   requiredRole?: Role;
@@ -47,13 +51,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   permission,
   permissions,
+  anyPermissions,
   requiredRole,
   requiredRoles,
   section,
   fallbackPath,
 }) => {
   const { isAuthenticated, user, isInitializing } = useAuth();
-  const { can, canAll, hasRole, hasAnyRole, canSection } = usePermissions();
+  const { can, canAll, canAny, hasRole, hasAnyRole, canSection } = usePermissions();
   const location = useLocation();
 
   if (isInitializing) {
@@ -91,6 +96,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check multiple permissions (all required)
   if (permissions && !canAll(permissions)) {
+    return deny();
+  }
+
+  // Check multiple permissions (at least one required)
+  if (anyPermissions && !canAny(anyPermissions)) {
     return deny();
   }
 

@@ -11,11 +11,18 @@ import {
   PaginatedResult,
   GeocodingService,
   ClientStatus as CoreClientStatus,
+  ADMIN_ROLES,
 } from '@folkcare/core';
 import { getPermissionService } from '@folkcare/core';
 import { getCacheService } from '@folkcare/core/service/cache.service';
 import { CacheKeys, CacheTTL } from '@folkcare/core/constants/cache-keys';
-import { Client, CreateClientInput, UpdateClientInput, ClientSearchFilters } from '../types/client';
+import {
+  Client,
+  CreateClientInput,
+  UpdateClientInput,
+  ClientSearchFilters,
+  MANUALLY_SELECTABLE_CLIENT_STATUSES,
+} from '../types/client';
 import { ClientRepository } from '../repository/client-repository';
 import { ClientValidator } from '../validation/client-validator';
 import type { ClientAuditService, AuditQuery, AuditReport } from './client-audit-service';
@@ -311,6 +318,17 @@ export class ClientService {
     // Verify client exists (internal existence check, not a PHI read — skip audit log)
     const existing = await this.getClientById(id, context, true);
 
+    // Defense-in-depth: only administrators can manually change client status.
+    // Non-admins (e.g. COORDINATOR) may only trigger the intake auto-promotion (PENDING_INTAKE -> ACTIVE).
+    if (updates.status !== undefined && updates.status !== existing.status) {
+      const isAdmin = context.roles.some((r) => (ADMIN_ROLES as readonly string[]).includes(r));
+      const isIntakeAutoPromotion =
+        existing.status === 'PENDING_INTAKE' && updates.status === 'ACTIVE';
+      if (!isAdmin && !isIntakeAutoPromotion) {
+        throw new PermissionError('Only administrators can manually update client status');
+      }
+    }
+
     // Validate updates
     const validation = this.validator.validateUpdate(updates);
     if (!validation.success) {
@@ -386,6 +404,7 @@ export class ClientService {
     // Invalidate cache
     const cache = getCacheService();
     await cache.delPattern(CacheKeys.patterns.client(id));
+    await cache.del(CacheKeys.clientsByOrganization(existing.organizationId));
 
     return updated;
   }
@@ -616,16 +635,43 @@ export class ClientService {
     context: UserContext,
     reason?: string
   ): Promise<Client> {
+    const isAdmin = context.roles.some((r) => (ADMIN_ROLES as readonly string[]).includes(r));
+    if (!isAdmin) {
+      throw new PermissionError('Only administrators can manually update client status');
+    }
+
+    if (
+      typeof status !== 'string' ||
+      !(MANUALLY_SELECTABLE_CLIENT_STATUSES as readonly string[]).includes(status)
+    ) {
+      throw new ValidationError(
+        `Invalid client status. Allowed values: ${MANUALLY_SELECTABLE_CLIENT_STATUSES.join(', ')}`
+      );
+    }
+
+    let trimmedReason: string | undefined;
+    if (reason !== undefined) {
+      if (typeof reason !== 'string') {
+        throw new ValidationError('Reason must be a string');
+      }
+      trimmedReason = reason.trim();
+      if (trimmedReason.length > 500) {
+        throw new ValidationError('Reason must be 500 characters or fewer');
+      }
+    }
+
     // Internal existence check feeding a mutation, not a standalone PHI read — skip audit log
     const client = await this.getClientById(clientId, context, true);
 
     const updates: UpdateClientInput = { status };
 
     if (status === 'DISCHARGED') {
-      if (reason !== undefined) {
-        updates.notes = `${client.notes || ''}\n\nDischarged: ${reason}`;
-      } else if (client.notes !== undefined) {
-        updates.notes = client.notes;
+      updates.dischargeDate = new Date();
+      if (trimmedReason) {
+        updates.dischargeReason = trimmedReason;
+        updates.notes = client.notes
+          ? `${client.notes}\n\nDischarged: ${trimmedReason}`
+          : `Discharged: ${trimmedReason}`;
       }
     }
 

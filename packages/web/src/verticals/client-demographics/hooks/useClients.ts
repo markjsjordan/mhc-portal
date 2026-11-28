@@ -7,6 +7,7 @@ import type {
   ClientSearchFilters,
   CreateClientInput,
   UpdateClientInput,
+  ManualClientStatus,
   CreateFamilyMemberInput,
   UpdateFamilyMemberInput,
 } from '../types';
@@ -67,6 +68,55 @@ export const useUpdateClient = () => {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to update client');
+    },
+  });
+};
+
+const MANUAL_STATUS_LABELS: Record<ManualClientStatus, string> = {
+  ACTIVE: 'Active',
+  INACTIVE: 'Inactive',
+  ON_HOLD: 'On Hold',
+  DISCHARGED: 'Discharged',
+  DECEASED: 'Deceased',
+};
+
+export const useUpdateClientStatus = () => {
+  const clientApi = useClientApi();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      status,
+      reason,
+    }: {
+      id: string;
+      status: ManualClientStatus;
+      reason?: string;
+    }) => {
+      const trimmedReason = reason?.trim();
+      return clientApi.updateClientStatus(id, {
+        status,
+        ...(trimmedReason ? { reason: trimmedReason } : {}),
+      });
+    },
+    onSuccess: (data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ['clients'] });
+      void queryClient.invalidateQueries({ queryKey: ['clients', data.id] });
+
+      const statusLabel = MANUAL_STATUS_LABELS[variables.status];
+      if (variables.status === 'DISCHARGED' || variables.status === 'DECEASED') {
+        void queryClient.invalidateQueries({ queryKey: ['client-portal-access', data.id] });
+        void queryClient.invalidateQueries({ queryKey: ['family-portal-access', data.id] });
+        toast.success(
+          `Client status updated to ${statusLabel}. Client and family portal access has been revoked.`
+        );
+      } else {
+        toast.success(`Client status updated to ${statusLabel}.`);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update client status');
     },
   });
 };

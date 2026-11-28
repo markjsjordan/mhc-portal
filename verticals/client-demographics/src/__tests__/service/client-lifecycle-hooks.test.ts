@@ -115,6 +115,77 @@ describe('Client Lifecycle Hooks', () => {
       await service.updateClient('client-1', { status: 'ACTIVE' }, mockContext);
       expect(mockHook.handleClientStatusChange).not.toHaveBeenCalled();
     });
+
+    it('fires the hook when client is marked DECEASED via updateClientStatus', async () => {
+      const service = new ClientService(mockRepo, undefined, mockHook);
+      const existing: Partial<Client> = {
+        id: 'client-1',
+        organizationId: 'org-123',
+        status: 'ACTIVE',
+        firstName: 'Alice',
+        lastName: 'Smith',
+      };
+
+      vi.spyOn(service, 'getClientById').mockResolvedValue(existing as Client);
+      vi.spyOn(mockRepo, 'update').mockResolvedValue({
+        ...existing,
+        status: 'DECEASED',
+      } as Client);
+
+      await service.updateClientStatus('client-1', 'DECEASED', mockContext);
+
+      expect(mockHook.handleClientStatusChange).toHaveBeenCalledTimes(1);
+      expect(mockHook.handleClientStatusChange).toHaveBeenCalledWith(
+        'client-1',
+        'ACTIVE',
+        'DECEASED',
+        mockContext
+      );
+    });
+
+    it('sets dischargeDate and dischargeReason on DISCHARGED and omits blank reason from notes', async () => {
+      const service = new ClientService(mockRepo, undefined, mockHook);
+      const existing: Partial<Client> = {
+        id: 'client-1',
+        organizationId: 'org-123',
+        status: 'ACTIVE',
+        firstName: 'Alice',
+        lastName: 'Smith',
+        notes: 'Initial note',
+      };
+
+      vi.spyOn(service, 'getClientById').mockResolvedValue(existing as Client);
+      const updateSpy = vi.spyOn(mockRepo, 'update').mockResolvedValue({
+        ...existing,
+        status: 'DISCHARGED',
+      } as Client);
+
+      await service.updateClientStatus('client-1', 'DISCHARGED', mockContext, '   ');
+      expect(updateSpy).toHaveBeenCalledWith(
+        'client-1',
+        expect.objectContaining({
+          status: 'DISCHARGED',
+          dischargeDate: expect.any(Date),
+        }),
+        mockContext
+      );
+      const blankCallUpdates = updateSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+      expect(blankCallUpdates.dischargeReason).toBeUndefined();
+      expect(blankCallUpdates.notes).toBeUndefined();
+
+      updateSpy.mockClear();
+      await service.updateClientStatus('client-1', 'DISCHARGED', mockContext, '  Completed care  ');
+      expect(updateSpy).toHaveBeenCalledWith(
+        'client-1',
+        expect.objectContaining({
+          status: 'DISCHARGED',
+          dischargeDate: expect.any(Date),
+          dischargeReason: 'Completed care',
+          notes: 'Initial note\n\nDischarged: Completed care',
+        }),
+        mockContext
+      );
+    });
   });
 
   describe('ClientService.deleteClient access revocation', () => {

@@ -106,4 +106,27 @@ describe('clientApi family portal access (wdvf3acun8)', () => {
     });
     expect(result).toEqual(mockRow);
   });
+
+  it('updateClientStatus calls PATCH /api/clients/:id/status with status and optional reason', async () => {
+    const mockClient = { id: 'client-123', status: 'DISCHARGED' };
+    const mockApiClient: ApiClient = {
+      get: vi.fn(),
+      post: vi.fn(),
+      put: vi.fn(),
+      patch: vi.fn().mockResolvedValue({ success: true, data: mockClient }),
+      delete: vi.fn(),
+    };
+
+    const service = createClientApiService(mockApiClient);
+    const result = await service.updateClientStatus('client-123', {
+      status: 'DISCHARGED',
+      reason: 'Completed care goals',
+    });
+
+    expect(mockApiClient.patch).toHaveBeenCalledWith('/api/clients/client-123/status', {
+      status: 'DISCHARGED',
+      reason: 'Completed care goals',
+    });
+    expect(result).toEqual(mockClient);
+  });
 });

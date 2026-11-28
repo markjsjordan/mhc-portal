@@ -319,6 +319,16 @@ export type ClientStatus =
   | 'DISCHARGED'
   | 'DECEASED';
 
+export const MANUALLY_SELECTABLE_CLIENT_STATUSES = [
+  'ACTIVE',
+  'INACTIVE',
+  'ON_HOLD',
+  'DISCHARGED',
+  'DECEASED',
+] as const;
+
+export type ManualClientStatus = (typeof MANUALLY_SELECTABLE_CLIENT_STATUSES)[number];
+
 export interface Phone {
   number: string;
   type: 'MOBILE' | 'HOME' | 'WORK';
@@ -606,6 +616,8 @@ export interface UpdateClientInput {
   authorizedContacts?: AuthorizedContact[];
   riskFlags?: RiskFlag[];
   status?: ClientStatus;
+  dischargeDate?: Date;
+  dischargeReason?: string;
   notes?: string;
   primaryPhysician?: HealthcareProvider;
   insurance?: Insurance[];

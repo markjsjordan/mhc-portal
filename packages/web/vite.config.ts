@@ -31,7 +31,7 @@ const appVersion =
   process.env.REACT_APP_VERSION ||
   getVersionFromGit() ||
   pkgJson.version ||
-  '1.5.0';
+  '1.6.0';
 
 export default defineConfig({
   define: {

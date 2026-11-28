@@ -757,7 +757,19 @@ export class ClientHandlers {
       });
     }
 
-    const client = await this.clientService.updateClientStatus(id, status, context, reason);
+    if (typeof status !== 'string' || status.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        error: 'Client status is required',
+      });
+    }
+
+    const client = await this.clientService.updateClientStatus(
+      id,
+      status as import('../types/client').ClientStatus,
+      context,
+      reason
+    );
 
     return res.json({
       success: true,

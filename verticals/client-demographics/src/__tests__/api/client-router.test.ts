@@ -175,4 +175,35 @@ describe('createClientRouter - route registration order', () => {
     expect(res.body.data).toEqual([{ id: 'branch-1', name: 'Main Branch' }]);
     expect(mockClientService.listBranches).toHaveBeenCalled();
   });
+
+  it('PATCH /clients/:id/status returns 400 when status is missing', async () => {
+    const clientId = '11111111-1111-4111-8111-111111111111';
+    const res = await request(app).patch(`/api/clients/${clientId}/status`).send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('PATCH /clients/:id/status returns 200 for valid status update', async () => {
+    const clientId = '11111111-1111-4111-8111-111111111111';
+    mockClientService.updateClientStatus = vi.fn().mockResolvedValue({
+      ...DASHBOARD_ID_FIXTURE,
+      id: clientId,
+      status: 'ON_HOLD',
+    });
+
+    const res = await request(app)
+      .patch(`/api/clients/${clientId}/status`)
+      .send({ status: 'ON_HOLD' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.status).toBe('ON_HOLD');
+    expect(mockClientService.updateClientStatus).toHaveBeenCalledWith(
+      clientId,
+      'ON_HOLD',
+      expect.anything(),
+      undefined
+    );
+  });
 });

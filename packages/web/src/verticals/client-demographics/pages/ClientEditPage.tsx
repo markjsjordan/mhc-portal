@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { LoadingSpinner, ErrorMessage } from '@/core/components';
 import { useClient } from '../hooks';
+import { ClientStatusCard } from '../components';
 import ClientIntakeWorkflow from '@/pages/clients/ClientIntakeWorkflow';
 import { mapClientToIntakeData } from '../utils/mappers';
 
@@ -47,16 +48,21 @@ export const ClientEditPage: React.FC = () => {
   };
 
   return (
-    <ClientIntakeWorkflow
-      // The form copies initialData into state once. Re-key on the record's version so a
-      // refetch (or switching clients) remounts it with the new data instead of
-      // silently showing and saving stale values.
-      key={`${client.id}:${client.updatedAt}`}
-      initialData={initialData}
-      isEditMode={true}
-      clientId={id}
-      currentStatus={client.status}
-      onSuccess={handleSuccess}
-    />
+    <div className="space-y-6">
+      <div className="max-w-4xl mx-auto px-4 pt-6">
+        <ClientStatusCard client={client} />
+      </div>
+      <ClientIntakeWorkflow
+        // The form copies initialData into state once. Re-key on the record's version so a
+        // refetch (or switching clients) remounts it with the new data instead of
+        // silently showing and saving stale values.
+        key={`${client.id}:${client.updatedAt}`}
+        initialData={initialData}
+        isEditMode={true}
+        clientId={id}
+        currentStatus={client.status}
+        onSuccess={handleSuccess}
+      />
+    </div>
   );
 };

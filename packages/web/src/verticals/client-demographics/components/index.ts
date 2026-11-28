@@ -14,3 +14,4 @@ export * from './ClientTimelineCard';
 export * from './ClientPortalAccessCard';
 
 export * from './ClientIntakeDetailsCards';
+export * from './ClientStatusCard';

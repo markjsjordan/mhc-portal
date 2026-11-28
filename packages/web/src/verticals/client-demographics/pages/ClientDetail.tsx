@@ -19,7 +19,7 @@ import {
 export const ClientDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { can } = usePermissions();
+  const { canAny } = usePermissions();
   const { canWrite, readOnly } = useSectionAccess('clients');
   const { data: client, isLoading, error, refetch } = useClient(id);
   const deleteClient = useDeleteClient();
@@ -85,7 +85,7 @@ export const ClientDetail: React.FC = () => {
           </div>
           <p className="text-sm text-gray-600 mt-1">{client.clientNumber}</p>
         </div>
-        {can('clients:write') && canWrite && (
+        {canAny(['clients:update', 'clients:write']) && canWrite && (
           <div className="flex flex-wrap items-center gap-2 md:shrink-0">
             <Link to={`/clients/${client.id}/edit`}>
               <Button variant="outline" className="min-h-[44px] px-3">

@@ -212,6 +212,8 @@ const updateClientSchema = z
     assessmentData: assessmentDataSchema.optional(),
     carePlanSummary: carePlanSummarySchema.optional(),
     visitSchedule: visitScheduleSchema.optional(),
+    dischargeDate: z.coerce.date().optional(),
+    dischargeReason: z.string().max(500).optional(),
     notes: z.string().optional(),
   })
   .partial();
